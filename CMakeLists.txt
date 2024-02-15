@@ -1,9 +1,23 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM3)
 
+set(ORB_SLAM3_VERSION "1.0")
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+set(ORB_SLAM3_INC_INSTALL_DIR "/usr/local/include/${PROJECT_NAME}")
+set(ORB_SLAM3_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}")
+set(ORB_SLAM3_LIBRARY_INSTALL_DIR "/usr/local/lib")
+set(ORB_SLAM3_ARCHIVE_INSTALL_DIR "/usr/local/lib")
+set(ORB_SLAM3_FRAMEWORK_INSTALL_DIR "/usr/local/lib")
+
+set(ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR "/usr/local/lib/cmake/ORB_SLAM3")
+set(ORB_SLAM3_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/ORB_SLAM3")
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -11,6 +25,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -30,28 +47,51 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV 4.4)
+find_package(OpenCV 3.2)
    if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 4.4 not found.")
+      message(FATAL_ERROR "OpenCV > 3.2 not found.")
    endif()
 
 MESSAGE("OPENCV VERSION:")
 MESSAGE(${OpenCV_VERSION})
 
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 3.3.9 REQUIRED EXACT)
 find_package(Pangolin REQUIRED)
+find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(realsense2)
 
-include_directories(
-${PROJECT_SOURCE_DIR}
-${PROJECT_SOURCE_DIR}/include
-${PROJECT_SOURCE_DIR}/include/CameraModels
-${PROJECT_SOURCE_DIR}/Thirdparty/Sophus
-${EIGEN3_INCLUDE_DIR}
-${Pangolin_INCLUDE_DIRS}
+set(HEADERS
+        include/System.h
+        include/Tracking.h
+        include/LocalMapping.h
+        include/LoopClosing.h
+        include/ORBextractor.h
+        include/ORBmatcher.h
+        include/FrameDrawer.h
+        include/Converter.h
+        include/MapPoint.h
+        include/KeyFrame.h
+        include/Atlas.h
+        include/Map.h
+        include/MapDrawer.h
+        include/Optimizer.h
+        include/Frame.h
+        include/KeyFrameDatabase.h
+        include/Sim3Solver.h
+        include/Viewer.h
+        include/ImuTypes.h
+        include/G2oTypes.h
+        include/CameraModels/GeometricCamera.h
+        include/CameraModels/Pinhole.h
+        include/CameraModels/KannalaBrandt8.h
+        include/OptimizableTypes.h
+        include/MLPnPsolver.h
+        include/GeometricTools.h
+        include/TwoViewReconstruction.h
+        include/SerializationUtils.h
+        include/Config.h
+        include/Settings.h
 )
-
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -82,47 +122,25 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
-include/System.h
-include/Tracking.h
-include/LocalMapping.h
-include/LoopClosing.h
-include/ORBextractor.h
-include/ORBmatcher.h
-include/FrameDrawer.h
-include/Converter.h
-include/MapPoint.h
-include/KeyFrame.h
-include/Atlas.h
-include/Map.h
-include/MapDrawer.h
-include/Optimizer.h
-include/Frame.h
-include/KeyFrameDatabase.h
-include/Sim3Solver.h
-include/Viewer.h
-include/ImuTypes.h
-include/G2oTypes.h
-include/CameraModels/GeometricCamera.h
-include/CameraModels/Pinhole.h
-include/CameraModels/KannalaBrandt8.h
-include/OptimizableTypes.h
-include/MLPnPsolver.h
-include/GeometricTools.h
-include/TwoViewReconstruction.h
-include/SerializationUtils.h
-include/Config.h
-include/Settings.h)
+${HEADERS}
+)
 
-add_subdirectory(Thirdparty/g2o)
+target_include_directories(${PROJECT_NAME} PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty> # for headers when building
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> # for headers when building
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/CameraModels> # for headers when building
+     $<INSTALL_INTERFACE:${ORB_SLAM3_INC_INSTALL_DIR}> # for client in install mode
+     ${EIGEN3_INCLUDE_DIR}
+     ${Pangolin_INCLUDE_DIRS}
+)
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
-${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
--lboost_serialization
--lcrypto
+${Boost_LIBRARIES}
+${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
+${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.a
 )
 
 # If RealSense SDK is found the library is added and its examples compiled
@@ -135,8 +153,64 @@ if(realsense2_FOUND)
     )
 endif()
 
+################################################################################
+# Create Targets
+################################################################################
 
-# Build examples
+
+# Library
+install(TARGETS ${PROJECT_NAME} EXPORT ORB_SLAM3Targets
+        RUNTIME       DESTINATION ${ORB_SLAM3_RUNTIME_INSTALL_DIR}
+        LIBRARY       DESTINATION ${ORB_SLAM3_LIBRARY_INSTALL_DIR}
+        ARCHIVE       DESTINATION ${ORB_SLAM3_ARCHIVE_INSTALL_DIR}
+        FRAMEWORK     DESTINATION ${ORB_SLAM3_FRAMEWORK_INSTALL_DIR})
+
+# Headers
+install(
+        FILES ${HEADERS}
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+################################################################################
+# Install All
+################################################################################
+
+set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME "ORB_SLAM3-${ORB_SLAM3_VERSION}")
+
+# Create and install version file
+set(version_file "${CMAKE_CURRENT_BINARY_DIR}/ORB_SLAM3ConfigVersion.cmake")
+write_basic_package_version_file(${version_file}
+        VERSION ${ORB_SLAM3_VERSION}
+        COMPATIBILITY ExactVersion
+        )
+install(FILES ${version_file}
+        DESTINATION ${ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR})
+
+# install readme and license
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+        DESTINATION ${ORB_SLAM3_ADDITIONAL_FILES_INSTALL_DIR}
+        )
+
+install(
+        EXPORT ORB_SLAM3Targets
+        DESTINATION ${ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR}
+        FILE ORB_SLAM3Config.cmake
+)
+
+
+################################################################################
+# Build Examples
+################################################################################
 
 # RGB-D examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)

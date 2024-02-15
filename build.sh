@@ -8,6 +8,7 @@ make -j
 
 cd ../../g2o
 
+
 echo "Configuring and building Thirdparty/g2o ..."
 
 mkdir build

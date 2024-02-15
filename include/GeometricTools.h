@@ -21,7 +21,7 @@
 #define GEOMETRIC_TOOLS_H
 
 #include <opencv2/core/core.hpp>
-#include <sophus/se3.hpp>
+#include "Sophus/sophus/se3.hpp"
 #include <Eigen/Core>
 
 namespace ORB_SLAM3

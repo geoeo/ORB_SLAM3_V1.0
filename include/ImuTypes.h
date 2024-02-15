@@ -26,7 +26,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/Dense>
-#include <sophus/se3.hpp>
+#include "Sophus/sophus/se3.hpp"
 #include <mutex>
 
 #include "SerializationUtils.h"
