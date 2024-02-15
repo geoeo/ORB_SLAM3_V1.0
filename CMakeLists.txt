@@ -16,8 +16,8 @@ set(ORB_SLAM3_LIBRARY_INSTALL_DIR "/usr/local/lib")
 set(ORB_SLAM3_ARCHIVE_INSTALL_DIR "/usr/local/lib")
 set(ORB_SLAM3_FRAMEWORK_INSTALL_DIR "/usr/local/lib")
 
-set(ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR "/usr/local/lib/cmake/ORB_SLAM3")
-set(ORB_SLAM3_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/ORB_SLAM3")
+set(ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR "/usr/local/lib/cmake/${PROJECT_NAME}")
+set(ORB_SLAM3_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}")
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -67,6 +67,7 @@ set(HEADERS
         include/LoopClosing.h
         include/ORBextractor.h
         include/ORBmatcher.h
+        include/ORBVocabulary.h
         include/FrameDrawer.h
         include/Converter.h
         include/MapPoint.h
@@ -122,17 +123,17 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
-${HEADERS}
+#${HEADERS}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty> # for headers when building
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> # for headers when building
-     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/CameraModels> # for headers when building
      $<INSTALL_INTERFACE:${ORB_SLAM3_INC_INSTALL_DIR}> # for client in install mode
      ${EIGEN3_INCLUDE_DIR}
      ${Pangolin_INCLUDE_DIRS}
 )
+
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
@@ -163,16 +164,58 @@ install(TARGETS ${PROJECT_NAME} EXPORT ORB_SLAM3Targets
         RUNTIME       DESTINATION ${ORB_SLAM3_RUNTIME_INSTALL_DIR}
         LIBRARY       DESTINATION ${ORB_SLAM3_LIBRARY_INSTALL_DIR}
         ARCHIVE       DESTINATION ${ORB_SLAM3_ARCHIVE_INSTALL_DIR}
-        FRAMEWORK     DESTINATION ${ORB_SLAM3_FRAMEWORK_INSTALL_DIR})
+        FRAMEWORK     DESTINATION ${ORB_SLAM3_FRAMEWORK_INSTALL_DIR}
+)
+
+file(GLOB HEAD 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
+)
 
 # Headers
 install(
-        FILES ${HEADERS}
+        FILES ${HEAD}
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
 )
 
 install(
-        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty>
+        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/CameraModels>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
         FILES_MATCHING # install only matched files
         PATTERN "*.h" # select header files
@@ -185,15 +228,23 @@ install(
 # Install All
 ################################################################################
 
-set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME "ORB_SLAM3-${ORB_SLAM3_VERSION}")
+#set_target_properties(${LIBRARY_NAME} PROPERTIES OUTPUT_NAME "ORB_SLAM3-${ORB_SLAM3_VERSION}")
 
 # Create and install version file
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/ORB_SLAM3ConfigVersion.cmake")
+set(config_file "${PROJECT_NAME}.cmake")
+
+install(EXPORT ORB_SLAM3Targets
+    FILE ${config_file}
+    NAMESPACE ORB_SLAM3::
+    DESTINATION lib/cmake/ORB_SLAM3)
+
 write_basic_package_version_file(${version_file}
         VERSION ${ORB_SLAM3_VERSION}
         COMPATIBILITY ExactVersion
         )
-install(FILES ${version_file}
+
+install(FILES ${config_file} ${version_file}
         DESTINATION ${ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR})
 
 # install readme and license
