@@ -31,7 +31,8 @@ public:
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu): mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu) {}
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, uint64_t fps_fac)
+      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0) {}
 
     void GrabImage(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat GetImage(const sensor_msgs::ImageConstPtr &img_msg);
@@ -46,6 +47,8 @@ public:
     const bool mbClahe;
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
     double timeshift_cam_imu;
+    uint64_t fps_factor;
+    uint64_t count;
 };
 
 
@@ -78,9 +81,10 @@ int main(int argc, char **argv)
   ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
 
 
-  double timeshift_cam_imu =  0.0021434982252719545*10.0; //Kaist - we are running 10x slower (10fps)
+  double timeshift_cam_imu = 0.0021434982252719545; //Kaist
+  uint64_t fps_factor = 3; //Kaist (3fps)
   ImuGrabber imugb;
-  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu); // TODO
+  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor); // TODO
 
     // Maximum delay, 5 seconds
   //ros::Subscriber sub_imu = n.subscribe("/imu0", 1000, &ImuGrabber::GrabImu, &imugb); 
@@ -100,10 +104,16 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &img_msg)
 {
+
   mBufMutex.lock();
+  count++;
   if (!img0Buf.empty())
     img0Buf.pop();
-  img0Buf.push(img_msg);
+  if(count == fps_factor){ //hardcoded fps factor Kaist
+    img0Buf.push(img_msg);
+    count = 0;
+  } 
+
   mBufMutex.unlock();
 }
 

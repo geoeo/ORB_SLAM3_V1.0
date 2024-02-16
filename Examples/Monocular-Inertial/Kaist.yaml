@@ -26,7 +26,7 @@ Camera.newWidth: 640
 Camera.newHeight: 480
 
 # Camera frames per second 
-Camera.fps: 3
+Camera.fps: 10
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -53,7 +53,7 @@ IMU.Frequency: 100.0
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 2000 # 1000
+ORBextractor.nFeatures: 1000 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
@@ -65,7 +65,7 @@ ORBextractor.nLevels: 8
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast			
-ORBextractor.iniThFAST: 15
+ORBextractor.iniThFAST: 10
 ORBextractor.minThFAST: 5
 
 #--------------------------------------------------------------------------------------------
