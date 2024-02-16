@@ -31,7 +31,7 @@ public:
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe): mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe){}
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu): mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu) {}
 
     void GrabImage(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat GetImage(const sensor_msgs::ImageConstPtr &img_msg);
@@ -45,6 +45,7 @@ public:
 
     const bool mbClahe;
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+    double timeshift_cam_imu;
 };
 
 
@@ -70,15 +71,25 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
+
+
+
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
   ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
 
+
+  double timeshift_cam_imu =  0.0021434982252719545*10.0; //Kaist - we are running 10x slower (10fps)
   ImuGrabber imugb;
-  ImageGrabber igb(&SLAM,&imugb,bEqual); // TODO
+  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu); // TODO
+
+    // Maximum delay, 5 seconds
+  //ros::Subscriber sub_imu = n.subscribe("/imu0", 1000, &ImuGrabber::GrabImu, &imugb); 
+  //ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
+  //Kaist
+  ros::Subscriber sub_imu = n.subscribe("/mavros/imu/data", 1000, &ImuGrabber::GrabImu, &imugb); 
+  ros::Subscriber sub_img0 = n.subscribe("/camera/infra1/image_rect_raw", 1000, &ImageGrabber::GrabImage,&igb);
+
   
-  // Maximum delay, 5 seconds
-  ros::Subscriber sub_imu = n.subscribe("/imu0", 1000, &ImuGrabber::GrabImu, &imugb); 
-  ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
 
   std::thread sync_thread(&ImageGrabber::SyncWithImu,&igb);
 
@@ -128,7 +139,7 @@ void ImageGrabber::SyncWithImu()
     double tIm = 0;
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
-      tIm = img0Buf.front()->header.stamp.toSec();
+      tIm = img0Buf.front()->header.stamp.toSec() + timeshift_cam_imu;
       if(tIm>mpImuGb->imuBuf.back()->header.stamp.toSec())
           continue;
       {
@@ -157,7 +168,8 @@ void ImageGrabber::SyncWithImu()
       if(mbClahe)
         mClahe->apply(im,im);
 
-      mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+      if(!vImuMeas.empty())
+        mpSLAM->TrackMonocular(im,tIm,vImuMeas);
     }
 
     std::chrono::milliseconds tSleep(1);
