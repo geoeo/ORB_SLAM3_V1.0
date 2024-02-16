@@ -127,7 +127,7 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
-  ${ORB_SLAM3_INCLUDE_DIR}
+  #${ORB_SLAM3_INCLUDE_DIR}
   ${Pangolin_INCLUDE_DIRS}
   ${OpenCV_LIBS}
 )
