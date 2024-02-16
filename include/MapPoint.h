@@ -29,6 +29,8 @@
 
 #include <opencv2/core/core.hpp>
 #include <mutex>
+#include <set>
+#include <map>
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/array.hpp>
@@ -157,8 +159,8 @@ public:
 
     void PrintObservations();
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid);
+    void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP);
+    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid);
 
 public:
     long unsigned int mnId;

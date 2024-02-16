@@ -58,7 +58,6 @@ MESSAGE(${OpenCV_VERSION})
 find_package(Eigen3 3.3.9 REQUIRED EXACT)
 find_package(Pangolin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
-find_package(realsense2)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -97,6 +96,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      $<INSTALL_INTERFACE:${ORB_SLAM3_INC_INSTALL_DIR}> # for client in install mode
      ${EIGEN3_INCLUDE_DIR}
      ${Pangolin_INCLUDE_DIRS}
+     ${DBoW2_INCLUDE_DIRS}
 )
 
 

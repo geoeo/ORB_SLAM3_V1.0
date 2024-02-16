@@ -33,6 +33,8 @@
 #include "SerializationUtils.h"
 
 #include <mutex>
+#include <vector>
+#include <set>
 
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/vector.hpp>
@@ -123,8 +125,8 @@ class KeyFrame
         // KeyPoints
         serializeVectorKeyPoints<Archive>(ar, mvKeys, version);
         serializeVectorKeyPoints<Archive>(ar, mvKeysUn, version);
-        ar & const_cast<vector<float>& >(mvuRight);
-        ar & const_cast<vector<float>& >(mvDepth);
+        ar & const_cast<std::vector<float>& >(mvuRight);
+        ar & const_cast<std::vector<float>& >(mvDepth);
         serializeMatrix<Archive>(ar,mDescriptors,version);
         // BOW
         ar & mBowVec;
@@ -135,9 +137,9 @@ class KeyFrame
         ar & const_cast<int&>(mnScaleLevels);
         ar & const_cast<float&>(mfScaleFactor);
         ar & const_cast<float&>(mfLogScaleFactor);
-        ar & const_cast<vector<float>& >(mvScaleFactors);
-        ar & const_cast<vector<float>& >(mvLevelSigma2);
-        ar & const_cast<vector<float>& >(mvInvLevelSigma2);
+        ar & const_cast<std::vector<float>& >(mvScaleFactors);
+        ar & const_cast<std::vector<float>& >(mvLevelSigma2);
+        ar & const_cast<std::vector<float>& >(mvInvLevelSigma2);
         // Image bounds and calibration
         ar & const_cast<int&>(mnMinX);
         ar & const_cast<int&>(mnMinY);
@@ -244,7 +246,7 @@ public:
 
     // Merge Edges
     void AddMergeEdge(KeyFrame* pKF);
-    set<KeyFrame*> GetMergeEdges();
+    std::set<KeyFrame*> GetMergeEdges();
 
     // MapPoint observation functions
     int GetNumberMPs();
@@ -296,8 +298,8 @@ public:
     bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
     bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
 
-    void PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP, set<GeometricCamera*>& spCam);
-    void PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsigned int, MapPoint*>& mpMPid, map<unsigned int, GeometricCamera*>& mpCamId);
+    void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP, std::set<GeometricCamera*>& spCam);
+    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid, std::map<unsigned int, GeometricCamera*>& mpCamId);
 
 
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
@@ -414,7 +416,7 @@ public:
 
     unsigned int mnOriginMapId;
 
-    string mNameFile;
+    std::string mNameFile;
 
     int mnDataset;
 
