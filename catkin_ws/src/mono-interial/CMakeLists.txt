@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
-find_package(OpenCV 3.2)
+find_package(OpenCV 3.4.20 EXACT REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures

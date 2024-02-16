@@ -1,0 +1,6 @@
+mono-interial
+/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/cmake.lock /workspaces/ORB_SLAM3/catkin_ws/devel/./cmake.lock
+/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/share/mono-interial/cmake/mono-interialConfig.cmake /workspaces/ORB_SLAM3/catkin_ws/devel/share/mono-interial/cmake/mono-interialConfig.cmake
+/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/share/mono-interial/cmake/mono-interialConfig-version.cmake /workspaces/ORB_SLAM3/catkin_ws/devel/share/mono-interial/cmake/mono-interialConfig-version.cmake
+/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/lib/pkgconfig/mono-interial.pc /workspaces/ORB_SLAM3/catkin_ws/devel/lib/pkgconfig/mono-interial.pc
+/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/lib/mono-interial/node /workspaces/ORB_SLAM3/catkin_ws/devel/lib/mono-interial/node
