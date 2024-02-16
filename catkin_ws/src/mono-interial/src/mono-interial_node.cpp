@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 
   //double timeshift_cam_imu = 0.0021434982252719545; //Kaist
-  //uint64_t fps_factor = 3; //Kaist (3fps)
+  //uint64_t fps_factor = 3; //Kaist (10fps)
 
   double timeshift_cam_imu = 0.0021434982252719545; //Euroc
   uint64_t fps_factor = 1; //Kaist (3fps)
