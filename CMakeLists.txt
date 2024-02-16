@@ -193,18 +193,10 @@ install(
 set(version_file "${CMAKE_CURRENT_BINARY_DIR}/ORB_SLAM3ConfigVersion.cmake")
 set(config_file "${PROJECT_NAME}.cmake")
 
-install(EXPORT ORB_SLAM3Targets
-    FILE ${config_file}
-    NAMESPACE ORB_SLAM3::
-    DESTINATION lib/cmake/ORB_SLAM3)
-
 write_basic_package_version_file(${version_file}
         VERSION ${ORB_SLAM3_VERSION}
         COMPATIBILITY ExactVersion
         )
-
-install(FILES ${config_file} ${version_file}
-        DESTINATION ${ORB_SLAM3_CMAKE_CONFIG_INSTALL_DIR})
 
 # install readme and license
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" "${CMAKE_CURRENT_SOURCE_DIR}/README.md"
