@@ -568,6 +568,12 @@ bool System::isShutDown() {
     return mbShutDown;
 }
 
+unsigned int System::GetLastKeyFrameId()
+{
+  unique_lock<mutex> lock(mMutexState);
+  return mpTracker->GetLastKeyFrameId();
+}
+
 cv::Mat System::DrawTrackedImage()
 {
   unique_lock<mutex> lock(mMutexState);

@@ -141,6 +141,8 @@ public:
     void Shutdown();
     bool isShutDown();
 
+    unsigned int GetLastKeyFrameId();
+
     // Returns image of the current frame being tracked with features
     cv::Mat DrawTrackedImage();
 

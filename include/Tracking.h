@@ -109,6 +109,10 @@ public:
 
     float GetImageScale();
 
+    unsigned int GetLastKeyFrameId() const {
+        return mnLastKeyFrameId;
+    }
+
 #ifdef REGISTER_LOOP
     void RequestStop();
     bool isStopped();
