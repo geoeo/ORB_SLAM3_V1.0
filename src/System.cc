@@ -568,6 +568,12 @@ bool System::isShutDown() {
     return mbShutDown;
 }
 
+cv::Mat System::DrawTrackedImage()
+{
+  unique_lock<mutex> lock(mMutexState);
+  return mpFrameDrawer->DrawFrame();
+}
+
 void System::SaveTrajectoryTUM(const string &filename)
 {
     cout << endl << "Saving camera trajectory to " << filename << " ..." << endl;
