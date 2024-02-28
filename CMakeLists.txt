@@ -102,7 +102,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
-${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${Boost_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a

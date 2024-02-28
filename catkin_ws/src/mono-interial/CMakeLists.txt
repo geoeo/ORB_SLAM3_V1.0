@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 3.3.9 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(OpenCV 3.4.20 EXACT REQUIRED)
@@ -161,7 +161,6 @@ add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 target_link_libraries(${PROJECT_NAME}_node
    ${catkin_LIBRARIES}
    ${OpenCV_LIBS} 
-   ${EIGEN3_LIBS}
    ${Pangolin_LIBRARIES}
    ORB_SLAM3
  )
