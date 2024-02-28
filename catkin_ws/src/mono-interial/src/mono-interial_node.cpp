@@ -78,14 +78,14 @@ int main(int argc, char **argv)
 
 
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
-  ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
+  ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,false);
 
 
   //double timeshift_cam_imu = 0.0021434982252719545; //Kaist
   //uint64_t fps_factor = 3; //Kaist (10fps)
 
-  //double timeshift_cam_imu = 0.0; //Euroc
-  double timeshift_cam_imu = -0.013490768586712722; // EvE
+  double timeshift_cam_imu = 0.0; //Euroc
+  //double timeshift_cam_imu = -0.013490768586712722; // EvE
 
 
   uint64_t fps_factor = 1;
@@ -94,11 +94,11 @@ int main(int argc, char **argv)
   ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor); // TODO
 
     // Maximum delay, 5 seconds
-  ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
-  ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
-  //Kaist
-  // ros::Subscriber sub_imu = n.subscribe("/mavros/imu/data", 1000, &ImuGrabber::GrabImu, &imugb); 
-  // ros::Subscriber sub_img0 = n.subscribe("/camera/infra1/image_rect_raw", 1000, &ImageGrabber::GrabImage,&igb);
+  //ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
+  //ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
+  //Euroc
+  ros::Subscriber sub_imu = n.subscribe("/imu0", 100, &ImuGrabber::GrabImu, &imugb); 
+  ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
 
   
 
@@ -189,8 +189,8 @@ void ImageGrabber::SyncWithImu()
         mpSLAM->TrackMonocular(im,tIm,vImuMeas);
     }
 
-    std::chrono::milliseconds tSleep(1);
-    std::this_thread::sleep_for(tSleep);
+    //std::chrono::milliseconds tSleep(1);
+    //std::this_thread::sleep_for(tSleep);
   }
 }
 
