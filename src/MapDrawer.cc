@@ -26,6 +26,17 @@ namespace ORB_SLAM3
 {
 
 
+MapDrawer::MapDrawer(Atlas* pAtlas)
+ : mpAtlas(pAtlas),
+   mKeyFrameSize(0.05),
+   mKeyFrameLineWidth(1.0),
+   mGraphLineWidth(0.9),
+   mPointSize(2.0),
+   mCameraSize(0.08),
+   mCameraLineWidth(3.0)
+{
+}
+
 MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings):mpAtlas(pAtlas)
 {
     if(settings){

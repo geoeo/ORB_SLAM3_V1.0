@@ -54,11 +54,43 @@ class LoopClosing;
 class System;
 class Settings;
 
+struct CameraParameters
+{  
+  bool isRGB;
+  float fps;
+  int width;
+  int height;
+  cv::Mat K;
+  cv::Mat distCoeffs;
+};
+
+struct ImuParameters
+{
+  Sophus::SE3f Tbc;
+  float noiseGyro;
+  float noiseAccel;
+  float gyroWalk;
+  float accelWalk;
+  float freq;
+};
+
+struct OrbParameters
+{
+  int nFeatures;
+  float scaleFactor;
+  int nLevels;
+  int iniThFast;
+  int minThFast;
+};
+
 class Tracking
 {  
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
+             KeyFrameDatabase* pKFDB, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int sensor);
+
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
              KeyFrameDatabase* pKFDB, const std::string &strSettingPath, const int sensor, Settings* settings, const std::string &_nameSeq=std::string());
 

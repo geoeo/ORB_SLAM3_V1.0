@@ -40,6 +40,107 @@ namespace ORB_SLAM3
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
+bool System::has_suffix(const std::string &str, const std::string &suffix) {
+  std::size_t index = str.find(suffix, str.size() - suffix.size());
+  return (index != std::string::npos);
+}
+
+System::System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const eSensor sensor, bool activeLC):
+    mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
+    mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
+{
+  // Output welcome message
+  cout << endl <<
+       "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
+       "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
+       "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
+       "This is free software, and you are welcome to redistribute it" << endl <<
+       "under certain conditions. See LICENSE.txt." << endl << endl;
+
+  cout << "Input sensor was set to: ";
+
+  if(mSensor==MONOCULAR)
+    cout << "Monocular" << endl;
+  else if(mSensor==STEREO)
+    cout << "Stereo" << endl;
+  else if(mSensor==RGBD)
+    cout << "RGB-D" << endl;
+  else if(mSensor==IMU_MONOCULAR)
+    cout << "Monocular-Inertial" << endl;
+  else if(mSensor==IMU_STEREO)
+    cout << "Stereo-Inertial" << endl;
+
+  bool loadedAtlas = false;
+
+  //Load ORB Vocabulary
+  cout << endl << "Loading ORB Vocabulary from " << strVocFile << endl;
+
+  mpVocabulary = new ORB_SLAM3::ORBVocabulary();
+  bool bVocLoad = false;
+  // chose loading method based on file extension
+  if (has_suffix(strVocFile, ".txt"))
+    bVocLoad = mpVocabulary->loadFromTextFile(strVocFile);
+  else
+    bVocLoad = mpVocabulary->loadFromBinaryFile(strVocFile);
+
+  if(!bVocLoad)
+  {
+    cerr << "Wrong path to vocabulary. " << endl;
+    cerr << "Falied to open at: " << strVocFile << endl;
+    exit(-1);
+  }
+  cout << "Vocabulary loaded!" << endl << endl;
+
+  //Create KeyFrame Database
+  mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+
+  //Create the Atlas
+  //mpMap = new Map();
+  mpAtlas = new Atlas(0);
+  //----
+
+  if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
+    mpAtlas->SetInertialSensor();
+
+  //Create Drawers. These are used by the Viewer
+  mpFrameDrawer = new FrameDrawer(mpAtlas);
+  mpMapDrawer = new MapDrawer(mpAtlas);
+
+  //Initialize the Tracking thread
+  //(it will live in the main thread of execution, the one that called this constructor)
+  mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, cam, imu, orb, mSensor);
+
+  //Initialize the Local Mapping thread and launch
+  mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, "");
+  mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
+
+  if(mpLocalMapper->mThFarPoints > 1.0)
+  {
+    cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
+    mpLocalMapper->mbFarPoints = true;
+  }
+  else
+    mpLocalMapper->mbFarPoints = false;
+
+  //Initialize the Loop Closing thread and launch
+  // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
+  mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
+  mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
+
+  //Set pointers between threads
+  mpTracker->SetLocalMapper(mpLocalMapper);
+  mpTracker->SetLoopClosing(mpLoopCloser);
+
+  mpLocalMapper->SetTracker(mpTracker);
+  mpLocalMapper->SetLoopCloser(mpLoopCloser);
+
+  mpLoopCloser->SetTracker(mpTracker);
+  mpLoopCloser->SetLocalMapper(mpLocalMapper);
+
+  // Fix verbosity
+  Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+}
+
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence):
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
