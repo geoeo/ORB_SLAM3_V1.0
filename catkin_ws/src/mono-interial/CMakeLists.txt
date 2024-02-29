@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Eigen3 REQUIRED NO_MODULE)
+find_package(Eigen3 3.3.9 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(OpenCV 3.4.20 EXACT REQUIRED)

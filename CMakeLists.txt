@@ -55,7 +55,7 @@ find_package(OpenCV 3.4.20 REQUIRED EXACT)
 MESSAGE("OPENCV VERSION:")
 MESSAGE(${OpenCV_VERSION})
 
-find_package(Eigen3 REQUIRED)
+find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 

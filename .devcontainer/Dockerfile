@@ -54,7 +54,7 @@ RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
-    libeigen3-dev \
+    #libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -76,19 +76,19 @@ RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INST
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
 
-# WORKDIR /
-# RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
-#     && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.tar.bz2 \
-#     && tar xf eigen-3.3.9.tar.bz2 \
-#     && rm -rf eigen-3.3.9.tar.bz2 \
-#     && cd eigen-3.3.9 \
-#     && mkdir -p build && cd build \
-#     && cmake \
-#         -DCMAKE_BUILD_TYPE=Release \
-#         -DCMAKE_INSTALL_PREFIX=/usr/local \
-#         .. \
-#     && make -j $(nproc --all) \
-#     && make install
+WORKDIR /
+RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
+    && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.tar.bz2 \
+    && tar xf eigen-3.3.9.tar.bz2 \
+    && rm -rf eigen-3.3.9.tar.bz2 \
+    && cd eigen-3.3.9 \
+    && mkdir -p build && cd build \
+    && cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        .. \
+    && make -j $(nproc --all) \
+    && make install
 
 WORKDIR /
 RUN mkdir bags
