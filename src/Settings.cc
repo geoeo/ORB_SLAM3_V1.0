@@ -181,6 +181,61 @@ namespace ORB_SLAM3 {
         cout << "----------------------------------" << endl;
     }
 
+    Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor):
+        bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false) {
+            cameraType_ = PinHole;
+
+            //Read intrinsic parameters
+            float fx = cam.K.at<float>(0,0);
+            float fy = cam.K.at<float>(1,1);
+            float cx = cam.K.at<float>(0,2);
+            float cy = cam.K.at<float>(1,2);
+
+            vector<float> vCalibration = {fx, fy, cx, cy};
+
+            calibration1_ = new Pinhole(vCalibration);
+            originalCalib1_ = new Pinhole(vCalibration);
+
+
+            if(cam.distCoeffs.rows==5){
+                vPinHoleDistorsion1_.resize(5);
+                vPinHoleDistorsion1_[4] = cam.distCoeffs.at<float>(4);
+            }
+            else{
+                vPinHoleDistorsion1_.resize(4);
+            }
+            vPinHoleDistorsion1_[0] = cam.distCoeffs.at<float>(0);
+            vPinHoleDistorsion1_[1] = cam.distCoeffs.at<float>(1);
+            vPinHoleDistorsion1_[2] = cam.distCoeffs.at<float>(2);
+            vPinHoleDistorsion1_[3] = cam.distCoeffs.at<float>(3);
+            
+
+            //Check if we need to correct distortion from the images
+            if((sensor_ == System::MONOCULAR || sensor_ == System::IMU_MONOCULAR) && vPinHoleDistorsion1_.size() != 0){
+                bNeedToUndistort_ = true;
+            }
+
+            originalImSize_.width = cam.width;
+            originalImSize_.height = cam.height;
+            bNeedToResize1_ = false;
+
+            noiseGyro_ = imu.noiseGyro;
+            noiseAcc_ = imu.noiseAccel;
+            gyroWalk_ = imu.gyroWalk;
+            accWalk_ = imu.accelWalk;
+            imuFrequency_ = imu.freq;
+
+            Tbc_ = Converter::toSophus(imu.Tbc);
+            insertKFsWhenLost_ = imu.InsertKFsWhenLost;
+
+            nFeatures_ = orb.nFeatures;
+            scaleFactor_ = orb.scaleFactor;
+            nLevels_ = orb.nLevels;
+            initThFAST_ = orb.iniThFast;
+            minThFAST_ = orb.minThFast;
+
+    }
+
     void Settings::readCamera1(cv::FileStorage &fSettings) {
         bool found;
 

@@ -116,8 +116,69 @@ int main(int argc, char *argv[])
 
     cout.precision(17);
 
+
+    ORB_SLAM3::CameraParameters cam{};
+    cam.K = cv::Mat::zeros(3,3,CV_32F);
+    cam.K.at<float>(0,0) = 1388.9566234253055;
+    cam.K.at<float>(1,1) = 1389.860526555566;
+    cam.K.at<float>(0,2) = 944.8106061888452;
+    cam.K.at<float>(1,2) = 602.163082548295;
+    cam.K.at<float>(2,2) = 1;
+
+
+    cam.distCoeffs = cv::Mat::zeros(4,1,CV_32F);
+    cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
+    cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
+    cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
+    cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
+
+    cam.fps        = 17;
+    cam.width      = 752;
+    cam.height     = 480;
+    cam.isRGB      = false; // BGR
+
+    ORB_SLAM3::OrbParameters orb{};
+    orb.nFeatures   = 1000;
+    orb.nLevels     = 8;
+    orb.scaleFactor = 1.2;
+    orb.minThFast   = 7;
+    orb.iniThFast   = 20;
+
+    ORB_SLAM3::ImuParameters m_imu;
+    m_imu.accelWalk  = 3.0000e-3;
+    m_imu.gyroWalk   = 1.9393e-05;
+    m_imu.noiseAccel = 2.0000e-3;
+    m_imu.noiseGyro  = 1.6968e-04;
+    m_imu.InsertKFsWhenLost = false;
+
+    cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
+
+    cv_Tbc.at<float>(0,0) =   -0.00345318;
+    cv_Tbc.at<float>(0,1) =   -0.05123323;
+    cv_Tbc.at<float>(0,2) =   -0.99868075;
+    cv_Tbc.at<float>(0,3) =   -0.0605664;
+
+    cv_Tbc.at<float>(1,0) =   -0.00013874;
+    cv_Tbc.at<float>(1,1) =   -0.99868667;
+    cv_Tbc.at<float>(1,2) =   -0.05123401;
+    cv_Tbc.at<float>(1,3) =   -0.01364959;
+
+    cv_Tbc.at<float>(2,0) =   -0.99999403;
+    cv_Tbc.at<float>(2,1) =   -0.00031548;
+    cv_Tbc.at<float>(2,2) =   -0.00344154;
+    cv_Tbc.at<float>(2,3) =   -0.01763391;
+
+    cv_Tbc.at<float>(3,0) =   0.0;
+    cv_Tbc.at<float>(3,1) =   0.0;
+    cv_Tbc.at<float>(3,2) =   0.0;
+    cv_Tbc.at<float>(3,3) =   1.0;
+
+    m_imu.Tbc = cv_Tbc.clone();
+    m_imu.freq       = 200.0;
+
+
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR, true);
+    ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb,ORB_SLAM3::System::IMU_MONOCULAR, true);
     float imageScale = SLAM.GetImageScale();
 
     double t_resize = 0.f;

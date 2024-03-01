@@ -106,15 +106,20 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
   mpFrameDrawer = new FrameDrawer(mpAtlas);
   mpMapDrawer = new MapDrawer(mpAtlas);
 
+  settings_ = new Settings(cam, imu, orb,mSensor);
+
   //Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
-  mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, cam, imu, orb, mSensor);
+  //mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, cam, imu, orb, mSensor);
+
+    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+                                mpAtlas, mpKeyFrameDatabase, "", mSensor, settings_);
 
   //Initialize the Local Mapping thread and launch
   mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR, mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO, "");
   mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
 
-  if(mpLocalMapper->mThFarPoints > 1.0)
+  if(mpLocalMapper->mThFarPoints != 0.0)
   {
     cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
     mpLocalMapper->mbFarPoints = true;

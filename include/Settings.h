@@ -32,6 +32,36 @@
 
 namespace ORB_SLAM3 {
 
+    struct CameraParameters
+    {  
+    bool isRGB;
+    float fps;
+    int width;
+    int height;
+    cv::Mat K;
+    cv::Mat distCoeffs;
+    };
+
+    struct ImuParameters
+    {
+    cv::Mat Tbc;
+    float noiseGyro;
+    float noiseAccel;
+    float gyroWalk;
+    float accelWalk;
+    float freq;
+    bool InsertKFsWhenLost;
+    };
+
+    struct OrbParameters
+    {
+    int nFeatures;
+    float scaleFactor;
+    int nLevels;
+    int iniThFast;
+    int minThFast;
+    };
+
     class System;
 
     //TODO: change to double instead of float
@@ -56,6 +86,8 @@ namespace ORB_SLAM3 {
          * Constructor from file
          */
         Settings(const std::string &configFile, const int& sensor);
+
+        Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor);
 
         /*
          * Ostream operator overloading to dump settings to the terminal
