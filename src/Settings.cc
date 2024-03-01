@@ -219,14 +219,16 @@ namespace ORB_SLAM3 {
             originalImSize_.height = cam.height;
             bNeedToResize1_ = false;
 
-            noiseGyro_ = imu.noiseGyro;
-            noiseAcc_ = imu.noiseAccel;
-            gyroWalk_ = imu.gyroWalk;
-            accWalk_ = imu.accelWalk;
-            imuFrequency_ = imu.freq;
+            if(sensor_ == System::IMU_MONOCULAR){
+                noiseGyro_ = imu.noiseGyro;
+                noiseAcc_ = imu.noiseAccel;
+                gyroWalk_ = imu.gyroWalk;
+                accWalk_ = imu.accelWalk;
+                imuFrequency_ = imu.freq;
 
-            Tbc_ = Converter::toSophus(imu.Tbc);
-            insertKFsWhenLost_ = imu.InsertKFsWhenLost;
+                Tbc_ = Converter::toSophus(imu.Tbc);
+                insertKFsWhenLost_ = imu.InsertKFsWhenLost;
+            }
 
             nFeatures_ = orb.nFeatures;
             scaleFactor_ = orb.scaleFactor;
