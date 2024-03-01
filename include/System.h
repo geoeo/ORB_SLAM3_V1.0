@@ -107,7 +107,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Headless setup
-    System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const eSensor sensor, bool activeLC);
+    System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const eSensor sensor, bool activeLC, bool bUseViewer);
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
     System(const std::string &strVocFile, const std::string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true, const int initFr = 0, const std::string &strSequence = std::string());

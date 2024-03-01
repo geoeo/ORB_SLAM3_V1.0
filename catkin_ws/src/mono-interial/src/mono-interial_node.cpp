@@ -74,6 +74,7 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
+  // Eve
   ORB_SLAM3::CameraParameters cam{};
   cam.K = cv::Mat::zeros(3,3,CV_32F);
   cam.K.at<float>(0,0) = 1388.9566234253055;
@@ -90,16 +91,16 @@ int main(int argc, char **argv)
   cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
   cam.fps        = 17;
-  cam.width      = 752;
-  cam.height     = 480;
+  cam.width      = 1920;
+  cam.height     = 1200;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
   orb.nFeatures   = 1000;
-  orb.nLevels     = 8;
+  orb.nLevels     = 7;
   orb.scaleFactor = 1.2;
-  orb.minThFast   = 7;
-  orb.iniThFast   = 20;
+  orb.minThFast   = 5;
+  orb.iniThFast   = 15;
 
   ORB_SLAM3::ImuParameters m_imu;
   m_imu.accelWalk  = 3.0000e-3;
@@ -137,14 +138,14 @@ int main(int argc, char **argv)
 
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
   //ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
-  ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true);
+  ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
 
 
   //double timeshift_cam_imu = 0.0021434982252719545; //Kaist
   //uint64_t fps_factor = 3; //Kaist (10fps)
 
-  double timeshift_cam_imu = 0.0; //Euroc
-  //double timeshift_cam_imu = -0.013490768586712722; // EvE
+  //double timeshift_cam_imu = 0.0; //Euroc
+  double timeshift_cam_imu = -0.013490768586712722; // EvE
 
 
   uint64_t fps_factor = 1;
@@ -153,11 +154,11 @@ int main(int argc, char **argv)
   ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor); // TODO
 
     // Maximum delay, 5 seconds
-  //ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
-  //ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
+  ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
+  ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
   //Euroc
-  ros::Subscriber sub_imu = n.subscribe("/imu0", 100, &ImuGrabber::GrabImu, &imugb); 
-  ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
+ // ros::Subscriber sub_imu = n.subscribe("/imu0", 100, &ImuGrabber::GrabImu, &imugb); 
+ //ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
 
   
 
@@ -245,8 +246,15 @@ void ImageGrabber::SyncWithImu()
         mClahe->apply(im,im);
 
       std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-      if(!vImuMeas.empty())
-        mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+      if(!vImuMeas.empty()){
+        Sophus::Matrix4f pose = mpSLAM->TrackMonocular(im,tIm,vImuMeas).matrix();
+        cout << "ORB POSE:" << endl;
+        cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
+        cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
+        cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
+        cout << pose(3,0) << ", " << pose(3,1) << ", " << pose(3,2) << ", " << pose(3,3) << endl;
+      }
+
     }
 
     //std::chrono::milliseconds tSleep(1);

@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
     cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
     cam.fps        = 17;
-    cam.width      = 752;
-    cam.height     = 480;
+    cam.width      = 1920;
+    cam.height     = 1200;
     cam.isRGB      = false; // BGR
 
     ORB_SLAM3::OrbParameters orb{};
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb,ORB_SLAM3::System::IMU_MONOCULAR, true);
+    ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb,ORB_SLAM3::System::IMU_MONOCULAR, true, true);
     float imageScale = SLAM.GetImageScale();
 
     double t_resize = 0.f;
