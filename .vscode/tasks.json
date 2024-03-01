@@ -1,0 +1,14 @@
+{
+"version": "2.0.0",
+"tasks": [
+    {
+        "label": "source_orb3_ws",
+        "type": "shell",
+        "command": "source /workspaces/ORB_SLAM3/catkin_ws/devel/.private/catkin_tools_prebuild/setup.bash && source /workspaces/ORB_SLAM3/catkin_ws/devel/.private/catkin_tools_prebuild/local_setup.bash && env | head -n -1 > /workspaces/ORB_SLAM3/catkin_ws/devel/temp_launch.env",
+        "presentation": {
+          "reveal": "never",
+          "panel": "shared"
+        }
+    }
+]
+}

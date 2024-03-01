@@ -1,0 +1,66 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Orb3 Slam Node",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/lib/mono-interial/node",
+            "preLaunchTask": "source_orb3_ws",
+            "envFile": "/workspaces/ORB_SLAM3/catkin_ws/devel/temp_launch.env",
+            "args": [
+                "/workspaces/ORB_SLAM3/Vocabulary/ORBvoc.txt",
+                "/workspaces/ORB_SLAM3/Examples/Monocular-Inertial/EuRoC.yaml",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description":  "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Orb3 Slam",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/workspaces/ORB_SLAM3/Examples/Monocular-Inertial/mono_inertial_euroc",
+            "args": [
+                "/workspaces/ORB_SLAM3/Vocabulary/ORBvoc.txt",
+                "/workspaces/ORB_SLAM3/Examples/Monocular-Inertial/EuRoC.yaml",
+                "/workspaces/ORB_SLAM3/data/V1_01_easy",
+                "/workspaces/ORB_SLAM3/Examples/Monocular-Inertial/EuRoC_TimeStamps/V101.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description":  "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+    ]
+}
