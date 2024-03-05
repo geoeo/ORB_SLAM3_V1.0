@@ -22,8 +22,8 @@ Camera1.p2: 0.0005366633601752759
 Camera.width: 1920
 Camera.height: 1200
 
-Camera.newWidth: 1920
-Camera.newHeight: 1200
+Camera.newWidth: 768
+Camera.newHeight: 480
 
 # Camera frames per second 
 Camera.fps: 17
@@ -41,11 +41,35 @@ IMU.T_b_c1: !!opencv-matrix
           -0.99999403, 0.00031548, 0.00344154, -0.01763391,
          0.0, 0.0, 0.0, 1.0]
 
-# IMU noise
-IMU.NoiseGyro: 0.0018673115561113486
-IMU.NoiseAcc: 0.014605289788444298
-IMU.GyroWalk: 1.62566517589794e-05
-IMU.AccWalk: 0.000288252284411655
+# IMU noise - 
+
+#IMU.NoiseGyro: 0.09336557780556743 #x500
+#IMU.NoiseAcc: 0.7302644894222149 #x500
+#IMU.GyroWalk: 1.62566517589794e-03 # x1000
+#IMU.AccWalk: 2.88252284411655e-02 # x1000
+
+#IMU.NoiseGyro: 0.009336557780556743 #x50
+#IMU.NoiseAcc: 0.07302644894222149 #x50
+#IMU.GyroWalk: 1.62566517589794e-04 # x100
+#IMU.AccWalk: 2.88252284411655e-03 # x100
+
+IMU.NoiseGyro: 0.0018673115561113486 # x10
+IMU.NoiseAcc: 0.014605289788444298 # x10
+IMU.GyroWalk: 1.62566517589794e-05 # x10 
+IMU.AccWalk: 0.000288252284411655 #x10
+IMU.InsertKFsWhenLost: 1
+
+#IMU.NoiseGyro: 0.00018673115561113486 
+#IMU.NoiseAcc: 0.0014605289788444298 
+#IMU.GyroWalk: 1.62566517589794e-06  
+#IMU.AccWalk: 0.0000288252284411655
+#IMU.InsertKFsWhenLost: 1
+
+#IMU.NoiseGyro: 1e-8
+#IMU.NoiseAcc: 1e-8
+#IMU.GyroWalk: 1e-8 
+#IMU.AccWalk: 1e-8
+
 IMU.Frequency: 200.0
 
 #--------------------------------------------------------------------------------------------
@@ -53,13 +77,13 @@ IMU.Frequency: 200.0
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 2000 # 1000
+ORBextractor.nFeatures: 2500 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
-ORBextractor.scaleFactor: 1.2
+ORBextractor.scaleFactor: 1.1
 
 # ORB Extractor: Number of levels in the scale pyramid	
-ORBextractor.nLevels: 5
+ORBextractor.nLevels: 7
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.

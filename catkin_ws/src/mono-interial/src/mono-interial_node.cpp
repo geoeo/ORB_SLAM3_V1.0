@@ -45,7 +45,7 @@ public:
     ImuGrabber *mpImuGb;
 
     const bool mbClahe;
-    cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+    cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(4, 4));
     double timeshift_cam_imu;
     uint64_t fps_factor;
     uint64_t count;
@@ -57,6 +57,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv, "Mono_Inertial");
   ros::NodeHandle n("~");
+  n.setParam("/use_sim_time", true);
   ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Info);
   bool bEqual = false;
   if(argc < 3 || argc > 4)
@@ -91,12 +92,12 @@ int main(int argc, char **argv)
   cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
   cam.fps        = 17;
-  cam.width      = 1920;
-  cam.height     = 1200;
+  cam.width      = 768;
+  cam.height     = 480;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
-  orb.nFeatures   = 1000;
+  orb.nFeatures   = 2000;
   orb.nLevels     = 7;
   orb.scaleFactor = 1.2;
   orb.minThFast   = 5;
@@ -137,8 +138,8 @@ int main(int argc, char **argv)
 
 
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
-  //ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
-  ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
+  ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
+  //ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::MONOCULAR, true, true);
 
 
   //double timeshift_cam_imu = 0.0021434982252719545; //Kaist

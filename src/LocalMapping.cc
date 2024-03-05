@@ -196,11 +196,11 @@ void LocalMapping::Run()
                 timeKFCulling_ms = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndKFCulling - time_EndLBA).count();
                 vdKFCulling_ms.push_back(timeKFCulling_ms);
 #endif
-
-                if ((mTinit<50.0f) && mbInertial)
+                if (mbInertial)
                 {
                     if(mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
                     {
+                        cout << "check VIBA" << endl;
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
                             if (mTinit>5.0f)
                             {
@@ -1434,6 +1434,7 @@ void LocalMapping::ScaleRefinement()
     if (mbResetRequested)
         return;
 
+    cout << "scale refinement" << endl;
     // Retrieve all keyframes in temporal order
     list<KeyFrame*> lpKF;
     KeyFrame* pKF = mpCurrentKeyFrame;

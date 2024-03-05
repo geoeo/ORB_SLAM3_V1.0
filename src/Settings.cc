@@ -680,6 +680,8 @@ namespace ORB_SLAM3 {
             output << "\t-Gyro walk: " << settings.gyroWalk_ << endl;
             output << "\t-Accelerometer walk: " << settings.accWalk_ << endl;
             output << "\t-IMU frequency: " << settings.imuFrequency_ << endl;
+            output << "\t-IMU Tbc: " << settings.Tbc_.matrix() << endl;
+            output << "\t-IMU Init KF when lost: " << settings.insertKFsWhenLost_ << endl;
         }
 
         if(settings.sensor_ == System::RGBD || settings.sensor_ == System::IMU_RGBD){

@@ -604,6 +604,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     mInsertKFsLost = settings->insertKFsWhenLost();
     mImuFreq = settings->imuFrequency();
     mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
+    //mImuPer = 1.0 / (double) (5*mImuFreq);
     float Ng = settings->noiseGyro();
     float Na = settings->noiseAcc();
     float Ngw = settings->gyroWalk();
@@ -1341,6 +1342,7 @@ bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
     {
         mImuFreq = node.operator int();
         mImuPer = 0.001; //1.0 / (double) mImuFreq;
+        //mImuPer = 1.0 / (double) (5*mImuFreq);
     }
     else
     {
@@ -1754,6 +1756,9 @@ bool Tracking::PredictStateIMU()
         Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
+        //cout << "Imu Key Update T: " << twb2 << endl;
+        //cout << "Imu Key Update V: " << Vwb2 << endl;
+        //cout << "Imu Key Update R: " << Rwb1 << endl;
         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
         mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
@@ -1772,6 +1777,9 @@ bool Tracking::PredictStateIMU()
         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
+        //cout << "Imu Frame Update T: " << twb2 << endl;
+        //cout << "Imu Frame Update V: " << Vwb2 << endl;
+        //cout << "Imu Frame Update R: " << Rwb2 << endl;
         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
         mCurrentFrame.mImuBias = mLastFrame.mImuBias;
@@ -2982,11 +2990,13 @@ bool Tracking::TrackLocalMap()
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                cout << "inliers last frame: " << inliers << endl;
             }
             else
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                cout << "inliers last key: " << inliers << endl;
             }
         }
     }
@@ -3026,6 +3036,7 @@ bool Tracking::TrackLocalMap()
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
+    //cout << "mnMatchesInliers: " << mnMatchesInliers << endl;
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
         return false;
 
@@ -3035,7 +3046,7 @@ bool Tracking::TrackLocalMap()
 
     if (mSensor == System::IMU_MONOCULAR)
     {
-        if((mnMatchesInliers<15 && mpAtlas->isImuInitialized())||(mnMatchesInliers<50 && !mpAtlas->isImuInitialized()))
+        if((mnMatchesInliers<10 && mpAtlas->isImuInitialized())||(mnMatchesInliers<50 && !mpAtlas->isImuInitialized()))
         {
             return false;
         }
