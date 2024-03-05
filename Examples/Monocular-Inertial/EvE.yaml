@@ -61,6 +61,12 @@ IMU.InsertKFsWhenLost: 1
 
 #IMU.NoiseGyro: 0.0018673115561113486 # x10
 #IMU.NoiseAcc: 0.014605289788444298 # x10
+#IMU.GyroWalk: 0.00002438497  # x15 
+#IMU.AccWalk: 0.00043237842  #x15
+#IMU.InsertKFsWhenLost: 1
+
+#IMU.NoiseGyro: 0.0018673115561113486 # x10
+#IMU.NoiseAcc: 0.014605289788444298 # x10
 #IMU.GyroWalk: 1.62566517589794e-05 # x10 
 #IMU.AccWalk: 0.000288252284411655 #x10
 #IMU.InsertKFsWhenLost: 1
@@ -86,7 +92,7 @@ IMU.Frequency: 200.0
 ORBextractor.nFeatures: 2500 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
-ORBextractor.scaleFactor: 1.1
+ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid	
 ORBextractor.nLevels: 7
