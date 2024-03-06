@@ -22,8 +22,8 @@ Camera1.p2: 0.0005366633601752759
 Camera.width: 1920
 Camera.height: 1200
 
-Camera.newWidth: 768
-Camera.newHeight: 480
+Camera.newWidth: 1152 # x0.6
+Camera.newHeight: 720 # x0.6
 
 # Camera frames per second 
 Camera.fps: 17
@@ -95,7 +95,7 @@ ORBextractor.nFeatures: 2500 # 1000
 ORBextractor.scaleFactor: 1.2
 
 # ORB Extractor: Number of levels in the scale pyramid	
-ORBextractor.nLevels: 7
+ORBextractor.nLevels: 8
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.

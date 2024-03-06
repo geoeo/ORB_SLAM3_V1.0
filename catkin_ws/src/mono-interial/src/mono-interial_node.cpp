@@ -92,8 +92,8 @@ int main(int argc, char **argv)
   cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
   cam.fps        = 17;
-  cam.width      = 768;
-  cam.height     = 480;
+  cam.width      = 1920;
+  cam.height     = 1200;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
@@ -157,6 +157,7 @@ int main(int argc, char **argv)
     // Maximum delay, 5 seconds
   ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
   ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
+  //ros::Subscriber sub_img0 = n.subscribe("/camera/image_color", 1000, &ImageGrabber::GrabImage,&igb);
   //Euroc
  // ros::Subscriber sub_imu = n.subscribe("/imu0", 100, &ImuGrabber::GrabImu, &imugb); 
  //ros::Subscriber sub_img0 = n.subscribe("/cam0/image_raw", 1000, &ImageGrabber::GrabImage,&igb);
@@ -167,7 +168,7 @@ int main(int argc, char **argv)
 
   ros::spin();
 
-   return 0;
+  return 0;
 }
 
 void ImageGrabber::GrabImage(const sensor_msgs::ImageConstPtr &img_msg)
@@ -249,11 +250,12 @@ void ImageGrabber::SyncWithImu()
       std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
       if(!vImuMeas.empty()){
         Sophus::Matrix4f pose = mpSLAM->TrackMonocular(im,tIm,vImuMeas).matrix();
-        cout << "ORB POSE:" << endl;
-        cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
-        cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
-        cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
-        cout << pose(3,0) << ", " << pose(3,1) << ", " << pose(3,2) << ", " << pose(3,3) << endl;
+        vImuMeas.clear();
+        //cout << "ORB POSE:" << endl;
+        //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
+        //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
+        //cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
+        //cout << pose(3,0) << ", " << pose(3,1) << ", " << pose(3,2) << ", " << pose(3,3) << endl;
       }
 
     }
