@@ -1242,10 +1242,12 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             (*itKF)->mPrevKF->SetVelocity(_vel);
         }
 
+        Verbose::PrintMess("InitializeIMU - dirG norm: " + to_string(dirG.norm()), Verbose::VERBOSITY_DEBUG);
         dirG = dirG/dirG.norm();
         Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
+                Verbose::PrintMess("InitializeIMU - nv norm: " + to_string(nv), Verbose::VERBOSITY_DEBUG);
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
         Verbose::PrintMess("InitializeIMU - before exp call ...", Verbose::VERBOSITY_DEBUG);
