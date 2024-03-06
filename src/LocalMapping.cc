@@ -1247,6 +1247,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         const float nv = v.norm();
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
+        Verbose::PrintMess("InitializeIMU - before exp call ...", Verbose::VERBOSITY_DEBUG);
         Eigen::Vector3f vzg = v*ang/nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
