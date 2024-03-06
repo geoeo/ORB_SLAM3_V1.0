@@ -263,27 +263,14 @@ void Preintegrated::MergePrevious(Preintegrated* pPrev)
 
 void Preintegrated::SetNewBias(const Bias &bu_)
 {
-    auto isValid = !(std::isnan(bu_.bax) || std::isnan(bu_.bay) || std::isnan(bu_.baz) ||
-        std::isnan(bu_.bwx) ||  std::isnan(bu_.bwy) || std::isnan(bu_.bwz));
     std::unique_lock<std::mutex> lock(mMutex);
-    if(isValid){
-        bu = bu_;
-        db(0) = bu_.bwx-b.bwx;
-        db(1) = bu_.bwy-b.bwy;
-        db(2) = bu_.bwz-b.bwz;
-        db(3) = bu_.bax-b.bax;
-        db(4) = bu_.bay-b.bay;
-        db(5) = bu_.baz-b.baz;
-    } else {
-        bu = Bias(10,10,10,10,10,10);
-        db(0) = bu.bwx-b.bwx;
-        db(1) = bu.bwy-b.bwy;
-        db(2) = bu.bwz-b.bwz;
-        db(3) = bu.bax-b.bax;
-        db(4) = bu.bay-b.bay;
-        db(5) = bu.baz-b.baz;
-    }
-
+    bu = bu_;
+    db(0) = bu_.bwx-b.bwx;
+    db(1) = bu_.bwy-b.bwy;
+    db(2) = bu_.bwz-b.bwz;
+    db(3) = bu_.bax-b.bax;
+    db(4) = bu_.bay-b.bay;
+    db(5) = bu_.baz-b.baz;
 }
 
 IMU::Bias Preintegrated::GetDeltaBias(const Bias &b_)
@@ -298,7 +285,7 @@ Eigen::Matrix3f Preintegrated::GetDeltaRotation(const Bias &b_)
     std::unique_lock<std::mutex> lock(mMutex);
     Eigen::Vector3f dbg;
     dbg << b_.bwx-b.bwx,b_.bwy-b.bwy,b_.bwz-b.bwz;
-    Eigen::Vector3f rot_lie = JRg * Eigen::Vector3f(1.0,1.0,1.0);
+    Eigen::Vector3f rot_lie = JRg * Eigen::Vector3f(10.0,10.0,10.0);
     if(dbg.norm() != 0.0)
         rot_lie = JRg*dbg;
     Verbose::PrintMess("GetDeltaRotation - before exp call ...", Verbose::VERBOSITY_DEBUG);

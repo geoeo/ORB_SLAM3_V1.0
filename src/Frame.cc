@@ -438,14 +438,9 @@ void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
 
 void Frame::SetNewBias(const IMU::Bias &b)
 {   
-    auto isValid = !(std::isnan(b.bax) || std::isnan(b.bay) || std::isnan(b.baz) ||
-        std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
-    auto b_new = b;
-    if(!isValid) 
-        b_new = IMU::Bias(10,10,10,10,10,10);
-    mImuBias = b_new;
+    mImuBias = b;
     if(mpImuPreintegrated)
-        mpImuPreintegrated->SetNewBias(b_new);
+        mpImuPreintegrated->SetNewBias(b);
 }
 
 void Frame::SetVelocity(Eigen::Vector3f Vwb)
