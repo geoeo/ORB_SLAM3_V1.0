@@ -810,12 +810,13 @@ void KeyFrame::SetNewBias(const IMU::Bias &b)
 {
     auto isValid = !(std::isnan(b.bax) || std::isnan(b.bay) || std::isnan(b.baz) ||
         std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
+    auto b_new = b;
     if(!isValid) 
-        return;
+        b_bew = Bias(0,0,0,0,0,0);
     unique_lock<mutex> lock(mMutexPose);
-    mImuBias = b;
+    mImuBias = b_new;
     if(mpImuPreintegrated)
-        mpImuPreintegrated->SetNewBias(b);
+        mpImuPreintegrated->SetNewBias(b_new);
 }
 
 Eigen::Vector3f KeyFrame::GetGyroBias()

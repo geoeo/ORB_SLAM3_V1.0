@@ -440,11 +440,12 @@ void Frame::SetNewBias(const IMU::Bias &b)
 {   
     auto isValid = !(std::isnan(b.bax) || std::isnan(b.bay) || std::isnan(b.baz) ||
         std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
+    auto b_new = b;
     if(!isValid) 
-        return;
-    mImuBias = b;
+        b_bew = Bias(0,0,0,0,0,0);
+    mImuBias = b_new;
     if(mpImuPreintegrated)
-        mpImuPreintegrated->SetNewBias(b);
+        mpImuPreintegrated->SetNewBias(b_new);
 }
 
 void Frame::SetVelocity(Eigen::Vector3f Vwb)

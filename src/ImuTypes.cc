@@ -265,17 +265,25 @@ void Preintegrated::SetNewBias(const Bias &bu_)
 {
     auto isValid = !(std::isnan(bu_.bax) || std::isnan(bu_.bay) || std::isnan(bu_.baz) ||
         std::isnan(bu_.bwx) ||  std::isnan(bu_.bwy) || std::isnan(bu_.bwz));
-    if(!isValid)
-        return;
-
     std::unique_lock<std::mutex> lock(mMutex);
-    bu = bu_;
-    db(0) = bu_.bwx-b.bwx;
-    db(1) = bu_.bwy-b.bwy;
-    db(2) = bu_.bwz-b.bwz;
-    db(3) = bu_.bax-b.bax;
-    db(4) = bu_.bay-b.bay;
-    db(5) = bu_.baz-b.baz;
+    if(isValid){
+        bu = bu_;
+        db(0) = bu_.bwx-b.bwx;
+        db(1) = bu_.bwy-b.bwy;
+        db(2) = bu_.bwz-b.bwz;
+        db(3) = bu_.bax-b.bax;
+        db(4) = bu_.bay-b.bay;
+        db(5) = bu_.baz-b.baz;
+    } else {
+        bu = Bias(0,0,0,0,0,0);
+        db(0) = bu.bwx-b.bwx;
+        db(1) = bu.bwy-b.bwy;
+        db(2) = bu.bwz-b.bwz;
+        db(3) = bu.bax-b.bax;
+        db(4) = bu.bay-b.bay;
+        db(5) = bu.baz-b.baz;
+    }
+
 }
 
 IMU::Bias Preintegrated::GetDeltaBias(const Bias &b_)
