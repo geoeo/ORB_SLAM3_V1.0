@@ -442,7 +442,7 @@ void Frame::SetNewBias(const IMU::Bias &b)
         std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
     auto b_new = b;
     if(!isValid) 
-        b_new = IMU::Bias(0,0,0,0,0,0);
+        b_new = IMU::Bias(10,10,10,10,10,10);
     mImuBias = b_new;
     if(mpImuPreintegrated)
         mpImuPreintegrated->SetNewBias(b_new);

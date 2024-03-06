@@ -275,7 +275,7 @@ void Preintegrated::SetNewBias(const Bias &bu_)
         db(4) = bu_.bay-b.bay;
         db(5) = bu_.baz-b.baz;
     } else {
-        bu = Bias(0,0,0,0,0,0);
+        bu = Bias(10,10,10,10,10,10);
         db(0) = bu.bwx-b.bwx;
         db(1) = bu.bwy-b.bwy;
         db(2) = bu.bwz-b.bwz;
