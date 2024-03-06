@@ -437,7 +437,11 @@ void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
 }
 
 void Frame::SetNewBias(const IMU::Bias &b)
-{
+{   
+    auto isValid = !(std::isnan(b.bax) || std::isnan(b.bay) || std::isnan(b.baz) ||
+        std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
+    if(!isValid) 
+        return;
     mImuBias = b;
     if(mpImuPreintegrated)
         mpImuPreintegrated->SetNewBias(b);

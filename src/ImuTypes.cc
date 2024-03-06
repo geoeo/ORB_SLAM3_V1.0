@@ -263,9 +263,13 @@ void Preintegrated::MergePrevious(Preintegrated* pPrev)
 
 void Preintegrated::SetNewBias(const Bias &bu_)
 {
+    auto isValid = !(std::isnan(bu_.bax) || std::isnan(bu_.bay) || std::isnan(bu_.baz) ||
+        std::isnan(bu_.bwx) ||  std::isnan(bu_.bwy) || std::isnan(bu_.bwz));
+    if(!isValid)
+        return;
+
     std::unique_lock<std::mutex> lock(mMutex);
     bu = bu_;
-
     db(0) = bu_.bwx-b.bwx;
     db(1) = bu_.bwy-b.bwy;
     db(2) = bu_.bwz-b.bwz;

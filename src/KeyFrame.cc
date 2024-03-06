@@ -808,6 +808,10 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
 
 void KeyFrame::SetNewBias(const IMU::Bias &b)
 {
+    auto isValid = !(std::isnan(b.bax) || std::isnan(b.bay) || std::isnan(b.baz) ||
+        std::isnan(b.bwx) ||  std::isnan(b.bwy) || std::isnan(b.bwz));
+    if(!isValid) 
+        return;
     unique_lock<mutex> lock(mMutexPose);
     mImuBias = b;
     if(mpImuPreintegrated)
