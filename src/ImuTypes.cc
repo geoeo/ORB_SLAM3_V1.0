@@ -285,9 +285,9 @@ Eigen::Matrix3f Preintegrated::GetDeltaRotation(const Bias &b_)
     std::unique_lock<std::mutex> lock(mMutex);
     Eigen::Vector3f dbg;
     dbg << b_.bwx-b.bwx,b_.bwy-b.bwy,b_.bwz-b.bwz;
-    Eigen::Vector3f rot_lie = JRg * Eigen::Vector3f(10.0,10.0,10.0);
-    if(dbg.norm() != 0.0 && !std::isnan(dbg.norm()))
-        rot_lie = JRg*dbg;
+    //Eigen::Vector3f rot_lie = JRg * Eigen::Vector3f(10.0,10.0,10.0);
+    //if(dbg.norm() != 0.0 && !std::isnan(dbg.norm()))
+    Eigen::Vector3f rot_lie = JRg*dbg;
     Verbose::PrintMess("GetDeltaRotation - before exp call ...", Verbose::VERBOSITY_DEBUG);
     Verbose::PrintMess("GetDeltaRotation Bias - " + to_string(dbg(0)) + ", " + to_string(dbg(1)) + ", " + to_string(dbg(2)), Verbose::VERBOSITY_DEBUG);
     Verbose::PrintMess("GetDeltaRotation rot lie- " + to_string(rot_lie(0)) + ", " + to_string(rot_lie(1)) + ", " + to_string(rot_lie(2)), Verbose::VERBOSITY_DEBUG);
