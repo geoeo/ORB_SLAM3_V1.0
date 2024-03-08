@@ -603,8 +603,8 @@ void Tracking::newParameterLoader(Settings *settings) {
     Sophus::SE3f Tbc = settings->Tbc();
     mInsertKFsLost = settings->insertKFsWhenLost();
     mImuFreq = settings->imuFrequency();
-    mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
-    //mImuPer = 1.0 / (double) (5*mImuFreq);
+    //mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
+    mImuPer = 0.0;
     float Ng = settings->noiseGyro();
     float Na = settings->noiseAcc();
     float Ngw = settings->gyroWalk();
@@ -1341,8 +1341,8 @@ bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
     if(!node.empty() && node.isInt())
     {
         mImuFreq = node.operator int();
-        mImuPer = 0.001; //1.0 / (double) mImuFreq;
-        //mImuPer = 1.0 / (double) (5*mImuFreq);
+        //mImuPer = 0.001; //1.0 / (double) mImuFreq;
+        mImuPer = 0.0;
     }
     else
     {
@@ -1654,7 +1654,7 @@ void Tracking::PreintegrateIMU()
                 {
                     mlQueueImuData.pop_front();
                 }
-                else if(m->t<mCurrentFrame.mTimeStamp-mImuPer)
+                else if(m->t<=mCurrentFrame.mTimeStamp-mImuPer)
                 {
                     mvImuFromLastFrame.push_back(*m);
                     mlQueueImuData.pop_front();
@@ -1787,7 +1787,7 @@ bool Tracking::PredictStateIMU()
         return true;
     }
     else
-        cout << "not IMU prediction!!" << endl;
+        Verbose::PrintMess("No IMU Prediction", Verbose::VERBOSITY_NORMAL);
 
     return false;
 }
@@ -2153,7 +2153,7 @@ void Tracking::Track()
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
             {
                 Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
-                if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
+                if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA1())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
                     mpSystem->ResetActiveMap();
@@ -2869,6 +2869,7 @@ bool Tracking::TrackWithMotionModel()
     if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
     {
         // Predict state with IMU if it is initialized and it doesnt need reset
+        Verbose::PrintMess("TrackWithMotionModel - Preduct IMU state", Verbose::VERBOSITY_NORMAL);
         PredictStateIMU();
         return true;
     }
@@ -2941,6 +2942,7 @@ bool Tracking::TrackWithMotionModel()
         }
     }
 
+    Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_NORMAL);
     if(mbOnlyTracking)
     {
         mbVO = nmatchesMap<10;

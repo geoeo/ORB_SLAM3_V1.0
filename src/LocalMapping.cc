@@ -146,7 +146,7 @@ void LocalMapping::Run()
                             }
                         }
 
-                        bool bLarge = ((mpTracker->GetMatchesInliers()>75)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
+                        bool bLarge = ((mpTracker->GetMatchesInliers()>50)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
                         Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, bLarge, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
                         b_doneLBA = true;
                     }
@@ -182,7 +182,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        InitializeIMU(1e3, 1e12, true);
+                        InitializeIMU(1e1, 1e10, true);
                     else
                         InitializeIMU(1e2, 1e5, true);
                 }
@@ -203,7 +203,7 @@ void LocalMapping::Run()
                     {
                         cout << "check VIBA" << endl;
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>10.0f)
+                            if (mTinit>5.0f)
                             {
                                 cout << "start VIBA 1" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
@@ -216,11 +216,11 @@ void LocalMapping::Run()
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>25.0f){
+                            if (mTinit>10.0f){
                                 cout << "start VIBA 2" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
                                 if (mbMonocular)
-                                    InitializeIMU(0.f, 0.f, true);
+                                    InitializeIMU(0.0, 0.0, true);
                                 else
                                     InitializeIMU(0.f, 0.f, true);
 
@@ -1181,7 +1181,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     if (mbMonocular)
     {
         minTime = 5.0;
-        nMinKF = 50;
+        nMinKF = 10;
     }
     else
     {
