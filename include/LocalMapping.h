@@ -65,6 +65,7 @@ public:
     bool AcceptKeyFrames();
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
+    bool GetInertialBA1Status();
 
     void InterruptBA();
 

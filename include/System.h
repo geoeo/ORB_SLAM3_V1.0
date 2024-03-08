@@ -187,7 +187,8 @@ public:
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
-    std::vector<MapPoint*> GetTrackedMapPoints(); //TODO: Change this to pActiveMap->GetReferenceMapPoints()
+    bool GetInertialBA1Status();
+    std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
     // For debugging
