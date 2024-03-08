@@ -34,7 +34,7 @@ namespace ORB_SLAM3
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
     mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), bInitializing(false),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
-    mIdxInit(0), mScale(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9))
+    mIdxInit(0), mScale(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9)), bHasInertialBAHappened(false)
 {
     mnMatchesInliers = 0;
 
@@ -204,7 +204,7 @@ void LocalMapping::Run()
                     {
                         cout << "check VIBA" << endl;
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>5.0f)
+                            if (mTinit>10.0f)
                             {
                                 cout << "start VIBA 1" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
@@ -217,11 +217,11 @@ void LocalMapping::Run()
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>10.0f){
+                            if (mTinit>13.0f){
                                 cout << "start VIBA 2" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
                                 if (mbMonocular)
-                                    InitializeIMU(0.0, 0.0, true);
+                                    InitializeIMU(0.f, 0.f, true);
                                 else
                                     InitializeIMU(0.f, 0.f, true);
 
@@ -230,16 +230,16 @@ void LocalMapping::Run()
                         }
 
                         // scale refinement
-                        if (((mpAtlas->KeyFramesInMap())<=200) &&
-                                ((mTinit>25.0f && mTinit<25.5f)||
-                                (mTinit>35.0f && mTinit<35.5f)||
-                                (mTinit>45.0f && mTinit<45.5f)||
-                                (mTinit>55.0f && mTinit<55.5f)||
-                                (mTinit>65.0f && mTinit<65.5f)||
-                                (mTinit>75.0f && mTinit<75.5f))){
-                            if (mbMonocular)
-                                ScaleRefinement();
-                        }
+                        // if (((mpAtlas->KeyFramesInMap())<=200) &&
+                        //         ((mTinit>25.0f && mTinit<25.5f)||
+                        //         (mTinit>35.0f && mTinit<35.5f)||
+                        //         (mTinit>45.0f && mTinit<45.5f)||
+                        //         (mTinit>55.0f && mTinit<55.5f)||
+                        //         (mTinit>65.0f && mTinit<65.5f)||
+                        //         (mTinit>75.0f && mTinit<75.5f))){
+                        //     if (mbMonocular)
+                        //         ScaleRefinement();
+                        // }
                     }
                 }
             }
@@ -297,8 +297,8 @@ bool LocalMapping::CheckNewKeyFrames()
     return(!mlNewKeyFrames.empty());
 }
 
-bool LocalMapping::GetInertialBA1Status() {
-    return mpCurrentKeyFrame->GetMap()->GetIniertialBA1();
+bool LocalMapping::HasInertialBAHappened() {
+    return bHasInertialBAHappened;
 }
 
 void LocalMapping::ProcessNewKeyFrame()
@@ -1185,7 +1185,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
-        minTime = 5.0;
+        minTime = 7.0;
         nMinKF = 10;
     }
     else
@@ -1313,9 +1313,10 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     if (bFIBA)
     {
         if (priorA!=0.f)
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, false);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, false);
+        bHasInertialBAHappened = true;
     }
 
     std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
