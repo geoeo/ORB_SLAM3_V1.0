@@ -1460,8 +1460,8 @@ int System::GetTrackingState()
     return mTrackingState;
 }
 
-bool System::GetInertialBA1Status(){
-    mpLocalMapper->GetInertialBA1Status();
+bool System::HasInertialBAHappened(){
+    mpLocalMapper->HasInertialBAHappened();
 }
 
 vector<MapPoint*> System::GetActiveReferenceMapPoints()
