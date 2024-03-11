@@ -247,7 +247,7 @@ void ImageGrabber::SyncWithImu()
       if(mbClahe)
         mClahe->apply(im,im);
 
-      std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
+      //std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
       if(!vImuMeas.empty()){
         Sophus::Matrix4f pose = mpSLAM->TrackMonocular(im,tIm,vImuMeas).matrix();
         vImuMeas.clear();

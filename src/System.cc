@@ -1460,10 +1460,14 @@ int System::GetTrackingState()
     return mTrackingState;
 }
 
-vector<MapPoint*> System::GetTrackedMapPoints()
+bool System::HasInertialBAHappened(){
+    mpLocalMapper->HasInertialBAHappened();
+}
+
+vector<MapPoint*> System::GetActiveReferenceMapPoints()
 {
-    unique_lock<mutex> lock(mMutexState);
-    return mTrackedMapPoints;
+    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    return pActiveMap->GetReferenceMapPoints();
 }
 
 vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()

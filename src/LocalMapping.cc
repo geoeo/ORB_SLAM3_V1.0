@@ -34,7 +34,7 @@ namespace ORB_SLAM3
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
     mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), bInitializing(false),
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
-    mIdxInit(0), mScale(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9))
+    mIdxInit(0), mScale(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9)), bHasInertialBAHappened(false)
 {
     mnMatchesInliers = 0;
 
@@ -145,13 +145,14 @@ void LocalMapping::Run()
                                 mbBadImu = true;
                             }
                         }
-
-                        bool bLarge = ((mpTracker->GetMatchesInliers()>75)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
+                        Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
+                        bool bLarge = ((mpTracker->GetMatchesInliers()>50)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
                         Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, bLarge, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
                         b_doneLBA = true;
                     }
                     else
                     {
+                        Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                         b_doneLBA = true;
                     }
@@ -182,7 +183,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        InitializeIMU(1e3, 1e12, true);
+                        InitializeIMU(1e1, 1e10, true);
                     else
                         InitializeIMU(1e2, 1e5, true);
                 }
@@ -216,7 +217,7 @@ void LocalMapping::Run()
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>25.0f){
+                            if (mTinit>13.0f){
                                 cout << "start VIBA 2" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
                                 if (mbMonocular)
@@ -229,16 +230,16 @@ void LocalMapping::Run()
                         }
 
                         // scale refinement
-                        if (((mpAtlas->KeyFramesInMap())<=200) &&
-                                ((mTinit>25.0f && mTinit<25.5f)||
-                                (mTinit>35.0f && mTinit<35.5f)||
-                                (mTinit>45.0f && mTinit<45.5f)||
-                                (mTinit>55.0f && mTinit<55.5f)||
-                                (mTinit>65.0f && mTinit<65.5f)||
-                                (mTinit>75.0f && mTinit<75.5f))){
-                            if (mbMonocular)
-                                ScaleRefinement();
-                        }
+                        // if (((mpAtlas->KeyFramesInMap())<=200) &&
+                        //         ((mTinit>25.0f && mTinit<25.5f)||
+                        //         (mTinit>35.0f && mTinit<35.5f)||
+                        //         (mTinit>45.0f && mTinit<45.5f)||
+                        //         (mTinit>55.0f && mTinit<55.5f)||
+                        //         (mTinit>65.0f && mTinit<65.5f)||
+                        //         (mTinit>75.0f && mTinit<75.5f))){
+                        //     if (mbMonocular)
+                        //         ScaleRefinement();
+                        // }
                     }
                 }
             }
@@ -294,6 +295,10 @@ bool LocalMapping::CheckNewKeyFrames()
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     return(!mlNewKeyFrames.empty());
+}
+
+bool LocalMapping::HasInertialBAHappened() {
+    return bHasInertialBAHappened;
 }
 
 void LocalMapping::ProcessNewKeyFrame()
@@ -1180,8 +1185,8 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
-        minTime = 5.0;
-        nMinKF = 50;
+        minTime = 7.0;
+        nMinKF = 10;
     }
     else
     {
@@ -1308,9 +1313,10 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     if (bFIBA)
     {
         if (priorA!=0.f)
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, false);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, false);
+        bHasInertialBAHappened = true;
     }
 
     std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
