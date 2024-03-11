@@ -65,7 +65,7 @@ public:
     bool AcceptKeyFrames();
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
-    bool HasInertialBAHappened();
+    bool InertialBACompleted();
 
     void InterruptBA();
 
@@ -184,7 +184,7 @@ protected:
     void ScaleRefinement();
 
     bool bInitializing;
-    bool bHasInertialBAHappened;
+    bool bInertialBACompleted;
 
     Eigen::MatrixXd infoInertial;
     int mNumLM;

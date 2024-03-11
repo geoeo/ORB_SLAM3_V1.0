@@ -251,7 +251,7 @@ void ImageGrabber::SyncWithImu()
       if(!vImuMeas.empty()){
         Sophus::Matrix4f pose = mpSLAM->TrackMonocular(im,tIm,vImuMeas).matrix();
         vImuMeas.clear();
-        //cout << "ORB POSE:" << endl;
+        cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;
         //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
         //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
         //cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
