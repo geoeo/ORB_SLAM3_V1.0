@@ -190,6 +190,7 @@ public:
     bool InertialBACompleted();
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
+    std::vector<KeyFrame*> GetAllKeyframes();
 
     // For debugging
     double GetTimeFromIMUInit();
