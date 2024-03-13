@@ -229,6 +229,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         activeLC = static_cast<int>(fsSettings["loopClosing"]) != 0;
     }
 
+    cout << endl << "Loop Closing: " << activeLC << endl;
+
     mStrVocabularyFilePath = strVocFile;
 
     bool loadedAtlas = false;

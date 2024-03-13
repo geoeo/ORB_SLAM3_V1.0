@@ -4,6 +4,7 @@
 # Camera Parameters. Adjust them!
 #--------------------------------------------------------------------------------------------
 File.version: "1.0"
+loopClosing: 0
 
 Camera.type: "PinHole"
 
