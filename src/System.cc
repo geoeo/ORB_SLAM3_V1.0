@@ -1476,6 +1476,11 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
     return mTrackedKeyPointsUn;
 }
 
+double System::GetScaleFactor() {
+    return mpLocalMapper->GetScaleFactor();
+}
+
+
 std::vector<KeyFrame*> System::GetAllKeyframes() {
     return mpAtlas->GetAllKeyFrames();
 }

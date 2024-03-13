@@ -1848,6 +1848,7 @@ void LoopClosing::MergeLocal2()
             bScaleVel=true;
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(T_on,s_on,bScaleVel);
         mpTracker->UpdateFrameIMU(s_on,mpCurrentKF->GetImuBias(),mpTracker->GetLastKeyFrame());
+        //TODO: save/accumulate scale
 
         std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
     }

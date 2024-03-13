@@ -66,6 +66,7 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
     bool InertialBACompleted();
+    double GetScaleFactor();
 
     void InterruptBA();
 
@@ -88,6 +89,7 @@ public:
     Eigen::Vector3d mbg;
     Eigen::Vector3d mba;
     double mScale;
+    double mScaleAcc;
     double mInitTime;
     double mCostTime;
 
