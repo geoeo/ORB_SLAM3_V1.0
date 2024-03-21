@@ -36,8 +36,10 @@ namespace ORB_SLAM3 {
     {  
     bool isRGB;
     float fps;
-    int width;
-    int height;
+    int orig_width;
+    int orig_height;
+    int new_width;
+    int new_height;
     cv::Mat K;
     cv::Mat distCoeffs;
     };

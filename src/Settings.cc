@@ -184,7 +184,8 @@ namespace ORB_SLAM3 {
     Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor):
         bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false), thFarPoints_(0.0),
         imageViewerScale_(1.0), keyFrameSize_(0.05), keyFrameLineWidth_(1.0), graphLineWidth_(0.9), pointSize_(2.0),
-        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0) {
+        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0){
+            sensor_ = sensor;
             cameraType_ = PinHole;
 
             //Read intrinsic parameters
@@ -213,13 +214,35 @@ namespace ORB_SLAM3 {
             
 
             //Check if we need to correct distortion from the images
-            if((sensor_ == System::MONOCULAR || sensor_ == System::IMU_MONOCULAR) && vPinHoleDistorsion1_.size() != 0){
+            if(vPinHoleDistorsion1_.size() != 0){
                 bNeedToUndistort_ = true;
             }
 
-            originalImSize_.width = cam.width;
-            originalImSize_.height = cam.height;
-            bNeedToResize1_ = false;
+            originalImSize_.width = cam.orig_width;
+            originalImSize_.height = cam.orig_height;
+
+            newImSize_ = originalImSize_;
+
+            if(cam.new_height != cam.orig_height){
+                bNeedToResize1_ = true;
+                newImSize_.height = cam.new_height ;
+
+                //Update calibration
+                float scaleRowFactor = (float)newImSize_.height / (float)originalImSize_.height;
+                calibration1_->setParameter(calibration1_->getParameter(1) * scaleRowFactor, 1);
+                calibration1_->setParameter(calibration1_->getParameter(3) * scaleRowFactor, 3);
+            }
+
+            if(cam.new_width != cam.orig_width){
+                bNeedToResize1_ = true;
+                newImSize_.width = cam.new_width;
+
+
+                //Update calibration
+                float scaleColFactor = (float)newImSize_.width /(float) originalImSize_.width;
+                calibration1_->setParameter(calibration1_->getParameter(0) * scaleColFactor, 0);
+                calibration1_->setParameter(calibration1_->getParameter(2) * scaleColFactor, 2);
+            }
 
             if(sensor_ == System::IMU_MONOCULAR){
                 noiseGyro_ = imu.noiseGyro;
@@ -238,6 +261,8 @@ namespace ORB_SLAM3 {
             initThFAST_ = orb.iniThFast;
             minThFAST_ = orb.minThFast;
 
+            fps_ = cam.fps;
+            bRGB_ = false;
     }
 
     void Settings::readCamera1(cv::FileStorage &fSettings) {

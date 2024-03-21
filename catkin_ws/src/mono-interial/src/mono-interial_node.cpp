@@ -31,8 +31,8 @@ public:
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, uint64_t fps_fac)
-      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0) {}
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, uint64_t fps_fac, float resize_factor)
+      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0), img_resize(resize_factor) {}
 
     void GrabImage(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat GetImage(const sensor_msgs::ImageConstPtr &img_msg);
@@ -49,6 +49,7 @@ public:
     double timeshift_cam_imu;
     uint64_t fps_factor;
     uint64_t count;
+    float img_resize;
 };
 
 
@@ -75,13 +76,15 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
+  float resize_factor = 1.0;
+
   // Eve
   ORB_SLAM3::CameraParameters cam{};
   cam.K = cv::Mat::zeros(3,3,CV_32F);
-  cam.K.at<float>(0,0) = 1388.9566234253055;
-  cam.K.at<float>(1,1) = 1389.860526555566;
-  cam.K.at<float>(0,2) = 944.8106061888452;
-  cam.K.at<float>(1,2) = 602.163082548295;
+  cam.K.at<float>(0,0) = 1388.9566234253055*resize_factor;
+  cam.K.at<float>(1,1) = 1389.860526555566*resize_factor;
+  cam.K.at<float>(0,2) = 944.8106061888452*resize_factor;
+  cam.K.at<float>(1,2) = 602.163082548295*resize_factor;
   cam.K.at<float>(2,2) = 1;
 
 
@@ -92,22 +95,25 @@ int main(int argc, char **argv)
   cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
   cam.fps        = 17;
-  cam.width      = 1920;
-  cam.height     = 1200;
+  cam.orig_width      = static_cast<int>(1920*resize_factor);
+  cam.orig_height     = static_cast<int>(1200*resize_factor);
+  cam.new_width      = 1152;
+  cam.new_height     = 720;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
-  orb.nFeatures   = 2000;
-  orb.nLevels     = 7;
+  orb.nFeatures   = 2500;
+  orb.nLevels     = 8;
   orb.scaleFactor = 1.2;
   orb.minThFast   = 5;
   orb.iniThFast   = 15;
 
   ORB_SLAM3::ImuParameters m_imu;
-  m_imu.accelWalk  = 3.0000e-3;
-  m_imu.gyroWalk   = 1.9393e-05;
-  m_imu.noiseAccel = 2.0000e-3;
-  m_imu.noiseGyro  = 1.6968e-04;
+  m_imu.accelWalk  = 2.88252284411655e-03;
+  m_imu.gyroWalk   = 1.62566517589794e-04;
+  m_imu.noiseAccel = 0.07302644894222149;
+  m_imu.noiseGyro  = 0.009336557780556743;
+  m_imu.InsertKFsWhenLost = false;
 
   cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
@@ -138,8 +144,8 @@ int main(int argc, char **argv)
 
 
   // Create SLAM system. It initializes all system threads and gets ready to process frames.
-  ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
-  //ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::MONOCULAR, true, true);
+  //ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
+  ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
 
 
   //double timeshift_cam_imu = 0.0021434982252719545; //Kaist
@@ -152,7 +158,7 @@ int main(int argc, char **argv)
   uint64_t fps_factor = 1;
 
   ImuGrabber imugb;
-  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor); // TODO
+  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor, resize_factor);
 
     // Maximum delay, 5 seconds
   ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
@@ -201,7 +207,9 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::ImageConstPtr &img_msg)
   
   if(cv_ptr->image.type()==0)
   {
-    return cv_ptr->image.clone();
+    cv::Mat im_resize;
+    cv::resize(cv_ptr->image, im_resize, cv::Size(), img_resize, img_resize, cv::INTER_LINEAR);
+    return im_resize;
   }
   else
   {

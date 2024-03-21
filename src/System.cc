@@ -103,6 +103,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
     mpAtlas->SetInertialSensor();
 
   settings_ = new Settings(cam, imu, orb,mSensor);
+  cout << (*settings_) << endl;
 
   //Create Drawers. These are used by the Viewer
   mpFrameDrawer = new FrameDrawer(mpAtlas);
