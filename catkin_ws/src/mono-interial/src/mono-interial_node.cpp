@@ -32,7 +32,7 @@ class ImageGrabber
 {
 public:
     ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, uint64_t fps_fac, float resize_factor)
-      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0), img_resize(resize_factor) {}
+      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0), img_resize_factor(resize_factor) {}
 
     void GrabImage(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat GetImage(const sensor_msgs::ImageConstPtr &img_msg);
@@ -49,7 +49,7 @@ public:
     double timeshift_cam_imu;
     uint64_t fps_factor;
     uint64_t count;
-    float img_resize;
+    float img_resize_factor;
 };
 
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
-  float resize_factor = 1.0;
+  float resize_factor = 0.6;
 
   // Eve
   ORB_SLAM3::CameraParameters cam{};
@@ -207,8 +207,11 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::ImageConstPtr &img_msg)
   
   if(cv_ptr->image.type()==0)
   {
+    auto width = cv_ptr->image.cols;
+    auto height = cv_ptr->image.rows;
+    cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
     cv::Mat im_resize;
-    cv::resize(cv_ptr->image, im_resize, cv::Size(), img_resize, img_resize, cv::INTER_LINEAR);
+    cv::resize(cv_ptr->image, im_resize, new_im_size);
     return im_resize;
   }
   else
