@@ -76,7 +76,7 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
-  float resize_factor = 0.6;
+  float resize_factor = 0.8;
 
   // Eve
   ORB_SLAM3::CameraParameters cam{};
@@ -97,8 +97,8 @@ int main(int argc, char **argv)
   cam.fps        = 17;
   cam.orig_width      = static_cast<int>(1920*resize_factor);
   cam.orig_height     = static_cast<int>(1200*resize_factor);
-  cam.new_width      = 1152;
-  cam.new_height     = 720;
+  cam.new_width      = 1536;
+  cam.new_height     = 960;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
@@ -109,10 +109,10 @@ int main(int argc, char **argv)
   orb.iniThFast   = 15;
 
   ORB_SLAM3::ImuParameters m_imu;
-  m_imu.accelWalk  = 2.88252284411655e-03;
-  m_imu.gyroWalk   = 1.62566517589794e-04;
-  m_imu.noiseAccel = 0.07302644894222149;
-  m_imu.noiseGyro  = 0.009336557780556743;
+  m_imu.accelWalk  = 0.001441261422058275;
+  m_imu.gyroWalk   = 0.000081283258794897;
+  m_imu.noiseAccel = 0.036513224471110745;
+  m_imu.noiseGyro  = 0.0046682788902783715;
   m_imu.InsertKFsWhenLost = false;
 
   cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
