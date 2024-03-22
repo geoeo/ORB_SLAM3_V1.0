@@ -2289,7 +2289,7 @@ void Tracking::Track()
                     mpSystem->ResetActiveMap();
                     return;
                 }
-
+            mpLocalMapper->RequestReset();
             CreateMapInAtlas();
 
             return;
