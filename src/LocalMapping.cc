@@ -1123,6 +1123,8 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
+            bInertialBACompleted = false;
+            mScaleAcc = 1.0;
 
             mIdxInit=0;
 
@@ -1140,6 +1142,8 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
+            bInertialBACompleted = false;
+            mScaleAcc = 1.0;
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
