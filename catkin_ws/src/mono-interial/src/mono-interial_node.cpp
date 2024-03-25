@@ -135,12 +135,12 @@ int main(int argc, char **argv)
 
   cv_Tbc.at<float>(1,0) =   -0.00013874;
   cv_Tbc.at<float>(1,1) =   -0.99868667;
-  cv_Tbc.at<float>(1,2) =   -0.05123401;
+  cv_Tbc.at<float>(1,2) =   0.05123401;
   cv_Tbc.at<float>(1,3) =   -0.01364959;
 
   cv_Tbc.at<float>(2,0) =   -0.99999403;
-  cv_Tbc.at<float>(2,1) =   -0.00031548;
-  cv_Tbc.at<float>(2,2) =   -0.00344154;
+  cv_Tbc.at<float>(2,1) =   0.00031548;
+  cv_Tbc.at<float>(2,2) =   0.00344154;
   cv_Tbc.at<float>(2,3) =   -0.01763391;
 
   cv_Tbc.at<float>(3,0) =   0.0;
