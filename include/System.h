@@ -191,7 +191,8 @@ public:
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
     std::vector<KeyFrame*> GetAllKeyframes();
-    double GetScaleFactor();
+    double GetScaleFactor() const;
+    std::vector<double> GetScaleChangeTimestamps() const;
 
     // For debugging
     double GetTimeFromIMUInit();

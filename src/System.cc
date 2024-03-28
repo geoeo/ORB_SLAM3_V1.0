@@ -160,7 +160,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
     }
 
     // Fix verbosity
-    Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+    Verbose::SetTh(Verbose::VERBOSITY_DEBUG);
 }
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
@@ -1479,10 +1479,13 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
     return mTrackedKeyPointsUn;
 }
 
-double System::GetScaleFactor() {
+double System::GetScaleFactor() const {
     return mpLocalMapper->GetScaleFactor();
 }
 
+vector<double> System::GetScaleChangeTimestamps() const {
+    return mpLocalMapper->GetScaleChangeTimestamps();
+}
 
 std::vector<KeyFrame*> System::GetAllKeyframes() {
     return mpAtlas->GetAllKeyFrames();

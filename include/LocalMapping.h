@@ -66,7 +66,8 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
     bool InertialBACompleted();
-    double GetScaleFactor();
+    double GetScaleFactor() const;
+    std::vector<double> GetScaleChangeTimestamps() const;
 
     void InterruptBA();
 
@@ -89,7 +90,6 @@ public:
     Eigen::Vector3d mbg;
     Eigen::Vector3d mba;
     double mScale;
-    double mScaleAcc;
     double mInitTime;
     double mCostTime;
 
@@ -172,8 +172,10 @@ protected:
 
     std::mutex mMutexNewKFs;
 
-    bool mbAbortBA;
+    double mScaleAcc;
+    std::vector<double> mScaleChangeKeyframeTimestamps;
 
+    bool mbAbortBA;
     bool mbStopped;
     bool mbStopRequested;
     bool mbNotStop;

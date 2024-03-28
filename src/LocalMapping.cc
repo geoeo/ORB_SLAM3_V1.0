@@ -36,6 +36,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
     mIdxInit(0), mScale(1.0), mScaleAcc(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9)), bInertialBACompleted(false)
 {
+    mScaleChangeKeyframeTimestamps.reserve(3); // We initialize the IMU / estimate scale 3 times
     mnMatchesInliers = 0;
 
     mbBadImu = false;
@@ -1297,6 +1298,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
             mScaleAcc*=mScale;
+            mScaleChangeKeyframeTimestamps.push_back(mpCurrentKeyFrame->mTimeStamp);
         }
 
         // Check if initialization OK
@@ -1536,9 +1538,13 @@ KeyFrame* LocalMapping::GetCurrKF()
     return mpCurrentKeyFrame;
 }
 
-double LocalMapping::GetScaleFactor() {
+double LocalMapping::GetScaleFactor() const {
     //TODO: Maybe lock this.
     return mScaleAcc;
+}
+
+vector<double> LocalMapping::GetScaleChangeTimestamps() const {
+    return mScaleChangeKeyframeTimestamps;
 }
 
 } //namespace ORB_SLAM
