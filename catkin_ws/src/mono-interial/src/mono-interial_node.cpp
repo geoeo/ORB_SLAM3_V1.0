@@ -268,9 +268,9 @@ void ImageGrabber::SyncWithImu()
 
       //std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
       if(!vImuMeas.empty()){
-        auto pose_flag = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
-        Sophus::Matrix4f pose = std::get<0>(pose_flag).matrix();
-        bool ba_complete_for_frame = std::get<1>(pose_flag);
+        auto pose_flag_pair = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        Sophus::Matrix4f pose = pose_flag_pair.first.matrix();
+        bool ba_complete_for_frame = pose_flag_pair.second;
         vImuMeas.clear();
         auto timestamps =  mpSLAM->GetScaleChangeTimestamps();
         cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;

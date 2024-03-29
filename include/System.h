@@ -27,7 +27,7 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <tuple>
+#include <utility>
 #include<opencv2/core/core.hpp>
 
 #include "Tracking.h"
@@ -127,7 +127,7 @@ public:
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    std::tuple<Sophus::SE3f,bool> TrackMonocular(const cv::Mat &im, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    std::pair<Sophus::SE3f,bool> TrackMonocular(const cv::Mat &im, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.
