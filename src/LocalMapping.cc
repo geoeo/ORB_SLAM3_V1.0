@@ -227,9 +227,14 @@ void LocalMapping::Run()
                                     InitializeIMU(0.f, 0.f, true);
 
                                 cout << "end VIBA 2" << endl;
+
+                                //TODO set BA complete in keyframe
                                 bInertialBACompleted = true;
+
                             }
                         }
+
+                        mpCurrentKeyFrame->setBAComplete(bInertialBACompleted);
 
                         // scale refinement
                         // if (((mpAtlas->KeyFramesInMap())<=200) &&

@@ -273,6 +273,8 @@ public:
     // Set/check bad flag
     void SetBadFlag();
     bool isBad();
+    bool getBAComplete() const;
+    void setBAComplete(bool ba_complete);
 
     // Compute Scene Depth (q=2 median). Used in monocular.
     float ComputeSceneMedianDepth(const int q);
@@ -481,6 +483,7 @@ protected:
     bool mbNotErase;
     bool mbToBeErased;
     bool mbBad;    
+    bool mbBAComplete;
 
     float mHalfBaseline; // Only for visualization
 

@@ -268,10 +268,13 @@ void ImageGrabber::SyncWithImu()
 
       //std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
       if(!vImuMeas.empty()){
-        Sophus::Matrix4f pose = mpSLAM->TrackMonocular(im,tIm,vImuMeas).matrix();
+        auto pose_flag = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        Sophus::Matrix4f pose = std::get<0>(pose_flag).matrix();
+        bool ba_complete_for_frame = std::get<1>(pose_flag);
         vImuMeas.clear();
         auto timestamps =  mpSLAM->GetScaleChangeTimestamps();
         cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;
+        cout << "BA completed for frame: " << ba_complete_for_frame << endl;
         cout << "Scale Factor: " << mpSLAM->GetScaleFactor() << endl;
         cout << "Current ts: " << tIm << endl;
         for(auto ts : timestamps)

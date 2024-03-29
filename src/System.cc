@@ -523,13 +523,13 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
     return Tcw;
 }
 
-Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     {
         unique_lock<mutex> lock(mMutexReset);
         if(mbShutDown)
-            return Sophus::SE3f();
+            return {Sophus::SE3f(),false};
     }
 
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
@@ -596,8 +596,9 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    bool isBAComplete = mpTracker->mCurrentFrame.isBACompleteForKeyframe();
 
-    return Tcw;
+    return {Tcw,isBAComplete};
 }
 
 
