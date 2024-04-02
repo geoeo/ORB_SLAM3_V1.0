@@ -1131,6 +1131,7 @@ void LocalMapping::ResetIfRequested()
             mbBadImu=false;
             bInertialBACompleted = false;
             mScaleAcc = 1.0;
+            mScaleChangeKeyframeTimestamps.clear();
 
             mIdxInit=0;
 
@@ -1150,6 +1151,7 @@ void LocalMapping::ResetIfRequested()
             mbBadImu=false;
             bInertialBACompleted = false;
             mScaleAcc = 1.0;
+            mScaleChangeKeyframeTimestamps.clear();
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
