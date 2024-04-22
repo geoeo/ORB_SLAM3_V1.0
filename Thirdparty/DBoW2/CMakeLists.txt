@@ -30,10 +30,10 @@ set(SRCS_DUTILS
 
 
 
-find_package(OpenCV 3.4.20 QUIET EXACT REQUIRED)
-  if(NOT OpenCV_FOUND)
-    message(FATAL_ERROR "OpenCV > 3.4.20 not found.")
-  endif()
+find_package(OpenCV QUIET REQUIRED)
+if(NOT OpenCV_FOUND)
+  message(FATAL_ERROR "OpenCV not found.")
+endif()
 
 
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
