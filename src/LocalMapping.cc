@@ -1276,9 +1276,8 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
         }
         else {
-            mRwg = Eigen::Matrix3d::Identity();
-            mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
-            mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
+            bInitializing=false;
+            return;
         }
     }
     else
