@@ -1259,20 +1259,27 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
         }
-
-        Verbose::PrintMess("InitializeIMU - dirG norm: " + to_string(dirG.norm()), Verbose::VERBOSITY_DEBUG);
-        dirG = dirG/dirG.norm();
-        Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
-        Eigen::Vector3f v = gI.cross(dirG);
-        const float nv = v.norm();
-                Verbose::PrintMess("InitializeIMU - nv norm: " + to_string(nv), Verbose::VERBOSITY_DEBUG);
-        const float cosg = gI.dot(dirG);
-        const float ang = acos(cosg);
-        Verbose::PrintMess("InitializeIMU - before exp call ...", Verbose::VERBOSITY_DEBUG);
-        Eigen::Vector3f vzg = v*ang/nv;
-        Rwg = Sophus::SO3f::exp(vzg).matrix();
-        mRwg = Rwg.cast<double>();
-        mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
+        auto dirG_norm = dirG.norm();
+        Verbose::PrintMess("InitializeIMU - dirG norm: " + to_string(dirG_norm), Verbose::VERBOSITY_DEBUG);
+        if(dirG_norm != 0.0){
+            dirG = dirG/dirG_norm;
+            Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
+            Eigen::Vector3f v = gI.cross(dirG);
+            const float nv = v.norm();
+                    Verbose::PrintMess("InitializeIMU - nv norm: " + to_string(nv), Verbose::VERBOSITY_DEBUG);
+            const float cosg = gI.dot(dirG);
+            const float ang = acos(cosg);
+            Verbose::PrintMess("InitializeIMU - before exp call ...", Verbose::VERBOSITY_DEBUG);
+            Eigen::Vector3f vzg = v*ang/nv;
+            Rwg = Sophus::SO3f::exp(vzg).matrix();
+            mRwg = Rwg.cast<double>();
+            mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
+        }
+        else {
+            mRwg = Eigen::Matrix3d::Identity();
+            mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
+            mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
+        }
     }
     else
     {
