@@ -1254,8 +1254,10 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             if (!(*itKF)->mPrevKF)
                 continue;
             
-            Verbose::PrintMess("InitializeIMU - vel " + to_string((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity()), Verbose::VERBOSITY_DEBUG);
-            dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+
+            auto vel = (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
+            Verbose::PrintMess("InitializeIMU - vel x: " + vel(0) + " y: " + vel(1) + " z: "+v(2), Verbose::VERBOSITY_DEBUG);
+            dirG -= (*itKF)->mPrevKF->GetImuRotation() * vel;
             Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
             (*itKF)->mPrevKF->SetVelocity(_vel);
