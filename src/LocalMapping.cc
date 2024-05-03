@@ -1253,7 +1253,9 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
                 continue;
             if (!(*itKF)->mPrevKF)
                 continue;
-
+            
+            Verbose::PrintMess("InitializeIMU - vel " + to_string((*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity()), Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("InitializeIMU - rot " + to_string((*itKF)->mPrevKF->GetImuRotation()), Verbose::VERBOSITY_DEBUG);
             dirG -= (*itKF)->mPrevKF->GetImuRotation() * (*itKF)->mpImuPreintegrated->GetUpdatedDeltaVelocity();
             Eigen::Vector3f _vel = ((*itKF)->GetImuPosition() - (*itKF)->mPrevKF->GetImuPosition())/(*itKF)->mpImuPreintegrated->dT;
             (*itKF)->SetVelocity(_vel);
@@ -1276,8 +1278,9 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
         }
         else {
-            bInitializing=false;
-            return;
+            mRwg = Eigen::Matrix3d::Identity();
+            mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
+            mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
         }
     }
     else
