@@ -1,6 +1,13 @@
-FROM nvidia/cuda:11.1.1-cudnn8-devel-ubuntu18.04 AS build
-
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS build
 ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt update && apt install locales -y
+RUN locale-gen en_US en_US.UTF-8
+RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+RUN LANG=en_US.UTF-8
+
+RUN apt install software-properties-common -y
+RUN add-apt-repository universe
 
 # INSTALL SYSTEM DEPS + OpenCV Deps.
 RUN apt-get update && apt-get install -y \
@@ -16,79 +23,64 @@ RUN apt-get update && apt-get install -y \
         libglew-dev \
         gdb \
         libgtk2.0-dev \ 
+        g++ \
     && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update &&\
-    wget -O cmake.sh https://github.com/Kitware/CMake/releases/download/v3.15.0/cmake-3.15.0-Linux-x86_64.sh &&\
-    sh ./cmake.sh --prefix=/usr/local --skip-license
 
 # For ROS with GUI support
-ARG ROS_DISTRO=melodic
+RUN apt update && apt install curl -y
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+RUN apt update && apt upgrade -y
+RUN apt install ros-humble-ros-base -y
+RUN apt install ros-dev-tools -y
 
-RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-RUN curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
+WORKDIR /root
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2.tar.gz
+RUN tar -xzvf cmake-3.25.2.tar.gz
+RUN cd cmake-3.25.2 && ./bootstrap && make -j$(nproc) && make install
+RUN rm cmake-3.25.2.tar.gz
 
-# install ros packages
-RUN apt-get update && apt-get install -y --no-install-recommends ros-melodic-desktop \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /
-RUN cd ~ && git clone -b 3.4.20 https://github.com/opencv/opencv.git \
-    && cd opencv && mkdir build && cd build \
-    && cmake -D WITH_CUDA=OFF \
-        -D CMAKE_BUILD_TYPE=RELEASE \
-        -D BUILD_EXAMPLES=OFF \
-        -D BUILD_opencv_apps=OFF \
-        -D BUILD_DOCS=OFF \
-        -D BUILD_PERF_TESTS=OFF \
-        -D OPENCV_ENABLE_NONFREE=ON \
-        -D OPENCV_GENERATE_PKGCONFIG=ON \
-        -D BUILD_TESTS=OFF \
-        -D CMAKE_INSTALL_PREFIX=/usr/local .. \
-    && make -j $(nproc --all) && make install
+WORKDIR /root
+RUN apt update && sudo apt install -y libgtk2.0-dev
+RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/4.9.0.zip 
+#RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
+RUN unzip opencv.zip
+#RUN unzip opencv_contrib.zip
+RUN cd opencv-4.9.0 && mkdir -p build && cd build \
+&& cmake -DWITH_CUDA=OFF \
+    -DCMAKE_BUILD_TYPE=RELEASE \
+    -DBUILD_EXAMPLES=OFF \
+    -DBUILD_opencv_apps=OFF \
+    -DBUILD_DOCS=OFF \
+    -DBUILD_PERF_TESTS=OFF \
+    -DOPENCV_ENABLE_NONFREE=ON \
+    -DOPENCV_GENERATE_PKGCONFIG=OFF \
+    -DBUILD_TESTS=OFF \
+    #-DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
+    -DCMAKE_INSTALL_PREFIX=/usr/local .. \
+&& make -j $(nproc --all) && make install
+#RUN rm opencv_contrib.zip
+RUN rm opencv.zip 
 
 
 # Deps for cv_image_transport
 RUN apt-get update && apt-get install -y \
-    python-catkin-tools \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
-    #libeigen3-dev \
+    libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
-
-
-WORKDIR /
-RUN mkdir -p /catkin_ws/src \
-    && cd /catkin_ws/src \
-    && git clone --branch melodic https://github.com/ros-perception/vision_opencv.git \
-    && git clone --branch melodic-devel https://github.com/ros-perception/image_transport_plugins.git
-
-WORKDIR /
-RUN cd /catkin_ws && set -ex && . /opt/ros/${ROS_DISTRO}/setup.sh \
-    && catkin config --extend /opt/ros/$ROS_DISTRO -DCMAKE_BUILD_TYPE=Release -DOpenCV_DIR=/usr/local/share/OpenCV \
-    && catkin build
-
+WORKDIR /workspaces/ORB_SLAM3_V1.0_ubuntu_22
+COPY scripts/install_ros_packages.sh /root
+WORKDIR /root
+RUN bash install_ros_packages.sh
+    
 WORKDIR /
 # Sadly this is required as it is linked throught the project
 RUN cd ~ && git clone --recursive https://github.com/stevenlovegrove/Pangolin.git
 RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
-
-WORKDIR /
-RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
-    && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.tar.bz2 \
-    && tar xf eigen-3.3.9.tar.bz2 \
-    && rm -rf eigen-3.3.9.tar.bz2 \
-    && cd eigen-3.3.9 \
-    && mkdir -p build && cd build \
-    && cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        .. \
-    && make -j $(nproc --all) \
-    && make install
 
 WORKDIR /
 RUN mkdir bags
