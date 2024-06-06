@@ -213,6 +213,112 @@ class MinimalPublisher : public rclcpp::Node
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
+
+  bool bEqual = false;
+  if(argc < 3 || argc > 4)
+  {
+    cerr << endl << "Usage: rosrun mono_inertial node path_to_vocabulary path_to_settings [do_equalize]" << endl;
+    rclcpp::shutdown();
+    return 1;
+  }
+
+
+  if(argc==4)
+  {
+    std::string sbEqual(argv[3]);
+    if(sbEqual == "true")
+      bEqual = true;
+  }
+
+  float resize_factor = 1.0;
+
+  // Eve
+  ORB_SLAM3::CameraParameters cam{};
+  cam.K = cv::Mat::zeros(3,3,CV_32F);
+  cam.K.at<float>(0,0) = 1388.9566234253055*resize_factor;
+  cam.K.at<float>(1,1) = 1389.860526555566*resize_factor;
+  cam.K.at<float>(0,2) = 944.8106061888452*resize_factor;
+  cam.K.at<float>(1,2) = 602.163082548295*resize_factor;
+  cam.K.at<float>(2,2) = 1;
+
+
+  cam.distCoeffs = cv::Mat::zeros(4,1,CV_32F);
+  cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
+  cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
+  cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
+  cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
+
+  cam.fps        = 17;
+  cam.orig_width      = static_cast<int>(1920*resize_factor);
+  cam.orig_height     = static_cast<int>(1200*resize_factor);
+
+  //1.0
+  cam.new_width      = 1920;
+  cam.new_height     = 1200;
+  cam.isRGB      = false; // BGR
+
+  ORB_SLAM3::OrbParameters orb{};
+  orb.nFeatures   = 2500;
+  orb.nLevels     = 8;
+  orb.scaleFactor = 1.2;
+  orb.minThFast   = 5;
+  orb.iniThFast   = 15;
+
+  ORB_SLAM3::ImuParameters m_imu;
+  m_imu.accelWalk  = 0.000288252284411655; // 10
+  m_imu.gyroWalk   = 0.0000162566517589794; // x10
+  m_imu.noiseAccel =  0.007302644894222149; //x5
+  m_imu.noiseGyro  = 0.0009336557780556743; // x5
+
+  m_imu.InsertKFsWhenLost = false;
+
+  cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
+
+  cv_Tbc.at<float>(0,0) =   -0.00345318;
+  cv_Tbc.at<float>(0,1) =   -0.05123323;
+  cv_Tbc.at<float>(0,2) =   -0.99868075;
+  cv_Tbc.at<float>(0,3) =   -0.0605664;
+
+  cv_Tbc.at<float>(1,0) =   -0.00013874;
+  cv_Tbc.at<float>(1,1) =   -0.99868667;
+  cv_Tbc.at<float>(1,2) =   0.05123401;
+  cv_Tbc.at<float>(1,3) =   -0.01364959;
+
+  cv_Tbc.at<float>(2,0) =   -0.99999403;
+  cv_Tbc.at<float>(2,1) =   0.00031548;
+  cv_Tbc.at<float>(2,2) =   0.00344154;
+  cv_Tbc.at<float>(2,3) =   -0.01763391;
+
+  cv_Tbc.at<float>(3,0) =   0.0;
+  cv_Tbc.at<float>(3,1) =   0.0;
+  cv_Tbc.at<float>(3,2) =   0.0;
+  cv_Tbc.at<float>(3,3) =   1.0;
+
+  m_imu.Tbc = cv_Tbc;
+  m_imu.freq       = 200.0;
+
+
+
+
+  // Create SLAM system. It initializes all system threads and gets ready to process frames.
+  //ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR,true);
+  ORB_SLAM3::System SLAM(argv[1],cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
+
+  double timeshift_cam_imu = -0.013490768586712722; // EvE
+
+
+  uint64_t fps_factor = 1;
+
+  ImuGrabber imugb;
+  ImageGrabber igb(&SLAM,&imugb,bEqual, timeshift_cam_imu, fps_factor, resize_factor);
+
+  //ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
+  //ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
+
+
+
+  std::thread sync_thread(&ImageGrabber::SyncWithImu,&igb);
+
   rclcpp::spin(std::make_shared<MinimalPublisher>());
   rclcpp::shutdown();
   return 0;
