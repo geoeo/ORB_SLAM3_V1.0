@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(visual-intertial)
+project(mono-intertial)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -26,15 +26,15 @@ find_package(Pangolin REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 
-add_executable(visual_intertial_node src/visual_intertial_node.cpp)
-target_link_libraries(visual_intertial_node 
+add_executable(mono_intertial_node src/mono_intertial_node.cpp)
+target_link_libraries(mono_intertial_node 
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ORB_SLAM3
   )
-ament_target_dependencies(visual_intertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs)
+ament_target_dependencies(mono_intertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs)
 
-target_include_directories(visual_intertial_node PUBLIC
+target_include_directories(mono_intertial_node PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
 "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
 ${OpenCV_INCLUDE_DIRS}
