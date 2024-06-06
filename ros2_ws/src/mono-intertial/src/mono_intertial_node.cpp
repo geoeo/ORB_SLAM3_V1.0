@@ -107,6 +107,79 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr  &i
 }
 
 
+void ImageGrabber::SyncWithImu()
+{
+  while(1)
+  {
+    cv::Mat im;
+    double tIm = 0;
+    if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
+    {
+      auto ros_image_ts_front = rclcpp::Time(img0Buf.front()->header.stamp);
+      mpImuGb->mBufMutex.lock();
+      auto ros_imu_ts_back = rclcpp::Time(mpImuGb->imuBuf.back().header.stamp);
+      mpImuGb->mBufMutex.unlock();
+      tIm = ros_image_ts_front.seconds() + timeshift_cam_imu;
+      if(tIm>ros_imu_ts_back.seconds())
+          continue;
+      {
+      this->mBufMutex.lock();
+      im = GetImage(img0Buf.front());
+      img0Buf.pop();
+      this->mBufMutex.unlock();
+      }
+
+      vector<ORB_SLAM3::IMU::Point> vImuMeas;
+      mpImuGb->mBufMutex.lock();
+      if(!mpImuGb->imuBuf.empty())
+      {
+        auto ros_imu_ts_front = rclcpp::Time(mpImuGb->imuBuf.front().header.stamp);
+        // Load imu measurements from buffer
+        vImuMeas.clear();
+        while(!mpImuGb->imuBuf.empty() && ros_imu_ts_front.seconds()<=tIm)
+        {
+          double t = ros_imu_ts_front.seconds();
+          cv::Point3f acc(mpImuGb->imuBuf.front().linear_acceleration.x, mpImuGb->imuBuf.front().linear_acceleration.y, mpImuGb->imuBuf.front().linear_acceleration.z);
+          cv::Point3f gyr(mpImuGb->imuBuf.front().angular_velocity.x, mpImuGb->imuBuf.front().angular_velocity.y, mpImuGb->imuBuf.front().angular_velocity.z);
+          vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
+          mpImuGb->imuBuf.pop();
+        }
+      }
+      mpImuGb->mBufMutex.unlock();
+      if(mbClahe)
+        mClahe->apply(im,im);
+
+      //std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
+      if(!vImuMeas.empty()){
+        auto pose_flag_pair = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        Sophus::Matrix4f pose = pose_flag_pair.first.matrix();
+        bool ba_complete_for_frame = pose_flag_pair.second;
+        vImuMeas.clear();
+        auto timestamps =  mpSLAM->GetScaleChangeTimestamps();
+        cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;
+        cout << "BA completed for frame: " << ba_complete_for_frame << endl;
+        cout << "Scale Factor: " << mpSLAM->GetScaleFactor() << endl;
+        cout << "Current ts: " << tIm << endl;
+        for(auto ts : timestamps)
+          cout << " ts: " << ts;
+        cout << endl;
+        //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
+        //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
+        //cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
+        //cout << pose(3,0) << ", " << pose(3,1) << ", " << pose(3,2) << ", " << pose(3,3) << endl;
+        cout << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3) << endl;
+      }
+
+    }
+
+    //std::chrono::milliseconds tSleep(1);
+    //std::this_thread::sleep_for(tSleep);
+  }
+}
+
+
+
+
 
 /* This example creates a subclass of Node and uses std::bind() to register a
 * member function as a callback from the timer. */
