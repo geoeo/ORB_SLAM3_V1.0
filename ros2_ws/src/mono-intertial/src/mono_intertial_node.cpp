@@ -258,23 +258,26 @@ class MinimalPublisher : public rclcpp::Node
       m_imu.freq = 200.0;
 
 
-
-
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       ORB_SLAM3::System SLAM(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE
       uint64_t fps_factor = 1;
 
-      ImuGrabber imugb;
-      ImageGrabber igb(&SLAM,&imugb,bEqual_, timeshift_cam_imu, fps_factor, resize_factor);
+      igb_ = std::make_unique<ImageGrabber>(&SLAM,&imugb_,bEqual_, timeshift_cam_imu, fps_factor, resize_factor);
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
 
-      std::thread sync_thread(&ImageGrabber::SyncWithImu,&igb);
+      std::thread sync_thread(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
   private:
     std::string path_to_vocab_;
     bool bEqual_;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_img0_;
+    ImuGrabber imugb_;
+    std::unique_ptr<ImageGrabber> igb_;
 };
 
 
@@ -298,16 +301,6 @@ int main(int argc, char * argv[])
     if(sbEqual == "true")
       bEqual = true;
   }
-
-
-
-
-  //ros::Subscriber sub_imu = n.subscribe("/bmi088/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
-  //ros::Subscriber sub_img0 = n.subscribe("/down/genicam_0/image", 1000, &ImageGrabber::GrabImage,&igb);
-
-  //rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr = 
-  //rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr = 
-
 
 
   rclcpp::spin(std::make_shared<MinimalPublisher>(argv[1],bEqual));
