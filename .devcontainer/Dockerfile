@@ -69,6 +69,7 @@ RUN apt-get update && apt-get install -y \
     libogg-dev \
     libtheora-dev \
     libeigen3-dev \
+    libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspaces/ORB_SLAM3_V1.0_ubuntu_22
 COPY scripts/install_ros_packages.sh /root
@@ -78,6 +79,7 @@ RUN bash install_ros_packages.sh
 WORKDIR /
 # Sadly this is required as it is linked throught the project
 RUN cd ~ && git clone --recursive https://github.com/stevenlovegrove/Pangolin.git
+RUN cd ~/Pangolin && git checkout d25ec00
 RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
