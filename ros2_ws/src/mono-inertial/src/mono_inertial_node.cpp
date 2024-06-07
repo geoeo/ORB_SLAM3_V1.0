@@ -105,52 +105,59 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr  &i
 
 void ImageGrabber::SyncWithImu()
 {
+  double init_ts = 0;
   while(1)
   {
     cv::Mat im;
     double tIm = 0;
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
-      this->mBufMutex.lock();
-      auto ros_image_ts_front = rclcpp::Time(img0Buf.front()->header.stamp);
-      this->mBufMutex.unlock();
-
       mpImuGb->mBufMutex.lock();
       auto ros_imu_ts_back = rclcpp::Time(mpImuGb->imuBuf.back().header.stamp);
+      if(init_ts == 0)
+        init_ts = ros_imu_ts_back.seconds();
       mpImuGb->mBufMutex.unlock();
 
-      tIm = ros_image_ts_front.seconds() + timeshift_cam_imu;
-      if(tIm>ros_imu_ts_back.seconds())
-          continue;
-      {
-        this->mBufMutex.lock();
-        im = GetImage(img0Buf.front());
-        img0Buf.pop();
-        this->mBufMutex.unlock();
-      }
 
+      
+      this->mBufMutex.lock();
+      im = GetImage(img0Buf.front());
+      auto ros_image_ts_front = rclcpp::Time(img0Buf.front()->header.stamp);
+      tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
+      img0Buf.pop();
+      this->mBufMutex.unlock();
+      
       vector<ORB_SLAM3::IMU::Point> vImuMeas;
       mpImuGb->mBufMutex.lock();
       if(!mpImuGb->imuBuf.empty())
       {
-        auto ros_imu_ts_front = rclcpp::Time(mpImuGb->imuBuf.front().header.stamp);
+        auto imu_meas = mpImuGb->imuBuf.front();
+        auto ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
+        auto t = ros_imu_ts_front.seconds();
+        t-=init_ts;
         // Load imu measurements from buffer
         vImuMeas.clear();
-        while(!mpImuGb->imuBuf.empty() && ros_imu_ts_front.seconds()<=tIm)
-        {
-          double t = ros_imu_ts_front.seconds();
-          cv::Point3f acc(mpImuGb->imuBuf.front().linear_acceleration.x, mpImuGb->imuBuf.front().linear_acceleration.y, mpImuGb->imuBuf.front().linear_acceleration.z);
-          cv::Point3f gyr(mpImuGb->imuBuf.front().angular_velocity.x, mpImuGb->imuBuf.front().angular_velocity.y, mpImuGb->imuBuf.front().angular_velocity.z);
+        while(t<=tIm)
+        { 
+          cv::Point3f acc(imu_meas.linear_acceleration.x, imu_meas.linear_acceleration.y, imu_meas.linear_acceleration.z);
+          cv::Point3f gyr(imu_meas.angular_velocity.x, imu_meas.angular_velocity.y, imu_meas.angular_velocity.z);
           vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
+
           mpImuGb->imuBuf.pop();
+          if(mpImuGb->imuBuf.empty())
+            break;
+          imu_meas = mpImuGb->imuBuf.front();
+          ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
+          t = ros_imu_ts_front.seconds();
+          t-=init_ts;
         }
       }
       mpImuGb->mBufMutex.unlock();
       if(mbClahe)
         mClahe->apply(im,im);
 
-      //std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-      if(!vImuMeas.empty()){
+      if(!vImuMeas.empty() && init_ts != 0){
+        std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
         auto pose_flag_pair = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
         Sophus::Matrix4f pose = pose_flag_pair.first.matrix();
         bool ba_complete_for_frame = pose_flag_pair.second;
@@ -184,10 +191,10 @@ void ImageGrabber::SyncWithImu()
 /* This example creates a subclass of Node and uses std::bind() to register a
 * member function as a callback from the timer. */
 
-class MinimalPublisher : public rclcpp::Node
+class SlamNode : public rclcpp::Node
 {
   public:
-    MinimalPublisher(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
+    SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
 
       float resize_factor = 1.0;
@@ -225,7 +232,7 @@ class MinimalPublisher : public rclcpp::Node
       orb.iniThFast   = 15;
 
       ORB_SLAM3::ImuParameters m_imu;
-      m_imu.accelWalk  = 0.000288252284411655; // 10
+      m_imu.accelWalk  = 0.000288252284411655; // x10
       m_imu.gyroWalk   = 0.0000162566517589794; // x10
       m_imu.noiseAccel =  0.007302644894222149; //x5
       m_imu.noiseGyro  = 0.0009336557780556743; // x5
@@ -259,7 +266,7 @@ class MinimalPublisher : public rclcpp::Node
 
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, false);
       cout << "SLAM Init" << endl;
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE
@@ -306,7 +313,7 @@ int main(int argc, char * argv[])
   }
 
 
-  rclcpp::spin(std::make_shared<MinimalPublisher>(argv[1],bEqual));
+  rclcpp::spin(std::make_shared<SlamNode>(argv[1],bEqual));
   rclcpp::shutdown();
   return 0;
 }
