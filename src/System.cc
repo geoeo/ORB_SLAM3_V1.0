@@ -160,7 +160,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
     }
 
     // Fix verbosity
-    Verbose::SetTh(Verbose::VERBOSITY_DEBUG);
+    Verbose::SetTh(Verbose::VERBOSITY_QUIET);
 }
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
