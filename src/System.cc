@@ -1465,7 +1465,10 @@ int System::GetTrackingState()
 }
 
 bool System::InertialBACompleted(){
-    mpLocalMapper->InertialBACompleted();
+    if(mpLocalMapper)
+        return mpLocalMapper->InertialBACompleted();
+    else
+        return false;
 }
 
 vector<MapPoint*> System::GetActiveReferenceMapPoints()
