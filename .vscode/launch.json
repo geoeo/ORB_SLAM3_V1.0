@@ -5,15 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Orb3 Slam Node",
+            "name": "Orbslam3 Node",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/workspaces/ORB_SLAM3/catkin_ws/devel/.private/mono-interial/lib/mono-interial/node",
+            "program": "/workspaces/ORB_SLAM3_V1.0_22/ros2_ws/install/mono-inertial/lib/mono-inertial/mono_inertial_node",
             "preLaunchTask": "source_orb3_ws",
-            "envFile": "/workspaces/ORB_SLAM3/catkin_ws/devel/temp_launch.env",
+            "envFile": "/workspaces/ORB_SLAM3_V1.0_22/ros2_ws/build/temp_launch.env",
             "args": [
-                "/workspaces/ORB_SLAM3/Vocabulary/ORBvoc.txt",
-                "/workspaces/ORB_SLAM3/Examples/Monocular-Inertial/EuRoC.yaml",
+                "/workspaces/ORB_SLAM3_V1.0_22/Vocabulary/ORBvoc.txt",
+                "false",
             ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",

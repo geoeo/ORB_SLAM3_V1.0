@@ -44,7 +44,7 @@
 	// "tools/setup.sh", "source  /opt/ros/melodic/setup.bash", "source /catkin_ws/devel/setup.bash"
 	"remoteUser": "root",
 	"mounts": [
-		"source=/home/haubenstock/rosbags,target=/bags,type=bind,consistency=cached"
+		"source=/home/marc/Datasets/AIT/Rosbags/,target=/bags,type=bind,consistency=cached"
 	]
 }
 //"-v /tmp/.X11-unix:/tmp/.X11-unix",

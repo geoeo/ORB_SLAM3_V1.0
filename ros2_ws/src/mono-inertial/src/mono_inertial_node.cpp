@@ -41,8 +41,8 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu &imu_msg)
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, uint64_t fps_fac, float resize_factor)
-      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),fps_factor(fps_fac),count(0), img_resize_factor(resize_factor) {}
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor)
+      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor) {}
 
     void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
     cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
@@ -57,22 +57,18 @@ public:
     const bool mbClahe;
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(4, 4));
     double timeshift_cam_imu;
-    uint64_t fps_factor;
     uint64_t count;
     float img_resize_factor;
 };
 
 void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg)
 {
-
   mBufMutex.lock();
-  count++;
   if (!img0Buf.empty())
     img0Buf.pop();
-  if(count == fps_factor){ //hardcoded fps factor Kaist
-    img0Buf.push(img_msg);
-    count = 0;
-  } 
+  img0Buf.push(img_msg);
+  count = 0;
+  
 
   mBufMutex.unlock();
 }
@@ -115,18 +111,22 @@ void ImageGrabber::SyncWithImu()
     double tIm = 0;
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
+      this->mBufMutex.lock();
       auto ros_image_ts_front = rclcpp::Time(img0Buf.front()->header.stamp);
+      this->mBufMutex.unlock();
+
       mpImuGb->mBufMutex.lock();
       auto ros_imu_ts_back = rclcpp::Time(mpImuGb->imuBuf.back().header.stamp);
       mpImuGb->mBufMutex.unlock();
+
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu;
       if(tIm>ros_imu_ts_back.seconds())
           continue;
       {
-      this->mBufMutex.lock();
-      im = GetImage(img0Buf.front());
-      img0Buf.pop();
-      this->mBufMutex.unlock();
+        this->mBufMutex.lock();
+        im = GetImage(img0Buf.front());
+        img0Buf.pop();
+        this->mBufMutex.unlock();
       }
 
       vector<ORB_SLAM3::IMU::Point> vImuMeas;
@@ -259,16 +259,15 @@ class MinimalPublisher : public rclcpp::Node
 
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      ORB_SLAM3::System SLAM(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, true, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
+      cout << "SLAM Init" << endl;
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE
-      uint64_t fps_factor = 1;
 
-      igb_ = std::make_unique<ImageGrabber>(&SLAM,&imugb_,bEqual_, timeshift_cam_imu, fps_factor, resize_factor);
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor);
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
-
-      std::thread sync_thread(&ImageGrabber::SyncWithImu,igb_.get());
+      sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
   private:
@@ -278,6 +277,8 @@ class MinimalPublisher : public rclcpp::Node
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_img0_;
     ImuGrabber imugb_;
     std::unique_ptr<ImageGrabber> igb_;
+    std::unique_ptr<std::thread> sync_thread_;
+    std::unique_ptr<ORB_SLAM3::System> SLAM_;
 };
 
 
@@ -289,7 +290,9 @@ int main(int argc, char * argv[])
   bool bEqual = false;
   if(argc < 2 || argc > 3)
   {
-    cerr << endl << "Usage: ros2 run mono_inertial_node path_to_vocabulary [do_equalize]" << endl;
+    for(auto i = 0; i < argc; ++i)
+      cout << argv[i] << endl;
+    cerr  << endl << "Arg count: " << argc << endl << "Usage: ros2 run mono_inertial_node path_to_vocabulary [do_equalize]" << endl;
     rclcpp::shutdown();
     return 1;
   }
