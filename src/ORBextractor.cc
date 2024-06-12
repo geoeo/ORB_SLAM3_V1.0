@@ -54,8 +54,8 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/cudafeatures2d.hpp>
 #include <vector>
 #include <iostream>
 
@@ -467,10 +467,8 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
-        feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-
-        gridCount = static_cast<float>(_gridCount); //Seems to work best for 0.8 image factor. TODO: make this a config param
+        m_feature = cv::cuda::ORB::create(250
+        );
     }
 
     static void computeOrientation(const Mat& image, vector<KeyPoint>& keypoints, const vector<int>& umax)
@@ -905,7 +903,20 @@ namespace ORB_SLAM3
         ComputePyramid(image);
 
         vector < vector<KeyPoint> > allKeypoints;
-        ComputeKeyPointsOctTree(allKeypoints);
+        //ComputeKeyPointsOctTree(allKeypoints);
+        vector<cv::cuda::GpuMat> mvImagePyramidCuda;
+        for(auto i = 0; i < mvImagePyramid.size(); ++i){
+            cv::cuda::GpuMat m;
+            m.upload(mvImagePyramid[i]);
+            cv::cuda::GpuMat gpu_keys;
+            m_feature->detectAsync(m,gpu_keys,cv::noArray(),m_stream);
+            m_stream.waitForCompletion();
+            vector<KeyPoint> kps;
+            m_feature->convert(gpu_keys, kps);
+            allKeypoints.push_back(kps);
+
+        }
+
 
         Mat descriptors;
 
@@ -937,11 +948,12 @@ namespace ORB_SLAM3
 
             // preprocess the resized image
             Mat workingMat = mvImagePyramid[level].clone();
-            GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+            GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
 
             // Compute the descriptors
             //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
             Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
+            
             computeDescriptors(workingMat, keypoints, desc, pattern);
 
             offset += nkeypointsLevel;

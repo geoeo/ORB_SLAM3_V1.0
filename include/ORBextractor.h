@@ -22,6 +22,8 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/cudafeatures2d.hpp>
 
 namespace ORB_SLAM3
 {
@@ -98,27 +100,27 @@ namespace ORB_SLAM3
         std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-        std::vector<cv::Point> pattern;
+    std::vector<cv::Point> pattern;
 
-        int nfeatures;
-        double scaleFactor;
-        int nlevels;
-        int iniThFAST;
-        int minThFAST;
-        float gridCount;
+    int nfeatures;
+    double scaleFactor;
+    int nlevels;
+    int iniThFAST;
+    int minThFAST;
 
-        std::vector<int> mnFeaturesPerLevel;
-        std::vector<int> umax;
+    std::vector<int> mnFeaturesPerLevel;
 
-        std::vector<float> mvScaleFactor;
-        std::vector<float> mvInvScaleFactor;
-        std::vector<float> mvLevelSigma2;
-        std::vector<float> mvInvLevelSigma2;
+    std::vector<int> umax;
 
-        cv::Ptr<cv::Feature2D> feat;
-        cv::Ptr<cv::Feature2D> feat_back;
-    };
+    std::vector<float> mvScaleFactor;
+    std::vector<float> mvInvScaleFactor;    
+    std::vector<float> mvLevelSigma2;
+    std::vector<float> mvInvLevelSigma2;
+    cv::Ptr<cv::cuda::ORB> m_feature;
+    cv::cuda::Stream m_stream;
 
-} // namespace ORB_SLAM
+};
+
+} //namespace ORB_SLAM
 
 #endif
