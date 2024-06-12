@@ -266,7 +266,7 @@ class SlamNode : public rclcpp::Node
 
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE

@@ -5,12 +5,12 @@ import launch_ros.actions
 
 bag_start_offset = 80.0
 #bag_path = '/workspaces/bags/20240222_Günselsdorf_Eve_IMU/tegra_master_2024-02-22-09-34-02'
-bag_path = '/bags/OpenREALM/20240229_Günselsdorf_Eve_IMU/tegra_master_2024-02-29-09-54-11'
+bag_path = '/bags/20240229_Günselsdorf_Eve_IMU/tegra_master_2024-02-29-09-54-11'
 
 def generate_launch_description():
     return LaunchDescription([
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0_22/Vocabulary/ORBvoc.txt', 'false'],
+            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0_ubuntu_22/Vocabulary/ORBvoc.txt', 'false'],
             output='screen'
         ),
         launch_ros.actions.Node(
