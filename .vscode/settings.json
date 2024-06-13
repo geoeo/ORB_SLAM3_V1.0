@@ -66,6 +66,7 @@
         "typeinfo": "cpp",
         "*.ipp": "cpp",
         "core": "cpp",
-        "specialfunctions": "cpp"
+        "specialfunctions": "cpp",
+        "forward_list": "cpp"
     }
 }

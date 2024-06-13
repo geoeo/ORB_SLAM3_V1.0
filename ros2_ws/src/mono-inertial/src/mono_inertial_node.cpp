@@ -113,11 +113,10 @@ void ImageGrabber::SyncWithImu()
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
       mpImuGb->mBufMutex.lock();
-      auto ros_imu_ts_back = rclcpp::Time(mpImuGb->imuBuf.back().header.stamp);
+      auto ros_imu_ts_front = rclcpp::Time(mpImuGb->imuBuf.front().header.stamp);
       if(init_ts == 0)
-        init_ts = ros_imu_ts_back.seconds();
+        init_ts = ros_imu_ts_front.seconds();
       mpImuGb->mBufMutex.unlock();
-
 
       
       this->mBufMutex.lock();
@@ -128,13 +127,13 @@ void ImageGrabber::SyncWithImu()
       this->mBufMutex.unlock();
       
       vector<ORB_SLAM3::IMU::Point> vImuMeas;
-      mpImuGb->mBufMutex.lock();
       if(!mpImuGb->imuBuf.empty())
       {
+        mpImuGb->mBufMutex.lock();
         auto imu_meas = mpImuGb->imuBuf.front();
+        mpImuGb->mBufMutex.unlock();
         auto ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
-        auto t = ros_imu_ts_front.seconds();
-        t-=init_ts;
+        auto t = ros_imu_ts_front.seconds() - init_ts;
         // Load imu measurements from buffer
         vImuMeas.clear();
         while(t<=tIm)
@@ -142,17 +141,22 @@ void ImageGrabber::SyncWithImu()
           cv::Point3f acc(imu_meas.linear_acceleration.x, imu_meas.linear_acceleration.y, imu_meas.linear_acceleration.z);
           cv::Point3f gyr(imu_meas.angular_velocity.x, imu_meas.angular_velocity.y, imu_meas.angular_velocity.z);
           vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
-
+          mpImuGb->mBufMutex.lock();
           mpImuGb->imuBuf.pop();
+          mpImuGb->mBufMutex.unlock();
+
           if(mpImuGb->imuBuf.empty())
             break;
+          
+          mpImuGb->mBufMutex.lock();
           imu_meas = mpImuGb->imuBuf.front();
+          mpImuGb->mBufMutex.unlock();
+
           ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
-          t = ros_imu_ts_front.seconds();
-          t-=init_ts;
+          t = ros_imu_ts_front.seconds() - init_ts;
         }
       }
-      mpImuGb->mBufMutex.unlock();
+
       if(mbClahe)
         mClahe->apply(im,im);
 
@@ -197,7 +201,7 @@ class SlamNode : public rclcpp::Node
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
 
-      float resize_factor = 1.0;
+      float resize_factor = 0.8;
 
       // Eve
       ORB_SLAM3::CameraParameters cam{};
@@ -220,12 +224,12 @@ class SlamNode : public rclcpp::Node
       cam.orig_height     = static_cast<int>(1200*resize_factor);
 
       //1.0
-      cam.new_width      = 1920;
-      cam.new_height     = 1200;
+      cam.new_width      = static_cast<int>(1920*resize_factor);
+      cam.new_height     = static_cast<int>(1200*resize_factor);
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 2500;
+      orb.nFeatures   = 400;
       orb.nLevels     = 8;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
@@ -266,7 +270,7 @@ class SlamNode : public rclcpp::Node
 
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
       cout << "SLAM Init" << endl;
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE
