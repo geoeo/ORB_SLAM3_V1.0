@@ -467,7 +467,17 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        m_feature = cv::cuda::ORB::create(250
+        m_feature = cv::cuda::ORB::create(
+            nfeatures,
+            scaleFactor,
+            nlevels,
+            31,
+            0,
+            2,
+            cv::ORB::HARRIS_SCORE,
+            20,
+            31,
+            true 
         );
     }
 
@@ -902,27 +912,35 @@ namespace ORB_SLAM3
         // Pre-compute the scale pyramid
         ComputePyramid(image);
 
+
         vector < vector<KeyPoint> > allKeypoints;
+        vector < cv::Mat > allDescriptors;
         //ComputeKeyPointsOctTree(allKeypoints);
         vector<cv::cuda::GpuMat> mvImagePyramidCuda;
-        for(auto i = 0; i < mvImagePyramid.size(); ++i){
+        int nkeypoints = 0;
+        for(auto i = 0; i < nlevels; ++i){
             cv::cuda::GpuMat m;
-            m.upload(mvImagePyramid[i]);
             cv::cuda::GpuMat gpu_keys;
-            m_feature->detectAsync(m,gpu_keys,cv::noArray(),m_stream);
+            cv::cuda::GpuMat gpu_desc;
+            cv::cuda::GpuMat mask;
+            m.upload(mvImagePyramid[i]);
+            m_feature->detectAndComputeAsync(m,cv::noArray(),gpu_keys,gpu_desc,false,m_stream);
             m_stream.waitForCompletion();
             vector<KeyPoint> kps;
+            cv::Mat desc;
             m_feature->convert(gpu_keys, kps);
+            gpu_desc.download(desc);
             allKeypoints.push_back(kps);
-
+            allDescriptors.push_back(desc);
+            nkeypoints+=kps.size();
         }
 
+        cv::Mat descriptors;
 
-        Mat descriptors;
+        // int nkeypoints = 0;
+        // for (int level = 0; level < nlevels; ++level)
+        //     nkeypoints += (int)allKeypoints[level].size();
 
-        int nkeypoints = 0;
-        for (int level = 0; level < nlevels; ++level)
-            nkeypoints += (int)allKeypoints[level].size();
         if( nkeypoints == 0 )
             _descriptors.release();
         else
@@ -931,8 +949,7 @@ namespace ORB_SLAM3
             descriptors = _descriptors.getMat();
         }
 
-        //_keypoints.clear();
-        //_keypoints.reserve(nkeypoints);
+
         _keypoints = vector<cv::KeyPoint>(nkeypoints);
 
         int offset = 0;
@@ -941,20 +958,12 @@ namespace ORB_SLAM3
         for (int level = 0; level < nlevels; ++level)
         {
             vector<KeyPoint>& keypoints = allKeypoints[level];
-            int nkeypointsLevel = (int)keypoints.size();
+            auto nkeypointsLevel = keypoints.size();
 
             if(nkeypointsLevel==0)
                 continue;
 
-            // preprocess the resized image
-            Mat workingMat = mvImagePyramid[level].clone();
-            GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
-
-            // Compute the descriptors
-            //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
-            Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-            
-            computeDescriptors(workingMat, keypoints, desc, pattern);
+            cv::Mat desc = allDescriptors[level];
 
             offset += nkeypointsLevel;
 
@@ -969,19 +978,61 @@ namespace ORB_SLAM3
                     keypoint->pt *= scale;
                 }
 
-                if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
-                    _keypoints.at(stereoIndex) = (*keypoint);
-                    desc.row(i).copyTo(descriptors.row(stereoIndex));
-                    stereoIndex--;
-                }
-                else{
-                    _keypoints.at(monoIndex) = (*keypoint);
-                    desc.row(i).copyTo(descriptors.row(monoIndex));
-                    monoIndex++;
-                }
+                _keypoints.at(monoIndex) = (*keypoint);
+                desc.row(i).copyTo(descriptors.row(monoIndex));
+                monoIndex++;
+
                 i++;
             }
         }
+
+        // int offset = 0;
+        // //Modified for speeding up stereo fisheye matching
+        // int monoIndex = 0, stereoIndex = nkeypoints-1;
+        // for (int level = 0; level < nlevels; ++level)
+        // {
+        //     vector<KeyPoint>& keypoints = allKeypoints[level];
+        //     int nkeypointsLevel = (int)keypoints.size();
+
+        //     if(nkeypointsLevel==0)
+        //         continue;
+
+        //     // preprocess the resized image
+        //     Mat workingMat = mvImagePyramid[level].clone();
+        //     GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
+
+        //     // Compute the descriptors
+        //     //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
+        //     Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
+            
+        //     computeDescriptors(workingMat, keypoints, desc, pattern);
+
+        //     offset += nkeypointsLevel;
+
+
+        //     float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+        //     int i = 0;
+        //     for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
+        //                  keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
+
+        //         // Scale keypoint coordinates
+        //         if (level != 0){
+        //             keypoint->pt *= scale;
+        //         }
+
+        //         if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
+        //             _keypoints.at(stereoIndex) = (*keypoint);
+        //             desc.row(i).copyTo(descriptors.row(stereoIndex));
+        //             stereoIndex--;
+        //         }
+        //         else{
+        //             _keypoints.at(monoIndex) = (*keypoint);
+        //             desc.row(i).copyTo(descriptors.row(monoIndex));
+        //             monoIndex++;
+        //         }
+        //         i++;
+        //     }
+        // }
         //cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
         return monoIndex;
     }
