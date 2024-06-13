@@ -23,7 +23,6 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <opencv2/cudafeatures2d.hpp>
 
 namespace ORB_SLAM3
 {
@@ -116,8 +115,7 @@ namespace ORB_SLAM3
     std::vector<float> mvInvScaleFactor;    
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
-    cv::Ptr<cv::cuda::ORB> m_feature;
-    cv::cuda::Stream m_stream;
+    cv::Ptr<cv::Feature2D> m_feature;
 
 };
 
