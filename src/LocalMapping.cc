@@ -1198,7 +1198,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
-        minTime = 2.0;
+        minTime = 7.0;
         nMinKF = 10;
     }
     else
