@@ -205,7 +205,7 @@ void LocalMapping::Run()
                     {
                         cout << "check VIBA" << endl;
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>10.0f)
+                            if (mTinit>7.0f)
                             {
                                 cout << "start VIBA 1" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
@@ -1198,7 +1198,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
-        minTime = 7.0;
+        minTime = 2.0;
         nMinKF = 10;
     }
     else
