@@ -467,16 +467,13 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        m_feature = cv::ORB::create(
+        m_feature = cv::GFTTDetector::create(
             nfeatures,
-            scaleFactor,
-            nlevels,
-            31,
-            0,
-            2,
-            cv::ORB::FAST_SCORE,
-            31,
-            iniThFAST
+            0.01,
+            1,
+            3,
+            true,
+            0.04
         );
     }
 
