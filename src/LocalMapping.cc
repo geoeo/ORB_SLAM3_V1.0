@@ -184,7 +184,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        InitializeIMU(1e1, 1e10, true);
+                        InitializeIMU(1e2, 1e10, true);
                     else
                         InitializeIMU(1e2, 1e5, true);
                 }
@@ -1198,7 +1198,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
-        minTime = 7.0;
+        minTime = 2.0;
         nMinKF = 10;
     }
     else
