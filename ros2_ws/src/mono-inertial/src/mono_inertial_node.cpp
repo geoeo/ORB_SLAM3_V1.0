@@ -357,7 +357,7 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 400;
+      orb.nFeatures   = 2500;
       orb.nLevels     = 8;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;

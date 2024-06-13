@@ -22,7 +22,10 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
-#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <cuda/Fast.hpp>
+#include <cuda/Orb.hpp>
 
 namespace ORB_SLAM3
 {
@@ -91,14 +94,18 @@ namespace ORB_SLAM3
             return mvInvLevelSigma2;
         }
 
-        std::vector<cv::Mat> mvImagePyramid;
+//    std::vector<cv::Mat> mvImagePyramid;
+    bool mvImagePyramidAllocatedFlag;
+    std::vector<cv::cuda::GpuMat> mvImagePyramid;
+    std::vector<cv::cuda::GpuMat> mvImagePyramidBorder;
+protected:
 
-    protected:
-        void ComputePyramid(cv::Mat image);
-        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
-                                                    const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
+    void ComputePyramid(cv::Mat image);
+    void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);    
+    std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
+                                           const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
+    void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);
     std::vector<cv::Point> pattern;
 
     int nfeatures;
@@ -115,8 +122,13 @@ namespace ORB_SLAM3
     std::vector<float> mvInvScaleFactor;    
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
-    cv::Ptr<cv::Feature2D> m_feature;
 
+    cv::Ptr<cv::cuda::Filter> mpGaussianFilter;
+    cuda::Stream mcvStream;
+
+    cuda::GpuFast gpuFast;
+    cuda::IC_Angle ic_angle;
+    cuda::GpuOrb gpuOrb;
 };
 
 } //namespace ORB_SLAM

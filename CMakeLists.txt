@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
-project(ORB_SLAM3)
+project(ORB_SLAM3 LANGUAGES CXX CUDA)
 
 set(ORB_SLAM3_VERSION "1.0")
+
+include(CheckLanguage)
+check_language(CUDA)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -29,6 +32,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) #  avoid rpath stripping at installations
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -63,6 +68,7 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDAToolkit REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -93,6 +99,10 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
+src/cuda/Allocator_gpu.cu
+src/cuda/Cuda.cu
+src/cuda/Fast_gpu.cu
+src/cuda/Orb_gpu.cu
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -103,6 +113,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
      ${G2O_INCLUDE_DIR}
+     ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 
@@ -128,6 +139,8 @@ ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
+${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.a
+${CUDAToolkit_LIBRARY_DIR}
 -lcrypto
 )
 
@@ -177,7 +190,17 @@ install(
 
 
 install(
-        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2>
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cuda>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
         FILES_MATCHING # install only matched files
         PATTERN "*.h" # select header files
