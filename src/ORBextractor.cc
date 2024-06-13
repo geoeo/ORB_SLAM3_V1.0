@@ -956,7 +956,7 @@ namespace ORB_SLAM3
 
             Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
             Mat workingMat = mvImagePyramid[level].clone();
-            GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
+            GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
             computeDescriptors(workingMat, keypoints, desc, pattern);
             offset += nkeypointsLevel;
 
