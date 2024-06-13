@@ -205,7 +205,7 @@ void LocalMapping::Run()
                     {
                         cout << "check VIBA" << endl;
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>7.0f)
+                            if (mTinit>10.0f)
                             {
                                 cout << "start VIBA 1" << endl;
                                 mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
