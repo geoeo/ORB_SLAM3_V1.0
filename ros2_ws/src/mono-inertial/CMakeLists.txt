@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(mono-inertial)
+project(mono-inertial LANGUAGES CXX CUDA)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -25,11 +25,13 @@ find_package(Eigen3 3.3.9 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDAToolkit REQUIRED)
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
 target_link_libraries(mono_inertial_node 
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
+  ${CUDAToolkit_LIBRARY_DIR}
   ORB_SLAM3
   )
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs)
@@ -40,6 +42,7 @@ target_include_directories(mono_inertial_node PUBLIC
 ${OpenCV_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+${CUDAToolkit_INCLUDE_DIRS}
 )
 
 

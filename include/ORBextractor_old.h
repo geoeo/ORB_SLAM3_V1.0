@@ -1,7 +1,7 @@
 /**
 * This file is part of ORB-SLAM3
 *
-* Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
+* Copyright (C) 2017-2021 Carlos Campos, Richard Elvira, Juan J. Gómez Rodríguez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
 * Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza.
 *
 * ORB-SLAM3 is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -22,10 +22,7 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudafilters.hpp>
-#include <cuda/Fast.hpp>
-#include <cuda/Orb.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
 
 namespace ORB_SLAM3
@@ -84,10 +81,8 @@ public:
         return mvInvLevelSigma2;
     }
 
-//    std::vector<cv::Mat> mvImagePyramid;
-    bool mvImagePyramidAllocatedFlag;
-    std::vector<cv::cuda::GpuMat> mvImagePyramid;
-    std::vector<cv::cuda::GpuMat> mvImagePyramidBorder;
+    std::vector<cv::Mat> mvImagePyramid;
+
 protected:
 
     void ComputePyramid(cv::Mat image);
@@ -95,7 +90,6 @@ protected:
     std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
                                            const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-    void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);
     std::vector<cv::Point> pattern;
 
     int nfeatures;
@@ -112,15 +106,11 @@ protected:
     std::vector<float> mvInvScaleFactor;    
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
+    cv::Ptr<cv::Feature2D> m_feature;
 
-    cv::Ptr<cv::cuda::Filter> mpGaussianFilter;
-    cuda::Stream mcvStream;
-
-    cuda::GpuFast gpuFast;
-    cuda::IC_Angle ic_angle;
-    cuda::GpuOrb gpuOrb;
 };
 
 } //namespace ORB_SLAM
 
 #endif
+

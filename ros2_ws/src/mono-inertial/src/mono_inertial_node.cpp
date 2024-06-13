@@ -201,7 +201,7 @@ class SlamNode : public rclcpp::Node
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
 
-      float resize_factor = 0.8;
+      float resize_factor = 1.0;
 
       // Eve
       ORB_SLAM3::CameraParameters cam{};
@@ -229,7 +229,7 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 400;
+      orb.nFeatures   = 2500;
       orb.nLevels     = 8;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
