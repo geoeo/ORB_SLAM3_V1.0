@@ -474,9 +474,9 @@ namespace ORB_SLAM3
             31,
             0,
             2,
-            cv::ORB::HARRIS_SCORE,
-            20,
+            cv::ORB::FAST_SCORE,
             31,
+            15,
             true 
         );
     }
