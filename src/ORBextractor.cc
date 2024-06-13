@@ -467,7 +467,7 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        m_feature = cv::cuda::ORB::create(
+        m_feature = cv::ORB::create(
             nfeatures,
             scaleFactor,
             nlevels,
@@ -476,8 +476,7 @@ namespace ORB_SLAM3
             2,
             cv::ORB::FAST_SCORE,
             31,
-            iniThFAST,
-            false 
+            iniThFAST
         );
     }
 
@@ -932,24 +931,16 @@ namespace ORB_SLAM3
 
 
         vector < vector<KeyPoint> > allKeypoints;
-        //vector < cv::Mat > allDescriptors;
+        vector < cv::Mat > allDescriptors;
         //ComputeKeyPointsOctTree(allKeypoints);
         vector<cv::cuda::GpuMat> mvImagePyramidCuda;
         int nkeypoints = 0;
         for(auto i = 0; i < nlevels; ++i){
-            cv::cuda::GpuMat m;
-            cv::cuda::GpuMat gpu_keys;
-            //cv::cuda::GpuMat gpu_desc;
-            cv::cuda::GpuMat mask;
-            m.upload(mvImagePyramid[i]);
-            m_feature->detectAsync(m,gpu_keys,cv::noArray(),m_stream);
-            m_stream.waitForCompletion();
             vector<KeyPoint> kps;
-            //cv::Mat desc;
-            m_feature->convert(gpu_keys, kps);
-            //gpu_desc.download(desc);
+            cv::Mat desc;
+            m_feature->detectAndCompute(mvImagePyramid[i],cv::noArray(),kps,desc);
             allKeypoints.push_back(kps);
-            //allDescriptors.push_back(desc);
+            allDescriptors.push_back(desc);
             nkeypoints+=kps.size();
         }
 
@@ -985,11 +976,10 @@ namespace ORB_SLAM3
             GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
 
             // Compute the descriptors
-            //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
-            Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-            
-            computeDescriptors(workingMat, keypoints, desc, pattern);
+            Mat desc = allDescriptors[level];
 
+            //Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
+            //computeDescriptors(workingMat, keypoints, desc, pattern);
             offset += nkeypointsLevel;
 
 
