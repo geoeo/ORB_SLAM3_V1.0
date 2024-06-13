@@ -476,8 +476,8 @@ namespace ORB_SLAM3
             2,
             cv::ORB::FAST_SCORE,
             31,
-            15,
-            true 
+            iniThFAST,
+            false 
         );
     }
 
@@ -932,24 +932,24 @@ namespace ORB_SLAM3
 
 
         vector < vector<KeyPoint> > allKeypoints;
-        vector < cv::Mat > allDescriptors;
+        //vector < cv::Mat > allDescriptors;
         //ComputeKeyPointsOctTree(allKeypoints);
         vector<cv::cuda::GpuMat> mvImagePyramidCuda;
         int nkeypoints = 0;
         for(auto i = 0; i < nlevels; ++i){
             cv::cuda::GpuMat m;
             cv::cuda::GpuMat gpu_keys;
-            cv::cuda::GpuMat gpu_desc;
+            //cv::cuda::GpuMat gpu_desc;
             cv::cuda::GpuMat mask;
             m.upload(mvImagePyramid[i]);
-            m_feature->detectAndComputeAsync(m,cv::noArray(),gpu_keys,gpu_desc,false,m_stream);
+            m_feature->detectAsync(m,gpu_keys,cv::noArray(),m_stream);
             m_stream.waitForCompletion();
             vector<KeyPoint> kps;
-            cv::Mat desc;
+            //cv::Mat desc;
             m_feature->convert(gpu_keys, kps);
-            gpu_desc.download(desc);
+            //gpu_desc.download(desc);
             allKeypoints.push_back(kps);
-            allDescriptors.push_back(desc);
+            //allDescriptors.push_back(desc);
             nkeypoints+=kps.size();
         }
 
@@ -981,7 +981,14 @@ namespace ORB_SLAM3
             if(nkeypointsLevel==0)
                 continue;
 
-            cv::Mat desc = allDescriptors[level];
+            Mat workingMat = mvImagePyramid[level].clone();
+            GaussianBlur(workingMat, workingMat, Size(7, 7), 2.0, 2.0, BORDER_REFLECT_101);
+
+            // Compute the descriptors
+            //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
+            Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
+            
+            computeDescriptors(workingMat, keypoints, desc, pattern);
 
             offset += nkeypointsLevel;
 
