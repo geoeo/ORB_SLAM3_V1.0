@@ -113,16 +113,13 @@ void ImageGrabber::SyncWithImu()
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
       mpImuGb->mBufMutex.lock();
-      auto ros_imu_ts_back = rclcpp::Time(mpImuGb->imuBuf.back().header.stamp);
+      auto ros_imu_ts = rclcpp::Time(mpImuGb->imuBuf.front().header.stamp);
       if(init_ts == 0)
-        init_ts = ros_imu_ts_back.seconds();
+        init_ts = ros_imu_ts.seconds();
       mpImuGb->mBufMutex.unlock();
 
-
-      
       this->mBufMutex.lock();
       im = GetImage(img0Buf.front());
-      auto ros_image_ts_front = rclcpp::Time(img0Buf.front()->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
       img0Buf.pop();
       this->mBufMutex.unlock();
