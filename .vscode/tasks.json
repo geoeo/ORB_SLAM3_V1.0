@@ -1,14 +1,44 @@
 {
-"version": "2.0.0",
-"tasks": [
-    {
-        "label": "source_orb3_ws",
-        "type": "shell",
-        "command": "source /workspaces/ORB_SLAM3_V1.0_22/ros2_ws/install/setup.bash && source /workspaces/ORB_SLAM3_V1.0_22/ros2_ws/install/local_setup.bash && env | head -n -1 > /workspaces/ORB_SLAM3_V1.0_22/ros2_ws/build/temp_launch.env",
-        "presentation": {
-          "reveal": "never",
-          "panel": "shared"
-        }
-    }
-]
-}
+  "version": "2.0.0",
+  "tasks": [
+          {
+            "label": "source_orb3_ws",
+            "type": "shell",
+            "command": "source /workspaces/ORB_SLAM3_V1.0_ubuntu_22/ros2_ws/install/setup.bash && source /workspaces/ORB_SLAM3_V1.0_ubuntu_22/ros2_ws/install/local_setup.bash && env | head -n -1 > /workspaces/ORB_SLAM3_V1.0_ubuntu_22/ros2_ws/build/temp_launch.env",
+            "presentation": {
+              "reveal": "never",
+              "panel": "shared"
+            },
+          },
+          {
+            "type": "shell",
+            "label": "Build Orb3 release",
+            "command": "./build.sh Release"
+          },
+          {
+            "type": "shell",
+            "label": "Build ros node release",
+            "command": "./build_ros.sh Release"
+          },
+          {
+            "type": "shell",
+            "label": "Build Orb3 debug",
+            "command": "./build.sh Debug"
+          },
+          {
+            "type": "shell",
+            "label": "Build ros node debug",
+            "command": "./build_ros.sh Debug"
+          },
+          {
+            "type": "shell",
+            "label": "Build Orb3 release with deb",
+            "command": "./build.sh RelWithDebInfo"
+          },
+          {
+            "type": "shell",
+            "label": "Build ros node release with deb",
+            "command": "./build_ros.sh RelWithDebInfo"
+          },
+  ]
+  }

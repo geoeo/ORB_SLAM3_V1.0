@@ -120,6 +120,7 @@ void ImageGrabber::SyncWithImu()
 
       this->mBufMutex.lock();
       im = GetImage(img0Buf.front());
+      auto ros_image_ts_front =  rclcpp::Time(img0Buf.front()->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
       img0Buf.pop();
       this->mBufMutex.unlock();
@@ -194,7 +195,7 @@ class SlamNode : public rclcpp::Node
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
 
-      float resize_factor = 1.0;
+      float resize_factor = 0.8;
 
       // Eve
       ORB_SLAM3::CameraParameters cam{};
@@ -217,8 +218,8 @@ class SlamNode : public rclcpp::Node
       cam.orig_height     = static_cast<int>(1200*resize_factor);
 
       //1.0
-      cam.new_width      = 1920;
-      cam.new_height     = 1200;
+      cam.new_width      = static_cast<int>(1920*resize_factor);
+      cam.new_height     = static_cast<int>(1200*resize_factor);
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
@@ -226,7 +227,7 @@ class SlamNode : public rclcpp::Node
       orb.nLevels     = 8;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
-      orb.iniThFast   = 15;
+      orb.iniThFast   = 10;
 
       ORB_SLAM3::ImuParameters m_imu;
       m_imu.accelWalk  = 0.000288252284411655; // x10
@@ -263,7 +264,7 @@ class SlamNode : public rclcpp::Node
 
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
       double timeshift_cam_imu = -0.013490768586712722; // EvE

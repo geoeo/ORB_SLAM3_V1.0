@@ -89,7 +89,6 @@ protected:
     std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
                                            const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-    void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);
     std::vector<cv::Point> pattern;
 
     int nfeatures;
@@ -99,13 +98,15 @@ protected:
     int minThFAST;
 
     std::vector<int> mnFeaturesPerLevel;
-
     std::vector<int> umax;
 
     std::vector<float> mvScaleFactor;
     std::vector<float> mvInvScaleFactor;    
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
+
+    cv::Ptr<cv::Feature2D> feat;
+    cv::Ptr<cv::Feature2D> feat_back;
 };
 
 } //namespace ORB_SLAM
