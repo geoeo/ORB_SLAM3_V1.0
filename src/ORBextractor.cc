@@ -782,7 +782,7 @@ namespace ORB_SLAM3
     {
         allKeypoints.resize(nlevels);
 
-        const float W = 35;
+        const float W = 96;
 
         for (int level = 0; level < nlevels; ++level)
         {
@@ -1130,7 +1130,7 @@ namespace ORB_SLAM3
 
             // preprocess the resized image
             Mat workingMat = mvImagePyramid[level].clone();
-            GaussianBlur(workingMat, workingMat, Size(7, 7), 2, 2, BORDER_REFLECT_101);
+            GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
 
             // Compute the descriptors
             //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);

@@ -76,7 +76,7 @@ int main(int argc, char **argv)
       bEqual = true;
   }
 
-  float resize_factor = 0.7;
+  float resize_factor = 0.8;
 
   // Eve
   ORB_SLAM3::CameraParameters cam{};
@@ -98,9 +98,9 @@ int main(int argc, char **argv)
   cam.orig_width      = static_cast<int>(1920*resize_factor);
   cam.orig_height     = static_cast<int>(1200*resize_factor);
 
-  //0.7
-  cam.new_width      = 1344;
-  cam.new_height     = 840;
+  //0.8
+  cam.new_width      = 1536;
+  cam.new_height     = 960;
   cam.isRGB      = false; // BGR
 
   ORB_SLAM3::OrbParameters orb{};
