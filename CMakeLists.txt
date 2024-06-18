@@ -128,7 +128,6 @@ ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
-#${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.a
 -lcrypto
 -lfmt
 )
@@ -187,16 +186,6 @@ install(
         PATTERN "lib" EXCLUDE
         PATTERN "build" EXCLUDE
 )
-
-# install(
-#         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
-#         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-#         FILES_MATCHING # install only matched files
-#         PATTERN "*.h" # select header files
-#         PATTERN "*.hpp" # select header files
-#         PATTERN "lib" EXCLUDE
-#         PATTERN "build" EXCLUDE
-# )
 
 install(
         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus>

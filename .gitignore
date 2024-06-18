@@ -1,15 +1,3 @@
-# Ignore all
-*
-
-# Unignore all with extensions
-!*.*
-
-# Unignore all dirs
-!*/
-
-CMakeLists.txt.user
-CMakeLists_modified.txt
-
 KeyFrameTrajectory.txt
 CameraTrajectory.txt
 kf_*.txt
