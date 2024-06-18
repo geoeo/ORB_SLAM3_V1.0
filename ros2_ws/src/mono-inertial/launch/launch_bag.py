@@ -10,7 +10,7 @@ bag_path = '/bags/openrealm/20240229_Günselsdorf_Eve_IMU/tegra_master_2024-02-2
 def generate_launch_description():
     return LaunchDescription([
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0_ubuntu_22/Vocabulary/ORBvoc.txt', 'false'],
+            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
             output='screen'
         ),
         launch_ros.actions.Node(

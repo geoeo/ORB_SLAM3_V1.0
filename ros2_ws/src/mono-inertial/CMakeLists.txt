@@ -9,7 +9,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 set(OpenGL_GL_PREFERENCE "GLVND")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /workspaces/ORB_SLAM3_V1.0_ubuntu_22/Thirdparty/g2o/cmake_modules)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /workspaces/ORB_SLAM3_V1.0/Thirdparty/g2o/cmake_modules)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
