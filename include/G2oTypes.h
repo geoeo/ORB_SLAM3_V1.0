@@ -19,13 +19,13 @@
 #ifndef G2OTYPES_H
 #define G2OTYPES_H
 
-#include "g2o/g2o/core/base_vertex.h"
-#include "g2o/g2o/core/base_binary_edge.h"
-#include "g2o/g2o/types/types_sba.h"
-#include "g2o/g2o/core/base_multi_edge.h"
-#include "g2o/g2o/core/base_unary_edge.h"
+#include <g2o/core/base_vertex.h>
+#include <g2o/core/base_binary_edge.h>
+#include <g2o/types/sba/types_sba.h>
+#include <g2o/core/base_multi_edge.h>
+#include <g2o/core/base_unary_edge.h>
 
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -339,7 +339,7 @@ public:
     }
 };
 
-class EdgeMono : public g2o::BaseBinaryEdge<2,Eigen::Vector2d,g2o::VertexSBAPointXYZ,VertexPose>
+class EdgeMono : public g2o::BaseBinaryEdge<2,Eigen::Vector2d,g2o::VertexPointXYZ,VertexPose>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -351,7 +351,7 @@ public:
     virtual bool write(std::ostream& os) const{return false;}
 
     void computeError(){
-        const g2o::VertexSBAPointXYZ* VPoint = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
+        const g2o::VertexPointXYZ* VPoint = static_cast<const g2o::VertexPointXYZ*>(_vertices[0]);
         const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[1]);
         const Eigen::Vector2d obs(_measurement);
         _error = obs - VPose->estimate().Project(VPoint->estimate(),cam_idx);
@@ -362,7 +362,7 @@ public:
 
     bool isDepthPositive()
     {
-        const g2o::VertexSBAPointXYZ* VPoint = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
+        const g2o::VertexPointXYZ* VPoint = static_cast<const g2o::VertexPointXYZ*>(_vertices[0]);
         const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[1]);
         return VPose->estimate().isDepthPositive(VPoint->estimate(),cam_idx);
     }
@@ -422,7 +422,7 @@ public:
     const int cam_idx;
 };
 
-class EdgeStereo : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,g2o::VertexSBAPointXYZ,VertexPose>
+class EdgeStereo : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,g2o::VertexPointXYZ,VertexPose>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -433,7 +433,7 @@ public:
     virtual bool write(std::ostream& os) const{return false;}
 
     void computeError(){
-        const g2o::VertexSBAPointXYZ* VPoint = static_cast<const g2o::VertexSBAPointXYZ*>(_vertices[0]);
+        const g2o::VertexPointXYZ* VPoint = static_cast<const g2o::VertexPointXYZ*>(_vertices[0]);
         const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[1]);
         const Eigen::Vector3d obs(_measurement);
         _error = obs - VPose->estimate().ProjectStereo(VPoint->estimate(),cam_idx);

@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.8)
 project(mono-inertial)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+set(OpenGL_GL_PREFERENCE "GLVND")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /workspaces/ORB_SLAM3_V1.0_ubuntu_22/Thirdparty/g2o/cmake_modules)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -23,6 +29,7 @@ find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 3.3.9 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
+find_package(G2O REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 
@@ -40,6 +47,7 @@ target_include_directories(mono_inertial_node PUBLIC
 ${OpenCV_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+${G2O_INCLUDE_DIR}
 )
 
 

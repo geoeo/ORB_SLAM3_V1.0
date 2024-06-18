@@ -4,17 +4,14 @@ cd Thirdparty/DBoW2
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=${1:-Release}
-make -j
+make -j4
 
 cd ../../g2o
 
-
 echo "Configuring and building Thirdparty/g2o ..."
 
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=${1:-Release}
-make -j
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${1:-Release} -DCMAKE_INSTALL_PREFIX=/usr/local -DG2O_BUILD_APPS=OFF -DG2O_BUILD_EXAMPLES=OFF 
+cmake --build build -j $(nproc --all) --target install
 
 cd ../../Sophus
 
@@ -23,7 +20,7 @@ echo "Configuring and building Thirdparty/Sophus ..."
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=${1:-Release}
-make -j
+make -j4
 
 cd ../../../
 
