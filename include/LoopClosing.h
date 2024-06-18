@@ -34,7 +34,7 @@
 #include <vector>
 #include <set>
 #include <map>
-#include "g2o/g2o/types/types_seven_dof_expmap.h"
+#include <g2o/types/sim3/types_seven_dof_expmap.h>
 
 namespace ORB_SLAM3
 {
@@ -226,7 +226,7 @@ protected:
     bool mbFixScale;
 
 
-    bool mnFullBAIdx;
+    int mnFullBAIdx;
 
 
 

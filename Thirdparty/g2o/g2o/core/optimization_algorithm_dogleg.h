@@ -27,63 +27,69 @@
 #ifndef G2O_OPTIMIZATION_ALGORITHM_DOGLEG_H
 #define G2O_OPTIMIZATION_ALGORITHM_DOGLEG_H
 
+#include <memory>
+
+#include "g2o_core_api.h"
 #include "optimization_algorithm_with_hessian.h"
 
 namespace g2o {
 
-  class BlockSolverBase;
+class BlockSolverBase;
 
+/**
+ * \brief Implementation of Powell's Dogleg Algorithm
+ */
+class G2O_CORE_API OptimizationAlgorithmDogleg
+    : public OptimizationAlgorithmWithHessian {
+ public:
+  /** \brief type of the step to take */
+  enum { STEP_UNDEFINED, STEP_SD, STEP_GN, STEP_DL };
+
+ public:
   /**
-   * \brief Implementation of Powell's Dogleg Algorithm
+   * construct the Dogleg algorithm, which will use the given Solver for solving
+   * the linearized system.
    */
-  class  OptimizationAlgorithmDogleg : public OptimizationAlgorithmWithHessian
-  {
-    public:
-      /** \brief type of the step to take */
-      enum {
-        STEP_UNDEFINED,
-        STEP_SD, STEP_GN, STEP_DL
-      };
+  explicit OptimizationAlgorithmDogleg(std::unique_ptr<BlockSolverBase> solver);
+  virtual ~OptimizationAlgorithmDogleg();
 
-    public:
-      /**
-       * construct the Dogleg algorithm, which will use the given Solver for solving the
-       * linearized system.
-       */
-      explicit OptimizationAlgorithmDogleg(BlockSolverBase* solver);
-      virtual ~OptimizationAlgorithmDogleg();
+  virtual SolverResult solve(int iteration, bool online = false);
 
-      virtual SolverResult solve(int iteration, bool online = false);
+  virtual void printVerbose(std::ostream& os) const;
 
-      virtual void printVerbose(std::ostream& os) const;
+  //! return the type of the last step taken by the algorithm
+  int lastStep() const { return _lastStep; }
+  //! return the diameter of the trust region
+  double trustRegion() const { return _delta; }
 
-      //! return the type of the last step taken by the algorithm
-      int lastStep() const { return _lastStep;}
-      //! return the diameter of the trust region
-      double trustRegion() const { return _delta;}
+  //! convert the type into an integer
+  static const char* stepType2Str(int stepType);
 
-      //! convert the type into an integer
-      static const char* stepType2Str(int stepType);
+ protected:
+  // parameters
+  Property<int>* _maxTrialsAfterFailure;
+  Property<double>* _userDeltaInit;
+  // damping to enforce positive definite matrix
+  Property<double>* _initialLambda;
+  Property<double>* _lamdbaFactor;
 
-    protected:
-      // parameters
-      Property<int>* _maxTrialsAfterFailure;
-      Property<double>* _userDeltaInit;
-      // damping to enforce positive definite matrix
-      Property<double>* _initialLambda;
-      Property<double>* _lamdbaFactor;
+  VectorX _hsd;        ///< steepest decent step
+  VectorX _hdl;        ///< final dogleg step
+  VectorX _auxVector;  ///< auxiliary vector used to perform multiplications or
+                       ///< other stuff
 
-      Eigen::VectorXd _hsd;         ///< steepest decent step
-      Eigen::VectorXd _hdl;         ///< final dogleg step
-      Eigen::VectorXd _auxVector;   ///< auxilary vector used to perform multiplications or other stuff
+  double
+      _currentLambda;  ///< the damping factor to force positive definite matrix
+  double _delta;       ///< trust region
+  int _lastStep;       ///< type of the step taken by the algorithm
+  bool _wasPDInAllIterations;  ///< the matrix we solve was positive definite in
+                               ///< all iterations -> if not apply damping
+  int _lastNumTries;
 
-      double _currentLambda;        ///< the damping factor to force positive definite matrix
-      double _delta;                ///< trust region
-      int _lastStep;                ///< type of the step taken by the algorithm
-      bool _wasPDInAllIterations;   ///< the matrix we solve was positive definite in all iterations -> if not apply damping
-      int _lastNumTries;
-  };
+ private:
+  std::unique_ptr<BlockSolverBase> m_solver;
+};
 
-} // end namespace
+}  // namespace g2o
 
 #endif

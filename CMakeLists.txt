@@ -26,26 +26,28 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if(COMPILER_SUPPORTS_CXX17)
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
    add_definitions(-DCOMPILEDWITHC11)
-   message(STATUS "Using flag -std=c++11.")
+   message(STATUS "Using flag -std=c++17.")
 elseif(COMPILER_SUPPORTS_CXX0X)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
    add_definitions(-DCOMPILEDWITHC0X)
    message(STATUS "Using flag -std=c++0x.")
 else()
-   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
 endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+set(OpenGL_GL_PREFERENCE "GLVND")
 
 find_package(OpenCV REQUIRED)
 if(NOT OpenCV_FOUND)
@@ -55,8 +57,11 @@ endif()
 MESSAGE("OPENCV VERSION:")
 MESSAGE(${OpenCV_VERSION})
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /workspaces/ORB_SLAM3_V1.0_ubuntu_22/Thirdparty/g2o/cmake_modules)
+
 find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
+find_package(G2O REQUIRED )
 find_package(Boost REQUIRED COMPONENTS serialization)
 
 add_library(${PROJECT_NAME} SHARED
@@ -97,6 +102,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${EIGEN3_INCLUDE_DIR}
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
+     ${G2O_INCLUDE_DIR}
 )
 
 
@@ -104,9 +110,27 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${Pangolin_LIBRARIES}
 ${Boost_LIBRARIES}
+${G2O_CORE_LIBRARY}
+${G2O_STUFF_LIBRARY}
+${G2O_SOLVER_CHOLMOD}
+${G2O_SOLVER_CSPARSE}
+${G2O_SOLVER_CSPARSE_EXTENSION}
+${G2O_SOLVER_DENSE}
+${G2O_SOLVER_PCG}
+${G2O_SOLVER_SLAM2D_LINEAR}
+${G2O_SOLVER_STRUCTURE_ONLY}
+${G2O_SOLVER_EIGEN}
+${G2O_TYPES_DATA}
+${G2O_TYPES_ICP}
+${G2O_TYPES_SBA}
+${G2O_TYPES_SCLAM2D}
+${G2O_TYPES_SIM3}
+${G2O_TYPES_SLAM2D}
+${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
-${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.a
+#${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.a
 -lcrypto
+-lfmt
 )
 
 
@@ -164,15 +188,15 @@ install(
         PATTERN "build" EXCLUDE
 )
 
-install(
-        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
-        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-        FILES_MATCHING # install only matched files
-        PATTERN "*.h" # select header files
-        PATTERN "*.hpp" # select header files
-        PATTERN "lib" EXCLUDE
-        PATTERN "build" EXCLUDE
-)
+# install(
+#         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/g2o>
+#         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+#         FILES_MATCHING # install only matched files
+#         PATTERN "*.h" # select header files
+#         PATTERN "*.hpp" # select header files
+#         PATTERN "lib" EXCLUDE
+#         PATTERN "build" EXCLUDE
+# )
 
 install(
         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus>

@@ -5,7 +5,7 @@ import launch_ros.actions
 
 bag_start_offset = 80.0
 #bag_path = '/workspaces/bags/20240222_Günselsdorf_Eve_IMU/tegra_master_2024-02-22-09-34-02'
-bag_path = '/bags/20240229_Günselsdorf_Eve_IMU/tegra_master_2024-02-29-09-54-11'
+bag_path = '/bags/openrealm/20240229_Günselsdorf_Eve_IMU/tegra_master_2024-02-29-09-54-11'
 
 def generate_launch_description():
     return LaunchDescription([
