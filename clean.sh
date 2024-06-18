@@ -20,6 +20,6 @@ rm -rf build
 
 cd ../../
 
-echo "RemovingORB_SLAM3 ..."
+echo "Removing ORB_SLAM3 ..."
 
 rm -rf build

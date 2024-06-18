@@ -71,7 +71,7 @@ RUN apt-get update && apt-get install -y \
     libeigen3-dev \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
-WORKDIR /workspaces/ORB_SLAM3_V1.0_ubuntu_22
+WORKDIR /workspaces/ORB_SLAM3_V1.0
 COPY scripts/install_ros_packages.sh /root
 WORKDIR /root
 RUN bash install_ros_packages.sh

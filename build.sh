@@ -10,7 +10,7 @@ cd ../../g2o
 
 echo "Configuring and building Thirdparty/g2o ..."
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=${1:-Release} -DCMAKE_INSTALL_PREFIX=/usr/local -DG2O_BUILD_APPS=OFF -DG2O_BUILD_EXAMPLES=OFF 
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${1:-Release} -DCMAKE_INSTALL_PREFIX=/usr/local -DG2O_BUILD_APPS=OFF -DG2O_BUILD_EXAMPLES=OFF -DG2O_USE_OPENGL=OFF
 cmake --build build -j $(nproc --all) --target install
 
 cd ../../Sophus
