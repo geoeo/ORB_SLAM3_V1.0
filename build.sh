@@ -4,7 +4,7 @@ cd Thirdparty/DBoW2
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=${1:-Release}
-make -j
+make -j4
 
 cd ../../g2o
 
@@ -20,7 +20,7 @@ echo "Configuring and building Thirdparty/Sophus ..."
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=${1:-Release}
-make -j
+make -j4
 
 cd ../../../
 

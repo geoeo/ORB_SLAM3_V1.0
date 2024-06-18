@@ -57,11 +57,11 @@ endif()
 MESSAGE("OPENCV VERSION:")
 MESSAGE(${OpenCV_VERSION})
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} /workspaces/ORB_SLAM3_V1.0_ubuntu_22/Thirdparty/g2o/cmake_modules)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/cmake_modules)
 
 find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
-find_package(G2O REQUIRED )
+find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 
 add_library(${PROJECT_NAME} SHARED
