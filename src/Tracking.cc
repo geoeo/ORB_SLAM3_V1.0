@@ -2889,7 +2889,7 @@ bool Tracking::TrackWithMotionModel()
     if(mSensor==System::STEREO)
         th=7;
     else
-        th=15;
+        th=30;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 

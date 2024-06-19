@@ -207,13 +207,13 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(2,2) = 1;
 
 
-      cam.distCoeffs = cv::Mat::zeros(4,1,CV_32F);
+      cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
       cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
       cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
       cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
       cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
 
-      cam.fps        = 17;
+      cam.fps        = 4;
       cam.orig_width      = static_cast<int>(1920*resize_factor);
       cam.orig_height     = static_cast<int>(1200*resize_factor);
 

@@ -788,7 +788,7 @@ namespace ORB_SLAM3
     {
         allKeypoints.resize(nlevels);
 
-        const float W = 96;
+        const float W = 118;
 
         for (int level = 0; level < nlevels; ++level)
         {

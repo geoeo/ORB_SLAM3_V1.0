@@ -4910,7 +4910,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     vnIndexEdgeMono.reserve(N);
     vnIndexEdgeStereo.reserve(N);
 
-    const float thHuberMono = sqrt(5.991);
+    const float thHuberMono = sqrt(7.815);
     const float thHuberStereo = sqrt(7.815);
 
     {
@@ -5086,7 +5086,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={5.991,5.991,5.991,5.991};
+    const float chi2Mono[4]={15.6f,9.8f,7.815f,7.815f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
     const int its[4]={10,10,10,10};
 
