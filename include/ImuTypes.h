@@ -28,6 +28,7 @@
 #include <Eigen/Dense>
 #include "Sophus/sophus/se3.hpp"
 #include <mutex>
+#include <iostream>
 
 #include "SerializationUtils.h"
 
