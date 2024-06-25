@@ -4685,8 +4685,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    //float chi2Mono[4]={12,7.5,5.991,5.991};
-    float chi2Mono[4]={15.6,15.6,7.815,7.815};
+    float chi2Mono[4]={12,7.5,5.991,5.991};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
     int its[4]={100,100,100,100};
@@ -4912,7 +4911,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     vnIndexEdgeStereo.reserve(N);
 
     //const float thHuberMono = sqrt(5.991);
-    const float thHuberMono = sqrt(15.6f);
+    const float thHuberMono = sqrt(7.815);
     const float thHuberStereo = sqrt(7.815);
 
     {
@@ -5089,7 +5088,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     //const float chi2Mono[4]={5.991,5.991,5.991,5.991};
-    const float chi2Mono[4]={15.6f,15.6f,7.815f,7.815f};
+    float chi2Mono[4]={12,7.5,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
     const int its[4]={10,10,10,10};
 
@@ -5110,7 +5109,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
         nInliers=0;
         nInliersMono=0;
         nInliersStereo=0;
-        float chi2close = 2.5*chi2Mono[it];
+        float chi2close = 1.5*chi2Mono[it];
 
         for(size_t i=0, iend=vpEdgesMono.size(); i<iend; i++)
         {
@@ -5187,7 +5186,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     if ((nInliers<30) && !bRecInit)
     {
         nBad=0;
-        const float chi2MonoOut = 24.f;
+        const float chi2MonoOut = 18.f;
         const float chi2StereoOut = 24.f;
         EdgeMonoOnlyPose* e1;
         EdgeStereoOnlyPose* e2;
