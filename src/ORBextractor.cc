@@ -788,7 +788,7 @@ namespace ORB_SLAM3
     {
         allKeypoints.resize(nlevels);
 
-        const float W = 118;
+        const float W = 96; //Seems to work best for 0.8 image factor. TODO: make this a config param
 
         for (int level = 0; level < nlevels; ++level)
         {
