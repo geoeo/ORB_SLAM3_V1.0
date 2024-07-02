@@ -62,6 +62,7 @@ namespace ORB_SLAM3 {
     int nLevels;
     int iniThFast;
     int minThFast;
+    int gridCount;
     };
 
     class System;
@@ -130,6 +131,7 @@ namespace ORB_SLAM3 {
 
         int nFeatures() {return nFeatures_;}
         int nLevels() {return nLevels_;}
+        int gridCount() {return gridCount_;}
         float initThFAST() {return initThFAST_;}
         float minThFAST() {return minThFAST_;}
         float scaleFactor() {return scaleFactor_;}
@@ -238,6 +240,7 @@ namespace ORB_SLAM3 {
         int nFeatures_;
         float scaleFactor_;
         int nLevels_;
+        int gridCount_;
         int initThFAST_, minThFAST_;
 
         /*

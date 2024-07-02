@@ -407,9 +407,9 @@ namespace ORB_SLAM3
             };
 
     ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
-                               int _iniThFAST, int _minThFAST):
+                               int _iniThFAST, int _minThFAST, int _gridCount):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
-            iniThFAST(_iniThFAST), minThFAST(_minThFAST)
+            iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -470,8 +470,7 @@ namespace ORB_SLAM3
         feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
-        //feat  = cv::GFTTDetector::create(100,0.1,1,5,false,0.04);
-        //feat_back = cv::GFTTDetector::create(100,0.01,1,5,false,0.04);
+        gridCount = static_cast<float>(_gridCount); //Seems to work best for 0.8 image factor. TODO: make this a config param
     }
 
     static void computeOrientation(const Mat& image, vector<KeyPoint>& keypoints, const vector<int>& umax)
@@ -788,8 +787,6 @@ namespace ORB_SLAM3
     {
         allKeypoints.resize(nlevels);
 
-        const float W = 96; //Seems to work best for 0.8 image factor. TODO: make this a config param
-
         for (int level = 0; level < nlevels; ++level)
         {
             const int minBorderX = EDGE_THRESHOLD-3;
@@ -803,8 +800,8 @@ namespace ORB_SLAM3
             const float width = (maxBorderX-minBorderX);
             const float height = (maxBorderY-minBorderY);
 
-            const int nCols = width/W;
-            const int nRows = height/W;
+            const int nCols = width/gridCount;
+            const int nRows = height/gridCount;
             const int wCell = ceil(width/nCols);
             const int hCell = ceil(height/nRows);
 

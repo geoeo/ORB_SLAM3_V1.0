@@ -590,14 +590,15 @@ void Tracking::newParameterLoader(Settings *settings) {
     int fIniThFAST = settings->initThFAST();
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
+    int fGridCount =  settings->gridCount();
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
 
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,fGridCount);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -1217,7 +1218,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
 {
     bool b_miss_params = false;
-    int nFeatures, nLevels, fIniThFAST, fMinThFAST;
+    int nFeatures, nLevels, fIniThFAST, fMinThFAST, fGridCount;
     float fScaleFactor;
 
     cv::FileNode node = fSettings["ORBextractor.nFeatures"];
@@ -1275,18 +1276,29 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
         b_miss_params = true;
     }
 
+    node = fSettings["ORBextractor.gridCount"];
+    if(!node.empty() && node.isInt())
+    {
+        fGridCount = node.operator int();
+    }
+    else
+    {
+        std::cerr << "*ORBextractor.gridCount parameter doesn't exist or is not an integer*" << std::endl;
+        b_miss_params = true;
+    }
+
     if(b_miss_params)
     {
         return false;
     }
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
 
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
 
     cout << endl << "ORB Extractor Parameters: " << endl;
     cout << "- Number of Features: " << nFeatures << endl;
