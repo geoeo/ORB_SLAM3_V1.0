@@ -204,18 +204,21 @@ namespace ORB_SLAM3 {
                 vPinHoleDistorsion1_.resize(5);
                 vPinHoleDistorsion1_[4] = cam.distCoeffs.at<float>(4);
             }
-            else{
+            else if(cam.distCoeffs.rows==4){
                 vPinHoleDistorsion1_.resize(4);
             }
-            vPinHoleDistorsion1_[0] = cam.distCoeffs.at<float>(0);
-            vPinHoleDistorsion1_[1] = cam.distCoeffs.at<float>(1);
-            vPinHoleDistorsion1_[2] = cam.distCoeffs.at<float>(2);
-            vPinHoleDistorsion1_[3] = cam.distCoeffs.at<float>(3);
-            
+            else{
+                vPinHoleDistorsion1_.resize(0);
+            }
 
+            
             //Check if we need to correct distortion from the images
             if(vPinHoleDistorsion1_.size() != 0){
                 bNeedToUndistort_ = true;
+                vPinHoleDistorsion1_[0] = cam.distCoeffs.at<float>(0);
+                vPinHoleDistorsion1_[1] = cam.distCoeffs.at<float>(1);
+                vPinHoleDistorsion1_[2] = cam.distCoeffs.at<float>(2);
+                vPinHoleDistorsion1_[3] = cam.distCoeffs.at<float>(3);
             }
 
             originalImSize_.width = cam.orig_width;
@@ -236,7 +239,6 @@ namespace ORB_SLAM3 {
             if(cam.new_width != cam.orig_width){
                 bNeedToResize1_ = true;
                 newImSize_.width = cam.new_width;
-
 
                 //Update calibration
                 float scaleColFactor = (float)newImSize_.width /(float) originalImSize_.width;
@@ -551,7 +553,7 @@ namespace ORB_SLAM3 {
         viewPointF_ = readParameter<float>(fSettings,"Viewer.ViewpointF",found);
         imageViewerScale_ = readParameter<float>(fSettings,"Viewer.imageViewScale",found,false);
 
-         if(!found)
+        if(!found)
             imageViewerScale_ = 1.0f;
     }
 
