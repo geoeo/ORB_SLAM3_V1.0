@@ -41,8 +41,10 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu &imu_msg)
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor)
-      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor) {}
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::Mat &undistortion_map1, const cv::Mat& undistortion_map2)
+      : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor),
+        m_undistortion_map1(undistortion_map1), m_undistortion_map2(undistortion_map2){
+      }
 
     void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
     cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
@@ -59,6 +61,8 @@ public:
     double timeshift_cam_imu;
     uint64_t count;
     float img_resize_factor;
+    cv::Mat m_undistortion_map1;
+    cv::Mat m_undistortion_map2;
 };
 
 void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg)
@@ -88,12 +92,25 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr  &i
   
   if(cv_ptr->image.type()==0)
   {
-    auto width = cv_ptr->image.cols;
-    auto height = cv_ptr->image.rows;
-    cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
-    cv::Mat im_resize;
-    cv::resize(cv_ptr->image, im_resize, new_im_size);
-    return im_resize;
+    cv::Mat img_undistorted;
+    if(!(m_undistortion_map1.empty() || m_undistortion_map2.empty())){
+      cv::remap(cv_ptr->image, img_undistorted, m_undistortion_map1, m_undistortion_map2, cv::InterpolationFlags::INTER_CUBIC);
+    }
+    else{
+      img_undistorted = cv_ptr->image;
+    }
+
+
+    if(img_resize_factor != 1.0){
+      auto width = cv_ptr->image.cols;
+      auto height = cv_ptr->image.rows;
+      cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
+      cv::Mat im_resize;
+      cv::resize(img_undistorted, im_resize, new_im_size);
+      return im_resize;
+    } else {
+      return img_undistorted;
+    }
   }
   else
   {
@@ -278,6 +295,11 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) = 748.2339952852544*resize_factor;
       cam.K.at<float>(2,2) = 1;
 
+      cv::Mat distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
+      distCoeffs.at<float>(0) = -0.19819316734046494;
+      distCoeffs.at<float>(1) = 0.08670622892662087;
+      distCoeffs.at<float>(2) = -0.0008400222221221046;
+      distCoeffs.at<float>(3) = 0.0005366633601752759;
 
       cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
       cam.distCoeffs.at<float>(0,0) = -0.020898721110400503;
