@@ -195,31 +195,103 @@ class SlamNode : public rclcpp::Node
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
 
+      // float resize_factor = 0.8;
+
+      // // Eve
+      // ORB_SLAM3::CameraParameters cam{};
+      // cam.K = cv::Mat::zeros(3,3,CV_32F);
+      // cam.K.at<float>(0,0) = 1388.9566234253055*resize_factor;
+      // cam.K.at<float>(1,1) = 1389.860526555566*resize_factor;
+      // cam.K.at<float>(0,2) = 944.8106061888452*resize_factor;
+      // cam.K.at<float>(1,2) = 602.163082548295*resize_factor;
+      // cam.K.at<float>(2,2) = 1;
+
+
+      // cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
+      // cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
+      // cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
+      // cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
+      // cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
+
+      // cam.fps        = 4;
+      // cam.orig_width      = static_cast<int>(1920*resize_factor);
+      // cam.orig_height     = static_cast<int>(1200*resize_factor);
+
+      // //1.0
+      // cam.new_width      = static_cast<int>(1920*resize_factor);
+      // cam.new_height     = static_cast<int>(1200*resize_factor);
+      // cam.isRGB      = false; // BGR
+
+      // ORB_SLAM3::OrbParameters orb{};
+      // orb.nFeatures   = 2500;
+      // orb.nLevels     = 8;
+      // orb.scaleFactor = 1.2;
+      // orb.minThFast   = 5;
+      // orb.iniThFast   = 15;
+      // orb.gridCount = 96;
+
+      // ORB_SLAM3::ImuParameters m_imu;
+      // m_imu.accelWalk  = 0.000288252284411655; // x10
+      // m_imu.gyroWalk   = 0.0000162566517589794; // x10
+      // m_imu.noiseAccel =  0.007302644894222149; //x5
+      // m_imu.noiseGyro  = 0.0009336557780556743; // x5
+
+      // m_imu.InsertKFsWhenLost = false;
+
+      // cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
+
+      // cv_Tbc.at<float>(0,0) =   -0.00345318;
+      // cv_Tbc.at<float>(0,1) =   -0.05123323;
+      // cv_Tbc.at<float>(0,2) =   -0.99868075;
+      // cv_Tbc.at<float>(0,3) =   -0.0605664;
+
+      // cv_Tbc.at<float>(1,0) =   -0.00013874;
+      // cv_Tbc.at<float>(1,1) =   -0.99868667;
+      // cv_Tbc.at<float>(1,2) =   0.05123401;
+      // cv_Tbc.at<float>(1,3) =   -0.01364959;
+
+      // cv_Tbc.at<float>(2,0) =   -0.99999403;
+      // cv_Tbc.at<float>(2,1) =   0.00031548;
+      // cv_Tbc.at<float>(2,2) =   0.00344154;
+      // cv_Tbc.at<float>(2,3) =   -0.01763391;
+
+      // cv_Tbc.at<float>(3,0) =   0.0;
+      // cv_Tbc.at<float>(3,1) =   0.0;
+      // cv_Tbc.at<float>(3,2) =   0.0;
+      // cv_Tbc.at<float>(3,3) =   1.0;
+
+      // m_imu.Tbc = cv_Tbc;
+      // m_imu.freq = 200.0;
+
+      // double timeshift_cam_imu = -0.013490768586712722; // EvE
+
+
+
       float resize_factor = 0.8;
 
       // Eve
       ORB_SLAM3::CameraParameters cam{};
       cam.K = cv::Mat::zeros(3,3,CV_32F);
-      cam.K.at<float>(0,0) = 1388.9566234253055*resize_factor;
-      cam.K.at<float>(1,1) = 1389.860526555566*resize_factor;
-      cam.K.at<float>(0,2) = 944.8106061888452*resize_factor;
-      cam.K.at<float>(1,2) = 602.163082548295*resize_factor;
+      cam.K.at<float>(0,0) = 1341.3908261080117*resize_factor;
+      cam.K.at<float>(1,1) = 1339.801008398156*resize_factor;
+      cam.K.at<float>(0,2) = 1025.4354831702265*resize_factor;
+      cam.K.at<float>(1,2) = 748.2339952852544*resize_factor;
       cam.K.at<float>(2,2) = 1;
 
 
       cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
-      cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
-      cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
-      cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
-      cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
+      cam.distCoeffs.at<float>(0,0) = -0.020898721110400503;
+      cam.distCoeffs.at<float>(1,0) = 0.10004887885496858;
+      cam.distCoeffs.at<float>(2,0) = -0.12205916600511264;
+      cam.distCoeffs.at<float>(3,0) = 0.05976140792758462;
 
-      cam.fps        = 4;
-      cam.orig_width      = static_cast<int>(1920*resize_factor);
-      cam.orig_height     = static_cast<int>(1200*resize_factor);
+      cam.fps        = 8;
+      cam.orig_width      = static_cast<int>(2048*resize_factor);
+      cam.orig_height     = static_cast<int>(1536*resize_factor);
 
       //1.0
-      cam.new_width      = static_cast<int>(1920*resize_factor);
-      cam.new_height     = static_cast<int>(1200*resize_factor);
+      cam.new_width      = static_cast<int>(2048*resize_factor);
+      cam.new_height     = static_cast<int>(1536*resize_factor);
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
@@ -231,29 +303,29 @@ class SlamNode : public rclcpp::Node
       orb.gridCount = 96;
 
       ORB_SLAM3::ImuParameters m_imu;
-      m_imu.accelWalk  = 0.000288252284411655; // x10
-      m_imu.gyroWalk   = 0.0000162566517589794; // x10
-      m_imu.noiseAccel =  0.007302644894222149; //x5
-      m_imu.noiseGyro  = 0.0009336557780556743; // x5
+      m_imu.accelWalk  = 0.00023873338765462642; // x5
+      m_imu.gyroWalk   = 0.00000818876; //x5
+      m_imu.noiseAccel =  0.00772065426; // x5 
+      m_imu.noiseGyro  = 0.00085628624; // x5
 
       m_imu.InsertKFsWhenLost = false;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
-      cv_Tbc.at<float>(0,0) =   -0.00345318;
-      cv_Tbc.at<float>(0,1) =   -0.05123323;
-      cv_Tbc.at<float>(0,2) =   -0.99868075;
-      cv_Tbc.at<float>(0,3) =   -0.0605664;
+      cv_Tbc.at<float>(0,0) =   0.00555971;
+      cv_Tbc.at<float>(0,1) =   0.02936748;
+      cv_Tbc.at<float>(0,2) =   0.99955322;
+      cv_Tbc.at<float>(0,3) =   0.05443226;
 
-      cv_Tbc.at<float>(1,0) =   -0.00013874;
-      cv_Tbc.at<float>(1,1) =   -0.99868667;
-      cv_Tbc.at<float>(1,2) =   0.05123401;
-      cv_Tbc.at<float>(1,3) =   -0.01364959;
+      cv_Tbc.at<float>(1,0) =   0.00321125;
+      cv_Tbc.at<float>(1,1) =   -0.99956404;
+      cv_Tbc.at<float>(1,2) =   0.02934994;
+      cv_Tbc.at<float>(1,3) =   -0.01588301;
 
-      cv_Tbc.at<float>(2,0) =   -0.99999403;
-      cv_Tbc.at<float>(2,1) =   0.00031548;
-      cv_Tbc.at<float>(2,2) =   0.00344154;
-      cv_Tbc.at<float>(2,3) =   -0.01763391;
+      cv_Tbc.at<float>(2,0) =   0.99997939;
+      cv_Tbc.at<float>(2,1) =   0.00304664;
+      cv_Tbc.at<float>(2,2) =   -0.00565159;
+      cv_Tbc.at<float>(2,3) =   -0.02002308;
 
       cv_Tbc.at<float>(3,0) =   0.0;
       cv_Tbc.at<float>(3,1) =   0.0;
@@ -261,18 +333,18 @@ class SlamNode : public rclcpp::Node
       cv_Tbc.at<float>(3,3) =   1.0;
 
       m_imu.Tbc = cv_Tbc;
-      m_imu.freq = 200.0;
+      m_imu.freq = 400.0;
 
+      double timeshift_cam_imu = 0.008684532573338512; // F1
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
-      double timeshift_cam_imu = -0.013490768586712722; // EvE
-
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor);
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
+      //sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter5/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
