@@ -140,7 +140,7 @@ void LocalMapping::Run()
                             if((mTinit<10.f) && (dist<0.02))
                             {
                                 cout << "Not enough motion for initializing. Reseting..." << endl;
-                                unique_lock<mutex> lock(mMutexReset);
+                                std::unique_lock<mutex> lock(mMutexReset);
                                 mbResetRequestedActiveMap = true;
                                 mpMapToReset = mpCurrentKeyFrame->GetMap();
                                 mbBadImu = true;
@@ -305,6 +305,7 @@ bool LocalMapping::CheckNewKeyFrames()
 }
 
 bool LocalMapping::InertialBACompleted() {
+    unique_lock<mutex> lock(mMutexBACompleted);
     return bInertialBACompleted;
 }
 
@@ -1114,6 +1115,7 @@ void LocalMapping::ResetIfRequested()
     bool executed_reset = false;
     {
         unique_lock<mutex> lock(mMutexReset);
+        unique_lock<mutex> lock2(mMutexBACompleted);
         if(mbResetRequested)
         {
             executed_reset = true;
@@ -1129,6 +1131,7 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
+            
             bInertialBACompleted = false;
             mScaleAcc = 1.0;
             mScaleChangeKeyframeTimestamps.clear();
@@ -1308,6 +1311,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
+            unique_lock<mutex> lock(mMutexBACompleted);
             mScaleAcc*=mScale;
             mScaleChangeKeyframeTimestamps.push_back(mpCurrentKeyFrame->mTimeStamp);
         }
@@ -1506,6 +1510,7 @@ void LocalMapping::ScaleRefinement()
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw,mScale,true);
         mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
+        unique_lock<mutex> lock(mMutexBACompleted);
         mScaleAcc*=mScale;
     }
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
@@ -1549,12 +1554,13 @@ KeyFrame* LocalMapping::GetCurrKF()
     return mpCurrentKeyFrame;
 }
 
-double LocalMapping::GetScaleFactor() const {
-    //TODO: Maybe lock this.
+double LocalMapping::GetScaleFactor() {
+    unique_lock<mutex> lock(mMutexBACompleted);
     return mScaleAcc;
 }
 
-vector<double> LocalMapping::GetScaleChangeTimestamps() const {
+vector<double> LocalMapping::GetScaleChangeTimestamps() {
+    unique_lock<mutex> lock(mMutexBACompleted);
     return mScaleChangeKeyframeTimestamps;
 }
 

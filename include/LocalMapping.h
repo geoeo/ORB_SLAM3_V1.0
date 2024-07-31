@@ -66,8 +66,8 @@ public:
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
     bool InertialBACompleted();
-    double GetScaleFactor() const;
-    std::vector<double> GetScaleChangeTimestamps() const;
+    double GetScaleFactor();
+    std::vector<double> GetScaleChangeTimestamps();
 
     void InterruptBA();
 
@@ -189,6 +189,7 @@ protected:
 
     bool bInitializing;
     bool bInertialBACompleted;
+    std::mutex mMutexBACompleted;
 
     Eigen::MatrixXd infoInertial;
     int mNumLM;
