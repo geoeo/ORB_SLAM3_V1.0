@@ -228,8 +228,6 @@ protected:
 
     int mnFullBAIdx;
 
-
-
     std::vector<double> vdPR_CurrentTime;
     std::vector<double> vdPR_MatchedTime;
     std::vector<int> vnPR_TypeRecogn;

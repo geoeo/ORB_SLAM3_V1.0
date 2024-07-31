@@ -70,8 +70,6 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
   else if(mSensor==IMU_STEREO)
     cout << "Stereo-Inertial" << endl;
 
-  bool loadedAtlas = false;
-
   //Load ORB Vocabulary
   cout << endl << "Loading ORB Vocabulary from " << strVocFile << endl;
 
@@ -234,8 +232,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     mStrVocabularyFilePath = strVocFile;
 
-    bool loadedAtlas = false;
-
     if(mStrLoadAtlasFromFile.empty())
     {
         //Load ORB Vocabulary
@@ -292,8 +288,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 
         //cout << "KF in DB: " << mpKeyFrameDatabase->mnNumKFs << "; words: " << mpKeyFrameDatabase->mnNumWords << endl;
-
-        loadedAtlas = true;
 
         mpAtlas->CreateNewMap();
 
@@ -810,7 +804,7 @@ void System::SaveTrajectoryEuRoC(const string &filename)
     }*/
 
     vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-    int numMaxKFs = 0;
+    size_t numMaxKFs = 0;
     Map* pBiggerMap;
     std::cout << "There are " << std::to_string(vpMaps.size()) << " maps in the atlas" << std::endl;
     for(Map* pMap :vpMaps)
@@ -925,8 +919,6 @@ void System::SaveTrajectoryEuRoC(const string &filename, Map* pMap)
         cerr << "ERROR: SaveTrajectoryEuRoC cannot be used for monocular." << endl;
         return;
     }*/
-
-    int numMaxKFs = 0;
 
     vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
     sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
@@ -1200,7 +1192,7 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
 
     vector<Map*> vpMaps = mpAtlas->GetAllMaps();
     Map* pBiggerMap;
-    int numMaxKFs = 0;
+    size_t numMaxKFs = 0;
     for(Map* pMap :vpMaps)
     {
         if(pMap && pMap->GetAllKeyFrames().size() > numMaxKFs)

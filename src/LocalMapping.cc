@@ -32,9 +32,9 @@ namespace ORB_SLAM3
 {
 
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
-    mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), bInitializing(false),
-    mbAbortBA(false), mbStopped(false), mbStopRequested(false), mbNotStop(false), mbAcceptKeyFrames(true),
-    mIdxInit(0), mScale(1.0), mScaleAcc(1.0), mInitSect(0), mbNotBA1(true), mbNotBA2(true), mIdxIteration(0), infoInertial(Eigen::MatrixXd::Zero(9,9)), bInertialBACompleted(false)
+    mScale(1.0), mInitSect(0), mIdxInit(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
+    mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mScaleAcc(1.0), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
+    mbNotStop(false), mbAcceptKeyFrames(true), bInitializing(false), bInertialBACompleted(false), infoInertial(Eigen::MatrixXd::Zero(9,9))
 {
     mScaleChangeKeyframeTimestamps.reserve(3); // We initialize the IMU / estimate scale 3 times
     mnMatchesInliers = 0;
@@ -402,7 +402,7 @@ void LocalMapping::MapPointCulling()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    int nn = 10;
+    size_t nn = 10;
     // For stereo inertial case
     if(mbMonocular)
         nn=30;
@@ -411,7 +411,7 @@ void LocalMapping::CreateNewMapPoints()
     if (mbInertial)
     {
         KeyFrame* pKF = mpCurrentKeyFrame;
-        int count=0;
+        size_t count=0;
         while((vpNeighKFs.size()<=nn)&&(pKF->mPrevKF)&&(count++<nn))
         {
             vector<KeyFrame*>::iterator it = std::find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->mPrevKF);
@@ -436,8 +436,6 @@ void LocalMapping::CreateNewMapPoints()
     const float &fy1 = mpCurrentKeyFrame->fy;
     const float &cx1 = mpCurrentKeyFrame->cx;
     const float &cy1 = mpCurrentKeyFrame->cy;
-    const float &invfx1 = mpCurrentKeyFrame->invfx;
-    const float &invfy1 = mpCurrentKeyFrame->invfy;
 
     const float ratioFactor = 1.5f*mpCurrentKeyFrame->mfScaleFactor;
     int countStereo = 0;
@@ -489,8 +487,6 @@ void LocalMapping::CreateNewMapPoints()
         const float &fy2 = pKF2->fy;
         const float &cx2 = pKF2->cx;
         const float &cy2 = pKF2->cy;
-        const float &invfx2 = pKF2->invfx;
-        const float &invfy2 = pKF2->invfy;
 
         // Triangulate each match
         const int nmatches = vMatchedIndices.size();
@@ -819,7 +815,7 @@ void LocalMapping::SearchInNeighbors()
 
     // Update points
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-    for(size_t i=0, iend=vpMapPointMatches.size(); i<iend; i++)
+    for(size_t i=0; i<vpMapPointMatches.size(); i++)
     {
         MapPoint* pMP=vpMapPointMatches[i];
         if(pMP)
@@ -934,7 +930,7 @@ void LocalMapping::KeyFrameCulling()
     const bool bInitImu = mpAtlas->isImuInitialized();
     int count=0;
 
-    // Compoute last KF from optimizable window:
+    // Compute last KF from optimizable window:
     unsigned int last_ID;
     if (mbInertial)
     {
@@ -963,7 +959,7 @@ void LocalMapping::KeyFrameCulling()
         const int thObs=nObs;
         int nRedundantObservations=0;
         int nMPs=0;
-        for(size_t i=0, iend=vpMapPoints.size(); i<iend; i++)
+        for(size_t i=0; i<vpMapPoints.size(); i++)
         {
             MapPoint* pMP = vpMapPoints[i];
             if(pMP)
@@ -980,7 +976,7 @@ void LocalMapping::KeyFrameCulling()
                     if(pMP->Observations()>thObs)
                     {
                         const int &scaleLevel = (pKF -> NLeft == -1) ? pKF->mvKeysUn[i].octave
-                                                                     : (i < pKF -> NLeft) ? pKF -> mvKeys[i].octave
+                                                                     : (i < static_cast<size_t>(pKF -> NLeft)) ? pKF -> mvKeys[i].octave
                                                                                           : pKF -> mvKeysRight[i].octave;
                         const map<KeyFrame*, tuple<int,int>> observations = pMP->GetObservations();
                         int nObs=0;
@@ -1198,7 +1194,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         return;
 
     float minTime;
-    int nMinKF;
+    size_t nMinKF;
     if (mbMonocular)
     {
         minTime = 5.0;
