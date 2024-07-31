@@ -243,7 +243,7 @@ vector<KeyFrame*> KeyFrame::GetVectorCovisibleKeyFrames()
 vector<KeyFrame*> KeyFrame::GetBestCovisibilityKeyFrames(const size_t &N)
 {
     unique_lock<mutex> lock(mMutexConnections);
-    if((int)mvpOrderedConnectedKeyFrames.size()<N)
+    if(mvpOrderedConnectedKeyFrames.size()<N)
         return mvpOrderedConnectedKeyFrames;
     else
         return vector<KeyFrame*>(mvpOrderedConnectedKeyFrames.begin(),mvpOrderedConnectedKeyFrames.begin()+N);
@@ -308,8 +308,8 @@ void KeyFrame::EraseMapPointMatch(const int &idx)
 
 void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
 {
-    tuple<size_t,size_t> indexes = pMP->GetIndexInKeyFrame(this);
-    size_t leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
+    auto indexes = pMP->GetIndexInKeyFrame(this);
+    auto leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
     if(leftIndex != -1)
         mvpMapPoints[leftIndex]=static_cast<MapPoint*>(NULL);
     if(rightIndex != -1)

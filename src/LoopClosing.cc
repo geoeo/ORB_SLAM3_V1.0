@@ -782,7 +782,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(std::vector<KeyFrame*> &vpBowCand, 
                                     continue;
                                 }
 
-                                tuple<size_t,size_t> indexes = pMPi->GetIndexInKeyFrame(pKFi);
+                                tuple<int,int> indexes = pMPi->GetIndexInKeyFrame(pKFi);
                                 int index = get<0>(indexes);
                                 if(index >= 0)
                                 {
