@@ -214,23 +214,43 @@ class SlamNode : public rclcpp::Node
 
       // float resize_factor = 0.8;
 
-      // // Eve
+      // Eve
       // ORB_SLAM3::CameraParameters cam{};
       // cam.K = cv::Mat::zeros(3,3,CV_32F);
-      // cam.K.at<float>(0,0) = 1388.9566234253055*resize_factor;
-      // cam.K.at<float>(1,1) = 1389.860526555566*resize_factor;
-      // cam.K.at<float>(0,2) = 944.8106061888452*resize_factor;
-      // cam.K.at<float>(1,2) = 602.163082548295*resize_factor;
+      // cam.K.at<float>(0,0) = 1388.9566234253055;
+      // cam.K.at<float>(1,1) = 1389.860526555566;
+      // cam.K.at<float>(0,2) = 944.8106061888452;
+      // cam.K.at<float>(1,2) = 602.163082548295;
       // cam.K.at<float>(2,2) = 1;
 
+      // cv::Mat distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
+      // distCoeffs.at<float>(0) = -0.19819316734046494;
+      // distCoeffs.at<float>(1) = 0.08670622892662087;
+      // distCoeffs.at<float>(2) = -0.0008400222221221046;
+      // distCoeffs.at<float>(3) = 0.0005366633601752759;
 
-      // cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
-      // cam.distCoeffs.at<float>(0,0) = -0.19819316734046494;
-      // cam.distCoeffs.at<float>(1,0) = 0.08670622892662087;
-      // cam.distCoeffs.at<float>(2,0) = -0.0008400222221221046;
-      // cam.distCoeffs.at<float>(3,0) = 0.0005366633601752759;
+      // cam.distCoeffs = cv::Mat:: zeros(1,1,CV_32F); // We dont want to undistort im ORBSLAM so we pass dummy matrix
+      // //cam.distCoeffs = distCoeffs.clone();
 
-      // cam.fps        = 4;
+      // cv::Mat m_undistortion_map1;
+      // cv::Mat m_undistortion_map2;
+
+      // //TODO: fisheye
+      // cv::initUndistortRectifyMap(cam.K,
+      //                   distCoeffs,
+      //                   cv::Mat_<double>::eye(3, 3),
+      //                   cam.K,
+      //                   cv::Size(1920, 1200),
+      //                   CV_16SC2,
+      //                   m_undistortion_map1,
+      //                   m_undistortion_map2);
+
+      // cam.K.at<float>(0,0) *= resize_factor;
+      // cam.K.at<float>(1,1) *= resize_factor;
+      // cam.K.at<float>(0,2) *= resize_factor;
+      // cam.K.at<float>(1,2) *= resize_factor;
+
+      // cam.fps        = 8;
       // cam.orig_width      = static_cast<int>(1920*resize_factor);
       // cam.orig_height     = static_cast<int>(1200*resize_factor);
 
@@ -286,26 +306,41 @@ class SlamNode : public rclcpp::Node
 
       float resize_factor = 0.8;
 
-      // Eve
+      // F1
       ORB_SLAM3::CameraParameters cam{};
       cam.K = cv::Mat::zeros(3,3,CV_32F);
-      cam.K.at<float>(0,0) = 1341.3908261080117*resize_factor;
-      cam.K.at<float>(1,1) = 1339.801008398156*resize_factor;
-      cam.K.at<float>(0,2) = 1025.4354831702265*resize_factor;
-      cam.K.at<float>(1,2) = 748.2339952852544*resize_factor;
+      cam.K.at<float>(0,0) = 1341.3908261080117;
+      cam.K.at<float>(1,1) = 1339.801008398156;
+      cam.K.at<float>(0,2) = 1025.4354831702265;
+      cam.K.at<float>(1,2) = 748.2339952852544;
       cam.K.at<float>(2,2) = 1;
 
-      cv::Mat distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
-      distCoeffs.at<float>(0) = -0.19819316734046494;
-      distCoeffs.at<float>(1) = 0.08670622892662087;
-      distCoeffs.at<float>(2) = -0.0008400222221221046;
-      distCoeffs.at<float>(3) = 0.0005366633601752759;
+      cv::Mat distCoeffs  = cv::Mat:: zeros(4,1,CV_32F);
+      distCoeffs.at<float>(0,0) = -0.020898721110400503;
+      distCoeffs.at<float>(1,0) = 0.10004887885496858;
+      distCoeffs.at<float>(2,0) = -0.12205916600511264;
+      distCoeffs.at<float>(3,0) = 0.05976140792758462;
 
-      cam.distCoeffs = cv::Mat:: zeros(4,1,CV_32F);
-      cam.distCoeffs.at<float>(0,0) = -0.020898721110400503;
-      cam.distCoeffs.at<float>(1,0) = 0.10004887885496858;
-      cam.distCoeffs.at<float>(2,0) = -0.12205916600511264;
-      cam.distCoeffs.at<float>(3,0) = 0.05976140792758462;
+      cam.distCoeffs = cv::Mat:: zeros(1,1,CV_32F); // We dont want to undistort im ORBSLAM so we pass dummy matrix
+
+      cv::Mat m_undistortion_map1;
+      cv::Mat m_undistortion_map2;
+
+      //TODO: fisheye
+      cv::fisheye::initUndistortRectifyMap(cam.K,
+                        distCoeffs,
+                        cv::Mat_<double>::eye(3, 3),
+                        cam.K,
+                        cv::Size(2048, 1536),
+                        CV_16SC2,
+                        m_undistortion_map1,
+                        m_undistortion_map2);
+
+      cam.K.at<float>(0,0) *= resize_factor;
+      cam.K.at<float>(1,1) *= resize_factor;
+      cam.K.at<float>(0,2) *= resize_factor;
+      cam.K.at<float>(1,2) *= resize_factor;
+
 
       cam.fps        = 8;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
@@ -325,10 +360,10 @@ class SlamNode : public rclcpp::Node
       orb.gridCount = 96;
 
       ORB_SLAM3::ImuParameters m_imu;
-      m_imu.accelWalk  = 0.00023873338765462642; // x5
-      m_imu.gyroWalk   = 0.00000818876; //x5
-      m_imu.noiseAccel =  0.00772065426; // x5 
-      m_imu.noiseGyro  = 0.00085628624; // x5
+      m_imu.accelWalk  = 0.00047746677530925284; // x10
+      m_imu.gyroWalk   = 0.00001637752; //x10
+      m_imu.noiseAccel =  0.01544130852; // x10
+      m_imu.noiseGyro  = 0.00171257248; // x10
 
       m_imu.InsertKFsWhenLost = false;
 
@@ -363,7 +398,7 @@ class SlamNode : public rclcpp::Node
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor);
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map1, m_undistortion_map2);
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
       //sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter5/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
