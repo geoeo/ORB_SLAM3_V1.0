@@ -24,16 +24,16 @@ class ImuGrabber
 {
 public:
     ImuGrabber(){};
-    void GrabImu(const sensor_msgs::msg::Imu &imu_msg);
+    void GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg);
 
     queue<sensor_msgs::msg::Imu> imuBuf;
     std::mutex mBufMutex;
 };
 
-void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu &imu_msg)
+void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
 {
   mBufMutex.lock();
-  imuBuf.push(imu_msg);
+  imuBuf.push(*imu_msg);
   mBufMutex.unlock();
   return;
 }
@@ -46,8 +46,8 @@ public:
         m_undistortion_map1(undistortion_map1), m_undistortion_map2(undistortion_map2){
       }
 
-    void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr& msg);
-    cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg);
+    void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+    cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
     void SyncWithImu();
 
     queue<sensor_msgs::msg::Image::ConstSharedPtr> img0Buf;
@@ -65,7 +65,7 @@ public:
     cv::Mat m_undistortion_map2;
 };
 
-void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_msg)
+void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
   mBufMutex.lock();
   if (!img0Buf.empty())
@@ -77,7 +77,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr &img_
   mBufMutex.unlock();
 }
 
-cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr  &img_msg)
+cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
   // Copy the ros image message to cv::Mat.
   cv_bridge::CvImageConstPtr cv_ptr;
