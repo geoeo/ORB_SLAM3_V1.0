@@ -38,6 +38,7 @@ target_link_libraries(mono_inertial_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ORB_SLAM3
+  -lfmt
   )
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs)
 

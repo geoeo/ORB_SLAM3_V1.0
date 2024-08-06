@@ -84,7 +84,7 @@ RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INST
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
 # needed for g2o
-RUN apt-get update && apt-get install -y libspdlog-dev libsuitesparse-dev 
+RUN apt-get update && apt-get install -y libsuitesparse-dev 
 
 
 

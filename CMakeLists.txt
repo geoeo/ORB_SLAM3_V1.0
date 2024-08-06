@@ -129,7 +129,6 @@ ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 -lcrypto
--lfmt
 )
 
 
