@@ -83,6 +83,19 @@ RUN cd ~/Pangolin && git checkout d25ec00
 RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
+RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
+    && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2 \
+    && tar xf eigen-3.4.0.tar.bz2 \
+    && rm -rf eigen-3.4.0.tar.bz2 \
+    && cd eigen-3.4.0 \
+    && mkdir -p build && cd build \
+    && cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        .. \
+    && make -j $(nproc --all) \
+    && make install
+
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
 
