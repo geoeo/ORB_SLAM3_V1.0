@@ -143,13 +143,13 @@ void ImageGrabber::SyncWithImu()
       this->mBufMutex.unlock();
       
       vector<ORB_SLAM3::IMU::Point> vImuMeas;
+      mpImuGb->mBufMutex.lock();
       if(!mpImuGb->imuBuf.empty())
       {
-        mpImuGb->mBufMutex.lock();
         auto imu_meas = mpImuGb->imuBuf.front();
-        mpImuGb->mBufMutex.unlock();
         auto ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
-        auto t = ros_imu_ts_front.seconds() - init_ts;
+        auto t = ros_imu_ts_front.seconds();
+        t-=init_ts;
         // Load imu measurements from buffer
         vImuMeas.clear();
         while(t<=tIm)
@@ -157,22 +157,17 @@ void ImageGrabber::SyncWithImu()
           cv::Point3f acc(imu_meas.linear_acceleration.x, imu_meas.linear_acceleration.y, imu_meas.linear_acceleration.z);
           cv::Point3f gyr(imu_meas.angular_velocity.x, imu_meas.angular_velocity.y, imu_meas.angular_velocity.z);
           vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
-          mpImuGb->mBufMutex.lock();
-          mpImuGb->imuBuf.pop();
-          mpImuGb->mBufMutex.unlock();
 
+          mpImuGb->imuBuf.pop();
           if(mpImuGb->imuBuf.empty())
             break;
-          
-          mpImuGb->mBufMutex.lock();
           imu_meas = mpImuGb->imuBuf.front();
-          mpImuGb->mBufMutex.unlock();
-
           ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
-          t = ros_imu_ts_front.seconds() - init_ts;
+          t = ros_imu_ts_front.seconds();
+          t-=init_ts;
         }
       }
-
+      mpImuGb->mBufMutex.unlock();
       if(mbClahe)
         mClahe->apply(im,im);
 
@@ -400,7 +395,7 @@ class SlamNode : public rclcpp::Node
       double timeshift_cam_imu = 0.008684532573338512; // F1
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map1, m_undistortion_map2);
