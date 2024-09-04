@@ -113,6 +113,7 @@ protected:
     int nlevels;
     int iniThFAST;
     int minThFAST;
+    float gridCount;
 
     std::vector<int> mnFeaturesPerLevel;
 
