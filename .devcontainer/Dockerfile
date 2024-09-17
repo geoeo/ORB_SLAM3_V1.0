@@ -43,9 +43,9 @@ RUN rm cmake-3.25.2.tar.gz
 WORKDIR /root
 RUN apt update && sudo apt install -y libgtk2.0-dev
 RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/4.9.0.zip 
-#RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
+RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
 RUN unzip opencv.zip
-#RUN unzip opencv_contrib.zip
+RUN unzip opencv_contrib.zip
 RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 && cmake -DWITH_CUDA=OFF \
     -DCMAKE_BUILD_TYPE=RELEASE \
@@ -56,10 +56,10 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
     -DOPENCV_ENABLE_NONFREE=ON \
     -DOPENCV_GENERATE_PKGCONFIG=OFF \
     -DBUILD_TESTS=OFF \
-    #-DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
+    -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
     -DCMAKE_INSTALL_PREFIX=/usr/local .. \
 && make -j $(nproc --all) && make install
-#RUN rm opencv_contrib.zip
+RUN rm opencv_contrib.zip
 RUN rm opencv.zip 
 
 
