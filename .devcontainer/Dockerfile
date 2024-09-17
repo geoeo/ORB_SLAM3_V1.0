@@ -47,7 +47,7 @@ RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/
 RUN unzip opencv.zip
 RUN unzip opencv_contrib.zip
 RUN cd opencv-4.9.0 && mkdir -p build && cd build \
-&& cmake -DWITH_CUDA=OFF \
+&& cmake -DWITH_CUDA=ON \
     -DCMAKE_BUILD_TYPE=RELEASE \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_opencv_apps=OFF \
@@ -99,7 +99,8 @@ RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
 
-
+# Tracy
+RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
 WORKDIR /
 RUN mkdir bags

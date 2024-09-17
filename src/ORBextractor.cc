@@ -60,7 +60,7 @@
 #include <iostream>
 
 #include "ORBextractor.h"
-
+#include "tracy/Tracy.hpp"
 
 using namespace cv;
 using namespace std;
@@ -560,6 +560,7 @@ namespace ORB_SLAM3
     vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
                                                          const int &maxX, const int &minY, const int &maxY, const int &N, const int &level)
     {
+        ZoneNamedN(DistributeOctTree, "DistributeOctTree", true);  // NOLINT: Profiler
         // Compute how many initial nodes
         const int nIni = round(static_cast<float>(maxX-minX)/(maxY-minY));
 
@@ -785,7 +786,10 @@ namespace ORB_SLAM3
 
     void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints)
     {
+        ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
         allKeypoints.resize(nlevels);
+        //vector<cv::KeyPoint> vKeysCell;
+        //vKeysCell.reserve(500);
 
         for (int level = 0; level < nlevels; ++level)
         {
@@ -824,21 +828,30 @@ namespace ORB_SLAM3
                     if(maxX>maxBorderX)
                         maxX = maxBorderX;
 
+                    //vKeysCell.clear();
                     vector<cv::KeyPoint> vKeysCell;
-                    
-                    feat->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                         vKeysCell);
+                    {
+                        ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
+                        feat->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
+                            vKeysCell);
+                        TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                    }
+
 
                     // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
                     //      vKeysCell,iniThFAST,true);
 
 
-
                     if(vKeysCell.empty())
                     {
 
-                        feat_back->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                            vKeysCell);
+                        {
+                            ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+                            feat_back->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
+                                vKeysCell);
+                            TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                        }
+
 
                         // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
                         //         vKeysCell,minThFAST,true);
@@ -885,6 +898,7 @@ namespace ORB_SLAM3
     static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors,
                                    const vector<Point>& pattern)
     {
+        ZoneNamedN(computeDescriptors, "computeDescriptors", true);  // NOLINT: Profiler
         descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
 
         for (size_t i = 0; i < keypoints.size(); i++)
@@ -894,6 +908,7 @@ namespace ORB_SLAM3
     int ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPoint>& _keypoints,
                                   OutputArray _descriptors, std::vector<int> &vLappingArea)
     {
+        ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
         //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
         if(_image.empty())
             return -1;
@@ -976,6 +991,7 @@ namespace ORB_SLAM3
 
     void ORBextractor::ComputePyramid(cv::Mat image)
     {
+        ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
         for (int level = 0; level < nlevels; ++level)
         {
             float scale = mvInvScaleFactor[level];

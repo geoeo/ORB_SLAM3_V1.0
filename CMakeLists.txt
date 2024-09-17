@@ -28,6 +28,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) #  avoid rpath stripping at installations
 
 # Check C++11 or C++0x support
@@ -47,6 +49,7 @@ else()
 endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/cmake_modules)
+LIST(APPEND CMAKE_INSTALL_RPATH  /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/lib)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 
@@ -95,6 +98,14 @@ src/Config.cc
 src/Settings.cc
 )
 
+
+add_compile_definitions(TRACY_ENABLE)
+set(TRACY_INCLUDE_DIR "/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/tracy/public")
+
+message("---------------: ${BUILD_INTERFACE}")
+
+include_directories(${TRACY_INCLUDE_DIR})
+
 target_include_directories(${PROJECT_NAME} PUBLIC
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty> # for headers when building
      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> # for headers when building
@@ -128,6 +139,7 @@ ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
+/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so
 -lcrypto
 )
 
@@ -188,6 +200,16 @@ install(
 
 install(
         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/Sophus>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/ros2_ws/install/tracy_profiler/tracy/public/tracy>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
         FILES_MATCHING # install only matched files
         PATTERN "*.h" # select header files
