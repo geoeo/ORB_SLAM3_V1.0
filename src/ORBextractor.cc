@@ -890,9 +890,13 @@ namespace ORB_SLAM3
             }
         }
 
-        // compute orientations
-        for (int level = 0; level < nlevels; ++level)
-            computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
+        {
+            ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
+            // compute orientations
+            for (int level = 0; level < nlevels; ++level)
+                computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
+        }
+
     }
 
     static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors,
@@ -951,8 +955,13 @@ namespace ORB_SLAM3
                 continue;
 
             // preprocess the resized image
-            Mat workingMat = mvImagePyramid[level].clone();
-            GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+            Mat workingMat;
+            {
+                ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
+                workingMat = mvImagePyramid[level].clone();
+                GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+            }
+
 
             // Compute the descriptors
             //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);

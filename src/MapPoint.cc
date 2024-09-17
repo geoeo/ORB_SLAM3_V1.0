@@ -18,6 +18,7 @@
 
 #include "MapPoint.h"
 #include "ORBmatcher.h"
+#include "tracy/Tracy.hpp"
 
 #include<mutex>
 
@@ -328,6 +329,7 @@ float MapPoint::GetFoundRatio()
 
 void MapPoint::ComputeDistinctiveDescriptors()
 {
+    ZoneNamedN(ComputeDistinctiveDescriptors, "ComputeDistinctiveDescriptors", true);  // NOLINT: Profiler
     // Retrieve all observed descriptors
     vector<cv::Mat> vDescriptors;
 

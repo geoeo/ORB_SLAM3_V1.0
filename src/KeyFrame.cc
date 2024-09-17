@@ -20,6 +20,7 @@
 #include "Converter.h"
 #include "ImuTypes.h"
 #include<mutex>
+#include "tracy/Tracy.hpp"
 
 namespace ORB_SLAM3
 {
@@ -97,6 +98,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 
 void KeyFrame::ComputeBoW()
 {
+    ZoneNamedN(ComputeBoW, "ComputeBoW", true);  // NOLINT: Profiler
     if(mBowVec.empty() || mFeatVec.empty())
     {
         vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);

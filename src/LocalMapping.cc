@@ -24,6 +24,7 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 #include "System.h" //for debug verbosity
+#include "tracy/Tracy.hpp"
 
 #include<mutex>
 #include<chrono>
@@ -69,6 +70,7 @@ void LocalMapping::Run()
 
     while(1)
     {
+        ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
 

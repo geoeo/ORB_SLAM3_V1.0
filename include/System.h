@@ -41,6 +41,7 @@
 #include "Viewer.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "tracy/Tracy.hpp"
 
 
 namespace ORB_SLAM3
