@@ -32,6 +32,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
+#include "tracy/Tracy.hpp"
 
 using namespace std;
 
@@ -519,6 +520,8 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
 pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
+
+    ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
 
     {
         unique_lock<mutex> lock(mMutexReset);

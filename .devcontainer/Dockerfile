@@ -43,11 +43,11 @@ RUN rm cmake-3.25.2.tar.gz
 WORKDIR /root
 RUN apt update && sudo apt install -y libgtk2.0-dev
 RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/4.9.0.zip 
-#RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
+RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
+RUN unzip opencv_contrib.zip
 RUN unzip opencv.zip
-#RUN unzip opencv_contrib.zip
 RUN cd opencv-4.9.0 && mkdir -p build && cd build \
-&& cmake -DWITH_CUDA=OFF \
+&& cmake -DWITH_CUDA=ON \
     -DCMAKE_BUILD_TYPE=RELEASE \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_opencv_apps=OFF \
@@ -56,10 +56,10 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
     -DOPENCV_ENABLE_NONFREE=ON \
     -DOPENCV_GENERATE_PKGCONFIG=OFF \
     -DBUILD_TESTS=OFF \
-    #-DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
+    -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
     -DCMAKE_INSTALL_PREFIX=/usr/local .. \
 && make -j $(nproc --all) && make install
-#RUN rm opencv_contrib.zip
+RUN rm opencv_contrib.zip
 RUN rm opencv.zip 
 
 
@@ -99,7 +99,8 @@ RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
 
-
+# Tracy
+RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
 WORKDIR /
 RUN mkdir bags
