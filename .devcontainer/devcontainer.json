@@ -12,11 +12,11 @@
 	},
 	"runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined",
 		"--net=host",
+		"--runtime=nvidia",
 		"--env=DISPLAY", 
 		"--env=QT_X11_NO_MITSHM=1",
 		"--env=NVIDIA_VISIBLE_DEVICES=all",
 		"--env=NVIDIA_DRIVER_CAPABILITIES=all"
-
 	], 
 	// Might need `xhost local:root` in terminal
 

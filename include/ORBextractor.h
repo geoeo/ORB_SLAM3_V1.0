@@ -23,6 +23,10 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/cudafeatures2d.hpp>
+#include <opencv2/core/cuda.hpp>
+
 namespace ORB_SLAM3
 {
 
@@ -92,9 +96,11 @@ namespace ORB_SLAM3
 
         std::vector<cv::Mat> mvImagePyramid;
 
+
     protected:
         void ComputePyramid(cv::Mat image);
-        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
+        void ComputePyramidGpu(cv::cuda::GpuMat &image, std::vector<cv::cuda::GpuMat>& imagePyramidGpu);
+        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints, std::vector<cv::cuda::GpuMat>& imagePyramidGpu);
         std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
@@ -117,6 +123,9 @@ namespace ORB_SLAM3
 
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
+
+        cv::Ptr<cv::cuda::Feature2DAsync> feat_gpu;
+        cv::Ptr<cv::cuda::Feature2DAsync> feat_back_gpu;
     };
 
 } // namespace ORB_SLAM
