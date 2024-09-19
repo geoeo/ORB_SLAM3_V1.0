@@ -13,6 +13,8 @@ ENDIF()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+set(CMAKE_CUDA_ARCHITECTURES 87)
+
 set(ORB_SLAM3_INC_INSTALL_DIR "/usr/local/include/${PROJECT_NAME}")
 set(ORB_SLAM3_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}")
 set(ORB_SLAM3_LIBRARY_INSTALL_DIR "/usr/local/lib")
@@ -139,7 +141,7 @@ ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
-${CUDAToolkit_LIBRARY_DIR}
+${CUDAToolkit_LIBRARIES}
 -lcrypto
 )
 
