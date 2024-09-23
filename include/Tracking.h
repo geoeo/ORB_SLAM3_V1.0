@@ -32,6 +32,7 @@
 #include "ORBVocabulary.h"
 #include "KeyFrameDatabase.h"
 #include "ORBextractor.h"
+//#include "ORBextractor_gpu.h"
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"

@@ -22,6 +22,7 @@
 #include "MapPoint.h"
 #include "KeyFrame.h"
 #include "ORBextractor.h"
+//#include "ORBextractor_gpu.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
 
@@ -29,6 +30,7 @@
 #include "CameraModels/Pinhole.h"
 #include "CameraModels/KannalaBrandt8.h"
 #include "CameraModels/GeometricCamera.h"
+#include <opencv2/core/cuda.hpp>
 
 namespace ORB_SLAM3
 {
@@ -913,6 +915,10 @@ void Frame::ComputeStereoMatches()
             // sliding window search
             const int w = 5;
             cv::Mat IL = mpORBextractorLeft->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
+            // cv::cuda::GpuMat gMat = mpORBextractorLeft->mvImagePyramid[kpL.octave].rowRange(scaledvL - w, scaledvL + w + 1).colRange(scaleduL - w, scaleduL + w + 1);
+            // cv::Mat IL(gMat.rows, gMat.cols, gMat.type(), gMat.data, gMat.step);
+            // IL.convertTo(IL,CV_16S);
+            // IL = IL - IL.at<short>(w,w);
 
             int bestDist = INT_MAX;
             int bestincR = 0;
@@ -928,7 +934,8 @@ void Frame::ComputeStereoMatches()
             for(int incR=-L; incR<=+L; incR++)
             {
                 cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
-
+                // cv::cuda::GpuMat gMat = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL - w, scaledvL + w + 1).colRange(scaleduR0 + incR - w, scaleduR0 + incR + w + 1);
+                // cv::Mat IR(gMat.rows, gMat.cols, gMat.type(), gMat.data, gMat.step);
                 float dist = cv::norm(IL,IR,cv::NORM_L1);
                 if(dist<bestDist)
                 {

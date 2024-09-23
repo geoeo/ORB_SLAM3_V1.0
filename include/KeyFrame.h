@@ -25,6 +25,7 @@
 #include "DBoW2/DBoW2/FeatureVector.h"
 #include "ORBVocabulary.h"
 #include "ORBextractor.h"
+//#include "ORBextractor_gpu.h"
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"

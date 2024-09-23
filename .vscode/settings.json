@@ -79,6 +79,12 @@
         "ranges": "cpp",
         "valarray": "cpp",
         "charconv": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "__tree": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "__nullptr": "cpp"
     }
 }

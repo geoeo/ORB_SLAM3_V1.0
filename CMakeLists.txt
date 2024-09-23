@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
-project(ORB_SLAM3)
+project(ORB_SLAM3 LANGUAGES CXX CUDA)
 
 set(ORB_SLAM3_VERSION "1.0")
+
+include(CheckLanguage)
+check_language(CUDA)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -9,6 +12,8 @@ ENDIF()
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
+set(CMAKE_CUDA_ARCHITECTURES 87)
 
 set(ORB_SLAM3_INC_INSTALL_DIR "/usr/local/include/${PROJECT_NAME}")
 set(ORB_SLAM3_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}")
@@ -23,11 +28,13 @@ MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CUDA_STANDARD 11)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) #  avoid rpath stripping at installations
@@ -66,6 +73,7 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDAToolkit REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -73,6 +81,7 @@ src/Tracking.cc
 src/LocalMapping.cc
 src/LoopClosing.cc
 src/ORBextractor.cc
+#src/ORBextractor_gpu.cc
 src/ORBmatcher.cc
 src/FrameDrawer.cc
 src/Converter.cc
@@ -96,6 +105,10 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
+src/cuda/Allocator_gpu.cu
+src/cuda/Cuda.cu
+src/cuda/Fast_gpu.cu
+src/cuda/Orb_gpu.cu
 )
 
 
@@ -114,6 +127,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
      ${G2O_INCLUDE_DIR}
+     ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 
@@ -138,6 +152,7 @@ ${G2O_TYPES_SCLAM2D}
 ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
+${CUDAToolkit_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so
 -lcrypto
