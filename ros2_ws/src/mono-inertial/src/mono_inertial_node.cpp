@@ -17,7 +17,6 @@
 
 #include <ORB_SLAM3/System.h>
 #include <ORB_SLAM3/ImuTypes.h>
-#include <tracy/Tracy.hpp>
 
 using namespace std::chrono_literals;
 

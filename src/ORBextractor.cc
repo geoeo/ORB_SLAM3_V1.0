@@ -60,7 +60,7 @@
 #include <iostream>
 
 #include "ORBextractor.h"
-#include "tracy/Tracy.hpp"
+#include <tracy.hpp>
 
  	
 #include <opencv2/cudaarithm.hpp>
