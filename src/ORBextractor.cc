@@ -59,8 +59,7 @@
 #include <vector>
 #include <iostream>
 #include "ORBextractor.h"
-//#include "ORBextractor_gpu.h"
-#include "tracy/Tracy.hpp"
+#include <tracy.hpp>
 
  	
 #include <opencv2/cudaarithm.hpp>

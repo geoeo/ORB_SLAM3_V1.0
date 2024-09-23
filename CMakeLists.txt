@@ -56,6 +56,18 @@ else()
 endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/cmake_modules)
+
+
+if(TRACY_ENABLE)
+    message("Tracy Enabled...")
+    LIST(APPEND CMAKE_INSTALL_RPATH  ${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/lib)
+    set(TRACY_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/tracy/public")
+    set(TRACY_LIB "${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so")
+    add_compile_definitions(TRACY_ENABLE)
+else()
+    set(TRACY_INCLUDE_DIR "")
+    set(TRACY_LIB "")
+endif()
 LIST(APPEND CMAKE_INSTALL_RPATH  /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/lib)
 
 set(OpenGL_GL_PREFERENCE "GLVND")
@@ -112,9 +124,6 @@ src/cuda/Orb_gpu.cu
 )
 
 
-add_compile_definitions(TRACY_ENABLE)
-set(TRACY_INCLUDE_DIR "/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/tracy/public")
-
 message("---------------: ${BUILD_INTERFACE}")
 
 include_directories(${TRACY_INCLUDE_DIR})
@@ -154,7 +163,7 @@ ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${CUDAToolkit_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
-/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so
+${TRACY_LIB}
 -lcrypto
 )
 
