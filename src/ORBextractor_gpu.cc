@@ -69,7 +69,7 @@
 #include "Utils.hpp"
 
 #include "ORBextractor_gpu.h"
-#include "tracy/Tracy.hpp"
+#include "tracy.hpp"
 
 
 using namespace cv;

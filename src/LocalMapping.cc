@@ -24,7 +24,7 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 #include "System.h" //for debug verbosity
-#include "tracy/Tracy.hpp"
+#include "tracy.hpp"
 
 #include<mutex>
 #include<chrono>
