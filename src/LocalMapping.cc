@@ -230,13 +230,20 @@ void LocalMapping::Run()
 
                                 cout << "end VIBA 2" << endl;
 
-                                //TODO set BA complete in keyframe
-                                bInertialBACompleted = true;
+                                {
+                                    unique_lock<mutex> lock(mMutexBACompleted);
+                                    bInertialBACompleted = true;
+                                }
+
 
                             }
                         }
 
-                        mpCurrentKeyFrame->setBAComplete(bInertialBACompleted);
+                        {
+                            unique_lock<mutex> lock(mMutexBACompleted);
+                            mpCurrentKeyFrame->setBAComplete(bInertialBACompleted);
+                        }
+
 
                         // scale refinement
                         // if (((mpAtlas->KeyFramesInMap())<=200) &&

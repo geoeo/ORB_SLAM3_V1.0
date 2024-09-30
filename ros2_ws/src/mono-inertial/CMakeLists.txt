@@ -33,15 +33,6 @@ find_package(G2O REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 
-find_package(tracy_profiler REQUIRED)
-option(TRACY_ENABLE "Enable profiling" tracy_profiler_FOUND)
-set(TRACY_PACKAGE tracy_profiler)
-
-if (NOT TRACY_ENABLE)
-  set(TRACY_PACKAGE "")
-else()
-  add_compile_definitions(TRACY_ENABLE)
-endif()
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
 target_link_libraries(mono_inertial_node 
