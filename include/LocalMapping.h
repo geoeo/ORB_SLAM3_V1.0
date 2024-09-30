@@ -68,6 +68,7 @@ public:
     bool InertialBACompleted();
     double GetScaleFactor();
     std::vector<double> GetScaleChangeTimestamps();
+    void ResetAccumulationData();
 
     void InterruptBA();
 

@@ -24,7 +24,6 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 #include "System.h" //for debug verbosity
-#include "tracy/Tracy.hpp"
 
 #include<mutex>
 #include<chrono>
@@ -70,7 +69,6 @@ void LocalMapping::Run()
 
     while(1)
     {
-        ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
 
@@ -1120,7 +1118,6 @@ void LocalMapping::ResetIfRequested()
     bool executed_reset = false;
     {
         unique_lock<mutex> lock(mMutexReset);
-        unique_lock<mutex> lock2(mMutexBACompleted);
         if(mbResetRequested)
         {
             executed_reset = true;
@@ -1137,9 +1134,7 @@ void LocalMapping::ResetIfRequested()
             mbNotBA1 = true;
             mbBadImu=false;
             
-            bInertialBACompleted = false;
-            mScaleAcc = 1.0;
-            mScaleChangeKeyframeTimestamps.clear();
+            ResetAccumulationData();
 
             mIdxInit=0;
 
@@ -1157,9 +1152,8 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
-            bInertialBACompleted = false;
-            mScaleAcc = 1.0;
-            mScaleChangeKeyframeTimestamps.clear();
+
+            ResetAccumulationData();
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
@@ -1567,6 +1561,14 @@ double LocalMapping::GetScaleFactor() {
 vector<double> LocalMapping::GetScaleChangeTimestamps() {
     unique_lock<mutex> lock(mMutexBACompleted);
     return mScaleChangeKeyframeTimestamps;
+}
+
+//TODO: Move this Data out of LocalMapper. Investigate which is best: Tracker or Atlas
+void LocalMapping::ResetAccumulationData(){
+    unique_lock<mutex> lock(mMutexBACompleted);
+    bInertialBACompleted = false;
+    mScaleAcc = 1.0;
+    mScaleChangeKeyframeTimestamps.clear();
 }
 
 } //namespace ORB_SLAM
