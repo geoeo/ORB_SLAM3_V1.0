@@ -231,6 +231,8 @@ void Map::clear()
     mbImuInitialized = false;
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
+
+    unique_lock<mutex> lock(mMutexMap);
     mbIMU_BA1 = false;
     mbIMU_BA2 = false;
     mfScale = 1.0;
