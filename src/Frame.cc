@@ -455,10 +455,23 @@ Eigen::Vector3f Frame::GetVelocity() const
 }
 
 bool Frame::isBACompleteForKeyframe() const {
-    if(mpLastKeyFrame == nullptr)
-        return false;
-    else
-        return mpLastKeyFrame->getBAComplete();
+    auto complete = false;
+    if(mpLastKeyFrame != nullptr) {
+        auto map = mpLastKeyFrame->GetMap();
+        if(map != nullptr)
+            complete = map->GetIniertialBA2();
+    }
+    return complete;   
+}
+
+vector<float> Frame::getKeyframeScales() const {
+    vector<float> scales = {};
+    if(mpLastKeyFrame != nullptr) {
+        auto map = mpLastKeyFrame->GetMap();
+        if(map != nullptr)
+            scales = map->getVIBAScales();
+    }
+    return scales;   
 }
 
 void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb)

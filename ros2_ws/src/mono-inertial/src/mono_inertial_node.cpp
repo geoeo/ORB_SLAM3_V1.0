@@ -6,6 +6,7 @@
 #include<queue>
 #include<thread>
 #include<mutex>
+#include<tuple>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
@@ -173,17 +174,17 @@ void ImageGrabber::SyncWithImu()
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-        auto pose_flag_pair = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
-        Sophus::Matrix4f pose = pose_flag_pair.first.matrix();
-        bool ba_complete_for_frame = pose_flag_pair.second;
+        auto tracking_results = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
+        bool ba_complete_for_frame = std::get<1>(tracking_results);
+        auto scale_factors = std::get<2>(tracking_results);
         vImuMeas.clear();
-        auto timestamps =  mpSLAM->GetScaleChangeTimestamps();
-        cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;
-        cout << "BA completed for frame: " << ba_complete_for_frame << endl;
-        cout << "Scale Factor: " << mpSLAM->GetScaleFactor() << endl;
+        cout << "BA completed: " << ba_complete_for_frame << endl;
+        if(!scale_factors.empty())
+          cout << "Latest Scale Factor: " << scale_factors.back() << endl;
         cout << "Current ts: " << tIm << endl;
-        for(auto ts : timestamps)
-          cout << " ts: " << ts;
+        for(auto s : scale_factors)
+          cout << " scale: " << s;
         cout << endl;
         //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
         //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;

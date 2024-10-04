@@ -65,10 +65,6 @@ public:
     bool AcceptKeyFrames();
     void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
-    bool InertialBACompleted();
-    double GetScaleFactor();
-    std::vector<double> GetScaleChangeTimestamps();
-    void ResetAccumulationData();
 
     void InterruptBA();
 
@@ -173,8 +169,6 @@ protected:
 
     std::mutex mMutexNewKFs;
 
-    double mScaleAcc;
-    std::vector<double> mScaleChangeKeyframeTimestamps;
 
     bool mbAbortBA;
     bool mbStopped;
@@ -185,12 +179,10 @@ protected:
     bool mbAcceptKeyFrames;
     std::mutex mMutexAccept;
 
-    void InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false);
+    bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false);
     void ScaleRefinement();
 
     bool bInitializing;
-    bool bInertialBACompleted;
-    std::mutex mMutexBACompleted;
 
     Eigen::MatrixXd infoInertial;
     int mNumLM;

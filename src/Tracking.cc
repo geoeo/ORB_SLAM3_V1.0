@@ -3873,7 +3873,6 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     Map* pMap = mpAtlas->GetCurrentMap();
     
-    mpLocalMapper->ResetAccumulationData();
     if (!bLocMap)
     {
         Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_VERY_VERBOSE);

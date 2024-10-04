@@ -33,10 +33,9 @@ namespace ORB_SLAM3
 
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
     mScale(1.0), mInitSect(0), mIdxInit(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
-    mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mScaleAcc(1.0), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
-    mbNotStop(false), mbAcceptKeyFrames(true), bInitializing(false), bInertialBACompleted(false), infoInertial(Eigen::MatrixXd::Zero(9,9))
+    mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
+    mbNotStop(false), mbAcceptKeyFrames(true), bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9))
 {
-    mScaleChangeKeyframeTimestamps.reserve(3); // We initialize the IMU / estimate scale 3 times
     mnMatchesInliers = 0;
 
     mbBadImu = false;
@@ -184,9 +183,9 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        InitializeIMU(1e1, 1e10, true);
+                        auto _ = InitializeIMU(1e1, 1e10, true);
                     else
-                        InitializeIMU(1e2, 1e5, true);
+                        auto _ = InitializeIMU(1e2, 1e5, true);
                 }
 
 
@@ -208,40 +207,32 @@ void LocalMapping::Run()
                             if (mTinit>10.0f)
                             {
                                 cout << "start VIBA 1" << endl;
-                                mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+                                auto success = false;
                                 if (mbMonocular)
-                                    InitializeIMU(1.f, 1e5, true);
+                                    success = InitializeIMU(1.f, 1e5, true);
                                 else
-                                    InitializeIMU(1.f, 1e5, true);
+                                    success = InitializeIMU(1.f, 1e5, true);
 
+                                if(success)
+                                mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
                                 cout << "end VIBA 1" << endl;
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
                             if (mTinit>20.0f){
                                 cout << "start VIBA 2" << endl;
-                                mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+                                auto success = false;
                                 if (mbMonocular)
-                                    InitializeIMU(0.f, 0.f, true);
+                                    success = InitializeIMU(0.f, 0.f, true);
                                 else
-                                    InitializeIMU(0.f, 0.f, true);
+                                    success = InitializeIMU(0.f, 0.f, true);
+
+                                if(success)
+                                    mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
 
                                 cout << "end VIBA 2" << endl;
-
-                                {
-                                    unique_lock<mutex> lock(mMutexBACompleted);
-                                    bInertialBACompleted = true;
-                                }
-
-
                             }
                         }
-
-                        {
-                            unique_lock<mutex> lock(mMutexBACompleted);
-                            mpCurrentKeyFrame->setBAComplete(bInertialBACompleted);
-                        }
-
 
                         // scale refinement
                         // if (((mpAtlas->KeyFramesInMap())<=200) &&
@@ -309,11 +300,6 @@ bool LocalMapping::CheckNewKeyFrames()
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     return(!mlNewKeyFrames.empty());
-}
-
-bool LocalMapping::InertialBACompleted() {
-    unique_lock<mutex> lock(mMutexBACompleted);
-    return bInertialBACompleted;
 }
 
 void LocalMapping::ProcessNewKeyFrame()
@@ -1133,8 +1119,6 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
-            
-            ResetAccumulationData();
 
             mIdxInit=0;
 
@@ -1152,8 +1136,6 @@ void LocalMapping::ResetIfRequested()
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
-
-            ResetAccumulationData();
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
@@ -1191,10 +1173,10 @@ bool LocalMapping::isFinished()
     return mbFinished;
 }
 
-void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
+bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 {
     if (mbResetRequested)
-        return;
+        return false;
 
     float minTime;
     size_t nMinKF;
@@ -1211,7 +1193,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 
 
     if(mpAtlas->KeyFramesInMap()<nMinKF)
-        return;
+        return false;
 
     // Retrieve all keyframe in temporal order
     list<KeyFrame*> lpKF;
@@ -1225,11 +1207,11 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     vector<KeyFrame*> vpKF(lpKF.begin(),lpKF.end());
 
     if(vpKF.size()<nMinKF)
-        return;
+        return false;
 
     mFirstTs=vpKF.front()->mTimeStamp;
     if(mpCurrentKeyFrame->mTimeStamp-mFirstTs<minTime)
-        return;
+        return false;
 
     bInitializing = true;
 
@@ -1300,7 +1282,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     {
         cout << "scale too small" << endl;
         bInitializing=false;
-        return;
+        return false;
     }
 
     // Before this line we are not changing the map
@@ -1310,9 +1292,6 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
-            unique_lock<mutex> lock(mMutexBACompleted);
-            mScaleAcc*=mScale;
-            mScaleChangeKeyframeTimestamps.push_back(mpCurrentKeyFrame->mTimeStamp);
         }
 
         // Check if initialization OK
@@ -1454,7 +1433,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 
     mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
 
-    return;
+    return true;
 }
 
 void LocalMapping::ScaleRefinement()
@@ -1509,8 +1488,6 @@ void LocalMapping::ScaleRefinement()
         Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw,mScale,true);
         mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
-        unique_lock<mutex> lock(mMutexBACompleted);
-        mScaleAcc*=mScale;
     }
     std::chrono::steady_clock::time_point t3 = std::chrono::steady_clock::now();
 
@@ -1551,24 +1528,6 @@ double LocalMapping::GetCurrKFTime()
 KeyFrame* LocalMapping::GetCurrKF()
 {
     return mpCurrentKeyFrame;
-}
-
-double LocalMapping::GetScaleFactor() {
-    unique_lock<mutex> lock(mMutexBACompleted);
-    return mScaleAcc;
-}
-
-vector<double> LocalMapping::GetScaleChangeTimestamps() {
-    unique_lock<mutex> lock(mMutexBACompleted);
-    return mScaleChangeKeyframeTimestamps;
-}
-
-//TODO: Move this Data out of LocalMapper. Investigate which is best: Tracker or Atlas
-void LocalMapping::ResetAccumulationData(){
-    unique_lock<mutex> lock(mMutexBACompleted);
-    bInertialBACompleted = false;
-    mScaleAcc = 1.0;
-    mScaleChangeKeyframeTimestamps.clear();
 }
 
 } //namespace ORB_SLAM

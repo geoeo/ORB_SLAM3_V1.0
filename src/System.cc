@@ -530,7 +530,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
     return Tcw;
 }
 
-pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
@@ -540,7 +540,7 @@ pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double 
         auto lock = scoped_mutex_lock( mMutexReset );
 
         if(mbShutDown)
-            return {Sophus::SE3f(),false};
+            return {Sophus::SE3f(),false, {}};
     }
 
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
@@ -615,9 +615,10 @@ pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double 
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-    bool isBAComplete = mpTracker->mCurrentFrame.isBACompleteForKeyframe();
+    auto isBAComplete = mpTracker->mCurrentFrame.isBACompleteForKeyframe();
+    auto computedScales = mpTracker->mCurrentFrame.getKeyframeScales();
 
-    return {Tcw,isBAComplete};
+    return {Tcw,isBAComplete, computedScales};
 }
 
 
@@ -1490,13 +1491,6 @@ int System::GetTrackingState()
     return mTrackingState;
 }
 
-bool System::InertialBACompleted(){
-    if(mpLocalMapper)
-        return mpLocalMapper->InertialBACompleted();
-    else
-        return false;
-}
-
 vector<MapPoint*> System::GetActiveReferenceMapPoints()
 {
     Map* pActiveMap = mpAtlas->GetCurrentMap();
@@ -1510,13 +1504,6 @@ vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
     return mTrackedKeyPointsUn;
 }
 
-double System::GetScaleFactor() const {
-    return mpLocalMapper->GetScaleFactor();
-}
-
-vector<double> System::GetScaleChangeTimestamps() const {
-    return mpLocalMapper->GetScaleChangeTimestamps();
-}
 
 std::vector<KeyFrame*> System::GetAllKeyframes() {
     return mpAtlas->GetAllKeyFrames();
