@@ -615,8 +615,8 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &i
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-    auto isBAComplete = mpTracker->mCurrentFrame.isBACompleteForKeyframe();
-    auto computedScales = mpTracker->mCurrentFrame.getKeyframeScales();
+    auto isBAComplete = mpTracker->isBACompleteForMap();
+    auto computedScales = mpTracker->getMapScales();
 
     return {Tcw,isBAComplete, computedScales};
 }

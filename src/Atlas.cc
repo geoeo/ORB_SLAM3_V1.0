@@ -206,6 +206,27 @@ std::vector<MapPoint*> Atlas::GetReferenceMapPoints()
     return mpCurrentMap->GetReferenceMapPoints();
 }
 
+bool Atlas::isBACompleteForMap() {
+    unique_lock<mutex> lock(mMutexAtlas);
+    auto complete = false;
+
+    if(mpCurrentMap)
+        complete = mpCurrentMap->GetIniertialBA2();
+    
+
+    return complete;   
+}
+
+vector<float> Atlas::getMapScales() {
+    unique_lock<mutex> lock(mMutexAtlas);
+    vector<float> scales = {};
+
+    if(mpCurrentMap)
+        scales = mpCurrentMap->getVIBAScales();
+    
+    return scales;   
+}
+
 vector<Map*> Atlas::GetAllMaps()
 {
     unique_lock<mutex> lock(mMutexAtlas);

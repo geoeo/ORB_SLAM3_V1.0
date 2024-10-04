@@ -163,10 +163,6 @@ public:
         return mbHasVelocity;
     }
 
-    bool isBACompleteForKeyframe() const;
-
-    vector<float> getKeyframeScales() const;
-
 
 
 private:

@@ -104,6 +104,8 @@ public:
     std::vector<KeyFrame*> GetAllKeyFrames();
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
+    bool isBACompleteForMap();
+    std::vector<float> getMapScales();
 
     std::vector<Map*> GetAllMaps();
 

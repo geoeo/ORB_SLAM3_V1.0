@@ -4107,6 +4107,14 @@ float Tracking::GetImageScale()
     return mImageScale;
 }
 
+bool Tracking::isBACompleteForMap() {
+    return mpAtlas->isBACompleteForMap();   
+}
+
+vector<float> Tracking::getMapScales() {
+    return mpAtlas->getMapScales();   
+}
+
 #ifdef REGISTER_LOOP
 void Tracking::RequestStop()
 {

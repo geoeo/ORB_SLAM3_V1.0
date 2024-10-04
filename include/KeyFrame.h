@@ -478,7 +478,6 @@ protected:
     bool mbNotErase;
     bool mbToBeErased;
     bool mbBad;    
-    bool mbBAComplete;
 
     float mHalfBaseline; // Only for visualization
 
