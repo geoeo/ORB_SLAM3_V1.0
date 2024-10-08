@@ -20,12 +20,11 @@
 #include "ORBmatcher.h"
 
 #include<limits.h>
-
 #include<opencv2/core/core.hpp>
+#include<stdint-gcc.h>
 
 #include "DBoW2/DBoW2/FeatureVector.h"
-
-#include<stdint-gcc.h>
+#include <tracy.hpp>
 
 using namespace std;
 
@@ -528,6 +527,7 @@ namespace ORB_SLAM3
     int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint*> &vpPoints, const std::vector<KeyFrame*> &vpPointsKFs,
                                        std::vector<MapPoint*> &vpMatched, std::vector<KeyFrame*> &vpMatchedKF, int th, float ratioHamming)
     {
+        ZoneNamedN(SearchByProjectionCall_1, "SearchByProjectionCall_1", true); 
         // Get Calibration Parameters for later projection
         const float &fx = pKF->fx;
         const float &fy = pKF->fy;
@@ -758,6 +758,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
     {
+        ZoneNamedN(SearchByBoWCall, "SearchByBoWCall", true); 
         const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
         const vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
@@ -901,6 +902,7 @@ namespace ORB_SLAM3
     int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
                                            vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
     {
+        ZoneNamedN(SearchForTriangulationCall, "SearchForTriangulationCall", true);
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
         const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
 
@@ -1440,6 +1442,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th)
     {
+        ZoneNamedN(SearchBySim3Call, "SearchBySim3Call", true); 
         const float &fx = pKF1->fx;
         const float &fy = pKF1->fy;
         const float &cx = pKF1->cx;
@@ -1659,6 +1662,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
     {
+        ZoneNamedN(SearchByProjectionCall_2, "SearchByProjectionCall_2", true); 
         int nmatches = 0;
 
         // Rotation Histogram (to check rotation consistency)
@@ -1870,6 +1874,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint*> &sAlreadyFound, const float th , const int ORBdist)
     {
+        ZoneNamedN(SearchByProjectionCall_3, "SearchByProjectionCall_3", true); 
         int nmatches = 0;
 
         const Sophus::SE3f Tcw = CurrentFrame.GetPose();
