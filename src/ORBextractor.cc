@@ -470,7 +470,7 @@ namespace ORB_SLAM3
         feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
-        gridCount = static_cast<float>(_gridCount); //Seems to work best for 0.8 image factor. TODO: make this a config param
+        gridCount = static_cast<float>(_gridCount);
     }
 
     static void computeOrientation(const Mat& image, vector<KeyPoint>& keypoints, const vector<int>& umax)
@@ -828,7 +828,6 @@ namespace ORB_SLAM3
                     if(maxX>maxBorderX)
                         maxX = maxBorderX;
 
-                    //vKeysCell.clear();
                     vector<cv::KeyPoint> vKeysCell;
                     {
                         ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
@@ -838,24 +837,12 @@ namespace ORB_SLAM3
                     }
 
 
-                    // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                    //      vKeysCell,iniThFAST,true);
-
-
                     if(vKeysCell.empty())
                     {
-
-                        {
-                            ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-                            feat_back->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                                vKeysCell);
-                            TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-                        }
-
-
-                        // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                        //         vKeysCell,minThFAST,true);
-
+                        ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+                        feat_back->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
+                            vKeysCell);
+                        TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                     }
 
                     if(!vKeysCell.empty())
@@ -927,7 +914,6 @@ namespace ORB_SLAM3
         ComputeKeyPointsOctTree(allKeypoints);
 
         Mat descriptors;
-
         int nkeypoints = 0;
         for (int level = 0; level < nlevels; ++level)
             nkeypoints += (int)allKeypoints[level].size();
@@ -939,8 +925,6 @@ namespace ORB_SLAM3
             descriptors = _descriptors.getMat();
         }
 
-        //_keypoints.clear();
-        //_keypoints.reserve(nkeypoints);
         _keypoints = vector<cv::KeyPoint>(nkeypoints);
 
         int offset = 0;
@@ -962,16 +946,14 @@ namespace ORB_SLAM3
                 GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
             }
 
-
             // Compute the descriptors
-            //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
             Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
             computeDescriptors(workingMat, keypoints, desc, pattern);
 
             offset += nkeypointsLevel;
 
 
-            float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+            float scale = mvScaleFactor[level];
             int i = 0;
             for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
                          keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
