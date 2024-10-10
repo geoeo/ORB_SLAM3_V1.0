@@ -37,6 +37,6 @@ echo "Configuring and building ORB_SLAM3 ..."
 
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DTRACY_ENABLE=OFF "$@"
+cmake .. -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DTRACY_ENABLE=ON "$@"
 make -j6
 make install
