@@ -80,6 +80,7 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(vpi REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -151,6 +152,7 @@ ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
+vpi
 -lcrypto
 )
 
