@@ -23,6 +23,7 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(vpi REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 
@@ -39,6 +40,7 @@ target_link_libraries(mono_inertial_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ORB_SLAM3
+  vpi
   -lfmt
   )
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs ${TRACY_PACKAGE})

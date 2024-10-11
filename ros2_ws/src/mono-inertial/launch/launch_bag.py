@@ -28,8 +28,7 @@ def generate_launch_description():
             ]
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}', '--topics', f'{image_topic}/compressed', '/bmi088/imu',
-],
+            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}', '--topics', f'{image_topic}/compressed', '/bmi088/imu'],
             output='log'
         )
 ])

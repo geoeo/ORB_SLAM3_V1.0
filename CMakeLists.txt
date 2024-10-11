@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.25)
 project(ORB_SLAM3)
 
 set(ORB_SLAM3_VERSION "1.0")
