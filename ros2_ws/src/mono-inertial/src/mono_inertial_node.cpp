@@ -354,9 +354,9 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 2500;
-      orb.nLevels     = 8;
-      orb.scaleFactor = 1.2;
-      orb.minThFast   = 5;
+      orb.nLevels     = 3;
+      orb.scaleFactor = 2.0;
+      orb.minThFast   = 3;
       orb.iniThFast   = 15;
       orb.gridCount = 256;
 
@@ -396,7 +396,7 @@ class SlamNode : public rclcpp::Node
       double timeshift_cam_imu = 0.008684532573338512; // F1
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, false);
       cout << "SLAM Init" << endl;
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map1, m_undistortion_map2);
