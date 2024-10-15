@@ -163,8 +163,6 @@ public:
         return mbHasVelocity;
     }
 
-    bool isBACompleteForKeyframe() const;
-
 
 
 private:

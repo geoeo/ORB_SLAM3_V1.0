@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
-project(ORB_SLAM3 LANGUAGES CXX CUDA)
+cmake_minimum_required(VERSION 2.25)
+project(ORB_SLAM3)
 
 set(ORB_SLAM3_VERSION "1.0")
 
@@ -61,9 +61,11 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules ${PROJECT_SOUR
 if(TRACY_ENABLE)
     message("Tracy Enabled...")
     LIST(APPEND CMAKE_INSTALL_RPATH  ${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/lib)
-    set(TRACY_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/tracy/public")
-    set(TRACY_LIB "${CMAKE_SOURCE_DIR}/../ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so")
+    set(TRACY_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/ros2_ws/install/tracy_profiler/tracy/public")
+    set(TRACY_LIB "${CMAKE_SOURCE_DIR}/ros2_ws/install/tracy_profiler/lib/libtracy_profiler.so")
     add_compile_definitions(TRACY_ENABLE)
+    message(${TRACY_INCLUDE_DIR})
+    message(${TRACY_LIB})
 else()
     set(TRACY_INCLUDE_DIR "")
     set(TRACY_LIB "")
@@ -85,7 +87,7 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
-find_package(CUDAToolkit REQUIRED)
+find_package(vpi REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -164,6 +166,7 @@ ${G2O_TYPES_SLAM3D}
 ${CUDAToolkit_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
+vpi
 -lcrypto
 )
 

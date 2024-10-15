@@ -113,6 +113,20 @@ RUN apt-get update && apt-get install -y libsuitesparse-dev
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
+
+# VPI - https://docs.nvidia.com/vpi/install_in_docker.html / https://docs.nvidia.com/vpi/installation.html
+RUN apt-key adv --fetch-key https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
+RUN add-apt-repository 'deb https://repo.download.nvidia.com/jetson/x86_64/jammy r36.4 main'
+RUN apt update
+
+# (For Orin) This is a temporary workaround required to install pva-allow-2 in docker which will not be necessary next release
+RUN apt-get install -y pva-allow-2 || true
+#RUN rm /var/lib/dpkg/info/pva-allow-2.post*
+#RUN dpkg --configure pva-allow-2
+ 
+# Install VPI
+RUN apt-get install -y libnvvpi3 vpi3-dev vpi3-samples
+
 WORKDIR /
 RUN mkdir bags
 

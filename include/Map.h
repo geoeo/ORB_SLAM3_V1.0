@@ -123,6 +123,7 @@ public:
     void SetIniertialBA2();
     bool GetIniertialBA1();
     bool GetIniertialBA2();
+    std::vector<float> getVIBAScales();
 
     void PrintEssentialGraph();
     bool CheckEssentialGraph();
@@ -197,6 +198,8 @@ protected:
     bool mbIsInertial;
     bool mbIMU_BA1;
     bool mbIMU_BA2;
+    float mfScale;
+    std::vector<float> mfScales;
 
     // Mutex
     std::mutex mMutexMap;

@@ -456,13 +456,6 @@ Eigen::Vector3f Frame::GetVelocity() const
     return mVw;
 }
 
-bool Frame::isBACompleteForKeyframe() const {
-    if(mpLastKeyFrame == nullptr)
-        return false;
-    else
-        return mpLastKeyFrame->getBAComplete();
-}
-
 void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f &twb, const Eigen::Vector3f &Vwb)
 {
     mVw = Vwb;

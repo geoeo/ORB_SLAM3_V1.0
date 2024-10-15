@@ -114,6 +114,9 @@ public:
 
     float GetImageScale();
 
+    bool isBACompleteForMap(); 
+    vector<float> getMapScales();
+
     unsigned int GetLastKeyFrameId() const {
         return mnLastKeyFrameId;
     }

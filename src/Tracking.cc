@@ -3872,7 +3872,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     }
 
     Map* pMap = mpAtlas->GetCurrentMap();
-
+    
     if (!bLocMap)
     {
         Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_VERY_VERBOSE);
@@ -4105,6 +4105,14 @@ void Tracking::SaveSubTrajectory(string strNameFile_frames, string strNameFile_k
 float Tracking::GetImageScale()
 {
     return mImageScale;
+}
+
+bool Tracking::isBACompleteForMap() {
+    return mpAtlas->isBACompleteForMap();   
+}
+
+vector<float> Tracking::getMapScales() {
+    return mpAtlas->getMapScales();   
 }
 
 #ifdef REGISTER_LOOP

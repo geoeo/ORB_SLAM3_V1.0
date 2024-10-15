@@ -105,7 +105,6 @@ class KeyFrame
         //ar & mBiasMerge;
         //ar & mnMergeCorrectedForKF;
         //ar & mnMergeForKF;
-        //ar & mfScaleMerge;
         //ar & mnBALocalForMerge;
 
         // Scale
@@ -274,8 +273,6 @@ public:
     // Set/check bad flag
     void SetBadFlag();
     bool isBad();
-    bool getBAComplete() const;
-    void setBAComplete(bool ba_complete);
 
     // Compute Scene Depth (q=2 median). Used in monocular.
     float ComputeSceneMedianDepth(const int q);
@@ -293,7 +290,6 @@ public:
 
     void SetNewBias(const IMU::Bias &b);
     Eigen::Vector3f GetGyroBias();
-
     Eigen::Vector3f GetAccBias();
 
     IMU::Bias GetImuBias();
@@ -370,7 +366,6 @@ public:
     IMU::Bias mBiasMerge;
     long unsigned int mnMergeCorrectedForKF;
     long unsigned int mnMergeForKF;
-    float mfScaleMerge;
     long unsigned int mnBALocalForMerge;
 
     float mfScale;
@@ -484,7 +479,6 @@ protected:
     bool mbNotErase;
     bool mbToBeErased;
     bool mbBad;    
-    bool mbBAComplete;
 
     float mHalfBaseline; // Only for visualization
 

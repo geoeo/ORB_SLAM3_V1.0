@@ -22,6 +22,7 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
+#include <vpi/Stream.h>
 
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/cudafeatures2d.hpp>
@@ -55,7 +56,10 @@ namespace ORB_SLAM3
         ORBextractor(int nfeatures, float scaleFactor, int nlevels,
                      int iniThFAST, int minThFAST, int gridCount);
 
-        ~ORBextractor() {}
+        ~ORBextractor() {
+            vpiStreamSync(stream);
+            vpiStreamDestroy(stream);
+        }
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
@@ -124,8 +128,7 @@ namespace ORB_SLAM3
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
 
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_gpu;
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_back_gpu;
+        VPIStream stream;
     };
 
 } // namespace ORB_SLAM

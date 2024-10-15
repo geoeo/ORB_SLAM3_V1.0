@@ -6,6 +6,7 @@
 #include<queue>
 #include<thread>
 #include<mutex>
+#include<tuple>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
@@ -173,17 +174,17 @@ void ImageGrabber::SyncWithImu()
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-        auto pose_flag_pair = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
-        Sophus::Matrix4f pose = pose_flag_pair.first.matrix();
-        bool ba_complete_for_frame = pose_flag_pair.second;
+        auto tracking_results = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
+        bool ba_complete_for_frame = std::get<1>(tracking_results);
+        auto scale_factors = std::get<2>(tracking_results);
         vImuMeas.clear();
-        auto timestamps =  mpSLAM->GetScaleChangeTimestamps();
-        cout << "BA completed: " << mpSLAM->InertialBACompleted() << endl;
-        cout << "BA completed for frame: " << ba_complete_for_frame << endl;
-        cout << "Scale Factor: " << mpSLAM->GetScaleFactor() << endl;
+        cout << "BA completed: " << ba_complete_for_frame << endl;
+        if(!scale_factors.empty())
+          cout << "Latest Scale Factor: " << scale_factors.back() << endl;
         cout << "Current ts: " << tIm << endl;
-        for(auto ts : timestamps)
-          cout << " ts: " << ts;
+        for(auto s : scale_factors)
+          cout << " scale: " << s;
         cout << endl;
         //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
         //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
@@ -353,11 +354,11 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 2500;
-      orb.nLevels     = 8;
-      orb.scaleFactor = 1.2;
-      orb.minThFast   = 5;
+      orb.nLevels     = 3;
+      orb.scaleFactor = 2.0;
+      orb.minThFast   = 3;
       orb.iniThFast   = 15;
-      orb.gridCount = 96;
+      orb.gridCount = 256;
 
       ORB_SLAM3::ImuParameters m_imu;
       m_imu.accelWalk  = 0.00047746677530925284; // x10
