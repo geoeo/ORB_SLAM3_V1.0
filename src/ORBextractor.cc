@@ -60,15 +60,10 @@
 #include <iostream>
 
 #include <vpi/OpenCVInterop.hpp>
-#include <vpi/Array.h>
 #include <vpi/Image.h>
-#include <vpi/Pyramid.h>
 #include <vpi/Status.h>
-#include <vpi/Stream.h>
 #include <vpi/algo/ConvertImageFormat.h>
-#include <vpi/algo/GaussianPyramid.h>
 #include <vpi/algo/ImageFlip.h>
-#include <vpi/algo/ORB.h>
 #include <vpi/algo/GaussianFilter.h>
 
 #include "ORBextractor.h"
@@ -495,6 +490,7 @@ namespace ORB_SLAM3
 
         feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
+        vpiStreamCreate(0, &stream);
 
         gridCount = static_cast<float>(_gridCount);
     }
@@ -935,128 +931,6 @@ namespace ORB_SLAM3
 
         // Pre-compute the scale pyramid
         ComputePyramid(image);
-        
-        // int monoIndex = 0; 
-        // {
-        //     ZoneNamedN(ApplyExtractor_VPI, "ApplyExtractor_VPI", true);  // NOLINT: Profiler
-
-        //     VPIBackend backend = VPI_BACKEND_CUDA;
-        //     // Use the selected backend with CPU to be able to read data back from CUDA to CPU for example.
-        //     const VPIBackend backendWithCPU = static_cast<VPIBackend>(backend | VPI_BACKEND_CPU);
-
-        //     VPIImage vpi_imgInput     = NULL;
-        //     VPIPyramid vpi_pyrInput   = NULL;
-        //     VPIArray vpi_keypoints    = NULL;
-        //     VPIArray vpi_descriptors  = NULL;
-        //     VPIPayload vpi_orbPayload = NULL;
-        //     VPIStream vpi_stream      = NULL;
-
-        //     // Create the stream where processing will happen
-        //     CHECK_STATUS(vpiStreamCreate(0, &vpi_stream));
-    
-        //     // Define the algorithm parameters.
-        //     VPIORBParams vpi_orbParams;
-        //     CHECK_STATUS(vpiInitORBParams(&vpi_orbParams));
-    
-        //     vpi_orbParams.fastParams.intensityThreshold = 50;
-        //     vpi_orbParams.maxFeaturesPerLevel           = 200;
-        //     vpi_orbParams.maxPyramidLevels              = 3; // Has to be the same as ros node config for now
-    
-        //     // We now wrap the loaded image into a VPIImage object to be used by VPI.
-        //     // VPI won't make a copy of it, so the original image must be in scope at all times.
-        //     CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(image, 0, &vpi_imgInput));
-
-        //     // For the output arrays capacity we can use the maximum number of features per level multiplied by the
-        //     // maximum number of pyramid levels, this will be the de factor maximum for all levels of the input.
-        //     int outCapacity = vpi_orbParams.maxFeaturesPerLevel * vpi_orbParams.maxPyramidLevels;
-    
-        //     // Create the output keypoint array.
-        //     CHECK_STATUS(vpiArrayCreate(outCapacity, VPI_ARRAY_TYPE_PYRAMIDAL_KEYPOINT_F32, backendWithCPU, &vpi_keypoints));
-    
-        //     // Create the output descriptors array.  To output corners only use NULL instead.
-        //     CHECK_STATUS(vpiArrayCreate(outCapacity, VPI_ARRAY_TYPE_BRIEF_DESCRIPTOR, backendWithCPU, &vpi_descriptors));
-
-        //     // For the internal buffers capacity we can use the maximum number of features per level multiplied by 20.
-        //     // This will make FAST find a large number of corners so then ORB can select the top N corners in
-        //     // accordance to Harris score of each corner, where N = maximum number of features per level.
-        //     int bufCapacity = vpi_orbParams.maxFeaturesPerLevel * 20;
-
-        //     // Create the payload for ORB Feature Detector algorithm
-        //     CHECK_STATUS(vpiCreateORBFeatureDetector(backend, bufCapacity, &vpi_orbPayload));
-
-        //     // ================
-        //     // Processing stage
-
-        //     // Then, create the Gaussian Pyramid for the image and wait for the execution to finish
-        //     CHECK_STATUS(vpiPyramidCreate(image.cols, image.rows, VPI_IMAGE_FORMAT_U8, vpi_orbParams.maxPyramidLevels, 0.5,
-        //                                 backend, &vpi_pyrInput));
-
-        //     CHECK_STATUS(vpiSubmitGaussianPyramidGenerator(vpi_stream, backend, vpi_imgInput, vpi_pyrInput, VPI_BORDER_CLAMP));
-            
-    
-        //     // Then get ORB features and wait for the execution to finish
-        //     CHECK_STATUS(vpiSubmitORBFeatureDetector(vpi_stream, backend, vpi_orbPayload, vpi_pyrInput, vpi_keypoints, vpi_descriptors,
-        //                                             &vpi_orbParams, VPI_BORDER_LIMITED));
-    
-        //     CHECK_STATUS(vpiStreamSync(vpi_stream));
-
-
-        //     // Lock output keypoints and scores to retrieve its data on cpu memory
-        //     VPIArrayData outKeypointsData;
-        //     VPIArrayData outDescriptorsData;
-        //     CHECK_STATUS(vpiArrayLockData(vpi_keypoints, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &outKeypointsData));
-        //     CHECK_STATUS(vpiArrayLockData(vpi_descriptors, VPI_LOCK_READ, VPI_ARRAY_BUFFER_HOST_AOS, &outDescriptorsData));
-
-
-        //     //@TODO: Probably wont be necessary on Orin?
-        //     VPIPyramidalKeypointF32 *outKeypoints = (VPIPyramidalKeypointF32 *)outKeypointsData.buffer.aos.data;
-        //     VPIBriefDescriptor *outDescriptors    = (VPIBriefDescriptor *)outDescriptorsData.buffer.aos.data;
-
-        //     // Done handling outputs, don't forget to unlock them.
-        //     CHECK_STATUS(vpiArrayUnlock(vpi_keypoints));
-        //     CHECK_STATUS(vpiArrayUnlock(vpi_descriptors));
-            
-
-        //     int vpi_numKeypoints = *outKeypointsData.buffer.aos.sizePointer;
-        //     _keypoints = vector<cv::KeyPoint>(vpi_numKeypoints);
-        //     _descriptors.create(vpi_numKeypoints, VPI_BRIEF_DESCRIPTOR_ARRAY_LENGTH, CV_8UC1);
-        //     Mat descriptors;
-        //     descriptors = _descriptors.getMat();
-
-        //     std::cout << "vpi num keypoints: " << vpi_numKeypoints << std::endl;
-
-        //     for (int i = 0; i < vpi_numKeypoints; i++)
-        //     {
-        //         float rescale = std::pow(2, outKeypoints[i].octave);
-        //         float x       = outKeypoints[i].x * rescale;
-        //         float y       = outKeypoints[i].y * rescale;
-        //         const int scaledPatchSize = PATCH_SIZE*rescale;
-
-        //         //std::cout << "im octave: " << outKeypoints[i].octave << std::endl;
-
-        //         //TODO: Use second un-blurred pyramid
-        //         float angle = IC_Angle(mvImagePyramid[outKeypoints[i].octave], Point2f(outKeypoints[i].x,outKeypoints[i].y ), umax);
-
-        //         _keypoints.at(i) = cv::KeyPoint(x,y,scaledPatchSize,angle);
-
-
-        //         //TODO: Use blurred image
-        //         //computeOrbDescriptor(_keypoints.at(i), mvImagePyramid[outKeypoints[i].octave], &pattern[0], &descriptors.row(i).data[0]);
-        //         std::memcpy(&descriptors.row(i).data[0],&outDescriptors[i].data[0],VPI_BRIEF_DESCRIPTOR_ARRAY_LENGTH);
-
-        //         monoIndex++;
-        //     }
-
-        //     vpiImageDestroy(vpi_imgInput);
-        //     vpiArrayDestroy(vpi_keypoints);
-        //     vpiArrayDestroy(vpi_descriptors);
-        //     vpiPayloadDestroy(vpi_orbPayload);
-        //     vpiStreamDestroy(vpi_stream);
-        // }
-
-
-        /// VPI END ///
-
         vector < vector<KeyPoint> > allKeypoints;
         ComputeKeyPointsOctTree(allKeypoints);
 
@@ -1078,11 +952,6 @@ namespace ORB_SLAM3
         //Modified for speeding up stereo fisheye matching
         int monoIndex = 0, stereoIndex = nkeypoints-1;
         std::cout << "num keypoints: " << nkeypoints << std::endl;
-
-        VPIStream stream;
-
-        vpiStreamCreate(0, &stream);
-
         for (int level = 0; level < nlevels; ++level)
         {
             vector<KeyPoint>& keypoints = allKeypoints[level];
@@ -1096,24 +965,22 @@ namespace ORB_SLAM3
             VPIImage vpi_imgInput     = NULL;
             VPIImageData data;
             Mat workingMat;
-            cv::Mat blurredImg;
             {
                 ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
-                workingMat = mvImagePyramid[level].clone();
-                GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+                // workingMat = mvImagePyramid[level].clone();
+                // GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
 
+                CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(mvImagePyramid[level], 0, &vpi_imgInput));
+                CHECK_STATUS(vpiImageCreate(mvImagePyramid[level].cols, mvImagePyramid[level].rows,  VPI_IMAGE_FORMAT_U8, 0, &vpi_imgOutput));
 
-                // CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(mvImagePyramid[level], 0, &vpi_imgInput));
-                // CHECK_STATUS(vpiImageCreate(mvImagePyramid[level].cols, mvImagePyramid[level].rows,  VPI_IMAGE_FORMAT_U8, 0, &vpi_imgOutput));
-
-                // CHECK_STATUS(vpiSubmitGaussianFilter(stream, VPI_BACKEND_CUDA, vpi_imgInput, vpi_imgOutput, 7, 7, 1.2, 1.2, VPI_BORDER_REFLECT));
+                //TODO: Try PVA on Orin
+                CHECK_STATUS(vpiSubmitGaussianFilter(stream, VPI_BACKEND_CUDA, vpi_imgInput, vpi_imgOutput, 7, 7, 1.2, 1.2, VPI_BORDER_CLAMP));
                 
-                // CHECK_STATUS(vpiImageLockData(vpi_imgOutput,VPI_LOCK_READ,VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
-                // CHECK_STATUS(vpiImageDataExportOpenCVMat(data,&blurredImg));
-                // CHECK_STATUS(vpiImageUnlock(vpi_imgOutput));
+                CHECK_STATUS(vpiImageLockData(vpi_imgOutput,VPI_LOCK_READ,VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
+                CHECK_STATUS(vpiImageDataExportOpenCVMat(data,&workingMat));
+                CHECK_STATUS(vpiImageUnlock(vpi_imgOutput));
 
-                // vpiStreamSync(stream);
-
+                vpiStreamSync(stream);
             }
 
             vpiImageDestroy(vpi_imgInput);
@@ -1153,8 +1020,6 @@ namespace ORB_SLAM3
             }
         }
 
-
-        vpiStreamDestroy(stream);
         cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
         return monoIndex;
     }
