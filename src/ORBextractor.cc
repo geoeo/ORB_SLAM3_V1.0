@@ -490,7 +490,7 @@ namespace ORB_SLAM3
 
         feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-        vpiStreamCreate(0, &stream);
+        vpiStreamCreate(VPI_BACKEND_CUDA | VPI_EXCLUSIVE_STREAM_ACCESS | VPI_BACKEND_CPU , &stream);
 
         gridCount = static_cast<float>(_gridCount);
     }
@@ -967,19 +967,21 @@ namespace ORB_SLAM3
             Mat workingMat;
             {
                 ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
+
+                // Inplace GuassianBlur seems to be faster than any VPI Backend
+
                 // workingMat = mvImagePyramid[level].clone();
                 // GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
 
+                
                 CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(mvImagePyramid[level], 0, &vpi_imgInput));
-                CHECK_STATUS(vpiImageCreate(mvImagePyramid[level].cols, mvImagePyramid[level].rows,  VPI_IMAGE_FORMAT_U8, 0, &vpi_imgOutput));
+                CHECK_STATUS(vpiImageCreate(mvImagePyramid[level].cols, mvImagePyramid[level].rows,  VPI_IMAGE_FORMAT_U8, VPI_BACKEND_CUDA | VPI_EXCLUSIVE_STREAM_ACCESS | VPI_BACKEND_CPU , &vpi_imgOutput));
 
-                //TODO: Try PVA on Orin
                 CHECK_STATUS(vpiSubmitGaussianFilter(stream, VPI_BACKEND_CUDA, vpi_imgInput, vpi_imgOutput, 7, 7, 1.2, 1.2, VPI_BORDER_CLAMP));
                 
                 CHECK_STATUS(vpiImageLockData(vpi_imgOutput,VPI_LOCK_READ,VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
                 CHECK_STATUS(vpiImageDataExportOpenCVMat(data,&workingMat));
                 CHECK_STATUS(vpiImageUnlock(vpi_imgOutput));
-
                 vpiStreamSync(stream);
             }
 

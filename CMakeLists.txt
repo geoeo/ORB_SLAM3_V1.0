@@ -95,7 +95,6 @@ src/Tracking.cc
 src/LocalMapping.cc
 src/LoopClosing.cc
 src/ORBextractor.cc
-#src/ORBextractor_gpu.cc
 src/ORBmatcher.cc
 src/FrameDrawer.cc
 src/Converter.cc
