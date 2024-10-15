@@ -67,11 +67,7 @@
 #include <vpi/algo/GaussianFilter.h>
 
 #include "ORBextractor.h"
-#include "tracy.hpp"
-
- 	
-#include <opencv2/cudaarithm.hpp>
-#include <opencv2/cudawarping.hpp>
+#include <tracy.hpp>
 
 using namespace cv;
 using namespace std;
@@ -810,7 +806,7 @@ namespace ORB_SLAM3
         return vResultKeys;
     }
 
-    void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints, std::vector<cv::cuda::GpuMat>& imagePyramidGpu)
+    void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints)
     {
         ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
         allKeypoints.resize(nlevels);
@@ -819,11 +815,10 @@ namespace ORB_SLAM3
 
         for (int level = 0; level < nlevels; ++level)
         {
-
             const int minBorderX = EDGE_THRESHOLD-3;
             const int minBorderY = minBorderX;
-            const int maxBorderX = imagePyramidGpu[level].cols-EDGE_THRESHOLD+3;
-            const int maxBorderY = imagePyramidGpu[level].rows-EDGE_THRESHOLD+3;
+            const int maxBorderX = mvImagePyramid[level].cols-EDGE_THRESHOLD+3;
+            const int maxBorderY = mvImagePyramid[level].rows-EDGE_THRESHOLD+3;
 
             vector<cv::KeyPoint> vToDistributeKeys;
             vToDistributeKeys.reserve(nfeatures*10);
@@ -927,7 +922,6 @@ namespace ORB_SLAM3
                                   OutputArray _descriptors, std::vector<int> &vLappingArea)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
-        std::vector<cv::cuda::GpuMat> mvImagePyramidGpu;
         //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
         if(_image.empty())
             return -1;
@@ -935,16 +929,10 @@ namespace ORB_SLAM3
         Mat image = _image.getMat();
         assert(image.type() == CV_8UC1 );
 
-        cv::cuda::GpuMat im_gpu;
-        {
-            ZoneNamedN(Upload, "Upload", true);  // NOLINT: Profiler
-            im_gpu.upload(image);  
-        }
-
         // Pre-compute the scale pyramid
         ComputePyramid(image);
         vector < vector<KeyPoint> > allKeypoints;
-        ComputeKeyPointsOctTree(allKeypoints, mvImagePyramidGpu);
+        ComputeKeyPointsOctTree(allKeypoints);
 
         Mat descriptors;
         int nkeypoints = 0;
@@ -966,15 +954,11 @@ namespace ORB_SLAM3
         std::cout << "num keypoints: " << nkeypoints << std::endl;
         for (int level = 0; level < nlevels; ++level)
         {
-            ZoneNamedN(ApplyExtractorLoop, "ApplyExtractorLoop", true);  // NOLINT: Profiler
-            cv::cuda::GpuMat workingMatGpuBlur; 
-            for (int level = 0; level < nlevels; ++level)
-            {
-                vector<KeyPoint>& keypoints = allKeypoints[level];
-                int nkeypointsLevel = (int)keypoints.size();
+            vector<KeyPoint>& keypoints = allKeypoints[level];
+            int nkeypointsLevel = (int)keypoints.size();
 
-                if(nkeypointsLevel==0)
-                    continue;
+            if(nkeypointsLevel==0)
+                continue;
 
             // preprocess the resized image
             VPIImage vpi_imgOutput    = NULL;
@@ -1040,119 +1024,30 @@ namespace ORB_SLAM3
         return monoIndex;
     }
 
-    void ORBextractor::ComputePyramidGpu(cv::cuda::GpuMat &image, std::vector<cv::cuda::GpuMat>& imagePyramidGpu)
-    {
-        ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
-
-
-        for (int level = 0; level < nlevels; ++level)
-        {
-            float scale = mvInvScaleFactor[level];
-            Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
-            Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-
-            cv::cuda::GpuMat temp_gpu(wholeSize, image.type());
-            imagePyramidGpu.emplace_back(temp_gpu(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height)));
-
-            
-            // Compute the resized image
-            if( level != 0 )
-            {
-
-                {
-                    ZoneNamedN(PyramidResize, "PyramidResize", true);  // NOLINT: Profiler
-                    cv::cuda::resize(imagePyramidGpu[level-1], imagePyramidGpu[level], sz, 0, 0, INTER_LINEAR);
-                }
-
-
-
-                {
-                    ZoneNamedN(copyMakeBorderNonZero, "copyMakeBorderNonZero", true);  // NOLINT: Profiler
-                    cv::cuda::copyMakeBorder(imagePyramidGpu[level], temp_gpu, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                                BORDER_REFLECT_101);
-                }
-
-            }
-            else
-            {
-
-                cv::cuda::copyMakeBorder(image, imagePyramidGpu[level],EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                                BORDER_REFLECT_101);
-            }
-
-            // {
-            //     ZoneNamedN(Download, "Download", true);  // NOLINT: Profiler
-            //     levels_gpu[level].download(mvImagePyramid[level]);  
-            // }
-
-        }
-
-    }
-
-
     void ORBextractor::ComputePyramid(cv::Mat image)
     {
         ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
-        // cv::cuda::GpuMat im_gpu;
-        // {
-        //     ZoneNamedN(Upload, "Upload", true);  // NOLINT: Profiler
-        //     im_gpu.upload(image);
-        // }
-
-
-        //std::vector<cv::cuda::GpuMat> levels_gpu;
-
         for (int level = 0; level < nlevels; ++level)
         {
             float scale = mvInvScaleFactor[level];
             Size sz(cvRound((float)image.cols*scale), cvRound((float)image.rows*scale));
             Size wholeSize(sz.width + EDGE_THRESHOLD*2, sz.height + EDGE_THRESHOLD*2);
-
             Mat temp(wholeSize, image.type()), masktemp;
             mvImagePyramid[level] = temp(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height));
-
-            //cv::cuda::GpuMat temp_gpu(wholeSize, image.type());
-            //levels_gpu.emplace_back(temp_gpu(Rect(EDGE_THRESHOLD, EDGE_THRESHOLD, sz.width, sz.height)));
-            
 
             // Compute the resized image
             if( level != 0 )
             {
-
                 resize(mvImagePyramid[level-1], mvImagePyramid[level], sz, 0, 0, INTER_LINEAR);
 
                 copyMakeBorder(mvImagePyramid[level], temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
                                BORDER_REFLECT_101+BORDER_ISOLATED);
-
-                // {
-                //     ZoneNamedN(PyramidResize, "PyramidResize", true);  // NOLINT: Profiler
-                //     cv::cuda::resize(levels_gpu[level-1], levels_gpu[level], sz, 0, 0, INTER_LINEAR);
-                // }
-
-
-
-                // {
-                //     ZoneNamedN(copyMakeBorderNonZero, "copyMakeBorderNonZero", true);  // NOLINT: Profiler
-                //     cv::cuda::copyMakeBorder(levels_gpu[level], temp_gpu, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                //                 BORDER_REFLECT_101);
-                // }
-
             }
             else
             {
-                //ZoneNamedN(PyramidLevel0, "PyramidLevel0", true);  // NOLINT: Profiler
                 copyMakeBorder(image, temp, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
                                BORDER_REFLECT_101);
-
-                // cv::cuda::copyMakeBorder(im_gpu, levels_gpu[level],EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD, EDGE_THRESHOLD,
-                //                 BORDER_REFLECT_101);
             }
-
-            // {
-            //     ZoneNamedN(Download, "Download", true);  // NOLINT: Profiler
-            //     levels_gpu[level].download(mvImagePyramid[level]);  
-            // }
-
         }
 
     }
