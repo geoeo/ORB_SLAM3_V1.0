@@ -951,6 +951,8 @@ namespace ORB_SLAM3
             computeDescriptors(workingMat, keypoints, desc, pattern);
 
             offset += nkeypointsLevel;
+
+
             float scale = mvScaleFactor[level];
             int i = 0;
             for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
@@ -961,13 +963,20 @@ namespace ORB_SLAM3
                     keypoint->pt *= scale;
                 }
 
-                _keypoints.at(monoIndex) = (*keypoint);
-                desc.row(i).copyTo(descriptors.row(monoIndex));
-                monoIndex++;
+                if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
+                    _keypoints.at(stereoIndex) = (*keypoint);
+                    desc.row(i).copyTo(descriptors.row(stereoIndex));
+                    stereoIndex--;
+                }
+                else{
+                    _keypoints.at(monoIndex) = (*keypoint);
+                    desc.row(i).copyTo(descriptors.row(monoIndex));
+                    monoIndex++;
+                }
                 i++;
             }
         }
-        //cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
+        //cout << "[ORBextractor]: mono " << monoIndex << " keypoints size " << nkeypoints << endl;
         return monoIndex;
     }
 
