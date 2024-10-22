@@ -45,7 +45,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
-    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
+    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
     // Load camera parameters from settings file
     if(settings){
@@ -2020,10 +2020,10 @@ void Tracking::Track()
                     {
                         // Relocalization
                         bOK = Relocalization();
-                        // We reset only if the BA cycle was not completed for the current map.
+                        // We reset only if the trajectory was not georeferenced.
                         // This has to do with downstream application is not able to respond to change in an established map
                         // May change in the future
-                        if(!pCurrentMap->GetIniertialBA2() && mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
+                        if(!isGeoreferenced() && mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
                         {
                             mState = LOST;
                             Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -4115,6 +4115,15 @@ bool Tracking::isBACompleteForMap() {
 vector<float> Tracking::getMapScales() {
     return mpAtlas->getMapScales();   
 }
+
+bool Tracking::isGeoreferenced(){
+    return mIsGeoreferenced;
+}
+
+void Tracking::setGeoreference(bool is_georeferenced){
+    mIsGeoreferenced = is_georeferenced;
+}
+
 
 #ifdef REGISTER_LOOP
 void Tracking::RequestStop()
