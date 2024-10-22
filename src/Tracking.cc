@@ -2020,9 +2020,10 @@ void Tracking::Track()
                     {
                         // Relocalization
                         bOK = Relocalization();
-                        //std::cout << "mCurrentFrame.mTimeStamp:" << to_string(mCurrentFrame.mTimeStamp) << std::endl;
-                        //std::cout << "mTimeStampLost:" << to_string(mTimeStampLost) << std::endl;
-                        if(mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
+                        // We reset only if the BA cycle was not completed for the current map.
+                        // This has to do with downstream application is not able to respond to change in an established map
+                        // May change in the future
+                        if(!mpAtlas->isBACompleteForMap() && mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
                         {
                             mState = LOST;
                             Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -3434,7 +3435,7 @@ void Tracking::SearchLocalPoints()
         if(mState==LOST || mState==RECENTLY_LOST) // Lost for less than 1 second
             th=15; // 15
 
-        auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
+        auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, 2.0*th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
     }
 }
 
