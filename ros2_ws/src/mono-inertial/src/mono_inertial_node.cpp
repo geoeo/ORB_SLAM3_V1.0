@@ -358,7 +358,7 @@ class SlamNode : public rclcpp::Node
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
-      orb.gridCount = 96;
+      orb.gridCount = 256;
 
       ORB_SLAM3::ImuParameters m_imu;
       m_imu.accelWalk  = 0.00047746677530925284; // x10

@@ -976,7 +976,7 @@ namespace ORB_SLAM3
                 i++;
             }
         }
-        //cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
+        //cout << "[ORBextractor]: mono " << monoIndex << " keypoints size " << nkeypoints << endl;
         return monoIndex;
     }
 
