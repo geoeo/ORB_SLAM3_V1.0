@@ -368,7 +368,7 @@ protected:
     int initID, lastID;
 
     Sophus::SE3f mTlr;
-    std::atomic<bool> mIsGeoreferenced;
+    bool mIsGeoreferenced;
 
     void newParameterLoader(Settings* settings);
 
