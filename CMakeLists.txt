@@ -80,6 +80,7 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDACvManagedMemory REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc

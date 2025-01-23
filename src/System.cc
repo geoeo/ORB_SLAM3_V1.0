@@ -652,7 +652,7 @@ void System::InsertRectTime(double& time)
 void System::InsertResizeTime(double& time)
 {
     mpTracker->vdResizeImage_ms.push_back(time);
-}
+}git 
 
 void System::InsertTrackTime(double& time)
 {

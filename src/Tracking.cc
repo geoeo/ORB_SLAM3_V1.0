@@ -3975,18 +3975,6 @@ int Tracking::GetMatchesInliers()
     return mnMatchesInliers;
 }
 
-void Tracking::SaveSubTrajectory(string strNameFile_frames, string strNameFile_kf, string strFolder)
-{
-    mpSystem->SaveTrajectoryEuRoC(strFolder + strNameFile_frames);
-    //mpSystem->SaveKeyFrameTrajectoryEuRoC(strFolder + strNameFile_kf);
-}
-
-void Tracking::SaveSubTrajectory(string strNameFile_frames, string strNameFile_kf, Map* pMap)
-{
-    mpSystem->SaveTrajectoryEuRoC(strNameFile_frames, pMap);
-    if(!strNameFile_kf.empty())
-        mpSystem->SaveKeyFrameTrajectoryEuRoC(strNameFile_kf, pMap);
-}
 
 float Tracking::GetImageScale()
 {
