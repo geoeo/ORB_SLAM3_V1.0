@@ -3975,7 +3975,6 @@ int Tracking::GetMatchesInliers()
     return mnMatchesInliers;
 }
 
-
 float Tracking::GetImageScale()
 {
     return mImageScale;

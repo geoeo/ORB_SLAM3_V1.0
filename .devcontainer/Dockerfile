@@ -108,8 +108,6 @@ RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
 
-
-
 WORKDIR /
 RUN mkdir bags
 

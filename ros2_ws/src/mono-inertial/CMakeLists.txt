@@ -32,13 +32,17 @@ find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDACvManagedMemory REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
 target_link_libraries(mono_inertial_node 
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
+  ${CUDA_LIBRARIES}
   ORB_SLAM3
+  CUDACvManagedMemory
   -lfmt
   )
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs ${TRACY_PACKAGE})
@@ -50,6 +54,7 @@ ${OpenCV_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${G2O_INCLUDE_DIR}
+${CUDAToolkit_INCLUDE_DIRS}
 )
 
 

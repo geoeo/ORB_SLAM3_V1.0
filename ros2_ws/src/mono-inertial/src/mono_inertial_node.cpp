@@ -7,6 +7,10 @@
 #include<thread>
 #include<mutex>
 #include<tuple>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudawarping.hpp>
+#include <opencv2/core/cuda.hpp>
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
@@ -15,11 +19,12 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
-
+#include "cuda_runtime.h"
 #include <ORB_SLAM3/System.h>
 #include <ORB_SLAM3/ImuTypes.h>
 
 using namespace std::chrono_literals;
+using namespace cuda_cv_managed_memory;
 
 class ImuGrabber
 {
@@ -42,9 +47,9 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::Mat &undistortion_map1, const cv::Mat& undistortion_map2)
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, const cv::cuda::GpuMat& resized_img_gpu)
       : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor),
-        m_undistortion_map1(undistortion_map1), m_undistortion_map2(undistortion_map2){
+        m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_resized_img_gpu(resized_img_gpu){
       }
 
     void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
@@ -62,8 +67,12 @@ public:
     double timeshift_cam_imu;
     uint64_t count;
     float img_resize_factor;
-    cv::Mat m_undistortion_map1;
-    cv::Mat m_undistortion_map2;
+
+    cv::cuda::GpuMat m_undistortion_map_1;
+    cv::cuda::GpuMat m_undistortion_map_2;
+    cv::cuda::GpuMat m_undistorted_image_gpu;
+    cv::cuda::GpuMat m_resized_img_gpu; 
+
 };
 
 void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
@@ -80,44 +89,24 @@ void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_m
 
 cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
-  // Copy the ros image message to cv::Mat.
-  cv_bridge::CvImageConstPtr cv_ptr;
-  try
-  {
-    cv_ptr = cv_bridge::toCvShare(img_msg, sensor_msgs::image_encodings::MONO8);
-  }
-  catch (cv_bridge::Exception& e)
-  {
-    throw(cv_bridge::Exception("Error converting image!"));
-  }
-  
-  if(cv_ptr->image.type()==0)
-  {
-    cv::Mat img_undistorted;
-    if(!(m_undistortion_map1.empty() || m_undistortion_map2.empty())){
-      cv::remap(cv_ptr->image, img_undistorted, m_undistortion_map1, m_undistortion_map2, cv::InterpolationFlags::INTER_CUBIC);
-    }
-    else{
-      img_undistorted = cv_ptr->image;
-    }
+  auto width = img_msg->width;
+  auto height = img_msg->height;
+  auto size_in_bytes = img_msg->height*img_msg->step;
 
+  auto cuda_managed_memory_image 
+    = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(size_in_bytes, height, width, CV_8UC3, img_msg->step),CUDAManagedMemoryDeleter());
+  if(cudaMemcpy(cuda_managed_memory_image->getRaw(), &img_msg->data[0], size_in_bytes, cudaMemcpyDefault) != cudaError_t::cudaSuccess)
+        throw std::runtime_error("CUDAManagedMemory - Failed to copy memory to CUDA unified");
 
-    if(img_resize_factor != 1.0){
-      auto width = cv_ptr->image.cols;
-      auto height = cv_ptr->image.rows;
-      cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
-      cv::Mat im_resize;
-      cv::resize(img_undistorted, im_resize, new_im_size);
-      return im_resize;
-    } else {
-      return img_undistorted;
-    }
-  }
-  else
-  {
-    std::cout << "Error type" << std::endl;
-    return cv_ptr->image.clone();
-  }
+  cv::cuda::remap(cuda_managed_memory_image->getCvGpuMat(), m_undistorted_image_gpu, m_undistortion_map_1, m_undistortion_map_2, cv::InterpolationFlags::INTER_CUBIC);
+  cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
+  cv::cuda::resize(m_undistorted_image_gpu, m_resized_img_gpu, new_im_size, 0, 0, cv::INTER_LINEAR);
+
+  cv::Mat im;
+  cv::Mat im_bgr;
+  m_resized_img_gpu.download(im_bgr);
+  cvtColor(im_bgr,im,cv::COLOR_BGR2GRAY);
+  return im;
 }
 
 
@@ -327,15 +316,23 @@ class SlamNode : public rclcpp::Node
       cv::Mat m_undistortion_map1;
       cv::Mat m_undistortion_map2;
 
-      //TODO: fisheye
+
+      cv::cuda::GpuMat m_undistortion_map_1;
+      cv::cuda::GpuMat m_undistortion_map_2;
+      cv::cuda::GpuMat m_undistorted_image_gpu = cv::cuda::GpuMat(1536, 2048, CV_8UC3);
+      cv::cuda::GpuMat m_resized_img_gpu = cv::cuda::GpuMat(static_cast<int>(1536*resize_factor), static_cast<int>(2048*resize_factor), CV_8UC3);
+
       cv::fisheye::initUndistortRectifyMap(cam.K,
                         distCoeffs,
                         cv::Mat_<double>::eye(3, 3),
                         cam.K,
                         cv::Size(2048, 1536),
-                        CV_16SC2,
+                        CV_32F,
                         m_undistortion_map1,
                         m_undistortion_map2);
+
+      m_undistortion_map_1.upload(m_undistortion_map1);
+      m_undistortion_map_2.upload(m_undistortion_map2);
 
       cam.K.at<float>(0,0) *= resize_factor;
       cam.K.at<float>(1,1) *= resize_factor;
@@ -399,7 +396,7 @@ class SlamNode : public rclcpp::Node
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
       cout << "SLAM Init" << endl;
 
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map1, m_undistortion_map2);
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, m_resized_img_gpu);
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
       //sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/down/genicam_0/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter5/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
@@ -421,7 +418,6 @@ class SlamNode : public rclcpp::Node
     std::unique_ptr<std::thread> sync_thread_;
     std::unique_ptr<ORB_SLAM3::System> SLAM_;
 };
-
 
 
 int main(int argc, char * argv[])
