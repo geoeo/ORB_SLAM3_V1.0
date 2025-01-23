@@ -41,8 +41,8 @@ target_link_libraries(mono_inertial_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ${CUDA_LIBRARIES}
+  ${CUDACvManagedMemory_LIBRARIES}
   ORB_SLAM3
-  CUDACvManagedMemory
   -lfmt
   )
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs ${TRACY_PACKAGE})
@@ -55,8 +55,8 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${G2O_INCLUDE_DIR}
 ${CUDAToolkit_INCLUDE_DIRS}
+${CUDACvManagedMemory_INCLUDE_DIRS}
 )
-
 
 # Install directories files.
 install(DIRECTORY

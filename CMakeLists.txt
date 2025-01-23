@@ -126,8 +126,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
      ${G2O_INCLUDE_DIR}
+     ${CUDACvManagedMemory_INCLUDE_DIRS}
 )
-
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
@@ -152,6 +152,7 @@ ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
+${CUDACvManagedMemory_LIBRARIES}
 -lcrypto
 )
 
