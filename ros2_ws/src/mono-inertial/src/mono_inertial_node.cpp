@@ -353,12 +353,12 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 2500;
+      orb.nFeatures   = 1000;
       orb.nLevels     = 8;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
-      orb.gridCount = 256;
+      orb.gridCount = 128;
 
       ORB_SLAM3::ImuParameters m_imu;
       m_imu.accelWalk  = 0.00047746677530925284; // x10

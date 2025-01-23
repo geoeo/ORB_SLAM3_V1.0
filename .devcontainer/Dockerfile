@@ -99,8 +99,16 @@ RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
 
+RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
+    && cd CUDACvManagedMemory \
+    && cmake -S . -B build \
+    && cmake --build build -j $(nproc --all) --target install
+
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
+
+
+
 
 WORKDIR /
 RUN mkdir bags
