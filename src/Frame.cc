@@ -42,7 +42,9 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 //For stereo fisheye matching
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
-Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false), mbHasVelocity(false)
+Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), 
+    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false), mbHasVelocity(false),
+    m_frame_grid_rows(48), m_frame_grid_cols(64)
 {
 #ifdef REGISTER_TIMES
     mTimeStereoMatch = 0;
@@ -55,7 +57,7 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuP
 Frame::Frame(const Frame &frame)
     :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
      mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mK_(Converter::toMatrix3f(frame.mK)), mDistCoef(frame.mDistCoef.clone()),
-     mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
+     mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), mNumKeypoints(frame.mNumKeypoints), mvKeys(frame.mvKeys),
      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
      mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
      mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
@@ -66,16 +68,30 @@ Frame::Frame(const Frame &frame)
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors), mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
      mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame),
      mbIsSet(frame.mbIsSet), mbImuPreintegrated(frame.mbImuPreintegrated), mpMutexImu(frame.mpMutexImu),
+     m_frame_grid_rows(frame.m_frame_grid_rows), m_frame_grid_cols(frame.m_frame_grid_cols),
      mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
      mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
 {
-    for(int i=0;i<FRAME_GRID_COLS;i++)
-        for(int j=0; j<FRAME_GRID_ROWS; j++){
-            mGrid[i][j]=frame.mGrid[i][j];
+
+    //std::copy(frame.mGrid.begin(), frame.mGrid.end(), std::back_inserter(mGrid));
+    //mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
+
+    const auto size = m_frame_grid_cols*m_frame_grid_rows;
+    mGrid.resize(size);
+
+    for(int i=0;i<m_frame_grid_cols;i++){
+        for(int j=0; j<m_frame_grid_rows; j++){
+            auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
+            if(!frame.mGrid[linearIndex].empty()){
+                for(auto e: frame.mGrid[linearIndex])
+                    mGrid[linearIndex].push_back(e);
+            }
+
         }
+    }
 
     if(frame.mbHasPose)
         SetPose(frame.GetPose());
@@ -100,9 +116,15 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
     Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
+     m_frame_grid_rows(frame_grid_rows), m_frame_grid_cols(frame_grid_cols), mImuCalib(ImuCalib), 
+     mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
 {
+
+    const auto size = m_frame_grid_cols*m_frame_grid_rows;
+    mGrid.resize(size);
+
+
     // Frame ID
     mnId=nNextId++;
 
@@ -127,31 +149,31 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
 #endif
 
 
-    N = mvKeys.size();
+    mNumKeypoints = mvKeys.size();
     if(mvKeys.empty())
         return;
 
     UndistortKeyPoints();
 
     // Set no stereo information
-    mvuRight = vector<float>(N,-1);
-    mvDepth = vector<float>(N,-1);
+    mvuRight = vector<float>(mNumKeypoints,-1);
+    mvDepth = vector<float>(mNumKeypoints,-1);
     mnCloseMPs = 0;
 
-    mvpMapPoints = vector<MapPoint*>(N,static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint*>(mNumKeypoints,static_cast<MapPoint*>(NULL));
 
     mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
     mmMatchedInImage.clear();
 
-    mvbOutlier = vector<bool>(N,false);
+    mvbOutlier = vector<bool>(mNumKeypoints,false);
 
     // This is done only for the first Frame (or after a change in the calibration)
     if(mbInitialComputations)
     {
         ComputeImageBounds(im_managed_gray);
 
-        mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
+        mfGridElementWidthInv=static_cast<float>(m_frame_grid_cols)/static_cast<float>(mnMaxX-mnMinX);
+        mfGridElementHeightInv=static_cast<float>(m_frame_grid_rows)/static_cast<float>(mnMaxY-mnMinY);
 
         fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
         fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
@@ -192,22 +214,36 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
     mpMutexImu = new std::mutex();
 }
 
+int Frame::computeLinearGridIndex(int col, int row, int cols) {
+    return col*cols + row;    
+}
+
+int Frame::getFrameGridRows() const {
+    return m_frame_grid_rows;
+}
+
+int Frame::getFrameGridCols() const{
+    return m_frame_grid_cols;
+}
 
 void Frame::AssignFeaturesToGrid()
 {
     // Fill matrix with points
-    const int nCells = FRAME_GRID_COLS*FRAME_GRID_ROWS;
+    const int nCells = m_frame_grid_cols*m_frame_grid_rows;
 
-    int nReserve = 0.5f*N/(nCells);
+    int nReserve = 0.5f*mNumKeypoints/(nCells);
 
-    for(unsigned int i=0; i<FRAME_GRID_COLS;i++)
-        for (unsigned int j=0; j<FRAME_GRID_ROWS;j++){
-            mGrid[i][j].reserve(nReserve);
-        }
+    for(int i = 0; i < nCells; ++i)
+        mGrid[i].reserve(nReserve);
+
+    // for(unsigned int i=0; i<m_frame_grid_cols;i++)
+    //     for (unsigned int j=0; j<m_frame_grid_rows;j++){
+    //         mGrid[i][j].reserve(nReserve);
+    //     }
 
 
 
-    for(int i=0;i<N;i++)
+    for(int i=0;i<mNumKeypoints;i++)
     {
         const cv::KeyPoint &kp = (Nleft == -1) ? mvKeysUn[i]
                                                  : (i < Nleft) ? mvKeys[i]
@@ -215,7 +251,8 @@ void Frame::AssignFeaturesToGrid()
 
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
-            mGrid[nGridPosX][nGridPosY].push_back(i);
+            auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,m_frame_grid_cols);
+            mGrid[linear_index].push_back(i);
         }
     }
 }
@@ -460,30 +497,30 @@ Eigen::Vector3f Frame::inRefCoordinates(Eigen::Vector3f pCw)
 vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
 {
     vector<size_t> vIndices;
-    vIndices.reserve(N);
+    vIndices.reserve(mNumKeypoints);
 
     float factorX = r;
     float factorY = r;
 
     const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
-    if(nMinCellX>=FRAME_GRID_COLS)
+    if(nMinCellX>=m_frame_grid_cols)
     {
         return vIndices;
     }
 
-    const int nMaxCellX = min((int)FRAME_GRID_COLS-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
+    const int nMaxCellX = min((int)m_frame_grid_cols-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
     if(nMaxCellX<0)
     {
         return vIndices;
     }
 
     const int nMinCellY = max(0,(int)floor((y-mnMinY-factorY)*mfGridElementHeightInv));
-    if(nMinCellY>=FRAME_GRID_ROWS)
+    if(nMinCellY>=m_frame_grid_rows)
     {
         return vIndices;
     }
 
-    const int nMaxCellY = min((int)FRAME_GRID_ROWS-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
+    const int nMaxCellY = min((int)m_frame_grid_rows-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
     if(nMaxCellY<0)
     {
         return vIndices;
@@ -495,7 +532,8 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     {
         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
         {
-            const vector<size_t> vCell = mGrid[ix][iy];
+            auto linear_index = computeLinearGridIndex(ix,iy,m_frame_grid_cols);
+            const vector<size_t> vCell = mGrid[linear_index];
             if(vCell.empty())
                 continue;
 
@@ -530,8 +568,11 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
     posX = round((kp.pt.x-mnMinX)*mfGridElementWidthInv);
     posY = round((kp.pt.y-mnMinY)*mfGridElementHeightInv);
 
+    auto linearIdx = computeLinearGridIndex(posX,posY,m_frame_grid_cols);
+    const auto size = m_frame_grid_cols*m_frame_grid_rows;
+
     //Keypoint's coordinates are undistorted, which could cause to go out of the image
-    if(posX<0 || posX>=FRAME_GRID_COLS || posY<0 || posY>=FRAME_GRID_ROWS)
+    if(posX<0 || posY<0 || linearIdx>=size)
         return false;
 
     return true;
@@ -556,9 +597,9 @@ void Frame::UndistortKeyPoints()
     }
 
     // Fill matrix with points
-    cv::Mat mat(N,2,CV_32F);
+    cv::Mat mat(mNumKeypoints,2,CV_32F);
 
-    for(int i=0; i<N; i++)
+    for(int i=0; i<mNumKeypoints; i++)
     {
         mat.at<float>(i,0)=mvKeys[i].pt.x;
         mat.at<float>(i,1)=mvKeys[i].pt.y;
@@ -571,8 +612,8 @@ void Frame::UndistortKeyPoints()
 
 
     // Fill undistorted keypoint vector
-    mvKeysUn.resize(N);
-    for(int i=0; i<N; i++)
+    mvKeysUn.resize(mNumKeypoints);
+    for(int i=0; i<mNumKeypoints; i++)
     {
         cv::KeyPoint kp = mvKeys[i];
         kp.pt.x=mat.at<float>(i,0);
@@ -612,217 +653,6 @@ void Frame::ComputeImageBounds(const cuda_cv_managed_memory::CUDAManagedMemory::
         mnMinY = 0.0f;
         mnMaxY = imLeft.rows;
     }
-}
-
-void Frame::ComputeStereoMatches()
-{
-    mvuRight = vector<float>(N,-1.0f);
-    mvDepth = vector<float>(N,-1.0f);
-
-    const int thOrbDist = (ORBmatcher::TH_HIGH+ORBmatcher::TH_LOW)/2;
-
-    const int nRows = mpORBextractorLeft->mvImagePyramid[0].rows;
-
-    //Assign keypoints to row table
-    vector<vector<size_t> > vRowIndices(nRows,vector<size_t>());
-
-    for(int i=0; i<nRows; i++)
-        vRowIndices[i].reserve(200);
-
-    const int Nr = mvKeysRight.size();
-
-    for(int iR=0; iR<Nr; iR++)
-    {
-        const cv::KeyPoint &kp = mvKeysRight[iR];
-        const float &kpY = kp.pt.y;
-        const float r = 2.0f*mvScaleFactors[mvKeysRight[iR].octave];
-        const int maxr = ceil(kpY+r);
-        const int minr = floor(kpY-r);
-
-        for(int yi=minr;yi<=maxr;yi++)
-            vRowIndices[yi].push_back(iR);
-    }
-
-    // Set limits for search
-    const float minZ = mb;
-    const float minD = 0;
-    const float maxD = mbf/minZ;
-
-    // For each left keypoint search a match in the right image
-    vector<pair<int, int> > vDistIdx;
-    vDistIdx.reserve(N);
-
-    for(int iL=0; iL<N; iL++)
-    {
-        const cv::KeyPoint &kpL = mvKeys[iL];
-        const int &levelL = kpL.octave;
-        const float &vL = kpL.pt.y;
-        const float &uL = kpL.pt.x;
-
-        const vector<size_t> &vCandidates = vRowIndices[vL];
-
-        if(vCandidates.empty())
-            continue;
-
-        const float minU = uL-maxD;
-        const float maxU = uL-minD;
-
-        if(maxU<0)
-            continue;
-
-        int bestDist = ORBmatcher::TH_HIGH;
-        size_t bestIdxR = 0;
-
-        const cv::Mat &dL = mDescriptors.row(iL);
-
-        // Compare descriptor to right keypoints
-        for(size_t iC=0; iC<vCandidates.size(); iC++)
-        {
-            const size_t iR = vCandidates[iC];
-            const cv::KeyPoint &kpR = mvKeysRight[iR];
-
-            if(kpR.octave<levelL-1 || kpR.octave>levelL+1)
-                continue;
-
-            const float &uR = kpR.pt.x;
-
-            if(uR>=minU && uR<=maxU)
-            {
-                const cv::Mat &dR = mDescriptorsRight.row(iR);
-                const int dist = ORBmatcher::DescriptorDistance(dL,dR);
-
-                if(dist<bestDist)
-                {
-                    bestDist = dist;
-                    bestIdxR = iR;
-                }
-            }
-        }
-
-        // Subpixel match by correlation
-        if(bestDist<thOrbDist)
-        {
-            // coordinates in image pyramid at keypoint scale
-            const float uR0 = mvKeysRight[bestIdxR].pt.x;
-            const float scaleFactor = mvInvScaleFactors[kpL.octave];
-            const float scaleduL = round(kpL.pt.x*scaleFactor);
-            const float scaledvL = round(kpL.pt.y*scaleFactor);
-            const float scaleduR0 = round(uR0*scaleFactor);
-
-            // sliding window search
-            const int w = 5;
-            cv::Mat IL = mpORBextractorLeft->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
-
-            int bestDist = INT_MAX;
-            int bestincR = 0;
-            const int L = 5;
-            vector<float> vDists;
-            vDists.resize(2*L+1);
-
-            const float iniu = scaleduR0+L-w;
-            const float endu = scaleduR0+L+w+1;
-            if(iniu<0 || endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols)
-                continue;
-
-            for(int incR=-L; incR<=+L; incR++)
-            {
-                cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
-
-                float dist = cv::norm(IL,IR,cv::NORM_L1);
-                if(dist<bestDist)
-                {
-                    bestDist =  dist;
-                    bestincR = incR;
-                }
-
-                vDists[L+incR] = dist;
-            }
-
-            if(bestincR==-L || bestincR==L)
-                continue;
-
-            // Sub-pixel match (Parabola fitting)
-            const float dist1 = vDists[L+bestincR-1];
-            const float dist2 = vDists[L+bestincR];
-            const float dist3 = vDists[L+bestincR+1];
-
-            const float deltaR = (dist1-dist3)/(2.0f*(dist1+dist3-2.0f*dist2));
-
-            if(deltaR<-1 || deltaR>1)
-                continue;
-
-            // Re-scaled coordinate
-            float bestuR = mvScaleFactors[kpL.octave]*((float)scaleduR0+(float)bestincR+deltaR);
-
-            float disparity = (uL-bestuR);
-
-            if(disparity>=minD && disparity<maxD)
-            {
-                if(disparity<=0)
-                {
-                    disparity=0.01;
-                    bestuR = uL-0.01;
-                }
-                mvDepth[iL]=mbf/disparity;
-                mvuRight[iL] = bestuR;
-                vDistIdx.push_back(pair<int,int>(bestDist,iL));
-            }
-        }
-    }
-
-    sort(vDistIdx.begin(),vDistIdx.end());
-    const float median = vDistIdx[vDistIdx.size()/2].first;
-    const float thDist = 1.5f*1.4f*median;
-
-    for(int i=vDistIdx.size()-1;i>=0;i--)
-    {
-        if(vDistIdx[i].first<thDist)
-            break;
-        else
-        {
-            mvuRight[vDistIdx[i].second]=-1;
-            mvDepth[vDistIdx[i].second]=-1;
-        }
-    }
-}
-
-
-void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
-{
-    mvuRight = vector<float>(N,-1);
-    mvDepth = vector<float>(N,-1);
-
-    for(int i=0; i<N; i++)
-    {
-        const cv::KeyPoint &kp = mvKeys[i];
-        const cv::KeyPoint &kpU = mvKeysUn[i];
-
-        const float &v = kp.pt.y;
-        const float &u = kp.pt.x;
-
-        const float d = imDepth.at<float>(v,u);
-
-        if(d>0)
-        {
-            mvDepth[i] = d;
-            mvuRight[i] = kpU.pt.x-mbf/d;
-        }
-    }
-}
-
-bool Frame::UnprojectStereo(const int &i, Eigen::Vector3f &x3D)
-{
-    const float z = mvDepth[i];
-    if(z>0) {
-        const float u = mvKeysUn[i].pt.x;
-        const float v = mvKeysUn[i].pt.y;
-        const float x = (u-cx)*z*invfx;
-        const float y = (v-cy)*z*invfy;
-        Eigen::Vector3f x3Dc(x, y, z);
-        x3D = mRwc * x3Dc + mOw;
-        return true;
-    } else
-        return false;
 }
 
 bool Frame::imuIsPreintegrated()

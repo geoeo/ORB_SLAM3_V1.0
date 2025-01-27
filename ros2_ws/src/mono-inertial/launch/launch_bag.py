@@ -12,10 +12,10 @@ image_topic = '/AIT_Fighter5/down/image'
 
 def generate_launch_description():
     return LaunchDescription([
-        launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
-            output='screen'
-        ),
+        # launch.actions.ExecuteProcess(
+        #     cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
+        #     output='screen'
+        # ),
         launch_ros.actions.Node(
             package='image_transport',
             executable='republish',

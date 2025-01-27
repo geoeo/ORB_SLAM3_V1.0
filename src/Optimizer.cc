@@ -831,7 +831,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     optimizer.addVertex(vSE3);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
 
     vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose*> vpEdgesMono;
     vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMono_FHR;
@@ -4514,7 +4514,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     optimizer.addVertex(VA);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
     const int Nleft = pFrame->Nleft;
     const bool bRight = (Nleft!=-1);
 
@@ -4897,7 +4897,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     optimizer.addVertex(VA);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
     const int Nleft = pFrame->Nleft;
     const bool bRight = (Nleft!=-1);
 

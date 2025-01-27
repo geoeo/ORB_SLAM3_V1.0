@@ -44,8 +44,6 @@
 
 namespace ORB_SLAM3
 {
-#define FRAME_GRID_ROWS 48
-#define FRAME_GRID_COLS 64
 
 class MapPoint;
 class KeyFrame;
@@ -109,16 +107,6 @@ public:
     bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
 
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
-
-    // Search a match for each keypoint in the left image to a keypoint in the right image.
-    // If there is a match, depth is computed and the right coordinate associated to the left keypoint is stored.
-    void ComputeStereoMatches();
-
-    // Associate a "right" coordinate to a keypoint if there is valid depth in the depthmap.
-    void ComputeStereoFromRGBD(const cv::Mat &imDepth);
-
-    // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
-    bool UnprojectStereo(const int &i, Eigen::Vector3f &x3D);
 
     ConstraintPoseImu* mpcpi;
 
@@ -219,7 +207,7 @@ public:
     float mThDepth;
 
     // Number of KeyPoints.
-    int N;
+    int mNumKeypoints;
 
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
@@ -248,7 +236,7 @@ public:
     // Keypoints are assigned to cells in a grid to reduce matching complexity when projecting MapPoints.
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
-    std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS]; //TODO grid
+    std::vector<std::vector<std::size_t>> mGrid; // Represent a 2D grid [cols][rows] of vectors; with 1D index
 
     IMU::Bias mPredBias;
 
@@ -321,6 +309,9 @@ private:
 
     std::mutex *mpMutexImu;
 
+    int m_frame_grid_rows; 
+    int m_frame_grid_cols; 
+
 public:
     GeometricCamera* mpCamera, *mpCamera2;
 
@@ -342,6 +333,12 @@ public:
 
     Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, Sophus::SE3f& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
+    static int computeLinearGridIndex(int col, int row, int cols);
+
+    int getFrameGridRows() const;
+    
+    int getFrameGridCols() const;
+
     //Stereo fisheye
     void ComputeStereoFishEyeMatches();
 
@@ -353,8 +350,8 @@ public:
 
     void PrintPointDistribution(){
         int left = 0, right = 0;
-        int Nlim = (Nleft != -1) ? Nleft : N;
-        for(int i = 0; i < N; i++){
+        int Nlim = (Nleft != -1) ? Nleft : mNumKeypoints;
+        for(int i = 0; i < mNumKeypoints; i++){
             if(mvpMapPoints[i] && !mvbOutlier[i]){
                 if(i < Nlim) left++;
                 else right++;
