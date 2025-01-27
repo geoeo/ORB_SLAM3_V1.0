@@ -1471,9 +1471,9 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAMana
     assert(mSensor == System::IMU_MONOCULAR);
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+        mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,48, 64,&mLastFrame,*mpImuCalib);
     else
-        mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+        mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,48, 64,&mLastFrame,*mpImuCalib);
     
 
     if (mState==NO_IMAGES_YET)

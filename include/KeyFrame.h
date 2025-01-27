@@ -179,7 +179,6 @@ class KeyFrame
         ar & const_cast<int&>(NRight);
         serializeSophusSE3<Archive>(ar, mTlr, version);
         serializeVectorKeyPoints<Archive>(ar, mvKeysRight, version);
-        ar & mGridRight;
 
         // Inertial variables
         ar & mImuBias;
@@ -513,8 +512,6 @@ public:
     const std::vector<cv::KeyPoint> mvKeysRight;
 
     const int NLeft, NRight;
-
-    std::vector< std::vector <std::vector<size_t> > > mGridRight;
 
     Sophus::SE3<float> GetRightPose();
     Sophus::SE3<float> GetRightPoseInverse();
