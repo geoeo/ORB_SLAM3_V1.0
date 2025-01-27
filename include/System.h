@@ -30,6 +30,7 @@
 #include <utility>
 #include <tuple>
 #include<opencv2/core/core.hpp>
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"

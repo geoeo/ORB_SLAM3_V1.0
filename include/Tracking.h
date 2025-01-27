@@ -22,6 +22,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include "Viewer.h"
 #include "FrameDrawer.h"

@@ -36,6 +36,7 @@
 
 
 using namespace std;
+using namespace cuda_cv_managed_memory;
 
 namespace ORB_SLAM3
 {
@@ -1464,21 +1465,8 @@ bool Tracking::GetStepByStep()
 
 Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
 {
-    mImGray = im;
-    if(mImGray.channels()==3)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,cv::COLOR_RGB2GRAY);
-        else
-            cvtColor(mImGray,mImGray,cv::COLOR_BGR2GRAY);
-    }
-    else if(mImGray.channels()==4)
-    {
-        if(mbRGB)
-            cvtColor(mImGray,mImGray,cv::COLOR_RGBA2GRAY);
-        else
-            cvtColor(mImGray,mImGray,cv::COLOR_BGRA2GRAY);
-    }
+    //TODO: Clone for now -> Make rest of pipeline use CUDAManagedMemory
+    mImGray = im.clone();
 
     if (mSensor == System::MONOCULAR)
     {

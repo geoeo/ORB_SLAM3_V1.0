@@ -35,6 +35,7 @@
 #include <tracy.hpp>
 
 using namespace std;
+using namespace cuda_cv_managed_memory;
 
 auto scoped_mutex_lock(std::mutex &m){
     ZoneScopedC(tracy::Color::Coral);
@@ -387,12 +388,6 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &i
         exit(-1);
     }
 
-    cv::Mat imToFeed = im.clone();
-    if(settings_ && settings_->needToResize()){
-        cv::Mat resizedIm;
-        cv::resize(im,resizedIm,settings_->newImSize());
-        imToFeed = resizedIm;
-    }
 
     // Check mode change
     {
@@ -444,7 +439,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &i
     Sophus::SE3f Tcw;
     {
         ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true);  // NOLINT: Profiler
-        Tcw = mpTracker->GrabImageMonocular(imToFeed,timestamp,filename);
+        Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
     }
 
 

@@ -10,6 +10,7 @@
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaimgproc.hpp>
 #include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include <cv_bridge/cv_bridge.h>
@@ -49,11 +50,18 @@ class ImageGrabber
 public:
     ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, const cv::cuda::GpuMat& resized_img_gpu)
       : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor),
-        m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_resized_img_gpu(resized_img_gpu){
+        m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()){
+
+            auto new_rows = static_cast<int>(undistorted_image_gpu.rows*img_resize_factor);
+            auto new_cols = static_cast<int>(undistorted_image_gpu.cols*img_resize_factor);
+
+            m_resized_img_gpu = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(new_rows*new_cols*3, new_rows, new_cols, CV_8UC3, new_cols*3),CUDAManagedMemoryDeleter());
+
+            
       }
 
     void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
-    cv::Mat GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
+    CUDAManagedMemory::SharedPtr GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
     void SyncWithImu();
 
     queue<sensor_msgs::msg::Image::ConstSharedPtr> img0Buf;
@@ -71,7 +79,8 @@ public:
     cv::cuda::GpuMat m_undistortion_map_1;
     cv::cuda::GpuMat m_undistortion_map_2;
     cv::cuda::GpuMat m_undistorted_image_gpu;
-    cv::cuda::GpuMat m_resized_img_gpu; 
+    CUDAManagedMemory::SharedPtr m_resized_img_gpu; 
+    cv::cuda::Stream m_stream;
 
 };
 
@@ -87,7 +96,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_m
   mBufMutex.unlock();
 }
 
-cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
+CUDAManagedMemory::SharedPtr ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
   auto width = img_msg->width;
   auto height = img_msg->height;
@@ -98,15 +107,17 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img
   if(cudaMemcpy(cuda_managed_memory_image->getRaw(), &img_msg->data[0], size_in_bytes, cudaMemcpyDefault) != cudaError_t::cudaSuccess)
         throw std::runtime_error("CUDAManagedMemory - Failed to copy memory to CUDA unified");
 
-  cv::cuda::remap(cuda_managed_memory_image->getCvGpuMat(), m_undistorted_image_gpu, m_undistortion_map_1, m_undistortion_map_2, cv::InterpolationFlags::INTER_CUBIC);
-  cv::Size new_im_size = cv::Size(static_cast<int>(width*img_resize_factor),static_cast<int>(height*img_resize_factor));
-  cv::cuda::resize(m_undistorted_image_gpu, m_resized_img_gpu, new_im_size, 0, 0, cv::INTER_LINEAR);
+  cv::cuda::remap(cuda_managed_memory_image->getCvGpuMat(), m_undistorted_image_gpu, m_undistortion_map_1, m_undistortion_map_2, cv::InterpolationFlags::INTER_CUBIC,cv::BORDER_CONSTANT,cv::Scalar(),m_stream);
+  auto new_rows = static_cast<int>(height*img_resize_factor);
+  auto new_cols = static_cast<int>(width*img_resize_factor);
+  cv::Size new_im_size = cv::Size(new_cols,new_rows);
+  m_stream.waitForCompletion();
+  cv::cuda::resize(m_undistorted_image_gpu, m_resized_img_gpu->getCvGpuMat(), new_im_size, 0, 0, cv::INTER_LINEAR, m_stream);
 
-  cv::Mat im;
-  cv::Mat im_bgr;
-  m_resized_img_gpu.download(im_bgr);
-  cvtColor(im_bgr,im,cv::COLOR_BGR2GRAY);
-  return im;
+  CUDAManagedMemory::SharedPtr cuda_managed_memory_image_grey = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(new_rows*new_cols, new_rows, new_cols, CV_8UC1, new_cols),CUDAManagedMemoryDeleter());
+  cv::cvtColor(m_resized_img_gpu->getCvMat(),cuda_managed_memory_image_grey->getCvMat(),cv::COLOR_BGR2GRAY);
+
+  return cuda_managed_memory_image_grey;
 }
 
 
@@ -126,7 +137,7 @@ void ImageGrabber::SyncWithImu()
       mpImuGb->mBufMutex.unlock();
 
       this->mBufMutex.lock();
-      im = GetImage(img0Buf.front());
+      im = GetImage(img0Buf.front())->getCvMat().clone();
       auto ros_image_ts_front =  rclcpp::Time(img0Buf.front()->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
       img0Buf.pop();
@@ -158,8 +169,8 @@ void ImageGrabber::SyncWithImu()
         }
       }
       mpImuGb->mBufMutex.unlock();
-      if(mbClahe)
-        mClahe->apply(im,im);
+      // if(mbClahe)
+      //   mClahe->apply(im,im);
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
