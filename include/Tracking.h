@@ -74,7 +74,7 @@ public:
     bool ParseORBParamFile(cv::FileStorage &fSettings);
     bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
-    Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string filename);
+    Sophus::SE3f GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
@@ -148,7 +148,7 @@ public:
     Frame mCurrentFrame;
     Frame mLastFrame;
 
-    cv::Mat mImGray;
+    cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr mImManagedGray;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;

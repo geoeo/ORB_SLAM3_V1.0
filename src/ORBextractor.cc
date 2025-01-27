@@ -896,15 +896,16 @@ namespace ORB_SLAM3
             computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
     }
 
-    int ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPoint>& _keypoints,
+    int ORBextractor::operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &_im_managed, InputArray _mask, vector<KeyPoint>& _keypoints,
                                   OutputArray _descriptors, std::vector<int> &vLappingArea)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
+
+        cv::Mat image = _im_managed->getCvMat();
         //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
-        if(_image.empty())
+        if(image.empty())
             return -1;
 
-        Mat image = _image.getMat();
         assert(image.type() == CV_8UC1 );
 
         // Pre-compute the scale pyramid

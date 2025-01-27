@@ -369,7 +369,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 }
 
-tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
@@ -439,7 +439,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &i
     Sophus::SE3f Tcw;
     {
         ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true);  // NOLINT: Profiler
-        Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
+        Tcw = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
     }
 
 

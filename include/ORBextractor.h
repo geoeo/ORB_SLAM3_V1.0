@@ -22,6 +22,7 @@
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 namespace ORB_SLAM3
 {
@@ -56,7 +57,7 @@ namespace ORB_SLAM3
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int operator()(cv::InputArray _image, cv::InputArray _mask,
+        int operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &_im_managed, cv::InputArray _mask,
                        std::vector<cv::KeyPoint> &_keypoints,
                        cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
 

@@ -171,7 +171,7 @@ void ImageGrabber::SyncWithImu()
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-        auto tracking_results = mpSLAM->TrackMonocular(im_managed->getCvMat().clone(),tIm,vImuMeas);
+        auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas);
         Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
         bool ba_complete_for_frame = std::get<1>(tracking_results);
         auto scale_factors = std::get<2>(tracking_results);
