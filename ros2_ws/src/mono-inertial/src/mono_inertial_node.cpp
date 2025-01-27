@@ -87,8 +87,6 @@ public:
 void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
   mBufMutex.lock();
-  if (!img0Buf.empty())
-    img0Buf.pop();
   img0Buf.push(img_msg);
   count = 0;
   
@@ -126,6 +124,7 @@ void ImageGrabber::SyncWithImu()
   double init_ts = 0;
   while(1)
   {
+    CUDAManagedMemory::SharedPtr im_managed;
     cv::Mat im;
     double tIm = 0;
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
@@ -137,7 +136,7 @@ void ImageGrabber::SyncWithImu()
       mpImuGb->mBufMutex.unlock();
 
       this->mBufMutex.lock();
-      im = GetImage(img0Buf.front())->getCvMat().clone();
+      im_managed = GetImage(img0Buf.front());
       auto ros_image_ts_front =  rclcpp::Time(img0Buf.front()->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
       img0Buf.pop();
@@ -169,12 +168,10 @@ void ImageGrabber::SyncWithImu()
         }
       }
       mpImuGb->mBufMutex.unlock();
-      // if(mbClahe)
-      //   mClahe->apply(im,im);
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
-        auto tracking_results = mpSLAM->TrackMonocular(im,tIm,vImuMeas);
+        auto tracking_results = mpSLAM->TrackMonocular(im_managed->getCvMat().clone(),tIm,vImuMeas);
         Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
         bool ba_complete_for_frame = std::get<1>(tracking_results);
         auto scale_factors = std::get<2>(tracking_results);
