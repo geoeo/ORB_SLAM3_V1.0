@@ -44,7 +44,7 @@ cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), 
     mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false), mbHasVelocity(false),
-    m_frame_grid_rows(48), m_frame_grid_cols(64)
+    mFrameGridRows(48), mFrameGridCols(64)
 {
 #ifdef REGISTER_TIMES
     mTimeStereoMatch = 0;
@@ -68,31 +68,14 @@ Frame::Frame(const Frame &frame)
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors), mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
      mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame),
      mbIsSet(frame.mbIsSet), mbImuPreintegrated(frame.mbImuPreintegrated), mpMutexImu(frame.mpMutexImu),
-     m_frame_grid_rows(frame.m_frame_grid_rows), m_frame_grid_cols(frame.m_frame_grid_cols),
+     mFrameGridRows(frame.mFrameGridRows), mFrameGridCols(frame.mFrameGridCols),
      mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
      mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
 {
-
-    //std::copy(frame.mGrid.begin(), frame.mGrid.end(), std::back_inserter(mGrid));
     mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
-
-    // const auto size = m_frame_grid_cols*m_frame_grid_rows;
-    // mGrid.resize(size);
-
-    // for(int i=0;i<size;++i){
-    //      mGrid[i] = frame.mGrid[i];
-    //     // for(int j=0; j<m_frame_grid_rows; j++){
-    //     //     auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
-    //     //     if(!frame.mGrid[linearIndex].empty()){
-    //     //         for(auto e: frame.mGrid[linearIndex])
-    //     //             mGrid[linearIndex].push_back(e);
-    //     //     }
-
-    //     // }
-    // }
 
     if(frame.mbHasPose)
         SetPose(frame.GetPose());
@@ -113,17 +96,16 @@ Frame::Frame(const Frame &frame)
 
 
 Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
-    GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frame_grid_rows, int frame_grid_cols,
+    GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     m_frame_grid_rows(frame_grid_rows), m_frame_grid_cols(frame_grid_cols), mImuCalib(ImuCalib), 
+     mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
 {
-    const auto size = m_frame_grid_cols*m_frame_grid_rows;
+    const auto size = frameGridCols*frameGridRows;
     mGrid.resize(size);
-
 
     // Frame ID
     mnId=nNextId++;
@@ -172,8 +154,8 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
     {
         ComputeImageBounds(im_managed_gray);
 
-        mfGridElementWidthInv=static_cast<float>(m_frame_grid_cols)/static_cast<float>(mnMaxX-mnMinX);
-        mfGridElementHeightInv=static_cast<float>(m_frame_grid_rows)/static_cast<float>(mnMaxY-mnMinY);
+        mfGridElementWidthInv=static_cast<float>(mFrameGridCols)/static_cast<float>(mnMaxX-mnMinX);
+        mfGridElementHeightInv=static_cast<float>(mFrameGridRows)/static_cast<float>(mnMaxY-mnMinY);
 
         fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
         fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
@@ -219,17 +201,17 @@ int Frame::computeLinearGridIndex(int col, int row, int cols) {
 }
 
 int Frame::getFrameGridRows() const {
-    return m_frame_grid_rows;
+    return mFrameGridRows;
 }
 
 int Frame::getFrameGridCols() const{
-    return m_frame_grid_cols;
+    return mFrameGridCols;
 }
 
 void Frame::AssignFeaturesToGrid()
 {
     // Fill matrix with points
-    const int nCells = m_frame_grid_cols*m_frame_grid_rows;
+    const int nCells = mFrameGridCols*mFrameGridRows;
 
     int nReserve = 0.5f*mNumKeypoints/(nCells);
 
@@ -243,7 +225,7 @@ void Frame::AssignFeaturesToGrid()
 
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
-            auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,m_frame_grid_cols);
+            auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
             mGrid[linear_index].push_back(i);
         }
     }
@@ -394,7 +376,6 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     pMP->mbTrackInView = true;
     pMP->mTrackProjX = uv(0);
     pMP->mTrackProjXR = uv(0) - mbf*invz;
-
     pMP->mTrackDepth = Pc_dist;
 
     pMP->mTrackProjY = uv(1);
@@ -482,24 +463,24 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     float factorY = r;
 
     const int nMinCellX = max(0,(int)floor((x-mnMinX-factorX)*mfGridElementWidthInv));
-    if(nMinCellX>=m_frame_grid_cols)
+    if(nMinCellX>=mFrameGridCols)
     {
         return vIndices;
     }
 
-    const int nMaxCellX = min((int)m_frame_grid_cols-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
+    const int nMaxCellX = min((int)mFrameGridCols-1,(int)ceil((x-mnMinX+factorX)*mfGridElementWidthInv));
     if(nMaxCellX<0)
     {
         return vIndices;
     }
 
     const int nMinCellY = max(0,(int)floor((y-mnMinY-factorY)*mfGridElementHeightInv));
-    if(nMinCellY>=m_frame_grid_rows)
+    if(nMinCellY>=mFrameGridRows)
     {
         return vIndices;
     }
 
-    const int nMaxCellY = min((int)m_frame_grid_rows-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
+    const int nMaxCellY = min((int)mFrameGridRows-1,(int)ceil((y-mnMinY+factorY)*mfGridElementHeightInv));
     if(nMaxCellY<0)
     {
         return vIndices;
@@ -511,7 +492,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     {
         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
         {
-            auto linear_index = computeLinearGridIndex(ix,iy,m_frame_grid_cols);
+            auto linear_index = computeLinearGridIndex(ix,iy,mFrameGridCols);
             const auto vCell = mGrid[linear_index];
             if(vCell.empty())
                 continue;
@@ -545,8 +526,8 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
     posX = round((kp.pt.x-mnMinX)*mfGridElementWidthInv);
     posY = round((kp.pt.y-mnMinY)*mfGridElementHeightInv);
 
-    auto linearIdx = computeLinearGridIndex(posX,posY,m_frame_grid_cols);
-    const auto size = m_frame_grid_cols*m_frame_grid_rows;
+    auto linearIdx = computeLinearGridIndex(posX,posY,mFrameGridCols);
+    const auto size = mFrameGridCols*mFrameGridRows;
 
     //Keypoint's coordinates are undistorted, which could cause to go out of the image
     if(linearIdx < 0 || linearIdx>=size)

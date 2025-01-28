@@ -63,8 +63,6 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mnId=nNextId++;
     mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
 
-
-
     if(!F.HasVelocity()) {
         mVw.setZero();
         mbHasVelocity = false;

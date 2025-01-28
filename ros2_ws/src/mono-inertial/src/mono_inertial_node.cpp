@@ -324,7 +324,6 @@ class SlamNode : public rclcpp::Node
       cv::Mat m_undistortion_map1;
       cv::Mat m_undistortion_map2;
 
-
       cv::cuda::GpuMat m_undistortion_map_1;
       cv::cuda::GpuMat m_undistortion_map_2;
       cv::cuda::GpuMat m_undistorted_image_gpu = cv::cuda::GpuMat(1536, 2048, CV_8UC3);
@@ -400,8 +399,11 @@ class SlamNode : public rclcpp::Node
 
       double timeshift_cam_imu = 0.008684532573338512; // F1
 
+      const int frame_grid_cols = 64;
+      const int frame_grid_rows = 48;
+
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam,m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
       cout << "SLAM Init" << endl;
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, m_resized_img_gpu);

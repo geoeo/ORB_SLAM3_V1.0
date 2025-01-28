@@ -62,7 +62,7 @@ public:
 
     // Constructor for Monocular cameras.
     Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
-        GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frame_grid_rows, int frame_grid_cols,
+        GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
     // Destructor
@@ -310,8 +310,8 @@ private:
 
     std::mutex *mpMutexImu;
 
-    int m_frame_grid_rows; 
-    int m_frame_grid_cols; 
+    int mFrameGridRows; 
+    int mFrameGridCols; 
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;

@@ -90,7 +90,8 @@ namespace ORB_SLAM3 {
          */
         Settings(const std::string &configFile, const int& sensor);
 
-        Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor);
+        Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+            const int& sensor, int frame_grid_cols, int frame_grid_rows);
 
         /*
          * Ostream operator overloading to dump settings to the terminal
@@ -157,6 +158,9 @@ namespace ORB_SLAM3 {
         cv::Mat M2l() {return M2l_;}
         cv::Mat M1r() {return M1r_;}
         cv::Mat M2r() {return M2r_;}
+
+        int frameGridCols() {return frameGridCols_;}
+        int frameGridRows() {return frameGridRows_;}
 
     private:
         template<typename T>
@@ -264,6 +268,8 @@ namespace ORB_SLAM3 {
          * Other stuff
          */
         float thFarPoints_;
+        const int frameGridCols_;
+        const int frameGridRows_;
 
     };
 };

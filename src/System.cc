@@ -52,7 +52,8 @@ bool System::has_suffix(const std::string &str, const std::string &suffix) {
   return (index != std::string::npos);
 }
 
-System::System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const eSensor sensor, bool activeLC, bool bUseViewer):
+System::System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+    const eSensor sensor, int frameGridCols, int frameGridRows ,bool activeLC, bool bUseViewer):
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -107,7 +108,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
   if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
     mpAtlas->SetInertialSensor();
 
-  settings_ = new Settings(cam, imu, orb,mSensor);
+  settings_ = new Settings(cam, imu, orb,mSensor, frameGridCols, frameGridRows);
   cout << (*settings_) << endl;
 
   //Create Drawers. These are used by the Viewer
