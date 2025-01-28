@@ -61,27 +61,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false)
 {
     mnId=nNextId++;
-
-    //mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
-    const auto size = mnGridCols*mnGridRows;
-    mGrid.resize(size);
-
-    for(int i=0;i<size;++i){
-        mGrid[i]=F.mGrid[i];
-        // for(int j=0; j<mnGridRows; j++){
-        //     auto linearIndex = Frame::computeLinearGridIndex(i,j,mnGridCols);
-        //     mGrid[linearIndex]=F.mGrid[linearIndex];
-        // }
-    }
-
-    // mGrid.resize(mnGridCols);
-    // for(int i=0; i<mnGridCols;i++)
-    // {
-    //     mGrid[i].resize(mnGridRows);
-    //     for(int j=0; j<mnGridRows; j++){
-    //         mGrid[i][j] = F.mGrid[i][j];
-    //     }
-    // }
+    mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
 
 
 
@@ -739,9 +719,7 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
             const vector<size_t> vCell = mGrid[linearIndex];
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = (NLeft == -1) ? mvKeysUn[vCell[j]]
-                                                         : (!bRight) ? mvKeys[vCell[j]]
-                                                                     : mvKeysRight[vCell[j]];
+                const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
                 const float distx = kpUn.pt.x-x;
                 const float disty = kpUn.pt.y-y;
 

@@ -20,8 +20,9 @@
 #ifndef FRAME_H
 #define FRAME_H
 
-#include<vector>
+#include <vector>
 #include <map>
+#include <memory>
 
 #include "DBoW2/DBoW2/BowVector.h"
 #include "DBoW2/DBoW2/FeatureVector.h"
@@ -236,7 +237,7 @@ public:
     // Keypoints are assigned to cells in a grid to reduce matching complexity when projecting MapPoints.
     static float mfGridElementWidthInv;
     static float mfGridElementHeightInv;
-    std::vector<std::vector<std::size_t>> mGrid; // Represent a 2D grid [rows][cols] of vectors; with 1D index
+    std::vector<std::vector<std::size_t>> mGrid; // Represent a 2D grid [rows][cols] of vectors with 1D index
 
     IMU::Bias mPredBias;
 

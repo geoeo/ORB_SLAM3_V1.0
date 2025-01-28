@@ -77,22 +77,22 @@ Frame::Frame(const Frame &frame)
 {
 
     //std::copy(frame.mGrid.begin(), frame.mGrid.end(), std::back_inserter(mGrid));
-    //mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
+    mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
 
-    const auto size = m_frame_grid_cols*m_frame_grid_rows;
-    mGrid.resize(size);
+    // const auto size = m_frame_grid_cols*m_frame_grid_rows;
+    // mGrid.resize(size);
 
-    for(int i=0;i<size;++i){
-         mGrid[i] = frame.mGrid[i];
-        // for(int j=0; j<m_frame_grid_rows; j++){
-        //     auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
-        //     if(!frame.mGrid[linearIndex].empty()){
-        //         for(auto e: frame.mGrid[linearIndex])
-        //             mGrid[linearIndex].push_back(e);
-        //     }
+    // for(int i=0;i<size;++i){
+    //      mGrid[i] = frame.mGrid[i];
+    //     // for(int j=0; j<m_frame_grid_rows; j++){
+    //     //     auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
+    //     //     if(!frame.mGrid[linearIndex].empty()){
+    //     //         for(auto e: frame.mGrid[linearIndex])
+    //     //             mGrid[linearIndex].push_back(e);
+    //     //     }
 
-        // }
-    }
+    //     // }
+    // }
 
     if(frame.mbHasPose)
         SetPose(frame.GetPose());
@@ -121,7 +121,6 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false)
 {
-
     const auto size = m_frame_grid_cols*m_frame_grid_rows;
     mGrid.resize(size);
 
@@ -235,14 +234,12 @@ void Frame::AssignFeaturesToGrid()
     int nReserve = 0.5f*mNumKeypoints/(nCells);
 
     for(int i = 0; i < nCells; ++i)
-        mGrid[i].reserve(nReserve);
+        mGrid[i].reserve(nCells);
 
 
     for(int i=0;i<mNumKeypoints;i++)
     {
-        const cv::KeyPoint &kp = (Nleft == -1) ? mvKeysUn[i]
-                                                 : (i < Nleft) ? mvKeys[i]
-                                                                 : mvKeysRight[i - Nleft];
+        const cv::KeyPoint &kp = mvKeysUn[i];
 
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
@@ -346,78 +343,65 @@ Eigen::Vector3f Frame::GetRelativePoseTlr_translation() {
 
 bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
 {
-    if(Nleft == -1){
-        pMP->mbTrackInView = false;
-        pMP->mTrackProjX = -1;
-        pMP->mTrackProjY = -1;
+    pMP->mbTrackInView = false;
+    pMP->mTrackProjX = -1;
+    pMP->mTrackProjY = -1;
 
-        // 3D in absolute coordinates
-        Eigen::Matrix<float,3,1> P = pMP->GetWorldPos();
+    // 3D in absolute coordinates
+    Eigen::Matrix<float,3,1> P = pMP->GetWorldPos();
 
-        // 3D in camera coordinates
-        const Eigen::Matrix<float,3,1> Pc = mRcw * P + mtcw;
-        const float Pc_dist = Pc.norm();
+    // 3D in camera coordinates
+    const Eigen::Matrix<float,3,1> Pc = mRcw * P + mtcw;
+    const float Pc_dist = Pc.norm();
 
-        // Check positive depth
-        const float &PcZ = Pc(2);
-        const float invz = 1.0f/PcZ;
-        if(PcZ<0.0f)
-            return false;
+    // Check positive depth
+    const float &PcZ = Pc(2);
+    const float invz = 1.0f/PcZ;
+    if(PcZ<0.0f)
+        return false;
 
-        const Eigen::Vector2f uv = mpCamera->project(Pc);
+    const Eigen::Vector2f uv = mpCamera->project(Pc);
 
-        if(uv(0)<mnMinX || uv(0)>mnMaxX)
-            return false;
-        if(uv(1)<mnMinY || uv(1)>mnMaxY)
-            return false;
+    if(uv(0)<mnMinX || uv(0)>mnMaxX)
+        return false;
+    if(uv(1)<mnMinY || uv(1)>mnMaxY)
+        return false;
 
-        pMP->mTrackProjX = uv(0);
-        pMP->mTrackProjY = uv(1);
+    pMP->mTrackProjX = uv(0);
+    pMP->mTrackProjY = uv(1);
 
-        // Check distance is in the scale invariance region of the MapPoint
-        const float maxDistance = pMP->GetMaxDistanceInvariance();
-        const float minDistance = pMP->GetMinDistanceInvariance();
-        const Eigen::Vector3f PO = P - mOw;
-        const float dist = PO.norm();
+    // Check distance is in the scale invariance region of the MapPoint
+    const float maxDistance = pMP->GetMaxDistanceInvariance();
+    const float minDistance = pMP->GetMinDistanceInvariance();
+    const Eigen::Vector3f PO = P - mOw;
+    const float dist = PO.norm();
 
-        if(dist<minDistance || dist>maxDistance)
-            return false;
+    if(dist<minDistance || dist>maxDistance)
+        return false;
 
-        // Check viewing angle
-        Eigen::Vector3f Pn = pMP->GetNormal();
+    // Check viewing angle
+    Eigen::Vector3f Pn = pMP->GetNormal();
 
-        const float viewCos = PO.dot(Pn)/dist;
+    const float viewCos = PO.dot(Pn)/dist;
 
-        if(viewCos<viewingCosLimit)
-            return false;
+    if(viewCos<viewingCosLimit)
+        return false;
 
-        // Predict scale in the image
-        const int nPredictedLevel = pMP->PredictScale(dist,this);
+    // Predict scale in the image
+    const int nPredictedLevel = pMP->PredictScale(dist,this);
 
-        // Data used by the tracking
-        pMP->mbTrackInView = true;
-        pMP->mTrackProjX = uv(0);
-        pMP->mTrackProjXR = uv(0) - mbf*invz;
+    // Data used by the tracking
+    pMP->mbTrackInView = true;
+    pMP->mTrackProjX = uv(0);
+    pMP->mTrackProjXR = uv(0) - mbf*invz;
 
-        pMP->mTrackDepth = Pc_dist;
+    pMP->mTrackDepth = Pc_dist;
 
-        pMP->mTrackProjY = uv(1);
-        pMP->mnTrackScaleLevel= nPredictedLevel;
-        pMP->mTrackViewCos = viewCos;
+    pMP->mTrackProjY = uv(1);
+    pMP->mnTrackScaleLevel= nPredictedLevel;
+    pMP->mTrackViewCos = viewCos;
 
-        return true;
-    }
-    else{
-        pMP->mbTrackInView = false;
-        pMP->mbTrackInViewR = false;
-        pMP -> mnTrackScaleLevel = -1;
-        pMP -> mnTrackScaleLevelR = -1;
-
-        pMP->mbTrackInView = isInFrustumChecks(pMP,viewingCosLimit);
-        pMP->mbTrackInViewR = isInFrustumChecks(pMP,viewingCosLimit,true);
-
-        return pMP->mbTrackInView || pMP->mbTrackInViewR;
-    }
+    return true;
 }
 
 bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
@@ -528,15 +512,13 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
         for(int iy = nMinCellY; iy<=nMaxCellY; iy++)
         {
             auto linear_index = computeLinearGridIndex(ix,iy,m_frame_grid_cols);
-            const vector<size_t> vCell = mGrid[linear_index];
+            const auto vCell = mGrid[linear_index];
             if(vCell.empty())
                 continue;
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = (Nleft == -1) ? mvKeysUn[vCell[j]]
-                                                         : (!bRight) ? mvKeys[vCell[j]]
-                                                                     : mvKeysRight[vCell[j]];
+                const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel)
