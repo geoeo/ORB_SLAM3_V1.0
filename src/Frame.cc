@@ -82,15 +82,16 @@ Frame::Frame(const Frame &frame)
     const auto size = m_frame_grid_cols*m_frame_grid_rows;
     mGrid.resize(size);
 
-    for(int i=0;i<m_frame_grid_cols;i++){
-        for(int j=0; j<m_frame_grid_rows; j++){
-            auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
-            if(!frame.mGrid[linearIndex].empty()){
-                for(auto e: frame.mGrid[linearIndex])
-                    mGrid[linearIndex].push_back(e);
-            }
+    for(int i=0;i<size;++i){
+         mGrid[i] = frame.mGrid[i];
+        // for(int j=0; j<m_frame_grid_rows; j++){
+        //     auto linearIndex = computeLinearGridIndex(i,j,m_frame_grid_cols);
+        //     if(!frame.mGrid[linearIndex].empty()){
+        //         for(auto e: frame.mGrid[linearIndex])
+        //             mGrid[linearIndex].push_back(e);
+        //     }
 
-        }
+        // }
     }
 
     if(frame.mbHasPose)
@@ -215,7 +216,7 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
 }
 
 int Frame::computeLinearGridIndex(int col, int row, int cols) {
-    return col*cols + row;    
+    return row*cols + col;    
 }
 
 int Frame::getFrameGridRows() const {
@@ -235,12 +236,6 @@ void Frame::AssignFeaturesToGrid()
 
     for(int i = 0; i < nCells; ++i)
         mGrid[i].reserve(nReserve);
-
-    // for(unsigned int i=0; i<m_frame_grid_cols;i++)
-    //     for (unsigned int j=0; j<m_frame_grid_rows;j++){
-    //         mGrid[i][j].reserve(nReserve);
-    //     }
-
 
 
     for(int i=0;i<mNumKeypoints;i++)
@@ -572,7 +567,7 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
     const auto size = m_frame_grid_cols*m_frame_grid_rows;
 
     //Keypoint's coordinates are undistorted, which could cause to go out of the image
-    if(posX<0 || posY<0 || linearIdx>=size)
+    if(linearIdx < 0 || linearIdx>=size)
         return false;
 
     return true;

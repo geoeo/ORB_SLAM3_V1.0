@@ -66,11 +66,12 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     const auto size = mnGridCols*mnGridRows;
     mGrid.resize(size);
 
-    for(int i=0;i<mnGridCols;i++){
-        for(int j=0; j<mnGridRows; j++){
-            auto linearIndex = Frame::computeLinearGridIndex(i,j,mnGridCols);
-            mGrid[linearIndex]=F.mGrid[linearIndex];
-        }
+    for(int i=0;i<size;++i){
+        mGrid[i]=F.mGrid[i];
+        // for(int j=0; j<mnGridRows; j++){
+        //     auto linearIndex = Frame::computeLinearGridIndex(i,j,mnGridCols);
+        //     mGrid[linearIndex]=F.mGrid[linearIndex];
+        // }
     }
 
     // mGrid.resize(mnGridCols);
