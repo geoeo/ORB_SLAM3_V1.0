@@ -62,7 +62,6 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 RUN rm opencv_contrib.zip
 RUN rm opencv.zip 
 
-
 # Deps for cv_image_transport
 RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
@@ -106,6 +105,9 @@ RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
 
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
+
+#TODO place with other ros deps 
+RUN apt update && apt-get install -y ros-humble-rosbag2-storage-mcap
 
 
 WORKDIR /
