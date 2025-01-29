@@ -23,6 +23,8 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 #include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudafeatures2d.hpp>
 
 namespace ORB_SLAM3
 {
@@ -50,14 +52,15 @@ namespace ORB_SLAM3
         };
 
         ORBextractor(int nfeatures, float scaleFactor, int nlevels,
-                     int iniThFAST, int minThFAST, int gridCount);
+                     int iniThFAST, int minThFAST, int gridCount,
+                     int imageWidth, int imageHeight);
 
         ~ORBextractor() {}
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &_im_managed, cv::InputArray _mask,
+        int operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, cv::InputArray _mask,
                        std::vector<cv::KeyPoint> &_keypoints,
                        cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
 
@@ -91,10 +94,11 @@ namespace ORB_SLAM3
             return mvInvLevelSigma2;
         }
 
-        std::vector<cv::Mat> mvImagePyramid;
+        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvImagePyramid;
 
     protected:
-        void ComputePyramid(cv::Mat image);
+        void AllocatePyramid(int width, int height);
+        void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
         void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
         std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
@@ -118,6 +122,10 @@ namespace ORB_SLAM3
 
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
+
+        cv::Ptr<cv::cuda::Feature2DAsync> feat_cuda;
+        cv::Ptr<cv::cuda::Feature2DAsync> feat_back_cuda;
+        cv::Ptr<cv::cuda::Filter> gaussian_filter;
     };
 
 } // namespace ORB_SLAM

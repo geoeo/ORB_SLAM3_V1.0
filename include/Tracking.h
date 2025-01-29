@@ -71,8 +71,6 @@ public:
 
     // Parse the config file
     bool ParseCamParamFile(cv::FileStorage &fSettings);
-    bool ParseORBParamFile(cv::FileStorage &fSettings);
-    bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
     Sophus::SE3f GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
 
