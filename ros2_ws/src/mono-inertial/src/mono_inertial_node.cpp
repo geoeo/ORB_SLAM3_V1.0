@@ -211,7 +211,7 @@ class SlamNode : public rclcpp::Node
     {
       float resize_factor = 0.8;
 
-            // F4
+      // F4
       ORB_SLAM3::CameraParameters cam{};
       cam.K = cv::Mat::zeros(3,3,CV_32F);
       cam.K.at<float>(0,0) = 1336.9226074186074;
