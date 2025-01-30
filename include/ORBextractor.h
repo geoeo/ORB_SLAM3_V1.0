@@ -95,6 +95,7 @@ namespace ORB_SLAM3
         }
 
         std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvImagePyramid;
+        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvBlurredImagePyramid;
 
     protected:
         void AllocatePyramid(int width, int height);

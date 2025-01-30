@@ -147,8 +147,6 @@ namespace ORB_SLAM3
 
 #undef GET_VALUE
     }
-
-
     static int bit_pattern_31_[256*4] =
             {
                     8,-3, 9,5/*mean (0), correlation (0)*/,
@@ -434,6 +432,7 @@ namespace ORB_SLAM3
         }
 
         mvImagePyramid.resize(nlevels);
+        mvBlurredImagePyramid.resize(nlevels);
 
         mnFeaturesPerLevel.resize(nlevels);
         float factor = 1.0f / scaleFactor;
@@ -955,23 +954,21 @@ namespace ORB_SLAM3
                 continue;
 
             // preprocess the resized image
-            //Mat workingMat;
-            auto workingMatManaged = cuda_cv_managed_memory::CUDAManagedMemory::fromCvMat(mvImagePyramid[level]->getCvMat()); 
             {
                 ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
                 //GaussianBlur(mvImagePyramid[level]->getCvMat(), workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-                gaussian_filter->apply(mvImagePyramid[level]->getCvGpuMat(),workingMatManaged->getCvGpuMat());
+                gaussian_filter->apply(mvImagePyramid[level]->getCvGpuMat(),mvBlurredImagePyramid[level]->getCvGpuMat());
             }
 
             // Compute the descriptors
             Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-            computeDescriptors(workingMatManaged->getCvMat(), keypoints, desc, pattern);
+            computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypoints, desc, pattern);
 
             offset += nkeypointsLevel;
             float scale = mvScaleFactor[level];
             int i = 0;
             for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                         keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
+                keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
 
                 // Scale keypoint coordinates
                 if (level != 0){
@@ -998,6 +995,10 @@ namespace ORB_SLAM3
     void ORBextractor::AllocatePyramid(int width, int height)
     {
         ZoneNamedN(AllocatePyramid, "AllocatePyramid", true);  // NOLINT: Profiler
+
+        const auto size_in_bytes_level_0 = width*height;
+        mvBlurredImagePyramid[0] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes_level_0, height, width, CV_8UC1, width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
+        
         for (int level = 1; level < nlevels; ++level)
         {
             float scale = mvInvScaleFactor[level];
@@ -1006,9 +1007,8 @@ namespace ORB_SLAM3
             Size sz(cvRound(scaled_cols), cvRound(scaled_rows));
 
             const auto size_in_bytes = sz.height*sz.width;
-            auto temp_managed = 
-                shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes, sz.height, sz.width, CV_8UC1, sz.width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
-            mvImagePyramid[level] = temp_managed;
+            mvImagePyramid[level] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes, sz.height, sz.width, CV_8UC1, sz.width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
+            mvBlurredImagePyramid[level] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes, sz.height, sz.width, CV_8UC1, sz.width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
         }
     }
 
