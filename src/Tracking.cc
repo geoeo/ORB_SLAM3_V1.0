@@ -48,52 +48,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
-    // Load camera parameters from settings file
-    if(settings){
-        newParameterLoader(settings);
-    }
-    else{
-        cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
-        bool b_parse_cam = ParseCamParamFile(fSettings);
-        if(!b_parse_cam)
-        {
-            std::cout << "*Error with the camera parameters in the config file*" << std::endl;
-        }
-
-        // Load ORB parameters
-        bool b_parse_orb = ParseORBParamFile(fSettings);
-        if(!b_parse_orb)
-        {
-            std::cout << "*Error with the ORB parameters in the config file*" << std::endl;
-        }
-
-        bool b_parse_imu = true;
-        if(sensor==System::IMU_MONOCULAR || sensor==System::IMU_STEREO || sensor==System::IMU_RGBD)
-        {
-            b_parse_imu = ParseIMUParamFile(fSettings);
-            if(!b_parse_imu)
-            {
-                std::cout << "*Error with the IMU parameters in the config file*" << std::endl;
-            }
-
-            mnFramesToResetIMU = mMaxFrames;
-        }
-
-        if(!b_parse_cam || !b_parse_orb || !b_parse_imu)
-        {
-            std::cerr << "**ERROR in the config file, the format is not correct**" << std::endl;
-            try
-            {
-                throw -1;
-            }
-            catch(exception &e)
-            {
-
-            }
-        }
-    }
-
+    newParameterLoader(settings);
+   
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;
     mnNumDataset = 0;
@@ -151,28 +108,6 @@ void Tracking::newParameterLoader(Settings *settings) {
     mK_(0,2) = mpCamera->getParameter(2);
     mK_(1,2) = mpCamera->getParameter(3);
 
-    if((mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD) &&
-        settings->cameraType() == Settings::KannalaBrandt){
-        mpCamera2 = settings->camera2();
-        mpCamera2 = mpAtlas->AddCamera(mpCamera2);
-
-        mTlr = settings->Tlr();
-
-        mpFrameDrawer->both = true;
-    }
-
-    if(mSensor==System::STEREO || mSensor==System::RGBD || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD ){
-        mbf = settings->bf();
-        mThDepth = settings->b() * settings->thDepth();
-    }
-
-    if(mSensor==System::RGBD || mSensor==System::IMU_RGBD){
-        mDepthMapFactor = settings->depthMapFactor();
-        if(fabs(mDepthMapFactor)<1e-5)
-            mDepthMapFactor=1;
-        else
-            mDepthMapFactor = 1.0f/mDepthMapFactor;
-    }
 
     mMinFrames = 0;
     mMaxFrames = settings->fps();
@@ -185,14 +120,12 @@ void Tracking::newParameterLoader(Settings *settings) {
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
     int fGridCount =  settings->gridCount();
+    cv::Size newImSize = settings->newImSize();
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
-
-    if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,fGridCount);
+    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount, newImSize.width, newImSize.height);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
+        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount,newImSize.width, newImSize.height);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -808,228 +741,6 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
     {
         return false;
     }
-
-    return true;
-}
-
-bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
-{
-    bool b_miss_params = false;
-    int nFeatures, nLevels, fIniThFAST, fMinThFAST, fGridCount;
-    float fScaleFactor;
-
-    cv::FileNode node = fSettings["ORBextractor.nFeatures"];
-    if(!node.empty() && node.isInt())
-    {
-        nFeatures = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.nFeatures parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["ORBextractor.scaleFactor"];
-    if(!node.empty() && node.isReal())
-    {
-        fScaleFactor = node.real();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.scaleFactor parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["ORBextractor.nLevels"];
-    if(!node.empty() && node.isInt())
-    {
-        nLevels = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.nLevels parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["ORBextractor.iniThFAST"];
-    if(!node.empty() && node.isInt())
-    {
-        fIniThFAST = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.iniThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["ORBextractor.minThFAST"];
-    if(!node.empty() && node.isInt())
-    {
-        fMinThFAST = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.minThFAST parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["ORBextractor.gridCount"];
-    if(!node.empty() && node.isInt())
-    {
-        fGridCount = node.operator int();
-    }
-    else
-    {
-        std::cerr << "*ORBextractor.gridCount parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    if(b_miss_params)
-    {
-        return false;
-    }
-
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
-
-    if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
-        mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
-
-    if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount);
-
-    cout << endl << "ORB Extractor Parameters: " << endl;
-    cout << "- Number of Features: " << nFeatures << endl;
-    cout << "- Scale Levels: " << nLevels << endl;
-    cout << "- Scale Factor: " << fScaleFactor << endl;
-    cout << "- Initial Fast Threshold: " << fIniThFAST << endl;
-    cout << "- Minimum Fast Threshold: " << fMinThFAST << endl;
-
-    return true;
-}
-
-bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
-{
-    bool b_miss_params = false;
-
-    cv::Mat cvTbc;
-    cv::FileNode node = fSettings["Tbc"];
-    if(!node.empty())
-    {
-        cvTbc = node.mat();
-        if(cvTbc.rows != 4 || cvTbc.cols != 4)
-        {
-            std::cerr << "*Tbc matrix have to be a 4x4 transformation matrix*" << std::endl;
-            b_miss_params = true;
-        }
-    }
-    else
-    {
-        std::cerr << "*Tbc matrix doesn't exist*" << std::endl;
-        b_miss_params = true;
-    }
-    cout << endl;
-    cout << "Left camera to Imu Transform (Tbc): " << endl << cvTbc << endl;
-    Eigen::Matrix<float,4,4,Eigen::RowMajor> eigTbc(cvTbc.ptr<float>(0));
-    Sophus::SE3f Tbc(eigTbc);
-
-    node = fSettings["InsertKFsWhenLost"];
-    mInsertKFsLost = true;
-    if(!node.empty() && node.isInt())
-    {
-        mInsertKFsLost = (bool) node.operator int();
-    }
-
-    if(!mInsertKFsLost)
-        cout << "Do not insert keyframes when lost visual tracking " << endl;
-
-
-
-    float Ng, Na, Ngw, Naw;
-
-    node = fSettings["IMU.Frequency"];
-    if(!node.empty() && node.isInt())
-    {
-        mImuFreq = node.operator int();
-        //mImuPer = 0.001; //1.0 / (double) mImuFreq;
-        mImuPer = 0.0;
-    }
-    else
-    {
-        std::cerr << "*IMU.Frequency parameter doesn't exist or is not an integer*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["IMU.NoiseGyro"];
-    if(!node.empty() && node.isReal())
-    {
-        Ng = node.real();
-    }
-    else
-    {
-        std::cerr << "*IMU.NoiseGyro parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["IMU.NoiseAcc"];
-    if(!node.empty() && node.isReal())
-    {
-        Na = node.real();
-    }
-    else
-    {
-        std::cerr << "*IMU.NoiseAcc parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["IMU.GyroWalk"];
-    if(!node.empty() && node.isReal())
-    {
-        Ngw = node.real();
-    }
-    else
-    {
-        std::cerr << "*IMU.GyroWalk parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["IMU.AccWalk"];
-    if(!node.empty() && node.isReal())
-    {
-        Naw = node.real();
-    }
-    else
-    {
-        std::cerr << "*IMU.AccWalk parameter doesn't exist or is not a real number*" << std::endl;
-        b_miss_params = true;
-    }
-
-    node = fSettings["IMU.fastInit"];
-    mFastInit = false;
-    if(!node.empty())
-    {
-        mFastInit = static_cast<int>(fSettings["IMU.fastInit"]) != 0;
-    }
-
-    if(mFastInit)
-        cout << "Fast IMU initialization. Acceleration is not checked \n";
-
-    if(b_miss_params)
-    {
-        return false;
-    }
-
-    const float sf = sqrt(mImuFreq);
-    cout << endl;
-    cout << "IMU frequency: " << mImuFreq << " Hz" << endl;
-    cout << "IMU gyro noise: " << Ng << " rad/s/sqrt(Hz)" << endl;
-    cout << "IMU gyro walk: " << Ngw << " rad/s^2/sqrt(Hz)" << endl;
-    cout << "IMU accelerometer noise: " << Na << " m/s^2/sqrt(Hz)" << endl;
-    cout << "IMU accelerometer walk: " << Naw << " m/s^3/sqrt(Hz)" << endl;
-
-    mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
-
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-
 
     return true;
 }
