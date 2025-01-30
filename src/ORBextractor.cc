@@ -474,10 +474,6 @@ namespace ORB_SLAM3
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
         AllocatePyramid(imageWidth, imageHeight);
-        feat_cuda = cv::cuda::FastFeatureDetector::create(iniThFAST,true,FastFeatureDetector::TYPE_9_16);
-        feat_back_cuda = cv::cuda::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-        gaussian_filter = cv::cuda::createGaussianFilter(CV_8UC1,CV_8UC1,Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-
         gridCount = static_cast<float>(_gridCount);
     }
 
@@ -841,8 +837,6 @@ namespace ORB_SLAM3
                         ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
                         feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
                             vKeysCell);
-                        // feat_cuda->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-                        //     vKeysCell);
                         TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                     }
 
@@ -852,8 +846,6 @@ namespace ORB_SLAM3
                         ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
                         feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
                             vKeysCell);
-                        // feat_back_cuda->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-                        //     vKeysCell);
                         TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                     }
 
@@ -956,8 +948,7 @@ namespace ORB_SLAM3
             // preprocess the resized image
             {
                 ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
-                //GaussianBlur(mvImagePyramid[level]->getCvMat(), workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-                gaussian_filter->apply(mvImagePyramid[level]->getCvGpuMat(),mvBlurredImagePyramid[level]->getCvGpuMat());
+                GaussianBlur(mvImagePyramid[level]->getCvMat(), mvBlurredImagePyramid[level]->getCvMat(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
             }
 
             // Compute the descriptors
