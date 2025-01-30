@@ -412,7 +412,7 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(iniThFAST, minThFAST, nfeatures)
+            gpuFast(iniThFAST, minThFAST, 2*nfeatures)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);

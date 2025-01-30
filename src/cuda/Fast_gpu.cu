@@ -372,7 +372,7 @@ namespace ORB_SLAM3 { namespace cuda {
     checkCudaErrors( cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
 
     dim3 dimBlock(32, 32); // Grid size
-    dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y * 4));
+    dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
     tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpScore, maxKeypoints, highThreshold, lowThreshold, scoreMat, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
   }
