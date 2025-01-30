@@ -101,6 +101,8 @@ namespace ORB_SLAM3
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
         void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
+        void computeDescriptors(const cv::Mat& image, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
+                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor);
         std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 

@@ -892,14 +892,24 @@ namespace ORB_SLAM3
 
     }
 
-    static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors,
-                                   const vector<Point>& pattern)
+    void ORBextractor::computeDescriptors(const Mat& image, vector<KeyPoint>& keypointsLevel, vector<KeyPoint>& keypointsTotal, Mat& descriptors,
+                                   const vector<Point>& pattern, int monoIndexOffset, float scaleFactor)
     {
         ZoneNamedN(computeDescriptors, "computeDescriptors", true);  // NOLINT: Profiler
-        descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
+        Mat descLevel = Mat::zeros((int)keypointsLevel.size(), 32, CV_8UC1);
+        
+        for (size_t i = 0; i < keypointsLevel.size(); i++){
+            auto kp = keypointsLevel[i];
+            computeOrbDescriptor(kp, image, &pattern[0], descLevel.ptr((int)i));
 
-        for (size_t i = 0; i < keypoints.size(); i++)
-            computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
+            // Scale keypoint coordinates
+            kp.pt *= scaleFactor;
+
+            const int monoIndex = monoIndexOffset + i;
+            keypointsTotal.at(monoIndex) = kp;
+            descLevel.row(i).copyTo(descriptors.row(monoIndex));
+        }
+
     }
 
     int ORBextractor::operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, InputArray _mask, vector<KeyPoint>& _keypoints,
@@ -934,58 +944,32 @@ namespace ORB_SLAM3
 
         _keypoints = vector<cv::KeyPoint>(nkeypoints);
 
-        int offset = 0;
         //Modified for speeding up stereo fisheye matching
-        int monoIndex = 0, stereoIndex = nkeypoints-1;
+        int monoIndex = 0;
         for (int level = 0; level < nlevels; ++level)
         {
-            vector<KeyPoint>& keypoints = allKeypoints[level];
-            int nkeypointsLevel = (int)keypoints.size();
+            vector<KeyPoint>& keypointsLevel = allKeypoints[level];
+            int nkeypointsLevel = (int)keypointsLevel.size();
 
             if(nkeypointsLevel==0)
                 continue;
 
             // preprocess the resized image
             {
-                ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
+                ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);
                 GaussianBlur(mvImagePyramid[level]->getCvMat(), mvBlurredImagePyramid[level]->getCvMat(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
             }
 
             // Compute the descriptors
-            Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
-            computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypoints, desc, pattern);
-
-            offset += nkeypointsLevel;
-            float scale = mvScaleFactor[level];
-            int i = 0;
-            for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
-
-                // Scale keypoint coordinates
-                if (level != 0){
-                    keypoint->pt *= scale;
-                }
-
-                if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
-                    _keypoints.at(stereoIndex) = (*keypoint);
-                    desc.row(i).copyTo(descriptors.row(stereoIndex));
-                    stereoIndex--;
-                }
-                else{
-                    _keypoints.at(monoIndex) = (*keypoint);
-                    desc.row(i).copyTo(descriptors.row(monoIndex));
-                    monoIndex++;
-                }
-                i++;
-            }
+            computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level]);
+            monoIndex+=nkeypointsLevel;
         }
-        //cout << "[ORBextractor]: mono " << monoIndex << " keypoints size " << nkeypoints << endl;
         return monoIndex;
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)
     {
-        ZoneNamedN(AllocatePyramid, "AllocatePyramid", true);  // NOLINT: Profiler
+        ZoneNamedN(AllocatePyramid, "AllocatePyramid", true); 
 
         const auto size_in_bytes_level_0 = width*height;
         mvBlurredImagePyramid[0] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes_level_0, height, width, CV_8UC1, width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
