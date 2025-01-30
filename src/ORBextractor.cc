@@ -75,8 +75,7 @@ namespace ORB_SLAM3
     const int HALF_PATCH_SIZE = 15;
     const int EDGE_THRESHOLD = 19;
 
-
-    static float IC_Angle(const Mat& image, Point2f pt,  const vector<int> & u_max)
+    float ORBextractor::IC_Angle(const Mat& image, Point2f pt,  const vector<int> & u_max)
     {
         int m_01 = 0, m_10 = 0;
 
@@ -105,9 +104,14 @@ namespace ORB_SLAM3
         return fastAtan2((float)m_01, (float)m_10);
     }
 
+    
+    int ORBextractor::getOrbValue(const uchar* center, const Point* pattern, int idx, float a, float b, int step) {
+        return static_cast<int>(center[cvRound(pattern[idx].x*b + pattern[idx].y*a)*step +
+               cvRound(pattern[idx].x*a - pattern[idx].y*b)]);
+    }
 
-    const float factorPI = (float)(CV_PI/180.f);
-    static void computeOrbDescriptor(const KeyPoint& kpt,
+
+    void ORBextractor::computeOrbDescriptor(const KeyPoint& kpt,
                                      const Mat& img, const Point* pattern,
                                      uchar* desc)
     {
@@ -117,35 +121,28 @@ namespace ORB_SLAM3
         const uchar* center = &img.at<uchar>(cvRound(kpt.pt.y), cvRound(kpt.pt.x));
         const int step = (int)img.step;
 
-#define GET_VALUE(idx) \
-        center[cvRound(pattern[idx].x*b + pattern[idx].y*a)*step + \
-               cvRound(pattern[idx].x*a - pattern[idx].y*b)]
-
-
         for (int i = 0; i < 32; ++i, pattern += 16)
         {
             int t0, t1, val;
-            t0 = GET_VALUE(0); t1 = GET_VALUE(1);
+            t0 = getOrbValue(center, pattern, 0, a, b, step); t1 = getOrbValue(center, pattern, 1, a, b, step);
             val = t0 < t1;
-            t0 = GET_VALUE(2); t1 = GET_VALUE(3);
+            t0 = getOrbValue(center, pattern, 2, a, b, step); t1 = getOrbValue(center, pattern, 3, a, b, step);
             val |= (t0 < t1) << 1;
-            t0 = GET_VALUE(4); t1 = GET_VALUE(5);
+            t0 = getOrbValue(center, pattern, 4, a, b, step); t1 = getOrbValue(center, pattern, 5, a, b, step);
             val |= (t0 < t1) << 2;
-            t0 = GET_VALUE(6); t1 = GET_VALUE(7);
+            t0 = getOrbValue(center, pattern, 6, a, b, step); t1 = getOrbValue(center, pattern, 7, a, b, step);
             val |= (t0 < t1) << 3;
-            t0 = GET_VALUE(8); t1 = GET_VALUE(9);
+            t0 = getOrbValue(center, pattern, 8, a, b, step); t1 = getOrbValue(center, pattern, 9, a, b, step);
             val |= (t0 < t1) << 4;
-            t0 = GET_VALUE(10); t1 = GET_VALUE(11);
+            t0 = getOrbValue(center, pattern, 10, a, b, step); t1 = getOrbValue(center, pattern, 11, a, b, step);
             val |= (t0 < t1) << 5;
-            t0 = GET_VALUE(12); t1 = GET_VALUE(13);
+            t0 = getOrbValue(center, pattern, 12, a, b, step); t1 = getOrbValue(center, pattern, 13, a, b, step);
             val |= (t0 < t1) << 6;
-            t0 = GET_VALUE(14); t1 = GET_VALUE(15);
+            t0 = getOrbValue(center, pattern, 14, a, b, step); t1 = getOrbValue(center, pattern, 15, a, b, step);
             val |= (t0 < t1) << 7;
 
             desc[i] = (uchar)val;
         }
-
-#undef GET_VALUE
     }
     static int bit_pattern_31_[256*4] =
             {
@@ -477,12 +474,12 @@ namespace ORB_SLAM3
         gridCount = static_cast<float>(_gridCount);
     }
 
-    static void computeOrientation(const Mat& image, vector<KeyPoint>& keypoints, const vector<int>& umax)
+    void ORBextractor::computeOrientation(const cv::Mat& image, std::vector<KeyPoint>& keypoints, const std::vector<int>& umax)
     {
         for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
                      keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
         {
-            keypoint->angle = IC_Angle(image, keypoint->pt, umax);
+            keypoint->angle = ORBextractor::IC_Angle(image, keypoint->pt, umax);
         }
     }
 
@@ -885,7 +882,7 @@ namespace ORB_SLAM3
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
                 // compute orientations
                 for (int level = 0; level < nlevels; ++level)
-                    computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
+                    ORBextractor::computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
             
 
         }
