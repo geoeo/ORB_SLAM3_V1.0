@@ -123,10 +123,6 @@ namespace ORB_SLAM3
 
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
-
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_cuda;
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_back_cuda;
-        cv::Ptr<cv::cuda::Filter> gaussian_filter;
     };
 
 } // namespace ORB_SLAM
