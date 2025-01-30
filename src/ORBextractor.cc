@@ -767,6 +767,7 @@ static int bit_pattern_31_[256*4] =
         // Retain the best point in each node
         vector<cv::KeyPoint> vResultKeys;
         vResultKeys.reserve(nfeatures);
+        const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvScaleFactor[level]);
         for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
         {
             vector<cv::KeyPoint> &vNodeKeys = lit->vKeys;
@@ -781,6 +782,12 @@ static int bit_pattern_31_[256*4] =
                     maxResponse = vNodeKeys[k].response;
                 }
             }
+
+            // Add border to coordinates and scale information
+            pKP->pt.x+=minX;
+            pKP->pt.y+=minY;
+            pKP->octave=level;
+            pKP->size = scaledPatchSize;
 
             vResultKeys.push_back(*pKP);
         }
@@ -825,7 +832,7 @@ static int bit_pattern_31_[256*4] =
 
                 for(int j=0; j<nCols; j++)
                 {
-                    const float iniX =minBorderX+j*wCell;
+                    const float iniX = minBorderX+j*wCell;
                     float maxX = iniX+wCell+6;
                     if(iniX>=maxBorderX-6)
                         continue;
@@ -834,19 +841,18 @@ static int bit_pattern_31_[256*4] =
 
                     vector<cv::KeyPoint> vKeysCell;
                     {
-                        ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
+                        ZoneNamedN(featCall, "featCall", true); 
                         feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
                             vKeysCell);
-                        TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                        TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));
                     }
-
 
                     if(vKeysCell.empty())
                     {
-                        ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+                        ZoneNamedN(feat_backCall, "feat_backCall", true); 
                         feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
                             vKeysCell);
-                        TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                        TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));
                     }
 
                     if(!vKeysCell.empty())
@@ -862,32 +868,18 @@ static int bit_pattern_31_[256*4] =
                 }
             }
 
-            vector<KeyPoint> & keypoints = allKeypoints[level];
-            keypoints.reserve(nfeatures);
-
-            keypoints = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX,
+            allKeypoints[level].reserve(nfeatures);
+            allKeypoints[level] = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX,
                                           minBorderY, maxBorderY,mnFeaturesPerLevel[level], level);
 
-            const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
-
-            // Add border to coordinates and scale information
-            const int nkps = keypoints.size();
-            for(int i=0; i<nkps ; i++)
-            {
-                keypoints[i].pt.x+=minBorderX;
-                keypoints[i].pt.y+=minBorderY;
-                keypoints[i].octave=level;
-                keypoints[i].size = scaledPatchSize;
-            }
         }
 
         {
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
-                // compute orientations
-                for (int level = 0; level < nlevels; ++level)
-                    ORBextractor::computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
-            
-
+            // compute orientations
+            for (int level = 0; level < nlevels; ++level)
+                ORBextractor::computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
+          
         }
 
     }
