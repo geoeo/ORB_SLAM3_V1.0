@@ -802,40 +802,91 @@ static int bit_pattern_31_[256*4] =
         allKeypoints.resize(nlevels);
         for (int level = 0; level < nlevels; ++level)
         {
+        //     const int minBorderX = EDGE_THRESHOLD-3;
+        //     const int minBorderY = minBorderX;
+        //     const int maxBorderX = mvImagePyramid[level]->getWidth()-EDGE_THRESHOLD+3;
+        //     const int maxBorderY = mvImagePyramid[level]->getHeight()-EDGE_THRESHOLD+3;
+
+        //     vector<cv::KeyPoint> vToDistributeKeys;
+        //     vToDistributeKeys.reserve(nfeatures*10);
+
+        //     if (level == 0) {
+        //         gpuFast.detectAsync(
+        //                 mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+        //     }
+
+        //     // gpuFast.joinDetectAsync(vToDistributeKeys);
+        //     // if (level + 1 < nlevels) {
+        //     //     const int maxBorderX = mvImagePyramid[level + 1]->getWidth() - EDGE_THRESHOLD + 3;
+        //     //     const int maxBorderY = mvImagePyramid[level + 1]->getHeight() - EDGE_THRESHOLD + 3;
+        //     //     gpuFast.detectAsync(
+        //     //             mvImagePyramid[level + 1]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+        //     // }
+
+        //     else{
+        //         const int maxBorderX = mvImagePyramid[level]->getWidth() - EDGE_THRESHOLD + 3;
+        //         const int maxBorderY = mvImagePyramid[level]->getHeight() - EDGE_THRESHOLD + 3;
+        //         gpuFast.detectAsync(
+        //                 mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+        //     }
+
+        //     gpuFast.joinDetectAsync(vToDistributeKeys);
+
+
             const int minBorderX = EDGE_THRESHOLD-3;
             const int minBorderY = minBorderX;
             const int maxBorderX = mvImagePyramid[level]->getWidth()-EDGE_THRESHOLD+3;
             const int maxBorderY = mvImagePyramid[level]->getHeight()-EDGE_THRESHOLD+3;
+            const int wCell = gridCount;
+            const int hCell = gridCount;
 
             vector<cv::KeyPoint> vToDistributeKeys;
             vToDistributeKeys.reserve(nfeatures*10);
 
-            if (level == 0) {
-                gpuFast.detectAsync(
-                        mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+
+            for(int iniY=minBorderY; iniY<(maxBorderY-hCell); iniY+=hCell)
+            {
+                const int maxY = iniY+hCell;
+                for(int iniX=minBorderX; iniX<(maxBorderX-wCell); iniX+=wCell)
+                {
+                    const int maxX = iniX+wCell;
+                    vector<cv::KeyPoint> vKeysCell;
+                    {
+                        ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
+                        feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
+                            vKeysCell);
+                        TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                    }
+
+
+                    if(vKeysCell.empty())
+                    {
+                        ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+                        feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
+                            vKeysCell);
+                        TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+                    }
+
+                    if(!vKeysCell.empty())
+                    {
+                        for(auto& kp: vKeysCell)
+                        {
+                            kp.pt.x+=(iniX-minBorderX);
+                            kp.pt.y+=(iniY-minBorderY);
+                            vToDistributeKeys.push_back(kp);
+                        }
+                    }
+
+                }
             }
-
-            // gpuFast.joinDetectAsync(vToDistributeKeys);
-            // if (level + 1 < nlevels) {
-            //     const int maxBorderX = mvImagePyramid[level + 1]->getWidth() - EDGE_THRESHOLD + 3;
-            //     const int maxBorderY = mvImagePyramid[level + 1]->getHeight() - EDGE_THRESHOLD + 3;
-            //     gpuFast.detectAsync(
-            //             mvImagePyramid[level + 1]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
-            // }
-
-            else{
-                const int maxBorderX = mvImagePyramid[level]->getWidth() - EDGE_THRESHOLD + 3;
-                const int maxBorderY = mvImagePyramid[level]->getHeight() - EDGE_THRESHOLD + 3;
-                gpuFast.detectAsync(
-                        mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
-            }
-
-            gpuFast.joinDetectAsync(vToDistributeKeys);
 
             allKeypoints[level].reserve(nfeatures);
             allKeypoints[level] = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX,
                                           minBorderY, maxBorderY,mnFeaturesPerLevel[level], level);
         }
+
+
+
 
         {
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler

@@ -182,19 +182,8 @@ install(TARGETS ${PROJECT_NAME} EXPORT ORB_SLAM3Targets
 # Install Headers
 ################################################################################
 
-file(GLOB HEAD 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-)
-
-# Headers
 install(
-        FILES ${HEAD}
-        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-)
-
-install(
-        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
 )
 
