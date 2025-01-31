@@ -864,8 +864,9 @@ static int bit_pattern_31_[256*4] =
                 vector<cv::KeyPoint> vKeysCell;
                 {
                     ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
-                    feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-                        vKeysCell);
+                    feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+
+                    //gpuFast.detectAsyncOpenCv(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX));
                     TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                 }
 
@@ -873,8 +874,7 @@ static int bit_pattern_31_[256*4] =
                 if(vKeysCell.empty())
                 {
                     ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-                    feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-                        vKeysCell);
+                    feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
                     TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                 }
 

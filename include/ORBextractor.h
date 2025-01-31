@@ -131,7 +131,7 @@ namespace ORB_SLAM3
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
 
-        cuda::GpuFast gpuFast;
+        cuda::fast::GpuFast gpuFast;
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
     };
