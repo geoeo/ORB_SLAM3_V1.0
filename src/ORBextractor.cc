@@ -412,7 +412,7 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(iniThFAST, minThFAST, 2*nfeatures)
+            gpuFast(iniThFAST, minThFAST, gridCount, gridCount ,2*nfeatures)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -473,6 +473,7 @@ static int bit_pattern_31_[256*4] =
 
         feat = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
+        feat_back_gpu = cv::cuda::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
         AllocatePyramid(imageWidth, imageHeight);
         gridCount = static_cast<float>(_gridCount);
@@ -862,11 +863,17 @@ static int bit_pattern_31_[256*4] =
                 const int maxX = iniX+wCell;
 
                 vector<cv::KeyPoint> vKeysCell;
-                {
-                    ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
-                    feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+                {   
+                    // {
+                    //     ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
+                    //     feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+                    // }
 
-                    //gpuFast.detectAsyncOpenCv(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX));
+                    {
+                        ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
+                        gpuFast.detectAsyncOpenCv(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+                    }
+
                     TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                 }
 
@@ -874,7 +881,8 @@ static int bit_pattern_31_[256*4] =
                 if(vKeysCell.empty())
                 {
                     ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-                    feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+                    //feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+                    feat_back_gpu->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
                     TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                 }
 
@@ -892,42 +900,6 @@ static int bit_pattern_31_[256*4] =
 
             }
 
-
-            // for(int iniY=minBorderY; iniY<(maxBorderY-hCell); iniY+=hCell)
-            // {
-            //     const int maxY = iniY+hCell;
-            //     for(int iniX=minBorderX; iniX<(maxBorderX-wCell); iniX+=wCell)
-            //     {
-            //         const int maxX = iniX+wCell;
-            //         vector<cv::KeyPoint> vKeysCell;
-            //         {
-            //             ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
-            //             feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-            //                 vKeysCell);
-            //             TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-            //         }
-
-
-            //         if(vKeysCell.empty())
-            //         {
-            //             ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-            //             feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),
-            //                 vKeysCell);
-            //             TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-            //         }
-
-            //         if(!vKeysCell.empty())
-            //         {
-            //             for(auto& kp: vKeysCell)
-            //             {
-            //                 kp.pt.x+=(iniX-minBorderX);
-            //                 kp.pt.y+=(iniY-minBorderY);
-            //                 vToDistributeKeys.push_back(kp);
-            //             }
-            //         }
-
-            //     }
-            // }
 
             allKeypoints[level].reserve(nfeatures);
             allKeypoints[level] = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX,

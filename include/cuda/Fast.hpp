@@ -14,28 +14,33 @@ namespace ORB_SLAM3::cuda::fast {
   using namespace cv;
   using namespace cv::cuda;
 
-  const float FEATURE_SIZE = 9.0;
-
   class GpuFast {
     short2 * kpLoc;
     float * kpScore;
     unsigned int * counter_ptr;
-    unsigned int highThreshold;
-    unsigned int lowThreshold; 
-    unsigned int maxKeypoints;
+    int highThreshold;
+    int lowThreshold; 
+    int gridSizeX;
+    int gridSizeY;
+    int maxKeypoints;
     unsigned int count;
+
+    static const int LOCATION_ROW = 0;
+    static const int RESPONSE_ROW = 1;
+    static const int FEATURE_SIZE = 7;
+
     cv::cuda::GpuMat scoreMat;
     cudaStream_t stream;
     Stream cvStream;
   public:
-    GpuFast(int highThreshold, int lowThreshold, int maxKeypoints = 10000);
+    GpuFast(int highThreshold, int lowThreshold, int grid_size_x, int grid_size_y, int maxKeypoints = 10000);
     ~GpuFast();
 
     // void detect(InputArray, std::vector<KeyPoint>&);
 
     // void detectAsync(InputArray);
     // void joinDetectAsync(std::vector<KeyPoint>&);
-    void detectAsyncOpenCv(InputArray);
+    void detectAsyncOpenCv(InputArray im, std::vector<KeyPoint>& keypoints_cpu);
   };
 }
 #endif

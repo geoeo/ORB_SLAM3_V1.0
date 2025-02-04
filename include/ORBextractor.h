@@ -134,6 +134,7 @@ namespace ORB_SLAM3
         cuda::fast::GpuFast gpuFast;
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
+        cv::Ptr<cv::Feature2D> feat_back_gpu;
     };
 
 } // namespace ORB_SLAM
