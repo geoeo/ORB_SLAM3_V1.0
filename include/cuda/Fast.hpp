@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef __FAST_HPP__
-#define __FAST_HPP__
-
 #include <vector>
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/core/cuda_stream_accessor.hpp>
@@ -18,11 +15,9 @@ namespace ORB_SLAM3::cuda::fast {
     short2 * kpLoc;
     float * kpScore;
     unsigned int * counter_ptr;
-    int highThreshold;
-    int lowThreshold; 
-    int gridSizeX;
-    int gridSizeY;
-    int maxKeypoints;
+    unsigned int highThreshold;
+    unsigned int lowThreshold; 
+    unsigned int maxKeypoints;
     unsigned int count;
 
     static const int LOCATION_ROW = 0;
@@ -33,14 +28,26 @@ namespace ORB_SLAM3::cuda::fast {
     cudaStream_t stream;
     Stream cvStream;
   public:
-    GpuFast(int highThreshold, int lowThreshold, int grid_size_x, int grid_size_y, int maxKeypoints = 10000);
+    GpuFast(int highThreshold, int lowThreshold, int maxKeypoints = 10000);
     ~GpuFast();
 
-    // void detect(InputArray, std::vector<KeyPoint>&);
+    void detect(InputArray, std::vector<KeyPoint>&);
+    void detectAsync(InputArray);
+    void joinDetectAsync(std::vector<KeyPoint>&);
+  };
 
-    // void detectAsync(InputArray);
-    // void joinDetectAsync(std::vector<KeyPoint>&);
-    void detectAsyncOpenCv(InputArray im, std::vector<KeyPoint>& keypoints_cpu);
+    class IC_Angle {
+    unsigned int maxKeypoints;
+    KeyPoint * keypoints;
+    cudaStream_t stream;
+    Stream _cvStream;
+  public:
+    IC_Angle(unsigned int maxKeypoints = 10000);
+    ~IC_Angle();
+    void launch_async(InputArray _image, KeyPoint * _keypoints, int npoints, int half_k, int minBorderX, int minBorderY, int octave, int size);
+    void join(KeyPoint * _keypoints, int npoints);
+
+    Stream& cvStream() { return _cvStream;}
+    static void loadUMax(const int* u_max, int count);
   };
 }
-#endif

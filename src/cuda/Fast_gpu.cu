@@ -46,12 +46,13 @@
 #include "opencv2/core/cuda/functional.hpp"
 #include "cuda/helper_cuda.h"
 #include <cuda/Fast.hpp>
+#include <algorithm>
 
 using namespace cv;
 using namespace cv::cuda;
 using namespace cv::cuda::device;
 
-namespace ORB_SLAM3 { namespace cuda {
+namespace ORB_SLAM3 { namespace cuda { namespace fast {
   ///////////////////////////////////////////////////////////////////////////
   // calcKeypoints
 
@@ -368,8 +369,8 @@ namespace ORB_SLAM3 { namespace cuda {
       // else THIS WILL BREAK
       scoreMat = GpuMat(image.size(), CV_32SC1);
     }
-    scoreMat.setTo(Scalar::all(0), cvStream);
-    checkCudaErrors( cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
+    checkCudaErrors(cudaMemsetAsync(scoreMat.ptr(), 0, scoreMat.step*scoreMat.rows, stream));
+    checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
 
     dim3 dimBlock(32, 32); // Grid size
     dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
@@ -508,4 +509,4 @@ namespace ORB_SLAM3 { namespace cuda {
     checkCudaErrors( cudaStreamSynchronize(stream) );
   }
 
-} } // namespace fast
+} } } // namespace fast
