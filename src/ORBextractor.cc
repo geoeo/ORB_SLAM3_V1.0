@@ -875,11 +875,7 @@ static int bit_pattern_31_[256*4] =
             //     }
             // }
 
-            std::vector<int> ivec(dim_1D);
-            std::iota (std::begin(ivec), std::end(ivec), 0);
-
-            //////////// Loop Version ////////////
-            std::for_each(std::execution::par, std::begin(ivec), std::end(ivec), [&](int i){
+            for(int i = 0; i < dim_1D; ++i){
                 int r = floor(i/nCols);  
                 int c = floor(std::fmod(i,nCols));
 
@@ -915,16 +911,11 @@ static int bit_pattern_31_[256*4] =
                     for(auto& kp: vKeysCell)
                     {
                         kp.pt.x+=(c*wCell);
-                        kp.pt.y+=(r*hCell);      
-                    }
-
-                    mFastFeature.lock();
-                    for(auto& kp: vKeysCell){
+                        kp.pt.y+=(r*hCell); 
                         vToDistributeKeys.push_back(kp);
                     }
-                    mFastFeature.unlock();
                 }
-            });
+            }
 
 
             allKeypoints[level].reserve(nfeatures);
