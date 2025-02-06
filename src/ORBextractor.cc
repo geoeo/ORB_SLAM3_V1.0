@@ -414,8 +414,8 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(iniThFAST, minThFAST ,2*nfeatures),
-            gpuFastCV(iniThFAST, minThFAST, imageHeight, imageWidth, gridCount ,2*nfeatures)
+            gpuFast(iniThFAST, minThFAST,imageHeight, imageWidth ,4*nfeatures),
+            gpuFastCV(iniThFAST, minThFAST, imageHeight, imageWidth, gridCount ,4*nfeatures)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -832,30 +832,30 @@ static int bit_pattern_31_[256*4] =
 
 
             ////////// Gpu Version //////////
-            // {
-            //     ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
-            //     if (level == 0) {
-            //         gpuFast.detectAsync(
-            //                 mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
-            //     }
+            {
+                ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
+                if (level == 0) {
+                    gpuFast.detectAsync(
+                            mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+                }
 
-            //     // gpuFast.joinDetectAsync(vToDistributeKeys);
-            //     // if (level + 1 < nlevels) {
-            //     //     const int maxBorderX = mvImagePyramid[level + 1]->getWidth() - EDGE_THRESHOLD + 3;
-            //     //     const int maxBorderY = mvImagePyramid[level + 1]->getHeight() - EDGE_THRESHOLD + 3;
-            //     //     gpuFast.detectAsync(
-            //     //             mvImagePyramid[level + 1]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
-            //     // }
+                // gpuFast.joinDetectAsync(vToDistributeKeys);
+                // if (level + 1 < nlevels) {
+                //     const int maxBorderX = mvImagePyramid[level + 1]->getWidth() - EDGE_THRESHOLD + 3;
+                //     const int maxBorderY = mvImagePyramid[level + 1]->getHeight() - EDGE_THRESHOLD + 3;
+                //     gpuFast.detectAsync(
+                //             mvImagePyramid[level + 1]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+                // }
 
-            //     else{
-            //         const int maxBorderX = mvImagePyramid[level]->getWidth() - EDGE_THRESHOLD + 3;
-            //         const int maxBorderY = mvImagePyramid[level]->getHeight() - EDGE_THRESHOLD + 3;
-            //         gpuFast.detectAsync(
-            //                 mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
-            //     }
-
-            //     gpuFast.joinDetectAsync(vToDistributeKeys);
-            // }
+                else{
+                    const int maxBorderX = mvImagePyramid[level]->getWidth() - EDGE_THRESHOLD + 3;
+                    const int maxBorderY = mvImagePyramid[level]->getHeight() - EDGE_THRESHOLD + 3;
+                    gpuFast.detectAsync(
+                            mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX));
+                }
+                gpuFast.joinDetectAsync(vToDistributeKeys);
+                std::cout << "Size: " << vToDistributeKeys.size() << std::endl;
+            }
 
 
             // vector<cv::KeyPoint> vKeysCell;
@@ -879,32 +879,32 @@ static int bit_pattern_31_[256*4] =
                 int r = floor(i/nCols);  
                 int c = floor(std::fmod(i,nCols));
 
-                const int iniY = minBorderY + r*hCell;
-                const int maxY = iniY+hCell;
+            //     const int iniY = minBorderY + r*hCell;
+            //     const int maxY = iniY+hCell;
 
-                const int iniX = minBorderX + c*wCell;
-                const int maxX = iniX+wCell;
+            //     const int iniX = minBorderX + c*wCell;
+            //     const int maxX = iniX+wCell;
 
-                vector<cv::KeyPoint> vKeysCell;
-                {   
-                    {
-                        ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
-                        feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-                        //feat_gpu->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-                        //gpuFastCV.detectAsyncOpenCv(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY, maxY).colRange(iniX, maxX),vKeysCell);
-                    }
+            //     vector<cv::KeyPoint> vKeysCell;
+            //     {   
+            //         {
+            //             ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
+            //             feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+            //             //feat_gpu->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+            //             //gpuFastCV.detectAsyncOpenCv(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY, maxY).colRange(iniX, maxX),vKeysCell);
+            //         }
 
-                    TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-                }
+            //         TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+            //     }
 
 
-                if(vKeysCell.empty())
-                {
-                    ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-                    feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-                    //feat_back_gpu->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-                    TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-                }
+            //     if(vKeysCell.empty())
+            //     {
+            //         ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+            //         feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+            //         //feat_back_gpu->detect(mvImagePyramid[level]->getCvGpuMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
+            //         TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
+            //     }
 
                 if(!vKeysCell.empty())
                 {
