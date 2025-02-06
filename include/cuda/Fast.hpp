@@ -19,6 +19,8 @@ namespace ORB_SLAM3::cuda::fast {
     unsigned int lowThreshold; 
     unsigned int maxKeypoints;
     unsigned int count;
+    int imHeight;
+    int imWidth;
 
     static const int LOCATION_ROW = 0;
     static const int RESPONSE_ROW = 1;
@@ -28,7 +30,7 @@ namespace ORB_SLAM3::cuda::fast {
     cudaStream_t stream;
     Stream cvStream;
   public:
-    GpuFast(int highThreshold, int lowThreshold, int maxKeypoints = 10000);
+    GpuFast(int highThreshold, int lowThreshold,int imHeight, int imWidth, int maxKeypoints = 10000);
     ~GpuFast();
 
     void detect(InputArray, std::vector<KeyPoint>&);
