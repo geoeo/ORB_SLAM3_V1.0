@@ -14,8 +14,19 @@ def generate_launch_description():
             cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
             output='screen'
         ),
+        launch_ros.actions.Node(
+            package='image_transport',
+            executable='republish',
+            name='im_transport',
+            output='log',
+            arguments=['compressed', 'raw'],
+            remappings=[
+                ('in/compressed',f'{image_topic}/compressed'),
+                ('out',f'{image_topic}')
+            ]
+        ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}', '--topics', f'{image_topic}', '/bmi088_F4/imu'],
+            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}', '--topics', f'{image_topic}/compressed', '/bmi088_F4/imu'],
             output='log'
         )
 ])

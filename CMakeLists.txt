@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
-project(ORB_SLAM3)
+project(ORB_SLAM3 LANGUAGES CXX CUDA)
 
 set(ORB_SLAM3_VERSION "1.0")
+
+include(CheckLanguage)
+check_language(CUDA)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -81,6 +84,7 @@ find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDACvManagedMemory REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -111,6 +115,9 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
+src/cuda/Cuda.cu
+src/cuda/Fast_gpu.cu
+src/cuda/OpenCv_fast.cu
 )
 
 
@@ -127,6 +134,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${DBoW2_INCLUDE_DIRS}
      ${G2O_INCLUDE_DIR}
      ${CUDACvManagedMemory_INCLUDE_DIRS}
+     ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -153,6 +161,7 @@ ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
 ${CUDACvManagedMemory_LIBRARIES}
+${CUDAToolkit_LIBRARIES}
 -lcrypto
 )
 
@@ -174,19 +183,8 @@ install(TARGETS ${PROJECT_NAME} EXPORT ORB_SLAM3Targets
 # Install Headers
 ################################################################################
 
-file(GLOB HEAD 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-)
-
-# Headers
 install(
-        FILES ${HEAD}
-        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-)
-
-install(
-        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
 )
 
