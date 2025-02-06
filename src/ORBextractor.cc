@@ -414,8 +414,8 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(iniThFAST, minThFAST,imageHeight, imageWidth ,16*nfeatures),
-            gpuFastCV(iniThFAST, minThFAST, imageHeight, imageWidth, gridCount ,2*nfeatures)
+            gpuFast(iniThFAST, minThFAST,imageHeight, imageWidth ,4*nfeatures),
+            gpuFastCV(iniThFAST, minThFAST, imageHeight, imageWidth, gridCount ,4*nfeatures)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
