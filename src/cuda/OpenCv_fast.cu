@@ -47,6 +47,7 @@
 #include "cuda/helper_cuda.h"
 #include <cuda/FastCV.hpp>
 #include <algorithm>
+#include <iostream>
 
 
 using namespace cv;
@@ -237,13 +238,15 @@ namespace ORB_SLAM3 { namespace cuda
 
             int j = threadIdx.x + blockIdx.x * blockDim.x + 3; // X
             int i = threadIdx.y + blockIdx.y * blockDim.y + 3; // Y
-            const int gridLinearIdx = threadIdx.z + blockIdx.z * blockDim.z;
+            //const int gridLinearIdx = threadIdx.z + blockIdx.z * blockDim.z;
 
-            const int offsetY = gridLinearIdx/numGridX;
-            const int offsetX = gridLinearIdx%numGridX;
+            // const int offsetY = gridSize*int(gridLinearIdx/numGridX);
+            // const int offsetX = gridSize*int(gridLinearIdx%numGridX);
 
-            j+=offsetX;
-            i+=offsetY;
+            //j+=offsetX;
+            //i+=offsetY;
+
+            //printf("Y: %d , X: %d\n", offsetX,offsetY);
 
 
             if (i < img.rows - 3 && j < img.cols - 3)
@@ -303,13 +306,16 @@ namespace ORB_SLAM3 { namespace cuda
         {
             dim3 block(32, 8, 2);
             dim3 grid;
+
             grid.x = divUp(img.cols - 6, block.x);
             grid.y = divUp(img.rows - 6, block.y);
-            grid.z = divUp(gridTileNum, block.z);
+
+            // grid.x = divUp(gridSize - 6, block.x);
+            // grid.y = divUp(gridSize - 6, block.y);
+            //grid.z = divUp(gridTileNum, block.z);
 
             cudaSafeCall( cudaMemsetAsync(d_counter, 0, sizeof(unsigned int), stream) );
             calcKeypoints<<<grid, block, 0, stream>>>(img, kpLoc, maxKeypoints, score, threshold, d_counter, gridSize, numGridX);
-
 
             cudaSafeCall( cudaGetLastError() );
             unsigned int count = 0;
@@ -359,13 +365,17 @@ namespace ORB_SLAM3 { namespace cuda
             dim3 block(256);
             dim3 grid;
             grid.x = divUp(count, block.x);
+            unsigned int new_count;
+
 
             cudaSafeCall( cudaMemsetAsync(d_counter, 0, sizeof(unsigned int), stream) );
-
+            cudaSafeCall( cudaStreamSynchronize(stream) );
             nonmaxSuppression<<<grid, block, 0, stream>>>(kpLoc, count, score, loc, response, d_counter);
-            cudaSafeCall( cudaGetLastError() );
 
-            unsigned int new_count;
+            cudaSafeCall( cudaGetLastError() );
+            cudaSafeCall( cudaStreamSynchronize(stream) );
+
+
             cudaSafeCall( cudaMemcpyAsync(&new_count, d_counter, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream) );
             cudaSafeCall( cudaStreamSynchronize(stream) );
 
@@ -373,15 +383,15 @@ namespace ORB_SLAM3 { namespace cuda
         }
 
         GpuFastCV::GpuFastCV(int highThreshold, int lowThreshold, int imHeight, int imWidth, int gridSize, int maxKeypoints)
-            : highThreshold(highThreshold), lowThreshold(lowThreshold), imHeight(imHeight), imWidth(imWidth)  ,gridSize(gridSize), maxKeypoints(maxKeypoints)
+            : highThreshold(10), lowThreshold(5), imHeight(imHeight), imWidth(imWidth)  ,gridSize(gridSize), maxKeypoints(50000)
         {
             numGridX = divUp(imWidth,gridSize);
             numGridY = divUp(imHeight,gridSize);
             gridTileNum = numGridY*numGridX;
-            maxKeypoints *= gridTileNum;
+            //maxKeypoints *= gridTileNum*10;
 
             checkCudaErrors( cudaStreamCreate(&stream) );
-            cvStream = StreamAccessor::wrapStream(stream);
+            //cvStream = StreamAccessor::wrapStream(stream);
             checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) );
             checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLoc) );
             checkCudaErrors( cudaMallocManaged(&counter_ptr, sizeof(unsigned int)) );
@@ -389,7 +399,7 @@ namespace ORB_SLAM3 { namespace cuda
         }
 
         GpuFastCV::~GpuFastCV() {
-            cvStream.~Stream();
+            //cvStream.~Stream();
             checkCudaErrors( cudaFree(counter_ptr) );
             checkCudaErrors( cudaFree(kpLoc) );
             checkCudaErrors( cudaStreamDestroy(stream) );
@@ -399,11 +409,13 @@ namespace ORB_SLAM3 { namespace cuda
         void GpuFastCV::detectAsyncOpenCv(InputArray _image, std::vector<KeyPoint>& keypoints_cpu){
             
             const cv::cuda::GpuMat image = _image.getGpuMat();
-            checkCudaErrors(cudaMemsetAsync(scoreMat.ptr(), 0, scoreMat.step*scoreMat.rows, stream));
+            //checkCudaErrors(cudaMemsetAsync(scoreMat.ptr(), 0, scoreMat.step*scoreMat.rows, stream));
             checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
 
             int count = calcKeypoints_gpu(image,imHeight,imWidth, gridSize, kpLoc, maxKeypoints, 
                 scoreMat, highThreshold, counter_ptr,numGridX, numGridY, gridTileNum,stream);
+
+            //printf("C: %d\n", count);
             count = std::min(count, maxKeypoints);
             if(count == 0)
                 return;
@@ -412,14 +424,19 @@ namespace ORB_SLAM3 { namespace cuda
             cv::cuda::GpuMat keypoints = GpuMat(2,count,CV_32FC1);
             count = nonmaxSuppression_gpu(kpLoc, count, scoreMat, keypoints.ptr<short2>(LOCATION_ROW), keypoints.ptr<float>(RESPONSE_ROW), counter_ptr, stream);
             keypoints.cols = count;
+            //printf("C New: %d\n", count);
 
             count = std::min(count, maxKeypoints);
             keypoints_cpu.resize(count);
+            //short2* t = new short2[count];
+            //cudaMemcpy(t, kpLoc, sizeof(short2) * count, cudaMemcpyDeviceToHost);
             for (int i = 0; i < count; ++i) {
-                // We can access due to cuda managed memory
+                // We can access due to cudaStreamAttachMemAsync
                 KeyPoint kp(kpLoc[i].x, kpLoc[i].y, -1, -1, 0);
                 keypoints_cpu[i] = kp;
             }
+            //delete t;
+
 
         }
     } // namespace fast
