@@ -13,7 +13,9 @@ namespace ORB_SLAM3::cuda::fast {
 
   class GpuFast {
     short2 * kpLoc;
+    short2 * kpLocFinal;
     float * kpScore;
+    float * kpResponseFinal;
     unsigned int * counter_ptr;
     unsigned int highThreshold;
     unsigned int lowThreshold; 
@@ -33,9 +35,7 @@ namespace ORB_SLAM3::cuda::fast {
     GpuFast(int highThreshold, int lowThreshold,int imHeight, int imWidth, int maxKeypoints = 10000);
     ~GpuFast();
 
-    void detect(InputArray, std::vector<KeyPoint>&);
-    void detectAsync(InputArray);
-    void joinDetectAsync(std::vector<KeyPoint>&);
+    void detect(InputArray image,std::vector<KeyPoint>& keypoints);
   };
 
     class IC_Angle {

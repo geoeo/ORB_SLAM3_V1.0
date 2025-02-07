@@ -21,7 +21,6 @@
 
 #include <vector>
 #include <list>
-#include <mutex>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/FastCV.hpp>
@@ -139,7 +138,6 @@ namespace ORB_SLAM3
         cv::Ptr<cv::Feature2D> feat_gpu;
         cv::Ptr<cv::Feature2D> feat_back;
         cv::Ptr<cv::Feature2D> feat_back_gpu;
-        std::mutex mFastFeature;
     };
 
 } // namespace ORB_SLAM
