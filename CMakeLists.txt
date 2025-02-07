@@ -117,7 +117,6 @@ src/Config.cc
 src/Settings.cc
 src/cuda/Cuda.cu
 src/cuda/Fast_gpu.cu
-src/cuda/OpenCv_fast.cu
 )
 
 

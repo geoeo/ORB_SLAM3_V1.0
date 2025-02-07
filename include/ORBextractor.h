@@ -23,7 +23,6 @@
 #include <list>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
-#include <cuda/FastCV.hpp>
 
 #include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 #include <opencv2/cudafilters.hpp>
@@ -132,12 +131,9 @@ namespace ORB_SLAM3
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
 
-        cuda::fastCV::GpuFastCV gpuFastCV;
         cuda::fast::GpuFast gpuFast;
         cv::Ptr<cv::Feature2D> feat;
-        cv::Ptr<cv::Feature2D> feat_gpu;
         cv::Ptr<cv::Feature2D> feat_back;
-        cv::Ptr<cv::Feature2D> feat_back_gpu;
     };
 
 } // namespace ORB_SLAM

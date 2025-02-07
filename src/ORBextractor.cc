@@ -414,8 +414,7 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(iniThFAST, minThFAST,imageHeight, imageWidth ,16*nfeatures),
-            gpuFastCV(iniThFAST, minThFAST, imageHeight, imageWidth, gridCount ,4*nfeatures)
+            gpuFast(imageHeight, imageWidth ,24*nfeatures) //TODO: expose this for FAST features explicitly
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -475,9 +474,7 @@ static int bit_pattern_31_[256*4] =
         }
 
         feat = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
-        feat_gpu = cv::cuda::FastFeatureDetector::create(iniThFAST,true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-        feat_back_gpu = cv::cuda::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
         AllocatePyramid(imageWidth, imageHeight);
         gridCount = static_cast<float>(_gridCount);
@@ -833,10 +830,11 @@ static int bit_pattern_31_[256*4] =
             {
                 vector<cv::KeyPoint> vKeysCell;
                 ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
-
-                gpuFast.detect(
-                        mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX), vToDistributeKeys);
-                std::cout << "Size: " << vToDistributeKeys.size() << std::endl;
+                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX), iniThFAST, vToDistributeKeys);
+                
+                //Try again with lower threshold.
+                if(vToDistributeKeys.empty())
+                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX),minThFAST, vToDistributeKeys);
             }
 
 
