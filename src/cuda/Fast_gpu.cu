@@ -282,66 +282,71 @@ namespace ORB_SLAM3 { namespace cuda { namespace fast {
   }
 
   __global__ void tileCalcKeypoints_kernel(const PtrStepSzb img, short2 * kpLoc, float * kpScore, const unsigned int maxKeypoints, const int highThreshold, const int lowThreshold, PtrStepi scoreMat, unsigned int * counter_ptr) {
-    const int j = threadIdx.x + blockIdx.x * blockDim.x + 3;
-    const int i = (threadIdx.y + blockIdx.y * blockDim.y) * 4 + 3;
-    const int tid = threadIdx.y * blockDim.x + threadIdx.x;
-    __shared__ bool hasKp;
-    if (tid == 0) {
-      hasKp = false;
-    }
+    const int j = threadIdx.x + blockIdx.x * blockDim.x + 3; // X
+    const int i = (threadIdx.y + blockIdx.y * blockDim.y) * 4 + 3; // Y
 
     bool isKp[4] = {0};
     for (int t = 0; t < 4; ++t) {
-      const int x_offset = t;
-      if (i+x_offset < img.rows - 3 && j < img.cols - 3) {
-        isKp[t] = isKeyPoint2(img, i+x_offset, j, highThreshold, scoreMat);
-      }
-    }
-    // barrier
-    __syncthreads();
-    for (int t = 0; t < 4; ++t) {
-      const int x_offset = t;
-      if (isKp[t]) {
-        isKp[t] = false;
-        short2 loc = make_short2(j, i+x_offset);
-        if (isMax(loc, scoreMat)) {
-          int score = scoreMat(loc.y, loc.x);
-          hasKp = true;
+      const int y_offset = t;
+      if (i+y_offset < img.rows - 3 && j < img.cols - 3) {
+        isKp[t] = isKeyPoint2(img, i+y_offset, j, highThreshold, scoreMat);
+        if(isKp[t]){
           const unsigned int ind = atomicInc(counter_ptr, (unsigned int)(-1));
-          if (ind < maxKeypoints) {
-            kpLoc[ind] = loc;
-            kpScore[ind] = static_cast<float>(score);
-          }
+          short2 loc = make_short2(j, i+y_offset);
+          kpLoc[ind] = loc;
         }
       }
     }
-    // barrieer
-    __syncthreads();
-    if (hasKp) return ;
 
-    // lower the threshold and try again
-    for (int t = 0; t < 4; ++t) {
-      const int y_offset = t;
-      if (i+t < img.rows - 3 && j < img.cols - 3) {
-        isKp[t] = isKeyPoint2(img, i, j+y_offset, highThreshold, scoreMat);
-      }
-    }
-    // barrieer
-    __syncthreads();
-    for (int t = 0; t < 4; ++t) {
-      const int y_offset = t;
-      if (isKp[t]) {
-        short2 loc = make_short2(j+y_offset, i);
-        if (isMax(loc, scoreMat)) {
+  }
+
+  __global__ void nonmaxSuppression(const short2* kpLoc, int count, const PtrStepSzi scoreMat, short2* locFinal, float* response, unsigned int* d_counter)
+  {
+      const int kpIdx = threadIdx.x + blockIdx.x * blockDim.x;
+
+      if (kpIdx < count)
+      {
+          short2 loc = kpLoc[kpIdx];
+
           int score = scoreMat(loc.y, loc.x);
-          const unsigned int ind = atomicInc(counter_ptr, (unsigned int)(-1));
-          if (ind < maxKeypoints) {
-            kpLoc[ind] = loc;
-            kpScore[ind] = static_cast<float>(score);
+
+          bool ismax =
+              score > scoreMat(loc.y - 1, loc.x - 1) &&
+              score > scoreMat(loc.y - 1, loc.x    ) &&
+              score > scoreMat(loc.y - 1, loc.x + 1) &&
+
+              score > scoreMat(loc.y    , loc.x - 1) &&
+              score > scoreMat(loc.y    , loc.x + 1) &&
+
+              score > scoreMat(loc.y + 1, loc.x - 1) &&
+              score > scoreMat(loc.y + 1, loc.x    ) &&
+              score > scoreMat(loc.y + 1, loc.x + 1);
+          if (ismax)
+          {
+              const unsigned int ind = atomicInc(d_counter, (unsigned int)(-1));
+              locFinal[ind] = loc;
+              response[ind] = static_cast<float>(score);
           }
-        }
       }
-    }
+  }
+
+  int nonmaxSuppression_gpu(const short2* kpLoc, int count, PtrStepSzi score, short2* locFinal, float* responseFinal, unsigned int* d_counter, cudaStream_t stream)
+  {
+      dim3 block(256);
+      dim3 grid;
+      grid.x = divUp(count, block.x);
+      unsigned int new_count;
+
+
+      checkCudaErrors( cudaMemset(d_counter, 0, sizeof(unsigned int)) );
+      nonmaxSuppression<<<grid, block, 0, stream>>>(kpLoc, count, score, locFinal, responseFinal, d_counter);
+
+      checkCudaErrors( cudaGetLastError() );
+      checkCudaErrors( cudaStreamSynchronize(stream) );
+
+      checkCudaErrors( cudaMemcpy(&new_count, d_counter, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
+
+      return new_count;
   }
 
   GpuFast::GpuFast(int highThreshold, int lowThreshold, int imHeight, int imWidth, int maxKeypoints)
@@ -350,7 +355,9 @@ namespace ORB_SLAM3 { namespace cuda { namespace fast {
     checkCudaErrors( cudaStreamCreate(&stream) );
     cvStream = StreamAccessor::wrapStream(stream);
     checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) );
+    checkCudaErrors( cudaMallocManaged(&kpLocFinal, sizeof(short2) * maxKeypoints) );
     checkCudaErrors( cudaMallocManaged(&kpScore, sizeof(float) * maxKeypoints) );
+    checkCudaErrors( cudaMallocManaged(&kpResponseFinal, sizeof(float) * maxKeypoints) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLoc) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpScore) );
     checkCudaErrors( cudaMalloc(&counter_ptr, sizeof(unsigned int)) );
@@ -361,37 +368,45 @@ namespace ORB_SLAM3 { namespace cuda { namespace fast {
     cvStream.~Stream();
     checkCudaErrors( cudaFree(counter_ptr) );
     checkCudaErrors( cudaFree(kpScore) );
+    checkCudaErrors( cudaFree(kpLocFinal) );
     checkCudaErrors( cudaFree(kpLoc) );
+    checkCudaErrors( cudaFree(kpResponseFinal) );
     checkCudaErrors( cudaStreamDestroy(stream) );
     scoreMat.~GpuMat(); 
   }
 
-  void GpuFast::detectAsync(InputArray _image) {
+  void GpuFast::detect(InputArray _image, std::vector<KeyPoint>& keypoints) {
     const cv::cuda::GpuMat image = _image.getGpuMat();
     checkCudaErrors(cudaMemsetAsync(scoreMat.ptr(), 0, scoreMat.step*scoreMat.rows, stream));
+    checkCudaErrors(cudaMemsetAsync(kpScore, 0, sizeof(float) * maxKeypoints, stream));
+    checkCudaErrors(cudaMemsetAsync(kpLocFinal, 0, sizeof(float) * maxKeypoints, stream));
+    checkCudaErrors(cudaMemsetAsync(kpLoc, 0, sizeof(short2) * maxKeypoints, stream));
+    checkCudaErrors(cudaMemsetAsync(kpLocFinal, 0, sizeof(short2) * maxKeypoints, stream));
     checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
 
     dim3 dimBlock(32, 32); // Grid size
     dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
     tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpScore, maxKeypoints, highThreshold, lowThreshold, scoreMat, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
-  }
-
-  void GpuFast::joinDetectAsync(std::vector<KeyPoint>& keypoints) {
-    checkCudaErrors( cudaMemcpyAsync(&count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost, stream) );
     checkCudaErrors( cudaStreamSynchronize(stream) );
+
+    checkCudaErrors( cudaMemcpy(&count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
     count = std::min(count, maxKeypoints);
+
+    if(count == 0)
+        return;
+
+
+    count = nonmaxSuppression_gpu(kpLoc, count, scoreMat, kpLocFinal, kpResponseFinal, counter_ptr, stream);
+    count = std::min(count, maxKeypoints);
+
     keypoints.resize(count);
     for (int i = 0; i < count; ++i) {
-      KeyPoint kp(kpLoc[i].x, kpLoc[i].y, -1, -1, kpScore[i]);
+      KeyPoint kp(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
       keypoints[i] = kp;
     }
   }
 
-  void GpuFast::detect(InputArray _image, std::vector<KeyPoint>& keypoints) {
-    detectAsync(_image);
-    joinDetectAsync(keypoints);
-  }
 
   __constant__ int c_u_max[32];
 
@@ -448,8 +463,6 @@ namespace ORB_SLAM3 { namespace cuda { namespace fast {
 
       if (threadIdx.x == 0)
       {
-        //               vv  what is this ?
-        //float kp_dir = ::atan2f((float)m_01, (float)m_10);
         float kp_dir = atan2f((float)m_01, (float)m_10);
         kp_dir += (kp_dir < 0) * (2.0f * CV_PI_F);
         kp_dir *= 180.0f / CV_PI_F;
