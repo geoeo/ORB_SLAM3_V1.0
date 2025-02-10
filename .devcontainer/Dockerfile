@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS build
+FROM nvcr.io/nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS build
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && apt install locales -y
