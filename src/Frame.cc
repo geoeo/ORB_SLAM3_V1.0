@@ -26,6 +26,7 @@
 #include "ORBmatcher.h"
 
 #include <thread>
+#include <tracy.hpp>
 #include "CameraModels/Pinhole.h"
 #include "CameraModels/KannalaBrandt8.h"
 #include "CameraModels/GeometricCamera.h"
@@ -96,6 +97,7 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mpMutexImu(std::make_shared<std::mutex>())
 {
+    ZoneNamedN(Frame, "Frame", true); 
     const auto size = frameGridCols*frameGridRows;
     mGrid.resize(size);
 
@@ -112,7 +114,7 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-    ExtractORB(0,im_managed_gray,0,0);
+    ExtractORB(0,im_managed_gray);
 
     mNumKeypoints = mvKeys.size();
     if(mvKeys.empty())
@@ -191,6 +193,7 @@ int Frame::getFrameGridCols() const{
 
 void Frame::AssignFeaturesToGrid()
 {
+    ZoneNamedN(AssignFeaturesToGrid, "AssignFeaturesToGrid", true); 
     // Fill matrix with points
     const int nCells = mFrameGridCols*mFrameGridRows;
 
@@ -203,7 +206,6 @@ void Frame::AssignFeaturesToGrid()
     for(int i=0;i<mNumKeypoints;i++)
     {
         const cv::KeyPoint &kp = mvKeysUn[i];
-
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
             auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
@@ -212,11 +214,9 @@ void Frame::AssignFeaturesToGrid()
     }
 }
 
-void Frame::ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const int x0, const int x1)
+void Frame::ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed)
 {
-    vector<int> vLapping = {x0,x1};
-    monoLeft = (*mpORBextractorLeft)(im_managed,cv::Mat(),mvKeys,mDescriptors,vLapping);
-
+    monoLeft = mpORBextractorLeft->extractFeatures(im_managed,cv::Mat(),mvKeys,mDescriptors);
 }
 
 bool Frame::isSet() const {
@@ -511,10 +511,7 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
     const auto size = mFrameGridCols*mFrameGridRows;
 
     //Keypoint's coordinates are undistorted, which could cause to go out of the image
-    if(linearIdx < 0 || linearIdx>=size)
-        return false;
-
-    return true;
+    return linearIdx >= 0 & linearIdx<size;
 }
 
 
@@ -529,6 +526,7 @@ void Frame::ComputeBoW()
 
 void Frame::UndistortKeyPoints()
 {
+    ZoneNamedN(UndistortKeyPoints, "UndistortKeyPoints", true); 
     if(mDistCoef.at<float>(0)==0.0)
     {
         mvKeysUn=mvKeys;

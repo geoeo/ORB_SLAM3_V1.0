@@ -62,9 +62,9 @@ namespace ORB_SLAM3
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, cv::InputArray _mask,
+        int extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, cv::InputArray _mask,
                        std::vector<cv::KeyPoint> &_keypoints,
-                       cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
+                       cv::OutputArray _descriptors);
 
         int inline GetLevels()
         {
@@ -134,6 +134,7 @@ namespace ORB_SLAM3
         cuda::fast::GpuFast gpuFast;
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
+        cv::Ptr<cv::cuda::Filter> gaussian_filter_gpu;
     };
 
 } // namespace ORB_SLAM

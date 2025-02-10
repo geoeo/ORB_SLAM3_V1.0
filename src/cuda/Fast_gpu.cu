@@ -396,8 +396,7 @@ namespace ORB_SLAM3::cuda::fast {
 
     keypoints.resize(count);
     for (int i = 0; i < count; ++i) {
-      KeyPoint kp(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
-      keypoints[i] = kp;
+      keypoints[i] = cv::KeyPoint(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
     }
   }
 

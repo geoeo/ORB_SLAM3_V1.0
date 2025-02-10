@@ -475,6 +475,7 @@ static int bit_pattern_31_[256*4] =
 
         feat = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
+        gaussian_filter_gpu = cv::cuda::createGaussianFilter(CV_8U,CV_8U,cv::Size(7,7), 2.0,2.0, BORDER_REFLECT_101);
 
         AllocatePyramid(imageWidth, imageHeight);
         gridCount = static_cast<float>(_gridCount);
@@ -825,7 +826,6 @@ static int bit_pattern_31_[256*4] =
 
             ////////// Gpu Version //////////
             {
-                vector<cv::KeyPoint> vKeysCell;
                 ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
                 gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(), iniThFAST, BorderX, BorderY, vToDistributeKeys);
                 
@@ -912,8 +912,8 @@ static int bit_pattern_31_[256*4] =
 
     }
 
-    int ORBextractor::operator()(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, InputArray _mask, vector<KeyPoint>& _keypoints,
-                                  OutputArray _descriptors, std::vector<int> &vLappingArea)
+    int ORBextractor::extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, InputArray _mask, vector<KeyPoint>& _keypoints,
+                                  OutputArray _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
@@ -930,40 +930,50 @@ static int bit_pattern_31_[256*4] =
         vector < vector<KeyPoint> > allKeypoints;
         ComputeKeyPointsOctTree(allKeypoints);
 
+         
         Mat descriptors;
         int nkeypoints = 0;
-        for (int level = 0; level < nlevels; ++level)
-            nkeypoints += (int)allKeypoints[level].size();
-        if( nkeypoints == 0 )
-            _descriptors.release();
-        else
         {
-            _descriptors.create(nkeypoints, 32, CV_8U);
-            descriptors = _descriptors.getMat();
+            ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
+            for (int level = 0; level < nlevels; ++level)
+                nkeypoints += (int)allKeypoints[level].size();
+            if( nkeypoints == 0 )
+                _descriptors.release();
+            else
+            {
+                _descriptors.create(nkeypoints, 32, CV_8U);
+                descriptors = _descriptors.getMat();
+            }
+
+            _keypoints = vector<cv::KeyPoint>(nkeypoints);
         }
 
-        _keypoints = vector<cv::KeyPoint>(nkeypoints);
 
         //Modified for speeding up stereo fisheye matching
         int monoIndex = 0;
-        for (int level = 0; level < nlevels; ++level)
         {
-            vector<KeyPoint>& keypointsLevel = allKeypoints[level];
-            int nkeypointsLevel = (int)keypointsLevel.size();
-
-            if(nkeypointsLevel==0)
-                continue;
-
-            // preprocess the resized image
+            ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
+            for (int level = 0; level < nlevels; ++level)
             {
-                ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);
-                GaussianBlur(mvImagePyramid[level]->getCvMat(), mvBlurredImagePyramid[level]->getCvMat(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-            }
+                vector<KeyPoint>& keypointsLevel = allKeypoints[level];
+                int nkeypointsLevel = (int)keypointsLevel.size();
 
-            // Compute the descriptors
-            computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level]);
-            monoIndex+=nkeypointsLevel;
+                if(nkeypointsLevel==0)
+                    continue;
+
+                // preprocess the resized image
+                {
+                    ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);
+                    GaussianBlur(mvImagePyramid[level]->getCvMat(), mvBlurredImagePyramid[level]->getCvMat(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+                    //gaussian_filter_gpu->apply(mvImagePyramid[level]->getCvGpuMat(),mvBlurredImagePyramid[level]->getCvGpuMat());
+                }
+
+                // Compute the descriptors
+                computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level]);
+                monoIndex+=nkeypointsLevel;
+            }
         }
+
         return monoIndex;
     }
 

@@ -3,8 +3,8 @@ from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
 
-bag_start_offset = 90.0
-bag_path = '/bags/240925_guenselsdorf/fighter4/2024_09_25-guenselsdorf/seq0/bags/all/rosbag2_2024_09_25-11_04_09/'
+bag_start_offset = 80.0
+bag_path = '/bags/rosbag2_2024_09_25-11_04_09_uncompressed_fighter_4/rosbag2_2024_09_26-06_55_33'
 
 image_topic = '/AIT_Fighter4/down/image'
 
