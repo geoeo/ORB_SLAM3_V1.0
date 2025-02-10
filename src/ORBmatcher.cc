@@ -1656,7 +1656,8 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        
+        std::cout << "Found: " << nFound << std::endl;
         return nFound;
     }
 
@@ -1868,7 +1869,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        std::cout << "matches (2): " << nmatches << std::endl;
         return nmatches;
     }
 
@@ -1992,7 +1993,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        std::cout << "matches (3): " << nmatches << std::endl;
         return nmatches;
     }
 

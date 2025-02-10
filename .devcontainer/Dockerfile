@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS build
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04 AS build
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update && apt install locales -y
@@ -105,10 +105,6 @@ RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
 
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
-
-#TODO place with other ros deps 
-RUN apt update && apt-get install -y ros-humble-rosbag2-storage-mcap
-
 
 WORKDIR /
 RUN mkdir bags
