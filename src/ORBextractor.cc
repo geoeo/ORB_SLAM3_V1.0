@@ -787,8 +787,6 @@ static int bit_pattern_31_[256*4] =
             }
 
             // Add border to coordinates and scale information
-            pKP->pt.x+=minX;
-            pKP->pt.y+=minY;
             pKP->octave=level;
             pKP->size = scaledPatchSize;
 
@@ -800,27 +798,26 @@ static int bit_pattern_31_[256*4] =
 
     void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints)
     {
-
-
-
         ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
         allKeypoints.resize(nlevels);
         for (int level = 0; level < nlevels; ++level)
         {
-            const int minBorderX = EDGE_THRESHOLD-3;
-            const int minBorderY = minBorderX;
-            const int maxBorderX = mvImagePyramid[level]->getWidth()-EDGE_THRESHOLD+3;
-            const int maxBorderY = mvImagePyramid[level]->getHeight()-EDGE_THRESHOLD+3;
-            const int wCell = gridCount;
-            const int hCell = gridCount;
+            const int BorderX = EDGE_THRESHOLD-3;
+            const int BorderY = BorderX;
+            const int width = mvImagePyramid[level]->getWidth();
+            const int height = mvImagePyramid[level]->getHeight();
+            // const int maxBorderX = width-EDGE_THRESHOLD+3;
+            // const int maxBorderY = height-EDGE_THRESHOLD+3;
+            // const int wCell = gridCount;
+            // const int hCell = gridCount;
 
-            const int width = (maxBorderX-minBorderX);
-            const int height = (maxBorderY-minBorderY);
+            // const int width = (maxBorderX-minBorderX);
+            // const int height = (maxBorderY-minBorderY);
 
-            const int nCols = floor(width/gridCount);
-            const int nRows = floor(height/gridCount);
+            // const int nCols = floor(width/gridCount);
+            // const int nRows = floor(height/gridCount);
 
-            const int dim_1D = nRows*nCols;
+            // const int dim_1D = nRows*nCols;
 
             vector<cv::KeyPoint> vToDistributeKeys;
             vToDistributeKeys.reserve(nfeatures*nlevels*2);
@@ -830,13 +827,12 @@ static int bit_pattern_31_[256*4] =
             {
                 vector<cv::KeyPoint> vKeysCell;
                 ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
-                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX), iniThFAST, vToDistributeKeys);
+                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(), iniThFAST, BorderX, BorderY, vToDistributeKeys);
                 
                 //Try again with lower threshold.
                 if(vToDistributeKeys.empty())
-                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat().rowRange(minBorderY, maxBorderY).colRange(minBorderX, maxBorderX),minThFAST, vToDistributeKeys);
+                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(),minThFAST, BorderX, BorderY, vToDistributeKeys);
             }
-
 
 
             //////////// Loop Version ////////////
@@ -880,8 +876,8 @@ static int bit_pattern_31_[256*4] =
 
 
             allKeypoints[level].reserve(nfeatures);
-            allKeypoints[level] = DistributeOctTree(vToDistributeKeys, minBorderX, maxBorderX,
-                                          minBorderY, maxBorderY,mnFeaturesPerLevel[level], level);
+            allKeypoints[level] = DistributeOctTree(vToDistributeKeys, 0, width,
+                                          0, height,mnFeaturesPerLevel[level], level);
         }
 
 
@@ -892,7 +888,6 @@ static int bit_pattern_31_[256*4] =
             // compute orientations
             for (int level = 0; level < nlevels; ++level)
                 ORBextractor::computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
-          
         }
 
     }

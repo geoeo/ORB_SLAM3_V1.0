@@ -308,7 +308,7 @@ private:
 
     bool mbImuPreintegrated;
 
-    std::mutex *mpMutexImu;
+    std::shared_ptr<std::mutex> mpMutexImu;
 
     int mFrameGridRows; 
     int mFrameGridCols; 
