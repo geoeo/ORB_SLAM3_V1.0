@@ -379,13 +379,7 @@ namespace ORB_SLAM3::cuda::fast {
     checkCudaErrors(cudaMemsetAsync(scoreMat.ptr(), 0, scoreMat.step*scoreMat.rows, stream));
     checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
 
-    // checkCudaErrors(cudaMemsetAsync(kpScore, 0, sizeof(float) * maxKeypoints, stream));
-    // checkCudaErrors(cudaMemsetAsync(kpLocFinal, 0, sizeof(float) * maxKeypoints, stream));
-    // checkCudaErrors(cudaMemsetAsync(kpLoc, 0, sizeof(short2) * maxKeypoints, stream));
-    // checkCudaErrors(cudaMemsetAsync(kpLocFinal, 0, sizeof(short2) * maxKeypoints, stream));
-
-
-    dim3 dimBlock(32, 32); // Grid size
+    dim3 dimBlock(64, 8); // Grid size
     dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
     checkCudaErrors( cudaStreamSynchronize(stream) );
     tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpScore, maxKeypoints, threshold, scoreMat, counter_ptr);
@@ -402,8 +396,7 @@ namespace ORB_SLAM3::cuda::fast {
 
     keypoints.resize(count);
     for (int i = 0; i < count; ++i) {
-      KeyPoint kp(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
-      keypoints[i] = kp;
+      keypoints[i] = cv::KeyPoint(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
     }
   }
 

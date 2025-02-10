@@ -437,12 +437,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_ma
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    Sophus::SE3f Tcw;
-    {
-        ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true);  // NOLINT: Profiler
-        Tcw = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
-    }
-
+    Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
 
     //unique_lock<mutex> lock2(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
