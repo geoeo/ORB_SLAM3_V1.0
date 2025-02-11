@@ -282,14 +282,14 @@ namespace ORB_SLAM3::cuda::fast {
     return ismax;
   }
 
-  __global__ void tileCalcKeypoints_kernel(const PtrStepSzb img, short2 * kpLoc, float * kpScore, const unsigned int maxKeypoints, int threshold, PtrStepi scoreMat, int borderX, int borderY, unsigned int * counter_ptr) {
+  __global__ void tileCalcKeypoints_kernel(const PtrStepSzb img, short2 * kpLoc, float * kpScore, const unsigned int maxKeypoints, int threshold, PtrStepi scoreMat, int minX, int maxX, int minY, int maxY, unsigned int * counter_ptr) {
     const int j = threadIdx.x + blockIdx.x * blockDim.x; // X
     const int i = (threadIdx.y + blockIdx.y * blockDim.y) * 4; // Y
 
     bool isKp[4] = {0};
     for (int t = 0; t < 4; ++t) {
       const int y_offset = t;
-      if ((i+y_offset) < (img.rows - borderY) && j < (img.cols - borderX) && j >  borderX && (i +y_offset)  > borderY) {
+      if (i+ y_offset< maxY && j < maxX && j > minX && i+y_offset > minY) {
         isKp[t] = isKeyPoint2(img, i+y_offset, j, threshold, scoreMat);
         if(isKp[t]){
           const unsigned int ind = atomicInc(counter_ptr, (unsigned int)(-1));
@@ -382,7 +382,13 @@ namespace ORB_SLAM3::cuda::fast {
     dim3 dimBlock(128, 8); // Grid size
     dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
     checkCudaErrors( cudaStreamSynchronize(stream) );
-    tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpScore, maxKeypoints, threshold, scoreMat, borderX, borderY, counter_ptr);
+
+    int minX = borderX;
+    int minY = borderY;
+    int maxX = image.cols - borderX;
+    int maxY = image.rows - borderY;
+
+    tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpScore, maxKeypoints, threshold, scoreMat, minX, maxX, minY, maxY, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
     checkCudaErrors( cudaStreamSynchronize(stream) );
     checkCudaErrors( cudaMemcpy(&count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
