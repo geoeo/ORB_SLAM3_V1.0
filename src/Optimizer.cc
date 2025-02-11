@@ -4035,8 +4035,8 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
         {
             // Using mnBALocalForKF we avoid redundance here, one MP can not be added several times to lLocalMapPoints
             MapPoint* pMP = *vit;
-            if(pMP)
-                if(!pMP->isBad())
+            if(pMP){
+                if(!pMP->isBad()){
                     if(pMP->mnBALocalForKF!=pCurrKF->mnId)
                     {
                         mLocalObs[pMP]=1;
@@ -4046,6 +4046,8 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
                     else {
                         mLocalObs[pMP]++;
                     }
+                }
+            }
         }
     }
 
