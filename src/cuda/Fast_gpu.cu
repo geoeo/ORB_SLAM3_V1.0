@@ -40,18 +40,12 @@
 //
 //*/
 
-#include "opencv2/core/cuda/common.hpp"
-#include "opencv2/core/cuda/utility.hpp"
-#include "opencv2/core/cuda/reduce.hpp"
-#include "opencv2/core/cuda/functional.hpp"
 #include "cuda/helper_cuda.h"
 #include <cuda/Fast.hpp>
 #include <algorithm>
 #include <iostream>
-
-using namespace cv;
-using namespace cv::cuda;
-using namespace cv::cuda::device;
+#include <opencv2/core/cuda_types.hpp>
+#include <opencv2/core/utility.hpp>
 
 namespace ORB_SLAM3::cuda::fast {
   ///////////////////////////////////////////////////////////////////////////
@@ -224,7 +218,7 @@ namespace ORB_SLAM3::cuda::fast {
     return i*width + j;
   }
 
-  __device__ bool isKeyPoint2(const PtrStepSzb img, const int i, const int j, const int threshold, int* scoreMat) {
+  __device__ bool isKeyPoint2(const cv::cuda::PtrStepSzb img, const int i, const int j, const int threshold, int* scoreMat) {
     int v;
     uint C[4] = {0,0,0,0};
 
@@ -271,23 +265,7 @@ namespace ORB_SLAM3::cuda::fast {
     }
   }
 
-  __device__ bool isMax(short2 loc, int imWidth, int* scoreMat) {
-    int score = scoreMat[linearScoareIndex(imWidth,loc.y,loc.x)];
-    bool ismax =
-      score > scoreMat[linearScoareIndex(imWidth, loc.y - 1, loc.x - 1)] &&
-      score > scoreMat[linearScoareIndex(imWidth,loc.y - 1, loc.x)    ] &&
-      score > scoreMat[linearScoareIndex(imWidth,loc.y - 1, loc.x + 1)] &&
-
-      score > scoreMat[linearScoareIndex(imWidth,loc.y    , loc.x - 1)] &&
-      score > scoreMat[linearScoareIndex(imWidth,loc.y    , loc.x + 1)] &&
-
-      score > scoreMat[linearScoareIndex(imWidth,loc.y + 1, loc.x - 1)] &&
-      score > scoreMat[linearScoareIndex(imWidth,loc.y + 1, loc.x    )] &&
-      score > scoreMat[linearScoareIndex(imWidth,loc.y + 1, loc.x + 1)];
-    return ismax;
-  }
-
-  __global__ void tileCalcKeypoints_kernel(const PtrStepSzb img, short2 * kpLoc, float * kpScore, const unsigned int maxKeypoints, int threshold, int* scoreMat, int minX, int maxX, int minY, int maxY, unsigned int * counter_ptr) {
+  __global__ void tileCalcKeypoints_kernel(const cv::cuda::PtrStepSzb img, short2 * kpLoc, const unsigned int maxKeypoints, int threshold, int* scoreMat, int minX, int maxX, int minY, int maxY, unsigned int * counter_ptr) {
     const int j = threadIdx.x + blockIdx.x * blockDim.x; // X
     const int i = (threadIdx.y + blockIdx.y * blockDim.y) * 4; // Y
 
@@ -305,7 +283,7 @@ namespace ORB_SLAM3::cuda::fast {
 
   }
 
-  __global__ void nonmaxSuppression(const short2* kpLoc, int count,int imWidth, const int* scoreMat, short2* locFinal, float* response, unsigned int* d_counter)
+  __global__ void nonmaxSuppression(const short2* kpLoc, int count,int imWidth, const int* scoreMat, short2* locFinal, int* response, unsigned int* d_counter)
   {
       const int kpIdx = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -332,28 +310,9 @@ namespace ORB_SLAM3::cuda::fast {
           {
               const unsigned int ind = atomicInc(d_counter, (unsigned int)(-1));
               locFinal[ind] = loc;
-              response[ind] = static_cast<float>(score);
+              response[ind] = score;
           }
       }
-  }
-
-  int nonmaxSuppression_gpu(const short2* kpLoc, int count, int imWidth, int* score, short2* locFinal, float* responseFinal, unsigned int* d_counter, cudaStream_t stream)
-  {
-      dim3 block(256);
-      dim3 grid;
-      grid.x = divUp(count, block.x);
-      unsigned int new_count;
-
-
-      checkCudaErrors( cudaMemset(d_counter, 0, sizeof(unsigned int)) );
-      nonmaxSuppression<<<grid, block, 0, stream>>>(kpLoc, count, imWidth, score, locFinal, responseFinal, d_counter);
-
-      checkCudaErrors( cudaGetLastError() );
-      checkCudaErrors( cudaStreamSynchronize(stream) );
-
-      checkCudaErrors( cudaMemcpy(&new_count, d_counter, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
-
-      return new_count;
   }
 
   GpuFast::GpuFast(int imHeight, int imWidth, int maxKeypoints)
@@ -362,19 +321,19 @@ namespace ORB_SLAM3::cuda::fast {
     checkCudaErrors( cudaStreamCreate(&stream) );
     checkCudaErrors( cudaMalloc(&scoreMat, sizeof(int) * imHeight*imWidth) );
     checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) );
+
     checkCudaErrors( cudaMallocManaged(&kpLocFinal, sizeof(short2) * maxKeypoints) );
-    checkCudaErrors( cudaMalloc(&kpResponse, sizeof(float) * maxKeypoints) );
-    checkCudaErrors( cudaMallocManaged(&kpResponseFinal, sizeof(float) * maxKeypoints) );
+    checkCudaErrors( cudaMallocManaged(&kpResponseFinal, sizeof(int) * maxKeypoints) );
     checkCudaErrors( cudaMalloc(&counter_ptr, sizeof(unsigned int)) );
+
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLoc) );
   }
 
   GpuFast::~GpuFast() {
     checkCudaErrors( cudaFree(counter_ptr) );
-    checkCudaErrors( cudaFree(kpResponse) );
+    checkCudaErrors( cudaFree(kpResponseFinal) );
     checkCudaErrors( cudaFree(kpLocFinal) );
     checkCudaErrors( cudaFree(kpLoc) );
-    checkCudaErrors( cudaFree(kpResponseFinal) );
     checkCudaErrors( cudaFree(scoreMat) );
     checkCudaErrors( cudaStreamDestroy(stream) );
   }
@@ -383,7 +342,7 @@ namespace ORB_SLAM3::cuda::fast {
     return stream;
   }
 
-  void GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, std::vector<KeyPoint>& keypoints) {
+  void GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, std::vector<cv::KeyPoint>& keypoints) {
     checkCudaErrors(cudaMemset(scoreMat, 0, sizeof(int) * imHeight*imWidth));
     checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal) );
@@ -391,7 +350,7 @@ namespace ORB_SLAM3::cuda::fast {
 
     // Y component will be scaled by a factor of 4 in kernel so 8 is effectively 32
     dim3 dimBlock(128, 8); // Grid size
-    dim3 dimGrid(divUp(image.cols, dimBlock.x), divUp(image.rows, dimBlock.y));
+    dim3 dimGrid(cv::divUp(image.cols, dimBlock.x), cv::divUp(image.rows, dimBlock.y));
     checkCudaErrors( cudaStreamSynchronize(stream) );
 
     int minX = borderX;
@@ -399,7 +358,7 @@ namespace ORB_SLAM3::cuda::fast {
     int maxX = image.cols - borderX;
     int maxY = image.rows - borderY;
 
-    tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, kpResponse, maxKeypoints, threshold, scoreMat, minX, maxX, minY, maxY, counter_ptr);
+    tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, maxKeypoints, threshold, scoreMat, minX, maxX, minY, maxY, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
     checkCudaErrors( cudaStreamSynchronize(stream) );
     unsigned int count;
@@ -409,7 +368,7 @@ namespace ORB_SLAM3::cuda::fast {
     if(count > 0) {
       dim3 block(256);
       dim3 grid;
-      grid.x = divUp(static_cast<int>(count), block.x);
+      grid.x = cv::divUp(static_cast<int>(count), block.x);
       unsigned int new_count;
 
 
@@ -428,7 +387,7 @@ namespace ORB_SLAM3::cuda::fast {
       checkCudaErrors( cudaStreamSynchronize(stream) );
       keypoints.resize(count);
       for (int i = 0; i < count; ++i) {
-        keypoints[i] = cv::KeyPoint(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, kpResponseFinal[i]);
+        keypoints[i] = cv::KeyPoint(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, static_cast<float>(kpResponseFinal[i]));
       }
     }
   }
