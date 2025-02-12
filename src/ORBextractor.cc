@@ -335,7 +335,7 @@ static int bit_pattern_31_[256*4] =
 
     const int PATCH_SIZE = 31;
     const int HALF_PATCH_SIZE = 15;
-    const int EDGE_THRESHOLD = 19;
+    const int EDGE_THRESHOLD = 16;
 
     float ORBextractor::IC_Angle(const Mat& image, Point2f pt,  const vector<int> & u_max)
     {
@@ -803,7 +803,7 @@ static int bit_pattern_31_[256*4] =
         allKeypoints.resize(nlevels);
         for (int level = 0; level < nlevels; ++level)
         {
-            const int BorderX = EDGE_THRESHOLD-3;
+            const int BorderX = EDGE_THRESHOLD;
             const int BorderY = BorderX;
             const int width = mvImagePyramid[level]->getWidth();
             const int height = mvImagePyramid[level]->getHeight();
@@ -827,11 +827,11 @@ static int bit_pattern_31_[256*4] =
             ////////// Gpu Version //////////
             {
                 ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
-                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(), iniThFAST, BorderX, BorderY, vToDistributeKeys);
+                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()), iniThFAST, BorderX, BorderY, vToDistributeKeys);
                 
                 //Try again with lower threshold.
                 if(vToDistributeKeys.empty())
-                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(),minThFAST, BorderX, BorderY, vToDistributeKeys);
+                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY, vToDistributeKeys);
             }
 
 
