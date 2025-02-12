@@ -370,7 +370,7 @@ static int bit_pattern_31_[256*4] =
     
     int ORBextractor::getOrbValue(const uchar* center, const Point* pattern, int idx, float a, float b, int step) {
         return static_cast<int>(center[cvRound(pattern[idx].x*b + pattern[idx].y*a)*step +
-               cvRound(pattern[idx].x*a - pattern[idx].y*b)]);
+                                cvRound(pattern[idx].x*a - pattern[idx].y*b)]);
     }
 
 
@@ -415,7 +415,8 @@ static int bit_pattern_31_[256*4] =
                                int imageWidth, int imageHeight):
             nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(imageHeight, imageWidth ,24*nfeatures) //TODO: expose this for FAST features explicitly
+            gpuFast(imageHeight, imageWidth ,24*nfeatures), //TODO: expose this for FAST features explicitly
+            gpuOrb(nfeatures)
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -480,6 +481,7 @@ static int bit_pattern_31_[256*4] =
 
         AllocatePyramid(imageWidth, imageHeight);
         gridCount = static_cast<float>(_gridCount);
+        cuda::orb::GpuOrb::loadPattern(pattern.data());
     }
 
     void ORBextractor::computeOrientation(const cv::Mat& image, std::vector<KeyPoint>& keypoints, const std::vector<int>& umax)
@@ -892,7 +894,7 @@ static int bit_pattern_31_[256*4] =
     }
 
     void ORBextractor::computeDescriptors(const Mat& image, vector<KeyPoint>& keypointsLevel, vector<KeyPoint>& keypointsTotal, Mat& descriptors,
-                                   const vector<Point>& pattern, int monoIndexOffset, float scaleFactor)
+                                   const vector<Point>& pattern, int monoIndexOffset, float scaleFactor, int level)
     {
         ZoneNamedN(computeDescriptors, "computeDescriptors", true);  // NOLINT: Profiler
         Mat descLevel = Mat::zeros((int)keypointsLevel.size(), 32, CV_8UC1);
@@ -908,6 +910,7 @@ static int bit_pattern_31_[256*4] =
             keypointsTotal.at(monoIndex) = kp;
             descLevel.row(i).copyTo(descriptors.row(monoIndex));
         }
+
 
     }
 
@@ -949,6 +952,7 @@ static int bit_pattern_31_[256*4] =
 
 
         //Modified for speeding up stereo fisheye matching
+        int offset = 0;
         int monoIndex = 0;
         {
             ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
@@ -968,8 +972,48 @@ static int bit_pattern_31_[256*4] =
                 }
 
                 // Compute the descriptors
-                computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level]);
-                monoIndex+=nkeypointsLevel;
+
+
+                // preprocess the resized image
+                cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level]->getCvGpuMat(gpuOrb.getStream());
+
+                // Compute of Gaussion Blur is pipelined into `ComputeKeyPointsOctTree()`
+
+                // Compute the descriptors
+                // Pipeline the CPU and GPU work
+                if (level == 0) {
+                    gpuOrb.launch_async(gMat, keypointsLevel.data(), keypointsLevel.size());
+                }
+                Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
+                gpuOrb.join(desc);
+
+                offset += nkeypointsLevel;
+
+                if (level + 1 < nlevels) {
+                    vector<KeyPoint> &keypoints = allKeypoints[level + 1];
+                    gpuOrb.launch_async(mvBlurredImagePyramid[level + 1]->getCvGpuMat(gpuOrb.getStream()), keypoints.data(), keypoints.size());
+                }
+
+                float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+                int i = 0;
+                for (vector<KeyPoint>::iterator keypoint = keypointsLevel.begin(),
+                             keypointEnd = keypointsLevel.end(); keypoint != keypointEnd; ++keypoint){
+    
+                    // Scale keypoint coordinates
+                    if (level != 0){
+                        keypoint->pt *= scale;
+                    }
+    
+                    _keypoints.at(monoIndex) = (*keypoint);
+                    desc.row(i).copyTo(descriptors.row(monoIndex));
+                    monoIndex++;
+                    
+                    i++;
+                }
+
+                //computeDescriptors(mvBlurredImagePyramid[level]->getCvMat(), keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level], level);
+                //monoIndex+=nkeypointsLevel;
+
             }
         }
 

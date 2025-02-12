@@ -16,13 +16,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBEXTRACTOR_H
-#define ORBEXTRACTOR_H
+#pragma once
 
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
+#include <cuda/Orb.hpp>
 
 #include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 #include <opencv2/cudafilters.hpp>
@@ -104,7 +104,7 @@ namespace ORB_SLAM3
         void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
         void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
         void computeDescriptors(const cv::Mat& image, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
-                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor);
+                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
         static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);
         static float IC_Angle(const cv::Mat& image, cv::Point2f pt,  const std::vector<int> & u_max);
@@ -132,11 +132,10 @@ namespace ORB_SLAM3
         std::vector<float> mvInvLevelSigma2;
 
         cuda::fast::GpuFast gpuFast;
+        cuda::orb::GpuOrb gpuOrb;
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
         cv::Ptr<cv::cuda::Filter> gaussian_filter_gpu;
     };
 
 } // namespace ORB_SLAM
-
-#endif

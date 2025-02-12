@@ -383,13 +383,11 @@ namespace ORB_SLAM3::cuda::fast {
       grid.x = cv::divUp(static_cast<int>(count), block.x);
       unsigned int new_count;
 
-
       checkCudaErrors( cudaMemset(counter_ptr, 0, sizeof(unsigned int)) );
       nonmaxSuppression<<<grid, block, 0, stream>>>(kpLoc, count, imWidth, scoreMat, kpLocFinal, kpResponseFinal, counter_ptr);
 
       checkCudaErrors( cudaGetLastError() );
       checkCudaErrors( cudaStreamSynchronize(stream) );
-
       checkCudaErrors( cudaMemcpy(&new_count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
 
       count = std::min(new_count, maxKeypoints);
