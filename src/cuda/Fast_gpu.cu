@@ -274,7 +274,7 @@ namespace ORB_SLAM3::cuda::fast {
       if (y< maxY && j < maxX && j > minX && y> minY) {
         bool isKp = isKeyPoint2(img, y, j, threshold, scoreMat);
         if(isKp){
-          const unsigned int ind = atomicInc(counter_ptr, (unsigned int)(-1));
+          const unsigned int ind = atomicAdd(counter_ptr, 1);
           short2 loc = make_short2(j, y);
           kpLoc[ind] = loc;
         }
@@ -308,7 +308,7 @@ namespace ORB_SLAM3::cuda::fast {
 
           if (ismax)
           {
-              const unsigned int ind = atomicInc(d_counter, (unsigned int)(-1));
+              const unsigned int ind = atomicAdd(d_counter, 1);
               locFinal[ind] = loc;
               response[ind] = score;
           }
