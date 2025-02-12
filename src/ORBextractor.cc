@@ -63,6 +63,7 @@
 #include <memory>
 #include <numeric>
 #include <execution>
+#include <cuda_runtime.h>
 
 #include "ORBextractor.h"
 #include <tracy.hpp>
@@ -565,7 +566,7 @@ static int bit_pattern_31_[256*4] =
         }
     }
 
-    vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
+    vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
                                                          const int &maxX, const int &minY, const int &maxY, const int &N, const int &level)
     {
         ZoneNamedN(DistributeOctTree, "DistributeOctTree", true);  // NOLINT: Profiler
@@ -586,17 +587,17 @@ static int bit_pattern_31_[256*4] =
             ni.UR = cv::Point2i(hX*static_cast<float>(i+1),0);
             ni.BL = cv::Point2i(ni.UL.x,maxY-minY);
             ni.BR = cv::Point2i(ni.UR.x,maxY-minY);
-            ni.vKeys.reserve(vToDistributeKeys.size());
+            ni.vKeys.reserve(fastKpCount);
 
             lNodes.push_back(ni);
             vpIniNodes[i] = &lNodes.back();
         }
 
         //Associate points to childs
-        for(size_t i=0;i<vToDistributeKeys.size();i++)
-        {
-            const cv::KeyPoint &kp = vToDistributeKeys[i];
-            vpIniNodes[kp.pt.x/hX]->vKeys.push_back(kp);
+        for(size_t i=0;i<fastKpCount;i++)
+        {   
+            const int kp_x = location[i].x;
+            vpIniNodes[kp_x/hX]->vKeys.emplace_back(kp_x, location[i].y, -1, -1, static_cast<float>(response[i]));
         }
 
         list<ExtractorNode>::iterator lit = lNodes.begin();
@@ -820,18 +821,18 @@ static int bit_pattern_31_[256*4] =
 
             // const int dim_1D = nRows*nCols;
 
-            vector<cv::KeyPoint> vToDistributeKeys;
-            vToDistributeKeys.reserve(nfeatures*nlevels*2);
-
+            // vector<cv::KeyPoint> vToDistributeKeys;
+            // vToDistributeKeys.reserve(nfeatures*nlevels*2);
+            unsigned int fastKpCount;
 
             ////////// Gpu Version //////////
             {
-                ZoneNamedN(featCallGPU, "featCallGPU", true);  // NOLINT: Profiler
-                gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()), iniThFAST, BorderX, BorderY, vToDistributeKeys);
+                ZoneNamedN(featCallGPU, "featCallGPU", true); 
+                fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()), iniThFAST, BorderX, BorderY);
                 
                 //Try again with lower threshold.
-                if(vToDistributeKeys.empty())
-                    gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY, vToDistributeKeys);
+                if(fastKpCount == 0)
+                    fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY);
             }
 
 
@@ -876,11 +877,9 @@ static int bit_pattern_31_[256*4] =
 
 
             allKeypoints[level].reserve(nfeatures);
-            allKeypoints[level] = DistributeOctTree(vToDistributeKeys, 0, width,
+            allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(), gpuFast.getResp(), 0, width,
                                           0, height,mnFeaturesPerLevel[level], level);
         }
-
-
 
 
         {

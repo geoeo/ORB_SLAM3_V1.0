@@ -20,7 +20,9 @@ namespace ORB_SLAM3::cuda::fast {
   public:
     GpuFast(int imHeight, int imWidth, int maxKeypoints);
     ~GpuFast();
-    void detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, std::vector<cv::KeyPoint>& keypoints);
+    unsigned int detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY);
     cudaStream_t getStream();
+    short2 * getLoc();
+    int* getResp();
   };
 }

@@ -320,7 +320,7 @@ namespace ORB_SLAM3::cuda::fast {
   {
     checkCudaErrors( cudaStreamCreate(&stream) );
     checkCudaErrors( cudaMalloc(&scoreMat, sizeof(int) * imHeight*imWidth) );
-    checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) );
+    checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) ); //Kernel crashes when is is not managed memory. Not sure why
 
     checkCudaErrors( cudaMallocManaged(&kpLocFinal, sizeof(short2) * maxKeypoints) );
     checkCudaErrors( cudaMallocManaged(&kpResponseFinal, sizeof(int) * maxKeypoints) );
@@ -342,7 +342,19 @@ namespace ORB_SLAM3::cuda::fast {
     return stream;
   }
 
-  void GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, std::vector<cv::KeyPoint>& keypoints) {
+  short2 * GpuFast::getLoc(){
+    checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal, 0, cudaMemAttachHost) );
+    checkCudaErrors( cudaStreamSynchronize(stream) );
+    return kpLocFinal;
+  }
+
+  int* GpuFast::getResp(){
+    checkCudaErrors( cudaStreamAttachMemAsync(stream, kpResponseFinal, 0, cudaMemAttachHost) );
+    checkCudaErrors( cudaStreamSynchronize(stream) );
+    return kpResponseFinal;
+  }
+
+  unsigned int GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY) {
     checkCudaErrors(cudaMemset(scoreMat, 0, sizeof(int) * imHeight*imWidth));
     checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal) );
@@ -381,15 +393,8 @@ namespace ORB_SLAM3::cuda::fast {
       checkCudaErrors( cudaMemcpy(&new_count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
 
       count = std::min(new_count, maxKeypoints);
-
-      checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal, 0, cudaMemAttachHost) );
-      checkCudaErrors( cudaStreamAttachMemAsync(stream, kpResponseFinal, 0, cudaMemAttachHost) );
-      checkCudaErrors( cudaStreamSynchronize(stream) );
-      keypoints.resize(count);
-      for (int i = 0; i < count; ++i) {
-        keypoints[i] = cv::KeyPoint(kpLocFinal[i].x, kpLocFinal[i].y, -1, -1, static_cast<float>(kpResponseFinal[i]));
-      }
     }
+    return count;
   }
 
 }// namespace fast
