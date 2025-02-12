@@ -14,11 +14,10 @@ namespace ORB_SLAM3::cuda::fast {
   class GpuFast {
     short2 * kpLoc;
     short2 * kpLocFinal;
-    float * kpScore;
+    float * kpResponse;
     float * kpResponseFinal;
     unsigned int * counter_ptr;
     unsigned int maxKeypoints;
-    unsigned int count;
     int imHeight;
     int imWidth;
 
