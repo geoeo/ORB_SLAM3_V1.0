@@ -2314,6 +2314,8 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
             mpLocalMapper->RequestStop();
             // Wait until Local Mapping has effectively stopped
 
+            Verbose::PrintMess("Stop Requested...", Verbose::VERBOSITY_NORMAL);
+
             while(!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished())
             {
                 usleep(1000);

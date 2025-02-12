@@ -216,7 +216,7 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed)
 {
-    monoLeft = mpORBextractorLeft->extractFeatures(im_managed,cv::Mat(),mvKeys,mDescriptors);
+    monoLeft = mpORBextractorLeft->extractFeatures(im_managed,mvKeys,mDescriptors);
 }
 
 bool Frame::isSet() const {

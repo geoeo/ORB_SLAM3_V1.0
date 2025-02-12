@@ -62,7 +62,7 @@ namespace ORB_SLAM3
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, cv::InputArray _mask,
+        int extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed,
                        std::vector<cv::KeyPoint> &_keypoints,
                        cv::OutputArray _descriptors);
 
@@ -102,7 +102,7 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
-        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
+        int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
         void computeDescriptors(const cv::Mat& image, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
                                    const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         

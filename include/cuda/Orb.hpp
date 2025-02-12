@@ -19,7 +19,7 @@ namespace ORB_SLAM3::cuda::orb {
     GpuOrb(int maxKeypoints = 10000);
     ~GpuOrb();
 
-    void launch_async(cv::InputArray _image, const cv::KeyPoint * _keypoints, const int npoints);
+    void launch_async(cv::cuda::GpuMat image, const cv::KeyPoint * _keypoints, const int npoints);
     void join(cv::Mat &_descriptors);
     cudaStream_t getStream();
 
