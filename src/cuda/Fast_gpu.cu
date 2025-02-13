@@ -276,10 +276,12 @@ namespace ORB_SLAM3::cuda::fast {
         if(isKp){
           const unsigned int ind = atomicAdd(counter_ptr, 1);
           short2 loc = make_short2(j, y);
-          kpLoc[ind] = loc;
+          if(ind < maxKeypoints)
+            kpLoc[ind] = loc;
         }
       }
     }
+
 
   }
 
@@ -356,7 +358,7 @@ namespace ORB_SLAM3::cuda::fast {
 
   unsigned int GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY) {
     checkCudaErrors(cudaMemset(scoreMat, 0, sizeof(int) * imHeight*imWidth));
-    checkCudaErrors(cudaMemsetAsync(counter_ptr, 0, sizeof(unsigned int), stream) );
+    checkCudaErrors(cudaMemset(counter_ptr, 0, sizeof(unsigned int)) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpResponseFinal) );
 
