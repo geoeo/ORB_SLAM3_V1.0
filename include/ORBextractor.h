@@ -109,12 +109,9 @@ namespace ORB_SLAM3
         
         static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);
         static float IC_Angle(const cv::Mat& image, cv::Point2f pt,  const std::vector<int> & u_max);
-        static int getOrbValue(const uchar* center, const cv::Point* pattern, int idx, float a, float b, int step);
-        static void computeOrbDescriptor(const cv::KeyPoint& kpt, const cv::Mat& img, int step,  const cv::Point* pattern,uchar* desc);
         std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-        std::vector<cv::Point> pattern;
         
         constexpr static float factorPI = (float)(CV_PI/180.f);
         int nfeatures;

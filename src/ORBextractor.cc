@@ -73,6 +73,7 @@ using namespace std;
 
 namespace ORB_SLAM3
 {
+
     const int PATCH_SIZE = 31;
     const int HALF_PATCH_SIZE = 15;
     const int EDGE_THRESHOLD = 25; // Seems to have be important for using the pattern
@@ -105,6 +106,8 @@ namespace ORB_SLAM3
 
         return fastAtan2((float)m_01, (float)m_10);
     }
+
+
 
     ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
                                int _iniThFAST, int _minThFAST, int _gridCount,
@@ -167,7 +170,6 @@ namespace ORB_SLAM3
             umax[v] = v0;
             ++v0;
         }
-        ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
 
         feat = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
@@ -175,6 +177,7 @@ namespace ORB_SLAM3
 
         AllocatePyramid(imageWidth, imageHeight);
         gridCount = static_cast<float>(_gridCount);
+        ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
     }
 
     void ORBextractor::computeOrientation(const cv::Mat& image, std::vector<KeyPoint>& keypoints, const std::vector<int>& umax)
@@ -504,21 +507,6 @@ namespace ORB_SLAM3
         {
             const int width = mvImagePyramid[level]->getWidth();
             const int height = mvImagePyramid[level]->getHeight();
-            // const int maxBorderX = width-EDGE_THRESHOLD+3;
-            // const int maxBorderY = height-EDGE_THRESHOLD+3;
-            // const int wCell = gridCount;
-            // const int hCell = gridCount;
-
-            // const int width = (maxBorderX-minBorderX);
-            // const int height = (maxBorderY-minBorderY);
-
-            // const int nCols = floor(width/gridCount);
-            // const int nRows = floor(height/gridCount);
-
-            // const int dim_1D = nRows*nCols;
-
-            // vector<cv::KeyPoint> vToDistributeKeys;
-            // vToDistributeKeys.reserve(nfeatures*nlevels*2);
             unsigned int fastKpCount;
 
             ////////// Gpu Version //////////
@@ -530,47 +518,6 @@ namespace ORB_SLAM3
                 if(fastKpCount == 0)
                     fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY);
             }
-
-
-            //////////// Loop Version ////////////
-            // for(int i = 0; i < dim_1D; ++i){
-            //     int r = floor(i/nCols);  
-            //     int c = floor(std::fmod(i,nCols));
-
-            //     const int iniY = minBorderY + r*hCell;
-            //     const int maxY = iniY+hCell;
-
-            //     const int iniX = minBorderX + c*wCell;
-            //     const int maxX = iniX+wCell;
-
-            //     vector<cv::KeyPoint> vKeysCell;
-
-
-            //     {   
-            //         ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
-            //         feat->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-            //         TracyPlot("vKeysCellFeat", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-            //     }
-
-
-            //     if(vKeysCell.empty())
-            //     {
-            //         ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-            //         feat_back->detect(mvImagePyramid[level]->getCvMat().rowRange(iniY,maxY).colRange(iniX,maxX),vKeysCell);
-            //         TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-            //     }
-
-            //     if(!vKeysCell.empty())
-            //     {
-            //         for(auto& kp: vKeysCell)
-            //         {
-            //             kp.pt.x+=(c*wCell);
-            //             kp.pt.y+=(r*hCell);   
-            //             vToDistributeKeys.push_back(kp);   
-            //         }
-            //     }
-            // }
-
 
             allKeypoints[level].reserve(nfeatures);
             allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(), gpuFast.getResp(), 0, width,
@@ -598,25 +545,6 @@ namespace ORB_SLAM3
             }
         }
         return allKeypointsCount;
-    }
-
-    void ORBextractor::computeDescriptors(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed, vector<KeyPoint>& keypointsLevel, vector<KeyPoint>& keypointsTotal, Mat& descriptors,
-                                   const vector<Point>& pattern, int monoIndexOffset, float scaleFactor, int level)
-    {
-        ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
-        Mat descLevel = Mat::zeros((int)keypointsLevel.size(), 32, CV_8UC1);
-        
-        for (size_t i = 0; i < keypointsLevel.size(); i++){
-            auto kp = keypointsLevel[i];
-            computeOrbDescriptor(kp, image_managed->getCvMat(),image_managed->getStep() ,&pattern[0], descLevel.ptr((int)i));
-
-            // Scale keypoint coordinates
-            kp.pt *= scaleFactor;
-
-            const int monoIndex = monoIndexOffset + i;
-            keypointsTotal.at(monoIndex) = kp;
-            descLevel.row(i).copyTo(descriptors.row(monoIndex));
-        }
     }
 
     int ORBextractor::extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, vector<KeyPoint>& _keypoints,
@@ -692,11 +620,6 @@ namespace ORB_SLAM3
                         monoIndex++;
                     }
                 }
-
-                //Compute the descriptors - CPU
-                // computeDescriptors(mvBlurredImagePyramid[level], keypointsLevel, _keypoints, descriptors, pattern, monoIndex, mvScaleFactor[level], level);
-                // monoIndex+=nkeypointsLevel;
-
             }
         }
 
