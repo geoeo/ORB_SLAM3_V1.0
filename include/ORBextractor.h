@@ -23,6 +23,7 @@
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
+#include <cuda/Angle.hpp>
 
 #include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 #include <opencv2/cudafilters.hpp>
@@ -103,13 +104,13 @@ namespace ORB_SLAM3
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
         int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        void computeDescriptors(const cv::Mat& image, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
+        void computeDescriptors(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
                                    const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
         static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);
         static float IC_Angle(const cv::Mat& image, cv::Point2f pt,  const std::vector<int> & u_max);
         static int getOrbValue(const uchar* center, const cv::Point* pattern, int idx, float a, float b, int step);
-        static void computeOrbDescriptor(const cv::KeyPoint& kpt, const cv::Mat& img, const cv::Point* pattern,uchar* desc);
+        static void computeOrbDescriptor(const cv::KeyPoint& kpt, const cv::Mat& img, int step,  const cv::Point* pattern,uchar* desc);
         std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
@@ -133,6 +134,7 @@ namespace ORB_SLAM3
 
         cuda::fast::GpuFast gpuFast;
         cuda::orb::GpuOrb gpuOrb;
+        cuda::angle::Angle gpuAngle;
         cv::Ptr<cv::Feature2D> feat;
         cv::Ptr<cv::Feature2D> feat_back;
         cv::Ptr<cv::cuda::Filter> gaussian_filter_gpu;
