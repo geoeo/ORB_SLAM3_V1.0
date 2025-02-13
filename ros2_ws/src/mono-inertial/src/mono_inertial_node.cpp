@@ -209,7 +209,7 @@ class SlamNode : public rclcpp::Node
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
-      float resize_factor = 0.6;
+      float resize_factor = 0.7;
 
       // F4
       ORB_SLAM3::CameraParameters cam{};
@@ -254,7 +254,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 25;
+      cam.fps        = 20;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
