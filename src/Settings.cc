@@ -261,9 +261,9 @@ namespace ORB_SLAM3 {
             }
 
             nFeatures_ = orb.nFeatures;
+            nFastFeatures_ = orb.nFastFeatures;
             scaleFactor_ = orb.scaleFactor;
             nLevels_ = orb.nLevels;
-            gridCount_ = orb.gridCount;
             initThFAST_ = orb.iniThFast;
             minThFAST_ = orb.minThFast;
 
@@ -534,9 +534,9 @@ namespace ORB_SLAM3 {
         bool found;
 
         nFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFeatures",found);
+        nFastFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFastFeatures",found);
         scaleFactor_ = readParameter<float>(fSettings,"ORBextractor.scaleFactor",found);
         nLevels_ = readParameter<int>(fSettings,"ORBextractor.nLevels",found);
-        gridCount_ = readParameter<int>(fSettings,"ORBextractor.gridCount",found);
         initThFAST_ = readParameter<int>(fSettings,"ORBextractor.iniThFAST",found);
         minThFAST_ = readParameter<int>(fSettings,"ORBextractor.minThFAST",found);
     }
@@ -721,11 +721,11 @@ namespace ORB_SLAM3 {
         }
 
         output << "\t-Features per image: " << settings.nFeatures_ << endl;
+        output << "\t-Fast Features per image: " << settings.nFastFeatures_ << endl;
         output << "\t-ORB scale factor: " << settings.scaleFactor_ << endl;
         output << "\t-ORB number of scales: " << settings.nLevels_ << endl;
         output << "\t-Initial FAST threshold: " << settings.initThFAST_ << endl;
         output << "\t-Min FAST threshold: " << settings.minThFAST_ << endl;
-        output << "\t-Grid Count: " << settings.gridCount_ << endl;
 
         return output;
     }

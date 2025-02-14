@@ -58,11 +58,11 @@ namespace ORB_SLAM3 {
     struct OrbParameters
     {
     int nFeatures;
+    int nFastFeatures;
     float scaleFactor;
     int nLevels;
     int iniThFast;
     int minThFast;
-    int gridCount;
     };
 
     class System;
@@ -131,8 +131,8 @@ namespace ORB_SLAM3 {
         float depthMapFactor() {return depthMapFactor_;}
 
         int nFeatures() {return nFeatures_;}
+        int nFastFeatures() {return nFastFeatures_;}
         int nLevels() {return nLevels_;}
-        int gridCount() {return gridCount_;}
         float initThFAST() {return initThFAST_;}
         float minThFAST() {return minThFAST_;}
         float scaleFactor() {return scaleFactor_;}
@@ -242,9 +242,9 @@ namespace ORB_SLAM3 {
          * ORB stuff
          */
         int nFeatures_;
+        int nFastFeatures_;
         float scaleFactor_;
         int nLevels_;
-        int gridCount_;
         int initThFAST_, minThFAST_;
 
         /*

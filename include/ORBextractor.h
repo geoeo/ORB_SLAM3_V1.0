@@ -54,9 +54,8 @@ namespace ORB_SLAM3
             FAST_SCORE = 1
         };
 
-        ORBextractor(int nfeatures, float scaleFactor, int nlevels,
-                     int iniThFAST, int minThFAST, int gridCount,
-                     int imageWidth, int imageHeight);
+        ORBextractor(int nFeatures,int nFastFeatures, float scaleFactor, int nlevels,
+                     int iniThFAST, int minThFAST, int imageWidth, int imageHeight);
 
         ~ORBextractor() {}
 
@@ -119,7 +118,6 @@ namespace ORB_SLAM3
         int nlevels;
         int iniThFAST;
         int minThFAST;
-        float gridCount;
 
         std::vector<int> mnFeaturesPerLevel;
         std::vector<int> umax;
@@ -132,9 +130,6 @@ namespace ORB_SLAM3
         cuda::fast::GpuFast gpuFast;
         cuda::orb::GpuOrb gpuOrb;
         cuda::angle::Angle gpuAngle;
-        cv::Ptr<cv::Feature2D> feat;
-        cv::Ptr<cv::Feature2D> feat_back;
-        cv::Ptr<cv::cuda::Filter> gaussian_filter_gpu;
     };
 
 } // namespace ORB_SLAM

@@ -115,24 +115,22 @@ void Tracking::newParameterLoader(Settings *settings) {
 
     //ORB parameters
     int nFeatures = settings->nFeatures();
+    int nFastFeatures = settings->nFastFeatures();
     int nLevels = settings->nLevels();
     int fIniThFAST = settings->initThFAST();
     int fMinThFAST = settings->minThFAST();
     float fScaleFactor = settings->scaleFactor();
-    int fGridCount =  settings->gridCount();
     cv::Size newImSize = settings->newImSize();
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount, newImSize.width, newImSize.height);
+    mpORBextractorLeft = new ORBextractor(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, fGridCount,newImSize.width, newImSize.height);
+        mpIniORBextractor = new ORBextractor(5*nFeatures,5*nFastFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,newImSize.width, newImSize.height);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
     mInsertKFsLost = settings->insertKFsWhenLost();
     mImuFreq = settings->imuFrequency();
-    //mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
-    mImuPer = 0.0;
     float Ng = settings->noiseGyro();
     float Na = settings->noiseAcc();
     float Ngw = settings->gyroWalk();
@@ -831,11 +829,11 @@ void Tracking::PreintegrateIMU()
             {
                 IMU::Point* m = &mlQueueImuData.front();
                 cout.precision(17);
-                if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp-mImuPer)
+                if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp)
                 {
                     mlQueueImuData.pop_front();
                 }
-                else if(m->t<=mCurrentFrame.mTimeStamp-mImuPer)
+                else if(m->t<=mCurrentFrame.mTimeStamp)
                 {
                     mvImuFromLastFrame.push_back(*m);
                     mlQueueImuData.pop_front();

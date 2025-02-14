@@ -109,12 +109,11 @@ namespace ORB_SLAM3
 
 
 
-    ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
-                               int _iniThFAST, int _minThFAST, int _gridCount,
-                               int imageWidth, int imageHeight):
-            nfeatures(_nfeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
-            iniThFAST(_iniThFAST), minThFAST(_minThFAST), gridCount(_gridCount),
-            gpuFast(imageHeight, imageWidth ,24*nfeatures), //TODO: expose this for FAST features explicitly
+    ORBextractor::ORBextractor(int _nFeatures, int _nFastFeatures, float _scaleFactor, int _nlevels,
+                               int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):
+            nfeatures(_nFeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
+            iniThFAST(_iniThFAST), minThFAST(_minThFAST),
+            gpuFast(imageHeight, imageWidth ,_nFastFeatures), 
             gpuOrb(nfeatures),
             gpuAngle(nfeatures)
     {
@@ -171,12 +170,7 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        feat = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
-        feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-        gaussian_filter_gpu = cv::cuda::createGaussianFilter(CV_8U,CV_8U,cv::Size(7,7), 2.0,2.0, BORDER_REFLECT_101);
-
         AllocatePyramid(imageWidth, imageHeight);
-        gridCount = static_cast<float>(_gridCount);
         ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
     }
 

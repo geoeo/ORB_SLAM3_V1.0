@@ -281,7 +281,6 @@ protected:
     float mImageScale;
 
     float mImuFreq;
-    double mImuPer;
     bool mInsertKFsLost;
 
     //New KeyFrame rules (according to fps)
