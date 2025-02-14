@@ -5,13 +5,10 @@
 #include <algorithm>
 #include <iostream>
 #include <opencv2/core/cuda_types.hpp>
-#include <opencv2/core/utility.hpp>
 
 #include <opencv2/core/cuda/common.hpp>
-#include <opencv2/core/cuda/utility.hpp>
 #include <opencv2/core/cuda/reduce.hpp>
 #include <opencv2/core/cuda/functional.hpp>
-#include <opencv2/core/cuda_stream_accessor.hpp>
 
 using namespace cv;
 using namespace cv::cuda;
@@ -84,12 +81,10 @@ namespace ORB_SLAM3::cuda::angle {
 
     Angle::Angle(unsigned int maxKeypoints) : maxKeypoints(maxKeypoints) {
         checkCudaErrors( cudaStreamCreate(&stream) );
-        _cvStream = cv::cuda::StreamAccessor::wrapStream(stream);
         checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
     }
 
     Angle::~Angle() {
-        _cvStream.~Stream();
         checkCudaErrors( cudaFree(keypoints) );
         checkCudaErrors( cudaStreamDestroy(stream) );
     }
