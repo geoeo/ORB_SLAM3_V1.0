@@ -55,11 +55,11 @@ namespace ORB_SLAM3::cuda::angle {
 
                 for (int u = threadIdx.x - d; u <= d; u += blockDim.x)
                 {
-                int val_plus = image(loc.y + v, loc.x + u);
-                int val_minus = image(loc.y - v, loc.x + u);
+                    int val_plus = image(loc.y + v, loc.x + u);
+                    int val_minus = image(loc.y - v, loc.x + u);
 
-                v_sum += (val_plus - val_minus);
-                m_sum += u * (val_plus + val_minus);
+                    v_sum += (val_plus - val_minus);
+                    m_sum += u * (val_plus + val_minus);
                 }
 
                 reduce<32>(smem_tuple(srow0, srow1), thrust::tie(v_sum, m_sum), threadIdx.x, thrust::make_tuple(op, op));
