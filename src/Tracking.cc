@@ -124,8 +124,8 @@ void Tracking::newParameterLoader(Settings *settings) {
 
     mpORBextractorLeft = new ORBextractor(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
 
-    if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-        mpIniORBextractor = new ORBextractor(5*nFeatures,5*nFastFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,newImSize.width, newImSize.height);
+    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
+    //     mpIniORBextractor = new ORBextractor(5*nFeatures,5*nFastFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,newImSize.width, newImSize.height);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -776,10 +776,11 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAMana
 
     assert(mSensor == System::IMU_MONOCULAR);
 
-    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
-    else
-        mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
+        
+    // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+    //     mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
+    // else
+    mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
     
 
     if (mState==NO_IMAGES_YET)
