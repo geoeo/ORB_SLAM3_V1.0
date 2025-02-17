@@ -634,6 +634,14 @@ float System::GetImageScale()
     return mpTracker->GetImageScale();
 }
 
+bool System::isGeoreferenced() {
+    return mpTracker->isGeoreferenced();
+}
+
+void System::setGeoreference(bool is_georeferenced){
+    mpTracker->setGeoreference(is_georeferenced);
+}
+
 #ifdef REGISTER_TIMES
 void System::InsertRectTime(double& time)
 {
