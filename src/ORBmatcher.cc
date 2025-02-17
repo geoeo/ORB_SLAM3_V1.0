@@ -223,7 +223,7 @@ namespace ORB_SLAM3
     {
         const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
-        vpMapPointMatches = vector<MapPoint*>(F.N,static_cast<MapPoint*>(NULL));
+        vpMapPointMatches = vector<MapPoint*>(F.mNumKeypoints,static_cast<MapPoint*>(NULL));
 
         const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
 
@@ -1656,7 +1656,8 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        
+        std::cout << "Found: " << nFound << std::endl;
         return nFound;
     }
 
@@ -1680,7 +1681,7 @@ namespace ORB_SLAM3
         const bool bForward = tlc(2)>CurrentFrame.mb && !bMono;
         const bool bBackward = -tlc(2)>CurrentFrame.mb && !bMono;
 
-        for(int i=0; i<LastFrame.N; i++)
+        for(int i=0; i<LastFrame.mNumKeypoints; i++)
         {
             MapPoint* pMP = LastFrame.mvpMapPoints[i];
             if(pMP)
@@ -1868,7 +1869,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        std::cout << "matches (2): " << nmatches << std::endl;
         return nmatches;
     }
 
@@ -1992,7 +1993,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-
+        std::cout << "matches (3): " << nmatches << std::endl;
         return nmatches;
     }
 

@@ -58,11 +58,11 @@ namespace ORB_SLAM3 {
     struct OrbParameters
     {
     int nFeatures;
+    int nFastFeatures;
     float scaleFactor;
     int nLevels;
     int iniThFast;
     int minThFast;
-    int gridCount;
     };
 
     class System;
@@ -90,7 +90,8 @@ namespace ORB_SLAM3 {
          */
         Settings(const std::string &configFile, const int& sensor);
 
-        Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor);
+        Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+            const int& sensor, int frame_grid_cols, int frame_grid_rows);
 
         /*
          * Ostream operator overloading to dump settings to the terminal
@@ -130,8 +131,8 @@ namespace ORB_SLAM3 {
         float depthMapFactor() {return depthMapFactor_;}
 
         int nFeatures() {return nFeatures_;}
+        int nFastFeatures() {return nFastFeatures_;}
         int nLevels() {return nLevels_;}
-        int gridCount() {return gridCount_;}
         float initThFAST() {return initThFAST_;}
         float minThFAST() {return minThFAST_;}
         float scaleFactor() {return scaleFactor_;}
@@ -157,6 +158,9 @@ namespace ORB_SLAM3 {
         cv::Mat M2l() {return M2l_;}
         cv::Mat M1r() {return M1r_;}
         cv::Mat M2r() {return M2r_;}
+
+        int frameGridCols() {return frameGridCols_;}
+        int frameGridRows() {return frameGridRows_;}
 
     private:
         template<typename T>
@@ -238,9 +242,9 @@ namespace ORB_SLAM3 {
          * ORB stuff
          */
         int nFeatures_;
+        int nFastFeatures_;
         float scaleFactor_;
         int nLevels_;
-        int gridCount_;
         int initThFAST_, minThFAST_;
 
         /*
@@ -264,6 +268,8 @@ namespace ORB_SLAM3 {
          * Other stuff
          */
         float thFarPoints_;
+        const int frameGridCols_;
+        const int frameGridRows_;
 
     };
 };

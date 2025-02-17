@@ -1,7 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
-project(ORB_SLAM3)
+cmake_minimum_required(VERSION 3.25)
+project(ORB_SLAM3 LANGUAGES CXX CUDA)
 
 set(ORB_SLAM3_VERSION "1.0")
+
+include(CheckLanguage)
+check_language(CUDA)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -21,8 +24,8 @@ set(ORB_SLAM3_ADDITIONAL_FILES_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_N
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -O3")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
@@ -80,6 +83,8 @@ find_package(Eigen3 3.3.9 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDACvManagedMemory REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -110,6 +115,10 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
+src/cuda/Cuda.cu
+src/cuda/Fast_gpu.cu
+src/cuda/Orb_gpu.cu
+src/cuda/Angle_gpu.cu
 )
 
 
@@ -125,8 +134,9 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
      ${G2O_INCLUDE_DIR}
+     ${CUDACvManagedMemory_INCLUDE_DIRS}
+     ${CUDAToolkit_INCLUDE_DIRS}
 )
-
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
@@ -151,6 +161,8 @@ ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
+${CUDACvManagedMemory_LIBRARIES}
+${CUDAToolkit_LIBRARIES}
 -lcrypto
 )
 
@@ -172,19 +184,8 @@ install(TARGETS ${PROJECT_NAME} EXPORT ORB_SLAM3Targets
 # Install Headers
 ################################################################################
 
-file(GLOB HEAD 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h 
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-)
-
-# Headers
 install(
-        FILES ${HEAD}
-        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-)
-
-install(
-        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        FILES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
 )
 
