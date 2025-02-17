@@ -16,12 +16,18 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBEXTRACTOR_H
-#define ORBEXTRACTOR_H
+#pragma once
 
 #include <vector>
 #include <list>
 #include <opencv2/opencv.hpp>
+#include <cuda/Fast.hpp>
+#include <cuda/Orb.hpp>
+#include <cuda/Angle.hpp>
+
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
+#include <opencv2/cudafilters.hpp>
+#include <opencv2/cudafeatures2d.hpp>
 
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/cudafeatures2d.hpp>
@@ -52,17 +58,17 @@ namespace ORB_SLAM3
             FAST_SCORE = 1
         };
 
-        ORBextractor(int nfeatures, float scaleFactor, int nlevels,
-                     int iniThFAST, int minThFAST, int gridCount);
+        ORBextractor(int nFeatures,int nFastFeatures, float scaleFactor, int nlevels,
+                     int iniThFAST, int minThFAST, int imageWidth, int imageHeight);
 
         ~ORBextractor() {}
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int operator()(cv::InputArray _image, cv::InputArray _mask,
+        int extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed,
                        std::vector<cv::KeyPoint> &_keypoints,
-                       cv::OutputArray _descriptors, std::vector<int> &vLappingArea);
+                       cv::OutputArray _descriptors);
 
         int inline GetLevels()
         {
@@ -94,24 +100,28 @@ namespace ORB_SLAM3
             return mvInvLevelSigma2;
         }
 
-        std::vector<cv::Mat> mvImagePyramid;
-
+        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvImagePyramid;
+        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvBlurredImagePyramid;
 
     protected:
-        void ComputePyramid(cv::Mat image);
-        void ComputePyramidGpu(cv::cuda::GpuMat &image, std::vector<cv::cuda::GpuMat>& imagePyramidGpu);
-        void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints, std::vector<cv::cuda::GpuMat>& imagePyramidGpu);
-        std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint> &vToDistributeKeys, const int &minX,
+        void AllocatePyramid(int width, int height);
+        void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
+        int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
+        void computeDescriptors(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
+                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
+        
+        static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);
+        static float IC_Angle(const cv::Mat& image, cv::Point2f pt,  const std::vector<int> & u_max);
+        std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-        std::vector<cv::Point> pattern;
-
+        
+        constexpr static float factorPI = (float)(CV_PI/180.f);
         int nfeatures;
         double scaleFactor;
         int nlevels;
         int iniThFAST;
         int minThFAST;
-        float gridCount;
 
         std::vector<int> mnFeaturesPerLevel;
         std::vector<int> umax;
@@ -121,13 +131,9 @@ namespace ORB_SLAM3
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
 
-        cv::Ptr<cv::Feature2D> feat;
-        cv::Ptr<cv::Feature2D> feat_back;
-
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_gpu;
-        cv::Ptr<cv::cuda::Feature2DAsync> feat_back_gpu;
+        cuda::fast::GpuFast gpuFast;
+        cuda::orb::GpuOrb gpuOrb;
+        cuda::angle::Angle gpuAngle;
     };
 
 } // namespace ORB_SLAM
-
-#endif

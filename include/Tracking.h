@@ -22,6 +22,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include "Viewer.h"
 #include "FrameDrawer.h"
@@ -70,13 +71,8 @@ public:
 
     // Parse the config file
     bool ParseCamParamFile(cv::FileStorage &fSettings);
-    bool ParseORBParamFile(cv::FileStorage &fSettings);
-    bool ParseIMUParamFile(cv::FileStorage &fSettings);
 
-    // Preprocess the input and call Track(). Extract features and performs stereo matching.
-    Sophus::SE3f GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, std::string filename);
-    Sophus::SE3f GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, std::string filename);
-    Sophus::SE3f GrabImageMonocular(const cv::Mat &im, const double &timestamp, std::string filename);
+    Sophus::SE3f GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
@@ -122,13 +118,6 @@ public:
         return mnLastKeyFrameId;
     }
 
-#ifdef REGISTER_LOOP
-    void RequestStop();
-    bool isStopped();
-    void Release();
-    bool stopRequested();
-#endif
-
 public:
 
     // Tracking states
@@ -152,7 +141,7 @@ public:
     Frame mCurrentFrame;
     Frame mLastFrame;
 
-    cv::Mat mImGray;
+    cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr mImManagedGray;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;
@@ -190,29 +179,11 @@ public:
 
     bool mbWriteStats;
 
-#ifdef REGISTER_TIMES
-    void LocalMapStats2File();
-    void TrackStats2File();
-    void PrintTimeStats();
-
-    vector<double> vdRectStereo_ms;
-    vector<double> vdResizeImage_ms;
-    vector<double> vdORBExtract_ms;
-    vector<double> vdStereoMatch_ms;
-    vector<double> vdIMUInteg_ms;
-    vector<double> vdPosePred_ms;
-    vector<double> vdLMTrack_ms;
-    vector<double> vdNewKF_ms;
-    vector<double> vdTrackTotal_ms;
-#endif
 
 protected:
 
     // Main tracking function. It is independent of the input sensor.
     void Track();
-
-    // Map initialization for stereo and RGB-D
-    void StereoInitialization();
 
     // Map initialization for monocular
     void MonocularInitialization();
@@ -271,9 +242,13 @@ protected:
     LocalMapping* mpLocalMapper;
     LoopClosing* mpLoopClosing;
 
+    //Frame
+    int mFrameGridRows;
+    int mFrameGridCols;
+
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    ORBextractor* mpIniORBextractor;
+    //ORBextractor* mpIniORBextractor;
 
     //BoW
     ORBVocabulary* mpORBVocabulary;
@@ -308,7 +283,6 @@ protected:
     float mImageScale;
 
     float mImuFreq;
-    double mImuPer;
     bool mInsertKFsLost;
 
     //New KeyFrame rules (according to fps)
@@ -371,15 +345,6 @@ protected:
     bool mIsGeoreferenced;
 
     void newParameterLoader(Settings* settings);
-
-#ifdef REGISTER_LOOP
-    bool Stop();
-
-    bool mbStopped;
-    bool mbStopRequested;
-    bool mbNotStop;
-    std::mutex mMutexStop;
-#endif
 
 public:
     cv::Mat mImRight;

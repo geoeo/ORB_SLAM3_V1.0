@@ -831,7 +831,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     optimizer.addVertex(vSE3);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
 
     vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose*> vpEdgesMono;
     vector<ORB_SLAM3::EdgeSE3ProjectXYZOnlyPoseToBody *> vpEdgesMono_FHR;
@@ -2827,10 +2827,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     //cout << "Total map points: " << lLocalMapPoints.size() << endl;
-    for(map<int,int>::iterator mit=mVisEdges.begin(), mend=mVisEdges.end(); mit!=mend; mit++)
-    {
-        assert(mit->second>=3);
-    }
+    // for(map<int,int>::iterator mit=mVisEdges.begin(), mend=mVisEdges.end(); mit!=mend; mit++)
+    // {
+    //     assert(mit->second>=3);
+    // }
 
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
@@ -4035,8 +4035,8 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
         {
             // Using mnBALocalForKF we avoid redundance here, one MP can not be added several times to lLocalMapPoints
             MapPoint* pMP = *vit;
-            if(pMP)
-                if(!pMP->isBad())
+            if(pMP){
+                if(!pMP->isBad()){
                     if(pMP->mnBALocalForKF!=pCurrKF->mnId)
                     {
                         mLocalObs[pMP]=1;
@@ -4046,6 +4046,8 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
                     else {
                         mLocalObs[pMP]++;
                     }
+                }
+            }
         }
     }
 
@@ -4514,7 +4516,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     optimizer.addVertex(VA);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
     const int Nleft = pFrame->Nleft;
     const bool bRight = (Nleft!=-1);
 
@@ -4897,7 +4899,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     optimizer.addVertex(VA);
 
     // Set MapPoint vertices
-    const int N = pFrame->N;
+    const int N = pFrame->mNumKeypoints;
     const int Nleft = pFrame->Nleft;
     const bool bRight = (Nleft!=-1);
 
@@ -5087,8 +5089,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    //const float chi2Mono[4]={5.991,5.991,5.991,5.991};
-    float chi2Mono[4]={12,7.5,5.991,5.991};
+    const float chi2Mono[4]={12,7.5,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
     const int its[4]={10,10,10,10};
 

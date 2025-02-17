@@ -2310,9 +2310,11 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
         {
             Verbose::PrintMess("Global Bundle Adjustment finished", Verbose::VERBOSITY_NORMAL);
             Verbose::PrintMess("Updating map ...", Verbose::VERBOSITY_NORMAL);
-
+            Verbose::PrintMess("Stop Requested...", Verbose::VERBOSITY_NORMAL);
             mpLocalMapper->RequestStop();
             // Wait until Local Mapping has effectively stopped
+
+
 
             while(!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished())
             {

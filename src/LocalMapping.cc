@@ -829,10 +829,16 @@ void LocalMapping::SearchInNeighbors()
 
 void LocalMapping::RequestStop()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    mbStopRequested = true;
-    unique_lock<mutex> lock2(mMutexNewKFs);
-    mbAbortBA = true;
+    {
+        unique_lock<mutex> lock(mMutexStop);
+        mbStopRequested = true;
+    }
+
+    {
+        unique_lock<mutex> lock2(mMutexNewKFs);
+        mbAbortBA = true;
+    }
+
 }
 
 bool LocalMapping::Stop()
@@ -1163,10 +1169,15 @@ bool LocalMapping::CheckFinish()
 
 void LocalMapping::SetFinish()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    mbFinished = true;    
-    unique_lock<mutex> lock2(mMutexStop);
-    mbStopped = true;
+    {
+        unique_lock<mutex> lock(mMutexFinish);
+        mbFinished = true;  
+    }
+
+    {
+        unique_lock<mutex> lock2(mMutexStop);
+        mbStopped = true;
+    }
 }
 
 bool LocalMapping::isFinished()
@@ -1324,12 +1335,13 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
 
     Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...", Verbose::VERBOSITY_NORMAL);
-
+    
     // Get Map Mutex
     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
     unsigned long GBAid = mpCurrentKeyFrame->mnId;
 
+    Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);
     // Process keyframes in the queue
     while(CheckNewKeyFrames())
     {
@@ -1337,6 +1349,8 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         vpKF.push_back(mpCurrentKeyFrame);
         lpKF.push_back(mpCurrentKeyFrame);
     }
+
+    Verbose::PrintMess("Check done ...", Verbose::VERBOSITY_NORMAL);
 
     // Correct keyframes starting at map first keyframe
     list<KeyFrame*> lpKFtoCheck(mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.begin(),mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.end());

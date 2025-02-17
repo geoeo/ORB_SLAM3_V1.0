@@ -125,7 +125,8 @@ namespace ORB_SLAM3 {
     }
 
     Settings::Settings(const std::string &configFile, const int& sensor) :
-    bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false) {
+    bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), 
+    bNeedToResize2_(false), frameGridCols_(64), frameGridRows_(48) {
         sensor_ = sensor;
 
         //Open settings file
@@ -181,10 +182,12 @@ namespace ORB_SLAM3 {
         cout << "----------------------------------" << endl;
     }
 
-    Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor):
+    Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+        const int& sensor, int frameGridCols, int frameGridRows):
         bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false), thFarPoints_(0.0),
         imageViewerScale_(1.0), keyFrameSize_(0.05), keyFrameLineWidth_(1.0), graphLineWidth_(0.9), pointSize_(2.0),
-        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0){
+        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0),
+        frameGridCols_(frameGridCols), frameGridRows_(frameGridRows) {
             sensor_ = sensor;
             cameraType_ = PinHole;
 
@@ -258,9 +261,9 @@ namespace ORB_SLAM3 {
             }
 
             nFeatures_ = orb.nFeatures;
+            nFastFeatures_ = orb.nFastFeatures;
             scaleFactor_ = orb.scaleFactor;
             nLevels_ = orb.nLevels;
-            gridCount_ = orb.gridCount;
             initThFAST_ = orb.iniThFast;
             minThFAST_ = orb.minThFast;
 
@@ -531,9 +534,9 @@ namespace ORB_SLAM3 {
         bool found;
 
         nFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFeatures",found);
+        nFastFeatures_ = readParameter<int>(fSettings,"ORBextractor.nFastFeatures",found);
         scaleFactor_ = readParameter<float>(fSettings,"ORBextractor.scaleFactor",found);
         nLevels_ = readParameter<int>(fSettings,"ORBextractor.nLevels",found);
-        gridCount_ = readParameter<int>(fSettings,"ORBextractor.gridCount",found);
         initThFAST_ = readParameter<int>(fSettings,"ORBextractor.iniThFAST",found);
         minThFAST_ = readParameter<int>(fSettings,"ORBextractor.minThFAST",found);
     }
@@ -718,11 +721,11 @@ namespace ORB_SLAM3 {
         }
 
         output << "\t-Features per image: " << settings.nFeatures_ << endl;
+        output << "\t-Fast Features per image: " << settings.nFastFeatures_ << endl;
         output << "\t-ORB scale factor: " << settings.scaleFactor_ << endl;
         output << "\t-ORB number of scales: " << settings.nLevels_ << endl;
         output << "\t-Initial FAST threshold: " << settings.initThFAST_ << endl;
         output << "\t-Min FAST threshold: " << settings.minThFAST_ << endl;
-        output << "\t-Grid Count: " << settings.gridCount_ << endl;
 
         return output;
     }

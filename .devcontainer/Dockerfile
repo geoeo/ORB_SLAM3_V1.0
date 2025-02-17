@@ -84,7 +84,6 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 RUN rm opencv_contrib.zip
 RUN rm opencv.zip 
 
-
 # Deps for cv_image_transport
 RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
@@ -109,6 +108,11 @@ RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
+
+RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
+    && cd CUDACvManagedMemory \
+    && cmake -S . -B build \
+    && cmake --build build -j $(nproc --all) --target install
 
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev

@@ -179,7 +179,6 @@ class KeyFrame
         ar & const_cast<int&>(NRight);
         serializeSophusSE3<Archive>(ar, mTlr, version);
         serializeVectorKeyPoints<Archive>(ar, mvKeysRight, version);
-        ar & mGridRight;
 
         // Inertial variables
         ar & mImuBias;
@@ -276,7 +275,7 @@ public:
     // Compute Scene Depth (q=2 median). Used in monocular.
     float ComputeSceneMedianDepth(const int q);
 
-    static bool weightComp( int a, int b){
+    static bool weightComp(int a, int b){
         return a>b;
     }
 
@@ -454,7 +453,7 @@ protected:
     ORBVocabulary* mpORBvocabulary;
 
     // Grid over the image to speed up feature matching
-    std::vector< std::vector <std::vector<size_t> > > mGrid;
+    std::vector<std::vector<std::size_t>> mGrid;
 
     std::map<KeyFrame*,int> mConnectedKeyFrameWeights;
     std::vector<KeyFrame*> mvpOrderedConnectedKeyFrames;
@@ -513,8 +512,6 @@ public:
     const std::vector<cv::KeyPoint> mvKeysRight;
 
     const int NLeft, NRight;
-
-    std::vector< std::vector <std::vector<size_t> > > mGridRight;
 
     Sophus::SE3<float> GetRightPose();
     Sophus::SE3<float> GetRightPoseInverse();

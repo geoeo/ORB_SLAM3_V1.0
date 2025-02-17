@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.25)
 project(mono-inertial)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -32,12 +32,16 @@ find_package(Pangolin REQUIRED)
 find_package(G2O REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(CUDACvManagedMemory REQUIRED)
+find_package(CUDAToolkit REQUIRED)
 
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
 target_link_libraries(mono_inertial_node 
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
+  ${CUDA_LIBRARIES}
+  ${CUDACvManagedMemory_LIBRARIES}
   ORB_SLAM3
   -lfmt
   )
@@ -50,8 +54,9 @@ ${OpenCV_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${G2O_INCLUDE_DIR}
+${CUDAToolkit_INCLUDE_DIRS}
+${CUDACvManagedMemory_INCLUDE_DIRS}
 )
-
 
 # Install directories files.
 install(DIRECTORY

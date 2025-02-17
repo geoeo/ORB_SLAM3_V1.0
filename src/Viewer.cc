@@ -361,10 +361,6 @@ void Viewer::Run()
 
             // Stop all threads
             mpSystem->Shutdown();
-
-            // Save camera trajectory
-            mpSystem->SaveTrajectoryEuRoC("CameraTrajectory.txt");
-            mpSystem->SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
             menuStop = false;
         }
 
