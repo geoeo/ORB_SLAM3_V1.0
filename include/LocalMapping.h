@@ -17,8 +17,7 @@
 */
 
 
-#ifndef LOCALMAPPING_H
-#define LOCALMAPPING_H
+#pragma once
 
 #include "KeyFrame.h"
 #include "Atlas.h"
@@ -111,24 +110,6 @@ public:
     bool mbFarPoints;
     float mThFarPoints;
 
-#ifdef REGISTER_TIMES
-    vector<double> vdKFInsert_ms;
-    vector<double> vdMPCulling_ms;
-    vector<double> vdMPCreation_ms;
-    vector<double> vdLBA_ms;
-    vector<double> vdKFCulling_ms;
-    vector<double> vdLMTotal_ms;
-
-
-    vector<double> vdLBASync_ms;
-    vector<double> vdKFCullingSync_ms;
-    vector<int> vnLBA_edges;
-    vector<int> vnLBA_KFopt;
-    vector<int> vnLBA_KFfixed;
-    vector<int> vnLBA_MPs;
-    int nLBA_exec;
-    int nLBA_abort;
-#endif
 protected:
 
     bool CheckNewKeyFrames();
@@ -199,4 +180,3 @@ protected:
 
 } //namespace ORB_SLAM
 
-#endif // LOCALMAPPING_H
