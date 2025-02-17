@@ -642,23 +642,6 @@ void System::setGeoreference(bool is_georeferenced){
     mpTracker->setGeoreference(is_georeferenced);
 }
 
-#ifdef REGISTER_TIMES
-void System::InsertRectTime(double& time)
-{
-    mpTracker->vdRectStereo_ms.push_back(time);
-}
-
-void System::InsertResizeTime(double& time)
-{
-    mpTracker->vdResizeImage_ms.push_back(time);
-}git 
-
-void System::InsertTrackTime(double& time)
-{
-    mpTracker->vdTrackTotal_ms.push_back(time);
-}
-#endif
-
 void System::SaveAtlas(int type){
     if(!mStrSaveAtlasToFile.empty())
     {
