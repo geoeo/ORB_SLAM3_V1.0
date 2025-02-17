@@ -977,14 +977,6 @@ void Tracking::ResetFrameIMU()
     // TODO To implement...
 }
 
-bool Tracking::isGeoreferenced() {
-    return mIsGeoreferenced;
-}
-void Tracking::setGeoreference(bool is_georeferenced){
-    mIsGeoreferenced = is_georeferenced;
-}
-
-
 void Tracking::Track()
 {
     ZoneNamedN(Track, "Track", true);
@@ -2953,6 +2945,13 @@ bool Tracking::isBACompleteForMap() {
 
 vector<float> Tracking::getMapScales() {
     return mpAtlas->getMapScales();   
+}
+
+bool Tracking::isGeoreferenced() {
+    return mIsGeoreferenced;
+}
+void Tracking::setGeoreference(bool is_georeferenced){
+    mIsGeoreferenced = is_georeferenced;
 }
 
 } //namespace ORB_SLAM
