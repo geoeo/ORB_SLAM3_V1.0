@@ -27,18 +27,20 @@ namespace ORB_SLAM3
 long unsigned int Map::nNextId=0;
 
 Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
-mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false)
+mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mfScale(1.0)
 {
     mnId=nNextId++;
     mThumbnail = static_cast<GLubyte*>(NULL);
+    mfScales.reserve(3);
 }
 
 Map::Map(int initKFid):mnInitKFid(initKFid), mnMaxKFid(initKFid),/*mnLastLoopKFid(initKFid),*/ mnBigChangeIdx(0), mIsInUse(false),
                        mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
-                       mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false)
+                       mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false),mfScale(1.0)
 {
     mnId=nNextId++;
     mThumbnail = static_cast<GLubyte*>(NULL);
+    mfScales.reserve(3);
 }
 
 Map::~Map()
@@ -229,8 +231,11 @@ void Map::clear()
     mbImuInitialized = false;
     mvpReferenceMapPoints.clear();
     mvpKeyFrameOrigins.clear();
+
     mbIMU_BA1 = false;
     mbIMU_BA2 = false;
+    mfScale = 1.0;
+    mfScales.clear();
 }
 
 bool Map::IsInUse()
@@ -271,7 +276,6 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool b
             pKF->SetVelocity(Ryw*Vw);
         else
             pKF->SetVelocity(Ryw*Vw*s);
-
     }
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
     {
@@ -279,8 +283,13 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool b
         pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
         pMP->UpdateNormalAndDepth();
     }
+
+    mfScale *=s;
+    mfScales.push_back(mfScale);
+
     mnMapChange++;
 }
+
 
 void Map::SetInertialSensor()
 {
@@ -316,6 +325,11 @@ bool Map::GetIniertialBA2()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mbIMU_BA2;
+}
+
+vector<float> Map::getVIBAScales() {
+    unique_lock<mutex> lock(mMutexMap);
+    return mfScales;
 }
 
 void Map::ChangeId(long unsigned int nId)

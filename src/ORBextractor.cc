@@ -474,11 +474,7 @@ namespace ORB_SLAM3
         feat  = cv::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
         feat_back = cv::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
 
-        feat_gpu  = cv::cuda::FastFeatureDetector::create(iniThFAST, true,FastFeatureDetector::TYPE_9_16);
-        feat_back_gpu = cv::cuda::FastFeatureDetector::create(minThFAST,true,FastFeatureDetector::TYPE_9_16);
-
-
-        gridCount = static_cast<float>(_gridCount); //Seems to work best for 0.8 image factor. TODO: make this a config param
+        gridCount = static_cast<float>(_gridCount);
     }
 
     static void computeOrientation(const Mat& image, vector<KeyPoint>& keypoints, const vector<int>& umax)
@@ -836,7 +832,6 @@ namespace ORB_SLAM3
                     if(maxX>maxBorderX)
                         maxX = maxBorderX;
 
-                    //vKeysCell.clear();
                     vector<cv::KeyPoint> vKeysCell;
                     {
                         ZoneNamedN(featCall, "featCall", true);  // NOLINT: Profiler
@@ -849,28 +844,12 @@ namespace ORB_SLAM3
                     }
 
 
-                    // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                    //      vKeysCell,iniThFAST,true);
-
-
                     if(vKeysCell.empty())
                     {
-
-                        {
-                            ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
-
-                            feat_back->detect(mvImagePyramid[level](cv::Rect(iniX,iniY,maxX-iniX,maxY-iniY)),
-                               vKeysCell);
-                            // feat_back_gpu->detectAsync(imagePyramidGpu[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                            //     gpu_keys,cv::noArray(),cv::cuda::Stream::Null());
-                            // feat_back_gpu->convert(gpu_keys, vKeysCell);
-                            TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
-                        }
-
-
-                        // FAST(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
-                        //         vKeysCell,minThFAST,true);
-
+                        ZoneNamedN(feat_backCall, "feat_backCall", true);  // NOLINT: Profiler
+                        feat_back->detect(mvImagePyramid[level].rowRange(iniY,maxY).colRange(iniX,maxX),
+                            vKeysCell);
+                        TracyPlot("vKeysCellFeatBack", static_cast<int64_t>(vKeysCell.size()));  // NOLINT: Profiler
                     }
 
                     if(!vKeysCell.empty())
@@ -904,10 +883,14 @@ namespace ORB_SLAM3
                 keypoints[i].size = scaledPatchSize;
             }
         }
-        // compute orientations
-        for (int level = 0; level < nlevels; ++level){
-            computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
+
+        {
+            ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
+            // compute orientations
+            for (int level = 0; level < nlevels; ++level)
+                computeOrientation(mvImagePyramid[level], allKeypoints[level], umax);
         }
+
     }
 
     static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Mat& descriptors,
@@ -947,7 +930,6 @@ namespace ORB_SLAM3
         ComputeKeyPointsOctTree(allKeypoints,mvImagePyramidGpu);
 
         Mat descriptors;
-
         int nkeypoints = 0;
         for (int level = 0; level < nlevels; ++level)
             nkeypoints += (int)allKeypoints[level].size();
@@ -959,8 +941,6 @@ namespace ORB_SLAM3
             descriptors = _descriptors.getMat();
         }
 
-        //_keypoints.clear();
-        //_keypoints.reserve(nkeypoints);
         _keypoints = vector<cv::KeyPoint>(nkeypoints);
 
         int offset = 0;
@@ -979,16 +959,13 @@ namespace ORB_SLAM3
                 if(nkeypointsLevel==0)
                     continue;
 
-                // preprocess the resized image
-                Mat workingMat = mvImagePyramid[level].clone();
-                //cv::cuda::GpuMat workingMatGpu = mvImagePyramidGpu[level];
-                {
-                    ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
-                    GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-                    // static auto filter = cv::cuda::createGaussianFilter(workingMatGpu.type(), workingMatGpu.type(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-                    // filter->apply(workingMatGpu,workingMatGpuBlur);
-                }
-
+            // preprocess the resized image
+            Mat workingMat;
+            {
+                ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);  // NOLINT: Profiler
+                workingMat = mvImagePyramid[level].clone();
+                GaussianBlur(workingMat, workingMat, Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+            }
 
                 // Compute the descriptors
                 //Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
@@ -996,6 +973,9 @@ namespace ORB_SLAM3
                 // Mat workingMat;
                 // workingMatGpuBlur.download(workingMat);
                 computeDescriptors(workingMat, keypoints, desc, pattern);
+            // Compute the descriptors
+            Mat desc = cv::Mat(nkeypointsLevel, 32, CV_8U);
+            computeDescriptors(workingMat, keypoints, desc, pattern);
 
                 offset += nkeypointsLevel;
 
@@ -1008,30 +988,30 @@ namespace ORB_SLAM3
                     for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
                                 keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
                     {
+            float scale = mvScaleFactor[level];
+            int i = 0;
+            for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
+                         keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint){
 
                         // Scale keypoint coordinates
                         if (level != 0){
                             keypoint->pt *= scale;
                         }
 
-                        if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
-                            _keypoints.at(stereoIndex) = (*keypoint);
-                            desc.row(i).copyTo(descriptors.row(stereoIndex));
-                            stereoIndex--;
-                        }
-                        else{
-                            _keypoints.at(monoIndex) = (*keypoint);
-                            desc.row(i).copyTo(descriptors.row(monoIndex));
-                            monoIndex++;
-                        }
-                        i++;
-                    }
+                if(keypoint->pt.x >= vLappingArea[0] && keypoint->pt.x <= vLappingArea[1]){
+                    _keypoints.at(stereoIndex) = (*keypoint);
+                    desc.row(i).copyTo(descriptors.row(stereoIndex));
+                    stereoIndex--;
                 }
-
+                else{
+                    _keypoints.at(monoIndex) = (*keypoint);
+                    desc.row(i).copyTo(descriptors.row(monoIndex));
+                    monoIndex++;
+                }
+                i++;
             }
         }
-
-        //cout << "[ORBextractor]: extracted " << _keypoints.size() << " KeyPoints" << endl;
+        //cout << "[ORBextractor]: mono " << monoIndex << " keypoints size " << nkeypoints << endl;
         return monoIndex;
     }
 

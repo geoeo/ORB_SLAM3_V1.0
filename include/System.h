@@ -28,6 +28,7 @@
 #include <thread>
 #include <vector>
 #include <utility>
+#include <tuple>
 #include<opencv2/core/core.hpp>
 
 #include "Tracking.h"
@@ -127,7 +128,7 @@ public:
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    std::pair<Sophus::SE3f,bool> TrackMonocular(const cv::Mat &im, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    std::tuple<Sophus::SE3f, bool, vector<float>> TrackMonocular(const cv::Mat &im, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.
@@ -188,12 +189,9 @@ public:
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
-    bool InertialBACompleted();
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
     std::vector<KeyFrame*> GetAllKeyframes();
-    double GetScaleFactor() const;
-    std::vector<double> GetScaleChangeTimestamps() const;
 
     // For debugging
     double GetTimeFromIMUInit();
@@ -203,6 +201,9 @@ public:
     void ChangeDataset();
 
     float GetImageScale();
+
+    bool isGeoreferenced();
+    void setGeoreference(bool is_georeferenced);
 
 #ifdef REGISTER_TIMES
     void InsertRectTime(double& time);

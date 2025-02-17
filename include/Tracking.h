@@ -113,6 +113,11 @@ public:
 
     float GetImageScale();
 
+    bool isBACompleteForMap(); 
+    vector<float> getMapScales();
+    bool isGeoreferenced();
+    void setGeoreference(bool is_georeferenced);
+
     unsigned int GetLastKeyFrameId() const {
         return mnLastKeyFrameId;
     }
@@ -363,6 +368,7 @@ protected:
     int initID, lastID;
 
     Sophus::SE3f mTlr;
+    bool mIsGeoreferenced;
 
     void newParameterLoader(Settings* settings);
 

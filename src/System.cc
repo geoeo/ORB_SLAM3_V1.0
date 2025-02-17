@@ -36,6 +36,11 @@
 
 using namespace std;
 
+auto scoped_mutex_lock(std::mutex &m){
+    ZoneScopedC(tracy::Color::Coral);
+    return std::unique_lock(m);
+}
+
 namespace ORB_SLAM3
 {
 
@@ -392,7 +397,9 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
 
     // Check mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
+        //unique_lock<mutex> lock(mMutexMode);
+        auto lock = scoped_mutex_lock( mMutexMode );
+        
         if(mbActivateLocalizationMode)
         {
             mpLocalMapper->RequestStop();
@@ -416,7 +423,8 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
+        //unique_lock<mutex> lock(mMutexReset);
+        auto lock = scoped_mutex_lock( mMutexReset );
         if(mbReset)
         {
             mpTracker->Reset();
@@ -439,7 +447,8 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
 
     // std::cout << "out grabber" << std::endl;
 
-    unique_lock<mutex> lock2(mMutexState);
+    //unique_lock<mutex> lock2(mMutexState);
+    auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
@@ -467,7 +476,8 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
     // Check mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
+        //unique_lock<mutex> lock(mMutexMode);
+        auto lock = scoped_mutex_lock( mMutexMode );
         if(mbActivateLocalizationMode)
         {
             mpLocalMapper->RequestStop();
@@ -491,7 +501,8 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
+        //unique_lock<mutex> lock(mMutexReset);
+        auto lock = scoped_mutex_lock( mMutexReset );
         if(mbReset)
         {
             mpTracker->Reset();
@@ -511,22 +522,25 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
     Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed,imDepthToFeed,timestamp,filename);
 
-    unique_lock<mutex> lock2(mMutexState);
+    //unique_lock<mutex> lock2(mMutexState);
+    auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     return Tcw;
 }
 
-pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
 
     {
-        unique_lock<mutex> lock(mMutexReset);
+        //unique_lock<mutex> lock(mMutexReset);
+        auto lock = scoped_mutex_lock( mMutexReset );
+
         if(mbShutDown)
-            return {Sophus::SE3f(),false};
+            return {Sophus::SE3f(),false, {}};
     }
 
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
@@ -544,7 +558,8 @@ pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double 
 
     // Check mode change
     {
-        unique_lock<mutex> lock(mMutexMode);
+        //unique_lock<mutex> lock(mMutexMode);
+        auto lock = scoped_mutex_lock( mMutexMode );
         if(mbActivateLocalizationMode)
         {
             mpLocalMapper->RequestStop();
@@ -568,7 +583,8 @@ pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double 
 
     // Check reset
     {
-        unique_lock<mutex> lock(mMutexReset);
+        //unique_lock<mutex> lock(mMutexReset);
+        auto lock = scoped_mutex_lock( mMutexReset );
         if(mbReset)
         {
             mpTracker->Reset();
@@ -587,28 +603,37 @@ pair<Sophus::SE3f, bool> System::TrackMonocular(const cv::Mat &im, const double 
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(imToFeed,timestamp,filename);
+    Sophus::SE3f Tcw;
+    {
+        ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true);  // NOLINT: Profiler
+        Tcw = mpTracker->GrabImageMonocular(imToFeed,timestamp,filename);
+    }
 
-    unique_lock<mutex> lock2(mMutexState);
+
+    //unique_lock<mutex> lock2(mMutexState);
+    auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
-    bool isBAComplete = mpTracker->mCurrentFrame.isBACompleteForKeyframe();
+    auto isBAComplete = mpTracker->isBACompleteForMap();
+    auto computedScales = mpTracker->getMapScales();
 
-    return {Tcw,isBAComplete};
+    return {Tcw,isBAComplete, computedScales};
 }
 
 
 
 void System::ActivateLocalizationMode()
 {
-    unique_lock<mutex> lock(mMutexMode);
+    //unique_lock<mutex> lock(mMutexMode);
+    auto lock = scoped_mutex_lock( mMutexMode );
     mbActivateLocalizationMode = true;
 }
 
 void System::DeactivateLocalizationMode()
 {
-    unique_lock<mutex> lock(mMutexMode);
+    //unique_lock<mutex> lock(mMutexMode);
+    auto lock = scoped_mutex_lock( mMutexMode );
     mbDeactivateLocalizationMode = true;
 }
 
@@ -627,20 +652,23 @@ bool System::MapChanged()
 
 void System::Reset()
 {
-    unique_lock<mutex> lock(mMutexReset);
+    //unique_lock<mutex> lock(mMutexReset);
+    auto lock = scoped_mutex_lock( mMutexReset );
     mbReset = true;
 }
 
 void System::ResetActiveMap()
 {
-    unique_lock<mutex> lock(mMutexReset);
+    //unique_lock<mutex> lock(mMutexReset);
+    auto lock = scoped_mutex_lock( mMutexReset );
     mbResetActiveMap = true;
 }
 
 void System::Shutdown()
 {
     {
-        unique_lock<mutex> lock(mMutexReset);
+        //unique_lock<mutex> lock(mMutexReset);
+        auto lock = scoped_mutex_lock( mMutexReset );
         mbShutDown = true;
     }
 
@@ -687,19 +715,22 @@ void System::Shutdown()
 }
 
 bool System::isShutDown() {
-    unique_lock<mutex> lock(mMutexReset);
+    //unique_lock<mutex> lock(mMutexReset);
+    auto lock = scoped_mutex_lock( mMutexReset );
     return mbShutDown;
 }
 
 unsigned int System::GetLastKeyFrameId()
 {
-  unique_lock<mutex> lock(mMutexState);
+  //unique_lock<mutex> lock(mMutexState);
+  auto lock = scoped_mutex_lock( mMutexState );
   return mpTracker->GetLastKeyFrameId();
 }
 
 cv::Mat System::DrawTrackedImage()
 {
-  unique_lock<mutex> lock(mMutexState);
+  //unique_lock<mutex> lock(mMutexState);
+  auto lock = scoped_mutex_lock( mMutexState );
   return mpFrameDrawer->DrawFrame();
 }
 
@@ -1455,15 +1486,9 @@ void System::SaveDebugData(const int &initIdx)
 
 int System::GetTrackingState()
 {
-    unique_lock<mutex> lock(mMutexState);
+    //unique_lock<mutex> lock(mMutexState);
+    auto lock = scoped_mutex_lock( mMutexState );
     return mTrackingState;
-}
-
-bool System::InertialBACompleted(){
-    if(mpLocalMapper)
-        return mpLocalMapper->InertialBACompleted();
-    else
-        return false;
 }
 
 vector<MapPoint*> System::GetActiveReferenceMapPoints()
@@ -1474,17 +1499,11 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
 
 vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
 {
-    unique_lock<mutex> lock(mMutexState);
+    //unique_lock<mutex> lock(mMutexState);
+    auto lock = scoped_mutex_lock( mMutexState );
     return mTrackedKeyPointsUn;
 }
 
-double System::GetScaleFactor() const {
-    return mpLocalMapper->GetScaleFactor();
-}
-
-vector<double> System::GetScaleChangeTimestamps() const {
-    return mpLocalMapper->GetScaleChangeTimestamps();
-}
 
 std::vector<KeyFrame*> System::GetAllKeyframes() {
     return mpAtlas->GetAllKeyFrames();
@@ -1535,6 +1554,14 @@ void System::ChangeDataset()
 float System::GetImageScale()
 {
     return mpTracker->GetImageScale();
+}
+
+bool System::isGeoreferenced() {
+    return mpTracker->isGeoreferenced();
+}
+
+void System::setGeoreference(bool is_georeferenced){
+    mpTracker->setGeoreference(is_georeferenced);
 }
 
 #ifdef REGISTER_TIMES
