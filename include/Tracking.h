@@ -43,6 +43,7 @@
 #include <string>
 #include <mutex>
 #include <unordered_set>
+#include <atomic>
 
 namespace ORB_SLAM3
 {
@@ -342,7 +343,7 @@ protected:
     int initID, lastID;
 
     Sophus::SE3f mTlr;
-    bool mIsGeoreferenced;
+    std::atomic<bool> mIsGeoreferenced;
 
     void newParameterLoader(Settings* settings);
 

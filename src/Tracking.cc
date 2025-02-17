@@ -977,6 +977,13 @@ void Tracking::ResetFrameIMU()
     // TODO To implement...
 }
 
+bool Tracking::isGeoreferenced() {
+    return mIsGeoreferenced;
+}
+void Tracking::setGeoreference(bool is_georeferenced){
+    mIsGeoreferenced = is_georeferenced;
+}
+
 
 void Tracking::Track()
 {
