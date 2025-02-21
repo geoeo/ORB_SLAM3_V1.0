@@ -46,6 +46,8 @@
 using namespace cv;
 using namespace cv::cuda;
 
+#define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
+
 namespace ORB_SLAM3::cuda::orb {
 
   __constant__ int c_pattern[] = {

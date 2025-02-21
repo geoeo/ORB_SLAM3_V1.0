@@ -3,7 +3,6 @@
 #include <vector>
 #include <opencv2/core/cuda.hpp>
 #include <cuda_runtime.h>
-#include <cuda/Cuda.hpp>
 
 namespace ORB_SLAM3::cuda::fast {
   class GpuFast {

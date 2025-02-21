@@ -4,7 +4,6 @@
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/core/cuda_stream_accessor.hpp>
 #include <cuda_runtime.h>
-#include <cuda/Cuda.hpp>
 
 namespace ORB_SLAM3::cuda::orb {
 

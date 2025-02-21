@@ -47,6 +47,8 @@
 #include <opencv2/core/cuda_types.hpp>
 #include <opencv2/core/utility.hpp>
 
+#define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
+
 namespace ORB_SLAM3::cuda::fast {
   ///////////////////////////////////////////////////////////////////////////
   // calcKeypoints
@@ -374,7 +376,8 @@ namespace ORB_SLAM3::cuda::fast {
 
     tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, maxKeypoints, threshold, scoreMat, minX, maxX, minY, maxY, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
-    checkCudaErrors( cudaStreamSynchronize(stream) );
+    checkCudaErrors( cudaStreamSynchronize(stream));
+    
     unsigned int count;
     checkCudaErrors( cudaMemcpy(&count, counter_ptr, sizeof(unsigned int), cudaMemcpyDeviceToHost) );
     count = std::min(count, maxKeypoints);

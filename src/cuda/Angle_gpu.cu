@@ -14,13 +14,15 @@ using namespace cv;
 using namespace cv::cuda;
 using namespace cv::cuda::device;
 
+#define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
+
 namespace ORB_SLAM3::cuda::angle {
 
     __constant__ int c_u_max[32];
 
     void Angle::loadUMax(const int* u_max, int count)
     {
-        checkCudaErrors( cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int)) );
+        checkCudaErrors( cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int)));
     }
 
     __global__ void IC_Angle_kernel(const PtrStepb image, KeyPoint * keypoints, const int npoints, const int half_k)

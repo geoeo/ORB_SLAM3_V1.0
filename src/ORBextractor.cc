@@ -516,10 +516,13 @@ namespace ORB_SLAM3
                 if(fastKpCount == 0)
                     fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY);
             }
+            
+            if(fastKpCount >0) {
+                allKeypoints[level].reserve(nfeatures);
+                allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(), gpuFast.getResp(), 0, width,
+                                              0, height,mnFeaturesPerLevel[level], level);
+            }
 
-            allKeypoints[level].reserve(nfeatures);
-            allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(), gpuFast.getResp(), 0, width,
-                                          0, height,mnFeaturesPerLevel[level], level);
         }
 
         int allKeypointsCount = 0;
