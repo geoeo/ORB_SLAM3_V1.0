@@ -113,8 +113,8 @@ public:
     System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
         const eSensor sensor, int frame_grid_cols, int frame_grid_rows, bool activeLC, bool bUseViewer);
 
-    // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
-    System(const std::string &strVocFile, const std::string &strSettingsFile, const eSensor sensor, const bool bUseViewer = true, const int initFr = 0, const std::string &strSequence = std::string());
+    
+    ~System();
 
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.

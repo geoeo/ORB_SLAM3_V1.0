@@ -320,14 +320,15 @@ void Viewer::Run()
         cv::Mat toShow;
         cv::Mat im = mpFrameDrawer->DrawFrame(trackedImageScale);
 
-        if(both){
-            cv::Mat imRight = mpFrameDrawer->DrawRightFrame(trackedImageScale);
-            cv::hconcat(im,imRight,toShow);
-        }
-        else{
-            toShow = im;
-        }
+        // if(both){
+        //     cv::Mat imRight = mpFrameDrawer->DrawRightFrame(trackedImageScale);
+        //     cv::hconcat(im,imRight,toShow);
+        // }
+        // else{
+        //     toShow = im;
+        // }
 
+        toShow = im;
         if(mImageViewerScale != 1.f)
         {
             int width = toShow.cols * mImageViewerScale;

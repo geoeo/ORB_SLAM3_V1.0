@@ -21,6 +21,7 @@ namespace ORB_SLAM3::cuda::orb {
     void launch_async(cv::cuda::GpuMat image, const cv::KeyPoint * _keypoints, const int npoints);
     void join(cv::Mat &_descriptors);
     cudaStream_t getStream();
+    cv::cuda::Stream getCvStream();
 
     static void loadPattern(const cv::Point * _pattern);
   };

@@ -58,7 +58,7 @@ protected:
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
 
     // Info of the frame to be drawn
-    cv::Mat mIm, mImRight;
+    cv::Mat mIm,mImRight;
     int N;
     std::vector<cv::KeyPoint> mvCurrentKeys,mvCurrentKeysRight;
     std::vector<bool> mvbMap, mvbVO;

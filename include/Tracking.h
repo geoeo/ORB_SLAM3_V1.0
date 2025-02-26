@@ -142,7 +142,7 @@ public:
     Frame mCurrentFrame;
     Frame mLastFrame;
 
-    cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr mImManagedGray;
+    cv::Mat mImGrayViewer;
 
     // Initialization Variables (Monocular)
     std::vector<int> mvIniLastMatches;

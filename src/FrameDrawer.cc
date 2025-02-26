@@ -22,7 +22,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#include<mutex>
+#include <mutex>
 
 namespace ORB_SLAM3
 {
@@ -30,7 +30,7 @@ namespace ORB_SLAM3
 FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 {
     mState=Tracking::SYSTEM_NOT_READY;
-    mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
+    mIm = cv::Mat(480,640,CV_8UC1, cv::Scalar(0));
     mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
 }
 
@@ -98,18 +98,22 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             vCurrentKeys = mvCurrentKeys;
         }
     }
+    std::cout << imageScale << std::endl;
+    // if(imageScale != 1.f)
+    // {
+    //     int imWidth = im.cols / imageScale;
+    //     int imHeight = im.rows / imageScale;
+    //     std::cout << "resize" << std::endl;
+    //     cv::resize(im, im, cv::Size(imWidth, imHeight));
+    // }
 
-    if(imageScale != 1.f)
-    {
-        int imWidth = im.cols / imageScale;
-        int imHeight = im.rows / imageScale;
-        cv::resize(im, im, cv::Size(imWidth, imHeight));
-    }
+    // if(im.channels()<3) {
+    //     std::cout << "cvt" << std::endl;
+         cvtColor(im,im,cv::COLOR_GRAY2BGR);
+    // }
 
-    if(im.channels()<3) //this should be always true
-        cvtColor(im,im,cv::COLOR_GRAY2BGR);
 
-    //Draw
+    // //Draw
     if(state==Tracking::NOT_INITIALIZED)
     {
         for(unsigned int i=0; i<vMatches.size(); i++)
@@ -370,7 +374,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 void FrameDrawer::Update(Tracking *pTracker)
 {
     unique_lock<mutex> lock(mMutex);
-    pTracker->mImManagedGray->getCvMat().copyTo(mIm);
+    pTracker->mImGrayViewer.copyTo(mIm);
     mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
     mThDepth = pTracker->mCurrentFrame.mThDepth;
     mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;

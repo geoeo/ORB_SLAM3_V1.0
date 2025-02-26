@@ -368,6 +368,10 @@ namespace ORB_SLAM3::cuda::orb {
     return stream;
   }
 
+  cv::cuda::Stream GpuOrb::getCvStream(){
+    return cvStream;
+  }
+
   void GpuOrb::launch_async(cv::cuda::GpuMat image, const KeyPoint * _keypoints, const int npoints) {
     checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
     desc = descriptors.rowRange(0, npoints);

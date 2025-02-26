@@ -194,7 +194,7 @@ void LocalMapping::Run()
                 }
             }
 
-            mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+            //mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
 
         }
         else if(Stop() && !mbBadImu)
@@ -216,7 +216,7 @@ void LocalMapping::Run()
         if(CheckFinish())
             break;
 
-        usleep(3000);
+        //usleep(3000);
     }
 
     SetFinish();

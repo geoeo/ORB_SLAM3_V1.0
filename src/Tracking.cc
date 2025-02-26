@@ -615,8 +615,9 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 
                 static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea[0] = leftLappingBegin;
                 static_cast<KannalaBrandt8*>(mpCamera)->mvLappingArea[1] = leftLappingEnd;
-
-                mpFrameDrawer->both = true;
+                
+                if(mpViewer)
+                    mpFrameDrawer->both = true;
 
                 vector<float> vCamCalib2{fx,fy,cx,cy,k1,k2,k3,k4};
                 mpCamera2 = new KannalaBrandt8(vCamCalib2);
@@ -771,8 +772,6 @@ bool Tracking::GetStepByStep()
 Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, string filename)
 {
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
-    //TODO: Clone for now -> Make rest of pipeline use CUDAManagedMemory
-    mImManagedGray = im_managed;
 
     assert(mSensor == System::IMU_MONOCULAR);
 
@@ -781,7 +780,10 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAMana
     //     mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
     // else
     mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
-    
+    if(mpViewer){
+        im_managed->getCvMat().copyTo(mImGrayViewer);
+    }
+
 
     if (mState==NO_IMAGES_YET)
         t0=timestamp;
@@ -852,7 +854,7 @@ void Tracking::PreintegrateIMU()
             }
         }
         if(bSleep)
-            usleep(500);
+           usleep(500);
     }
 
     const int n = mvImuFromLastFrame.size()-1;
@@ -984,7 +986,7 @@ void Tracking::Track()
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
         while(!mbStep && bStepByStep)
-            usleep(500);
+           usleep(500);
         mbStep = false;
     }
 
@@ -1348,7 +1350,9 @@ void Tracking::Track()
         }
 
         // Update drawer
-        mpFrameDrawer->Update(this);
+        if(mpViewer)
+            mpFrameDrawer->Update(this);
+
         if(mCurrentFrame.isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.GetPose());
 
@@ -1668,7 +1672,8 @@ void Tracking::CreateInitialMapMonocular()
 
     mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
 
-    mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
+    if(mpViewer)
+        mpMapDrawer->SetCurrentCameraPose(pKFcur->GetPose());
 
     mpAtlas->GetCurrentMap()->mvpKeyFrameOrigins.push_back(pKFini);
 
@@ -2653,7 +2658,7 @@ void Tracking::Reset(bool bLocMap)
     {
         mpViewer->RequestStop();
         while(!mpViewer->isStopped())
-            usleep(3000);
+           usleep(3000);
     }
 
     // Reset Local Mapping
@@ -2667,7 +2672,7 @@ void Tracking::Reset(bool bLocMap)
 
     // Reset Loop Closing
     Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    mpLoopClosing->RequestReset();
+    //mpLoopClosing->RequestReset();
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
@@ -2727,7 +2732,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     // Reset Loop Closing
     Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    mpLoopClosing->RequestResetActiveMap(pMap);
+    //mpLoopClosing->RequestResetActiveMap(pMap);
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
@@ -2879,7 +2884,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
 
     while(!mCurrentFrame.imuIsPreintegrated())
     {
-        usleep(500);
+       usleep(500);
     }
 
 

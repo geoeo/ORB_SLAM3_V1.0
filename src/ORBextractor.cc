@@ -510,11 +510,12 @@ namespace ORB_SLAM3
             ////////// Gpu Version //////////
             {
                 ZoneNamedN(featCallGPU, "featCallGPU", true); 
-                fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()), iniThFAST, BorderX, BorderY);
+                auto im_managed = mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream());
+                fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY);
                 
                 //Try again with lower threshold.
                 if(fastKpCount == 0)
-                    fastKpCount = gpuFast.detect(mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream()),minThFAST, BorderX, BorderY);
+                    fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY);
             }
             
             if(fastKpCount >0) {
@@ -553,10 +554,10 @@ namespace ORB_SLAM3
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
-        cv::Mat image = im_managed->getCvMat();
+        //cv::Mat image = im_managed->getCvMat();
         //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
-        if(image.empty())
-            return -1;
+        //if(image.empty())
+        //    return -1;
 
         assert(im_managed->getCvType() == CV_8UC1 );
 
@@ -650,20 +651,20 @@ namespace ORB_SLAM3
     void ORBextractor::ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed)
     {
         ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
-
         mvImagePyramid[0] = image_managed;
-        auto original_cols = image_managed->getWidth();
-        auto original_rows = image_managed->getHeight();
 
         for (int level = 1; level < nlevels; ++level)
         {
-            float scale = mvInvScaleFactor[level];
-            auto scaled_cols = scale*static_cast<float>(original_cols);
-            auto scaled_rows = scale*static_cast<float>(original_rows);
-            Size sz(cvRound(scaled_cols), cvRound(scaled_rows));
-
             // Compute the resized image
-            cv::cuda::resize(mvImagePyramid[level-1]->getCvGpuMat(), mvImagePyramid[level]->getCvGpuMat(), sz, 0, 0, INTER_LINEAR);
+            // Use Orb Stream for now
+            cv::cuda::Stream cvStream = gpuOrb.getCvStream();
+            cv::cuda::GpuMat gpu_mat_prior_level = mvImagePyramid[level-1]->getCvGpuMat(gpuOrb.getStream());
+            auto managed_image_level = mvImagePyramid[level];
+            cv::cuda::GpuMat gpu_mat_level = managed_image_level->getCvGpuMat(gpuOrb.getStream());
+            cv::Size sz = cv::Size(managed_image_level->getWidth(), managed_image_level->getHeight());
+
+            cv::cuda::resize(gpu_mat_prior_level,gpu_mat_level , sz, 0, 0, cv::InterpolationFlags::INTER_LINEAR, cvStream);
+            cvStream.waitForCompletion();
         }
 
     }

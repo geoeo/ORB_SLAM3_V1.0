@@ -48,7 +48,7 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, const cv::cuda::GpuMat& resized_img_gpu)
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu)
       : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor),
         m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()){
 
@@ -234,7 +234,6 @@ class SlamNode : public rclcpp::Node
       cv::cuda::GpuMat m_undistortion_map_1;
       cv::cuda::GpuMat m_undistortion_map_2;
       cv::cuda::GpuMat m_undistorted_image_gpu = cv::cuda::GpuMat(1536, 2048, CV_8UC3);
-      cv::cuda::GpuMat m_resized_img_gpu = cv::cuda::GpuMat(static_cast<int>(1536*resize_factor), static_cast<int>(2048*resize_factor), CV_8UC3);
 
       cv::fisheye::initUndistortRectifyMap(cam.K,
                         distCoeffs,
@@ -312,10 +311,10 @@ class SlamNode : public rclcpp::Node
       const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
       cout << "SLAM Init" << endl;
 
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, m_resized_img_gpu);
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F4/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter4/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
