@@ -26,6 +26,7 @@
 
 #include "DBoW2/DBoW2/BowVector.h"
 #include "DBoW2/DBoW2/FeatureVector.h"
+#include "XFextractor.h"
 
 #include "Sophus/sophus/geometry.hpp"
 
@@ -61,7 +62,7 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for Monocular cameras.
-    Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+    Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, XFextractor* XFextractor, ORBextractor* extractor,ORBVocabulary* voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
@@ -70,6 +71,8 @@ public:
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed);
+
+    void ExtractXF(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const int x0, const int x1);
 
     // Compute Bag of Words representation.
     void ComputeBoW();
@@ -182,6 +185,9 @@ public:
 
     // Feature extractor. The right is used only in the stereo case.
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+
+    // Accelerated Feature (XFeat) extractor. 
+    XFextractor* mpXFextractor;
 
     // Frame timestamp.
     double mTimeStamp;

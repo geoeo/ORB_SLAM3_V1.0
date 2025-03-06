@@ -85,6 +85,7 @@ find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDACvManagedMemory REQUIRED)
 find_package(CUDAToolkit REQUIRED)
+find_package(Torch REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -118,6 +119,8 @@ src/Settings.cc
 src/cuda/Fast_gpu.cu
 src/cuda/Orb_gpu.cu
 src/cuda/Angle_gpu.cu
+src/XFeat.cc
+src/XFextractor.cc
 )
 
 
@@ -162,6 +165,7 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
 ${CUDACvManagedMemory_LIBRARIES}
 ${CUDAToolkit_LIBRARIES}
+${TORCH_LIBRARIES}
 -lcrypto
 )
 

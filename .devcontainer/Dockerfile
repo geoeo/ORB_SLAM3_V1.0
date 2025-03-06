@@ -109,6 +109,14 @@ RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
+#Pytorch
+WORKDIR /root/pytorch
+RUN wget https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-without-deps-2.1.0%2Bcu121.zip
+RUN unzip libtorch-cxx11-abi-shared-without-deps-2.1.0+cu121.zip
+RUN echo 'export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:/root/pytorch/libtorch' >> /etc/profile
+RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/pytorch/libtorch/lib' >> /etc/profile
+RUN rm libtorch-cxx11-abi-shared-without-deps-2.1.0+cu121.zip
+
 WORKDIR /
 RUN mkdir bags
 

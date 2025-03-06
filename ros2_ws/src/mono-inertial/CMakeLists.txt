@@ -34,6 +34,7 @@ find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDACvManagedMemory REQUIRED)
 find_package(CUDAToolkit REQUIRED)
+find_package(Torch REQUIRED)
 
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
@@ -42,6 +43,7 @@ target_link_libraries(mono_inertial_node
   ${Pangolin_LIBRARIES}
   ${CUDA_LIBRARIES}
   ${CUDACvManagedMemory_LIBRARIES}
+  ${TORCH_LIBRARIES}
   ORB_SLAM3
   -lfmt
   )

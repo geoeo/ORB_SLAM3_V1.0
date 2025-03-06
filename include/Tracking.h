@@ -17,8 +17,7 @@
 */
 
 
-#ifndef TRACKING_H
-#define TRACKING_H
+#pragma once
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -33,6 +32,7 @@
 #include "ORBVocabulary.h"
 #include "KeyFrameDatabase.h"
 #include "ORBextractor.h"
+#include "XFextractor.h"
 #include "MapDrawer.h"
 #include "System.h"
 #include "ImuTypes.h"
@@ -249,7 +249,10 @@ protected:
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    //ORBextractor* mpIniORBextractor;
+
+    // Accelerated Feature (XFeat) extractor. 
+    XFextractor* mpXFextractor;
+
 
     //BoW
     ORBVocabulary* mpORBVocabulary;
@@ -353,4 +356,3 @@ public:
 
 } //namespace ORB_SLAM
 
-#endif // TRACKING_H

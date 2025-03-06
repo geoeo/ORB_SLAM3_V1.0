@@ -107,10 +107,11 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
     //     cv::resize(im, im, cv::Size(imWidth, imHeight));
     // }
 
-    // if(im.channels()<3) {
-    //     std::cout << "cvt" << std::endl;
+    if(im.channels()<3) {
          cvtColor(im,im,cv::COLOR_GRAY2BGR);
-    // }
+    } else {
+        cvtColor(im,im,cv::COLOR_RGB2BGR);
+    }
 
 
     // //Draw

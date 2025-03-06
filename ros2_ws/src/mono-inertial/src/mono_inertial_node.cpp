@@ -103,7 +103,7 @@ CUDAManagedMemory::SharedPtr ImageGrabber::GetImage(const sensor_msgs::msg::Imag
   auto cuda_managed_memory_image 
     = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(size_in_bytes, height, width, CV_8UC3, img_msg->step),CUDAManagedMemoryDeleter());
   if(cudaMemcpy(cuda_managed_memory_image->getRaw(), &img_msg->data[0], size_in_bytes, cudaMemcpyDefault) != cudaError_t::cudaSuccess)
-        throw std::runtime_error("CUDAManagedMemory - Failed to copy memory to CUDA unified");
+    throw std::runtime_error("CUDAManagedMemory - Failed to copy memory to CUDA unified");
 
   cv::cuda::remap(cuda_managed_memory_image->getCvGpuMat(), m_undistorted_image_gpu, m_undistortion_map_1, m_undistortion_map_2, cv::InterpolationFlags::INTER_CUBIC,cv::BORDER_CONSTANT,cv::Scalar(),m_stream);
   auto new_rows = static_cast<int>(height*img_resize_factor);
@@ -114,8 +114,11 @@ CUDAManagedMemory::SharedPtr ImageGrabber::GetImage(const sensor_msgs::msg::Imag
 
   CUDAManagedMemory::SharedPtr cuda_managed_memory_image_grey = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(new_rows*new_cols, new_rows, new_cols, CV_8UC1, new_cols),CUDAManagedMemoryDeleter());
   cv::cvtColor(m_resized_img_gpu->getCvMat(),cuda_managed_memory_image_grey->getCvMat(),cv::COLOR_BGR2GRAY);
-
   return cuda_managed_memory_image_grey;
+
+  // CUDAManagedMemory::SharedPtr cuda_managed_memory_image_rgb = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(m_resized_img_gpu->sizeInBytes(), m_resized_img_gpu->getHeight(), m_resized_img_gpu->getWidth(), CV_8UC3, m_resized_img_gpu->getStep()),CUDAManagedMemoryDeleter());
+  // cv::cvtColor(m_resized_img_gpu->getCvMat(),cuda_managed_memory_image_rgb->getCvMat(),cv::COLOR_BGR2RGB);
+  // return cuda_managed_memory_image_rgb;
 }
 
 
@@ -209,7 +212,7 @@ class SlamNode : public rclcpp::Node
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
-      float resize_factor = 0.7;
+      float resize_factor = 0.8;
 
       // F4
       ORB_SLAM3::CameraParameters cam{};
@@ -263,12 +266,12 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 2500;
+      orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 4;
+      orb.nLevels     = 5;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
-      orb.iniThFast   = 15;
+      orb.iniThFast   = 20;
 
       ORB_SLAM3::ImuParameters m_imu;
       m_imu.accelWalk  = 0.0006431373218006597; // x10

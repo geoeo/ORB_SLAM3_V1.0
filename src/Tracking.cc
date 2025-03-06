@@ -124,6 +124,8 @@ void Tracking::newParameterLoader(Settings *settings) {
 
     mpORBextractorLeft = new ORBextractor(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
 
+    mpXFextractor = new XFextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+
     // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
     //     mpIniORBextractor = new ORBextractor(5*nFeatures,5*nFastFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,newImSize.width, newImSize.height);
 
@@ -779,7 +781,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAMana
     // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
     //     mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
     // else
-    mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
+    mCurrentFrame = Frame(im_managed,timestamp,mpXFextractor,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
     if(mpViewer){
         im_managed->getCvMat().copyTo(mImGrayViewer);
     }
@@ -1514,6 +1516,8 @@ void Tracking::MonocularInitialization()
         ORBmatcher matcher(0.9,true);
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
+        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         // Check if there are enough correspondences
         if(nmatches<100)
         {
@@ -1524,8 +1528,13 @@ void Tracking::MonocularInitialization()
         Sophus::SE3f Tcw;
         vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
 
-        if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
+        auto two_view = mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated);
+
+        Verbose::PrintMess("Cam type:" +  std::to_string(mpCamera->GetType()), Verbose::VERBOSITY_DEBUG);
+
+        if(two_view)
         {
+            Verbose::PrintMess("init matches 2 view", Verbose::VERBOSITY_DEBUG);
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
                 if(mvIniMatches[i]>=0 && !vbTriangulated[i])
@@ -1562,6 +1571,8 @@ void Tracking::CreateInitialMapMonocular()
     // Insert KFs in the map
     mpAtlas->AddKeyFrame(pKFini);
     mpAtlas->AddKeyFrame(pKFcur);
+
+    Verbose::PrintMess("CreateInitialMapMonocular init matches: " + to_string(mvIniMatches.size()), Verbose::VERBOSITY_DEBUG);
 
     for(size_t i=0; i<mvIniMatches.size();i++)
     {
@@ -1753,9 +1764,11 @@ bool Tracking::TrackReferenceKeyFrame()
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
+
+
     if(nmatches<15)
     {
-        cout << "TRACK_REF_KF: Less than 15 matches!!\n";
+        Verbose::PrintMess("TRACK_REF_KF: Less than 15 matches!! - " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         return false;
     }
 

@@ -52,7 +52,7 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuP
 
 //Copy Constructor
 Frame::Frame(const Frame &frame)
-    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
+    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary),mpXFextractor(frame.mpXFextractor) , mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
      mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mK_(Converter::toMatrix3f(frame.mK)), mDistCoef(frame.mDistCoef.clone()),
      mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), mNumKeypoints(frame.mNumKeypoints), mvKeys(frame.mvKeys),
      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
@@ -88,10 +88,10 @@ Frame::Frame(const Frame &frame)
 }
 
 
-Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, XFextractor* XFextractor, ORBextractor* extractor,ORBVocabulary* voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     Frame* pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+    :mpcpi(NULL),mpORBvocabulary(voc),mpXFextractor(XFextractor), mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
@@ -114,7 +114,9 @@ Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_mana
     mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
 
     // ORB extraction
-    ExtractORB(0,im_managed_gray);
+    //ExtractORB(0,im_managed_gray);
+
+    ExtractXF(0,im_managed_gray,0,0);
 
     mNumKeypoints = mvKeys.size();
     if(mvKeys.empty())
@@ -218,6 +220,13 @@ void Frame::ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory
 {
     monoLeft = mpORBextractorLeft->extractFeatures(im_managed,mvKeys,mDescriptors);
 }
+
+void Frame::ExtractXF(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const int x0, const int x1)
+{
+    vector<int> vLapping = {0,0};
+    monoLeft = (*mpXFextractor)(im_managed,cv::Mat(),mvKeys,mDescriptors,vLapping);
+}
+
 
 bool Frame::isSet() const {
     return mbIsSet;

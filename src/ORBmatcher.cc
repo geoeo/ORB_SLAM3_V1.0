@@ -23,6 +23,7 @@
 #include<opencv2/core/core.hpp>
 #include<stdint-gcc.h>
 
+#include "System.h"
 #include "DBoW2/DBoW2/FeatureVector.h"
 #include <tracy.hpp>
 
@@ -30,11 +31,10 @@ using namespace std;
 
 namespace ORB_SLAM3
 {
-
     const int ORBmatcher::TH_HIGH = 100;
     const int ORBmatcher::TH_LOW = 50;
     const int ORBmatcher::HISTO_LENGTH = 30;
-
+    
     ORBmatcher::ORBmatcher(float nnratio, bool checkOri): mfNNratio(nnratio), mbCheckOrientation(checkOri)
     {
     }
@@ -219,6 +219,192 @@ namespace ORB_SLAM3
             return 4.0;
     }
 
+    // int ORBmatcher::SearchByNN(Frame &F, const vector<MapPoint*> &vpMapPoints)
+    // {
+    //     std::vector<cv::Mat> MPdescriptorAll;
+    //     std::vector<int> select_indice;
+    //     for(size_t iMP=0; iMP<vpMapPoints.size(); iMP++)
+    //     {
+    //         MapPoint* pMP = vpMapPoints[iMP];
+
+    //         if(!pMP)
+    //             continue;
+
+    //         if(!pMP->mbTrackInView)
+    //             continue;
+
+    //         if(pMP->isBad())
+    //             continue;
+
+    //         const cv::Mat MPdescriptor = pMP->GetDescriptor();
+    //         MPdescriptorAll.push_back(MPdescriptor);
+    //         select_indice.push_back(iMP);
+    //     }
+
+    //     cv::Mat MPdescriptors;
+    //     MPdescriptors.create(MPdescriptorAll.size(), 32, CV_8U);
+
+    //     for (int i=0; i<static_cast<int>(MPdescriptorAll.size()); i++)
+    //     {
+    //         for (int j=0; j<32; j++)
+    //         {
+    //             MPdescriptors.at<unsigned char>(i, j) = MPdescriptorAll[i].at<unsigned char>(j);
+    //         }
+    //     }
+
+    //     std::vector<cv::DMatch> matches;
+    //     match(MPdescriptors, F.mDescriptors, matches);
+
+    //     int nmatches =0;
+    //     for (int i = 0; i < static_cast<int>(matches.size()); ++i) {
+    //         int realIdxMap = select_indice[matches[i].queryIdx];
+    //         int bestIdxF  = matches[i].trainIdx;
+            
+    //         if(matches[i].distance > TH_HIGH)
+    //             continue;
+
+    //         if(F.mvpMapPoints[bestIdxF])
+    //             if(F.mvpMapPoints[bestIdxF]->Observations()>0)
+    //                 continue;
+
+    //         MapPoint* pMP = vpMapPoints[realIdxMap];
+    //         F.mvpMapPoints[bestIdxF] = pMP;
+    //         nmatches++;
+    //     }
+    //     return nmatches;
+    // }
+
+    // int ORBmatcher::SearchByNN(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches)
+    // {
+    //     std::cout << "KeyFrame matching..." << std::endl;
+    //     const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
+    //     vpMapPointMatches = vector<MapPoint*>(F.N, static_cast<MapPoint*>(NULL));
+
+    //     float min_cossim = -1;
+    //     std::vector<cv::DMatch> matches;
+    //     match(pKF->mDescriptors, F.mDescriptors, matches);
+
+    //     int nmatches = 0;
+    //     for (size_t i = 0; i < matches.size(); ++i)
+    //     {
+    //         int realIdxKF = matches[i].queryIdx;
+    //         int bestIdxF = matches[i].trainIdx;
+
+    //         if (matches[i].distance > (1.0 - min_cossim))   ///////////////////////////////////////
+    //         // if (matches[i].distance > TH_HIGH)
+    //             continue;
+
+    //         MapPoint* pMP = vpMapPointsKF[realIdxKF];
+
+    //         if (!pMP)
+    //             continue;
+            
+    //         if (pMP->isBad())
+    //             continue;
+            
+    //         vpMapPointMatches[bestIdxF] = pMP;
+    //         nmatches++;
+    //     }
+    //     return nmatches;
+    // }
+
+    // int ORBmatcher::SearchByNN(Frame &CurrentFrame, const Frame &LastFrame)
+    // {
+    //     std::cout << "Frame matching..." << std::endl;
+    //     float min_cossim = -1;
+    //     std::vector<cv::DMatch> matches;
+    //     match(LastFrame.mDescriptors, CurrentFrame.mDescriptors, matches);
+
+    //     int nmatches = 0;
+    //     for (size_t i = 0; i < matches.size(); ++i)
+    //     {
+    //         int realIdxF = matches[i].queryIdx;
+    //         int bestIdxF = matches[i].trainIdx;
+
+    //         if (matches[i].distance > (1.0f - min_cossim))      ////////////////////////////////////////////////
+    //             continue;
+            
+    //         MapPoint *pMP = LastFrame.mvpMapPoints[realIdxF];
+    //         if (!pMP || pMP->isBad())
+    //             continue;
+
+    //         if (!LastFrame.mvbOutlier[realIdxF])
+    //         {
+    //             CurrentFrame.mvpMapPoints[bestIdxF] = pMP;
+    //             nmatches++;
+    //         }
+    //     }
+    //     return nmatches;
+    // }
+
+    // void ORBmatcher::match(cv::Mat _frame1_desc, cv::Mat _frame2_desc, std::vector<cv::DMatch> &_matches)
+    // {   
+    //     // convert descriptors to torch::Tensor
+    //     torch::Tensor feats1 = torch::from_blob(
+    //         _frame1_desc.data, {_frame1_desc.rows, _frame1_desc.cols}, torch::kByte);
+    //     torch::Tensor feats2 = torch::from_blob(
+    //         _frame2_desc.data, {_frame2_desc.rows, _frame2_desc.cols}, torch::kByte);
+
+    //     // move to GPU if available and set to float type
+    //     if (torch::cuda::is_available())
+    //     {
+    //         feats1 = feats1.to(torch::kCUDA);
+    //         feats2 = feats2.to(torch::kCUDA);
+    //     }
+    //     feats1 = feats1.to(torch::kFloat);
+    //     feats2 = feats2.to(torch::kFloat);
+
+    //     // normalize the descriptors
+    //     feats1 = torch::nn::functional::normalize(feats1, torch::nn::functional::NormalizeFuncOptions().dim(-1));
+    //     feats2 = torch::nn::functional::normalize(feats2, torch::nn::functional::NormalizeFuncOptions().dim(-1));
+
+    //     // compute cossine similarity between feats1 and feats2
+    //     float min_cossim = -1;
+    //     torch::Tensor cossim = torch::matmul(feats1, feats2.t());
+    //     torch::Tensor cossim_t = torch::matmul(feats2, feats1.t());
+
+    //     torch::Tensor match12, match21;
+    //     std::tie(std::ignore, match12) = cossim.max(1);
+    //     std::tie(std::ignore, match21) = cossim_t.max(1);
+
+    //     // index tensor
+    //     torch::Tensor idx0 = torch::arange(match12.size(0), match12.options());
+    //     torch::Tensor mutual = match21.index({match12}) == idx0;
+
+    //     torch::Tensor idx1;
+    //     if (min_cossim > 0)
+    //     {
+    //         std::tie(cossim, std::ignore) = cossim.max(1);
+    //         torch::Tensor good = cossim > min_cossim;
+    //         idx0 = idx0.index({mutual & good});
+    //         idx1 = match12.index({mutual & good});
+    //     }
+    //     else
+    //     {
+    //         idx0 = idx0.index({mutual});
+    //         idx1 = match12.index({mutual});
+    //     }
+
+    //     // Convert tensor indices to vectors of integers
+    //     idx0 = idx0.to(torch::kInt).to(torch::kCPU);
+    //     idx1 = idx1.to(torch::kInt).to(torch::kCPU);
+    //     std::vector<int> lastFrameIndices(idx0.data_ptr<int>(), idx0.data_ptr<int>() + (int)idx0.size(0));
+    //     std::vector<int> currentFrameIndices(idx1.data_ptr<int>(), idx1.data_ptr<int>() + (int)idx1.size(0));
+
+    //     _matches.clear();
+    //     for (size_t i = 0; i < lastFrameIndices.size(); ++i)
+    //     {
+    //         int idx1 = lastFrameIndices[i];
+    //         int idx2 = currentFrameIndices[i];
+    //         float cosine_distance = 1.0f - cossim[idx1][idx2].item<float>();
+    //         float distance = std::sqrt(2 * cosine_distance);
+
+    //         std::cout << "Match: (" << idx1 << ", " << idx2 << "), Distance: " << distance << std::endl;
+
+    //         _matches.emplace_back(cv::DMatch(idx1, idx2, distance));
+    //     }
+    // }
+
     int ORBmatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPointMatches)
     {
         const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
@@ -281,6 +467,8 @@ namespace ORB_SLAM3
 
                             const int dist =  DescriptorDistance(dKF,dF);
 
+                            //Verbose::PrintMess("BoW: Dist " + std::to_string(dist), Verbose::VERBOSITY_DEBUG);
+
                             if(dist<bestDist1)
                             {
                                 bestDist2=bestDist1;
@@ -301,6 +489,8 @@ namespace ORB_SLAM3
                             const cv::Mat &dF = F.mDescriptors.row(realIdxF);
 
                             const int dist =  DescriptorDistance(dKF,dF);
+
+                            //Verbose::PrintMess("BoW: Dist " + std::to_string(dist), Verbose::VERBOSITY_DEBUG);
 
                             if(realIdxF < F.Nleft && dist<bestDist1){
                                 bestDist2=bestDist1;
@@ -400,6 +590,8 @@ namespace ORB_SLAM3
             }
         }
 
+        Verbose::PrintMess("BoW 1: Matches after loop " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         if(mbCheckOrientation)
         {
             int ind1=-1;
@@ -420,12 +612,20 @@ namespace ORB_SLAM3
             }
         }
 
+        Verbose::PrintMess("BoW 1: Matches final: " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         return nmatches;
     }
 
     int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3f &Scw, const vector<MapPoint*> &vpPoints,
                                        vector<MapPoint*> &vpMatched, int th, float ratioHamming)
     {
+        // Get Calibration Parameters for later projection
+        const float &fx = pKF->fx;
+        const float &fy = pKF->fy;
+        const float &cx = pKF->cx;
+        const float &cy = pKF->cy;
+
         Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(),Scw.translation()/Scw.scale());
         Eigen::Vector3f Ow = Tcw.inverse().translation();
 
@@ -527,7 +727,6 @@ namespace ORB_SLAM3
     int ORBmatcher::SearchByProjection(KeyFrame* pKF, Sophus::Sim3<float> &Scw, const std::vector<MapPoint*> &vpPoints, const std::vector<KeyFrame*> &vpPointsKFs,
                                        std::vector<MapPoint*> &vpMatched, std::vector<KeyFrame*> &vpMatchedKF, int th, float ratioHamming)
     {
-        ZoneNamedN(SearchByProjectionCall_1, "SearchByProjectionCall_1", true); 
         // Get Calibration Parameters for later projection
         const float &fx = pKF->fx;
         const float &fy = pKF->fy;
@@ -758,7 +957,6 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
     {
-        ZoneNamedN(SearchByBoWCall, "SearchByBoWCall", true); 
         const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
         const vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
@@ -876,6 +1074,8 @@ namespace ORB_SLAM3
             }
         }
 
+        Verbose::PrintMess("BoW 2: Matches after loop " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         if(mbCheckOrientation)
         {
             int ind1=-1;
@@ -902,7 +1102,6 @@ namespace ORB_SLAM3
     int ORBmatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2,
                                            vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
     {
-        ZoneNamedN(SearchForTriangulationCall, "SearchForTriangulationCall", true);
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
         const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
 
@@ -979,7 +1178,7 @@ namespace ORB_SLAM3
                             continue;
 
                     const cv::KeyPoint &kp1 = (pKF1 -> NLeft == -1) ? pKF1->mvKeysUn[idx1]
-                                                                    : (idx1 < static_cast<size_t>(pKF1 -> NLeft)) ? pKF1 -> mvKeys[idx1]
+                                                                    : (idx1 < pKF1 -> NLeft) ? pKF1 -> mvKeys[idx1]
                                                                                              : pKF1 -> mvKeysRight[idx1 - pKF1 -> NLeft];
 
                     const bool bRight1 = (pKF1 -> NLeft == -1 || idx1 < pKF1 -> NLeft) ? false
@@ -1014,9 +1213,9 @@ namespace ORB_SLAM3
                             continue;
 
                         const cv::KeyPoint &kp2 = (pKF2 -> NLeft == -1) ? pKF2->mvKeysUn[idx2]
-                                                                        : (idx2 < static_cast<size_t>(pKF2 -> NLeft)) ? pKF2 -> mvKeys[idx2]
+                                                                        : (idx2 < pKF2 -> NLeft) ? pKF2 -> mvKeys[idx2]
                                                                                                  : pKF2 -> mvKeysRight[idx2 - pKF2 -> NLeft];
-                        const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < static_cast<size_t>(pKF2 -> NLeft)) ? false
+                        const bool bRight2 = (pKF2 -> NLeft == -1 || idx2 < pKF2 -> NLeft) ? false
                                                                                            : true;
 
                         if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
@@ -1158,6 +1357,10 @@ namespace ORB_SLAM3
             pCamera = pKF->mpCamera;
         }
 
+        const float &fx = pKF->fx;
+        const float &fy = pKF->fy;
+        const float &cx = pKF->cx;
+        const float &cy = pKF->cy;
         const float &bf = pKF->mbf;
 
         int nFused=0;
@@ -1331,6 +1534,12 @@ namespace ORB_SLAM3
 
     int ORBmatcher::Fuse(KeyFrame *pKF, Sophus::Sim3f &Scw, const vector<MapPoint *> &vpPoints, float th, vector<MapPoint *> &vpReplacePoint)
     {
+        // Get Calibration Parameters for later projection
+        const float &fx = pKF->fx;
+        const float &fy = pKF->fy;
+        const float &cx = pKF->cx;
+        const float &cy = pKF->cy;
+
         // Decompose Scw
         Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(),Scw.translation()/Scw.scale());
         Eigen::Vector3f Ow = Tcw.inverse().translation();
@@ -1442,7 +1651,6 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchBySim3(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint *> &vpMatches12, const Sophus::Sim3f &S12, const float th)
     {
-        ZoneNamedN(SearchBySim3Call, "SearchBySim3Call", true); 
         const float &fx = pKF1->fx;
         const float &fy = pKF1->fy;
         const float &cx = pKF1->cx;
@@ -1656,14 +1864,12 @@ namespace ORB_SLAM3
                 }
             }
         }
-        
-        std::cout << "Found: " << nFound << std::endl;
+
         return nFound;
     }
 
     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
     {
-        ZoneNamedN(SearchByProjectionCall_2, "SearchByProjectionCall_2", true); 
         int nmatches = 0;
 
         // Rotation Histogram (to check rotation consistency)
@@ -1692,6 +1898,8 @@ namespace ORB_SLAM3
                     Eigen::Vector3f x3Dw = pMP->GetWorldPos();
                     Eigen::Vector3f x3Dc = Tcw * x3Dw;
 
+                    const float xc = x3Dc(0);
+                    const float yc = x3Dc(1);
                     const float invzc = 1.0/x3Dc(2);
 
                     if(invzc<0)
@@ -1869,13 +2077,12 @@ namespace ORB_SLAM3
                 }
             }
         }
-        std::cout << "matches (2): " << nmatches << std::endl;
+
         return nmatches;
     }
 
     int ORBmatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set<MapPoint*> &sAlreadyFound, const float th , const int ORBdist)
     {
-        ZoneNamedN(SearchByProjectionCall_3, "SearchByProjectionCall_3", true); 
         int nmatches = 0;
 
         const Sophus::SE3f Tcw = CurrentFrame.GetPose();
@@ -1993,7 +2200,7 @@ namespace ORB_SLAM3
                 }
             }
         }
-        std::cout << "matches (3): " << nmatches << std::endl;
+
         return nmatches;
     }
 
@@ -2040,25 +2247,32 @@ namespace ORB_SLAM3
         }
     }
 
-
-// Bit set count operation from
-// http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
+    // Bit set count for ORB operation from
+    // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
     int ORBmatcher::DescriptorDistance(const cv::Mat &a, const cv::Mat &b)
     {
-        const int *pa = a.ptr<int32_t>();
-        const int *pb = b.ptr<int32_t>();
+        // if (std::getenv("USE_ORB") == nullptr)
+        // {
+            float normDist = cv::norm(a, b, cv::NORM_L2SQR);
+            int scaledDist = static_cast<int>(normDist * 512);
+            // std::cout << "Distance: " << scaledDist << std::endl;
+            return scaledDist;
+        //}
+        // else
+        // {
+        //     const int *pa = a.ptr<int32_t>();
+        //     const int *pb = b.ptr<int32_t>();
 
-        int dist=0;
-
-        for(int i=0; i<8; i++, pa++, pb++)
-        {
-            unsigned  int v = *pa ^ *pb;
-            v = v - ((v >> 1) & 0x55555555);
-            v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-            dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-        }
-
-        return dist;
+        //     int dist=0;
+        //     for(int i=0; i<8; i++, pa++, pb++)
+        //     {
+        //         unsigned  int v = *pa ^ *pb;
+        //         v = v - ((v >> 1) & 0x55555555);
+        //         v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+        //         dist += (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+        //     }
+        //     return dist;
+        // }
     }
 
 } //namespace ORB_SLAM
