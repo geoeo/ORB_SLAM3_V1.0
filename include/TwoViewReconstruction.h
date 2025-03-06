@@ -35,7 +35,7 @@ namespace ORB_SLAM3
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         // Fix the reference frame
-        TwoViewReconstruction(const Eigen::Matrix3f& k, float sigma = 1.0, int iterations = 200);
+        TwoViewReconstruction(const Eigen::Matrix3f& k, float sigma = 1.0, int iterations = 800);
 
         // Computes in parallel a fundamental matrix and a homography
         // Selects a model and tries to recover the motion and the structure from motion

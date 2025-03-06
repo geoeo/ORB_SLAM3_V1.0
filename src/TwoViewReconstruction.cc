@@ -525,10 +525,10 @@ namespace ORB_SLAM3
 
             
         // If there is not a clear winner or not enough triangulated points reject initialization
-        if(maxGood<nMinGood || nsimilar>1)
-        {
-            return false;
-        }
+        // if(maxGood<nMinGood || nsimilar>1)
+        // {
+        //     return false;
+        // }
 
         // If best reconstruction has enough parallax initialize
         if(maxGood==nGood1)
