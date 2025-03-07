@@ -134,7 +134,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        auto _ = InitializeIMU(1e1, 1e10, true);
+                        auto _ = InitializeIMU(1e2, 1e10, true);
                     else
                         auto _ = InitializeIMU(1e2, 1e5, true);
                 }
@@ -147,11 +147,11 @@ void LocalMapping::Run()
                 {
                     if(mpCurrentKeyFrame->GetMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
                     {
-                        cout << "check VIBA" << endl;
+                        Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_NORMAL);
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>10.0f)
+                            if (mTinit>5.0f)
                             {
-                                cout << "start VIBA 1" << endl;
+                                Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)
                                     success = InitializeIMU(1.f, 1e5, true);
@@ -159,13 +159,14 @@ void LocalMapping::Run()
                                     success = InitializeIMU(1.f, 1e5, true);
 
                                 if(success)
-                                mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-                                cout << "end VIBA 1" << endl;
+                                    mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+
+                                Verbose::PrintMess("end VIBA " + std::to_string(success), Verbose::VERBOSITY_NORMAL);
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>20.0f){
-                                cout << "start VIBA 2" << endl;
+                            if (mTinit>10.0f){
+                                Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)
                                     success = InitializeIMU(0.f, 0.f, true);
@@ -175,7 +176,7 @@ void LocalMapping::Run()
                                 if(success)
                                     mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
 
-                                cout << "end VIBA 2" << endl;
+                                Verbose::PrintMess("end VIBA 2 " + std::to_string(success), Verbose::VERBOSITY_NORMAL);
                             }
                         }
 

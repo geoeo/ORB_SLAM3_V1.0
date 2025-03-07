@@ -1514,6 +1514,8 @@ void Tracking::MonocularInitialization()
         ORBmatcher matcher(0.9,true);
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
+        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         // Check if there are enough correspondences
         if(nmatches<100)
         {
@@ -1526,6 +1528,8 @@ void Tracking::MonocularInitialization()
 
         if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
         {
+            Verbose::PrintMess("init matches before 2 view " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+            
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
                 if(mvIniMatches[i]>=0 && !vbTriangulated[i])
@@ -1534,6 +1538,8 @@ void Tracking::MonocularInitialization()
                     nmatches--;
                 }
             }
+
+            Verbose::PrintMess("init matches after 2 view " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
             // Set Frame Poses
             mInitialFrame.SetPose(Sophus::SE3f());
@@ -1562,6 +1568,8 @@ void Tracking::CreateInitialMapMonocular()
     // Insert KFs in the map
     mpAtlas->AddKeyFrame(pKFini);
     mpAtlas->AddKeyFrame(pKFcur);
+
+    Verbose::PrintMess("CreateInitialMapMonocular init matches: " + to_string(mvIniMatches.size()), Verbose::VERBOSITY_DEBUG);
 
     for(size_t i=0; i<mvIniMatches.size();i++)
     {
@@ -1755,7 +1763,8 @@ bool Tracking::TrackReferenceKeyFrame()
 
     if(nmatches<15)
     {
-        cout << "TRACK_REF_KF: Less than 15 matches!!\n";
+        
+        Verbose::PrintMess("TRACK_REF_KF: Less than 15 matches!! - " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         return false;
     }
 
@@ -1942,7 +1951,7 @@ bool Tracking::TrackLocalMap()
         else
         {
             // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
-            if(!mbMapUpdated) //  && (mnMatchesInliers>30))
+            if(!mbMapUpdated && (mnMatchesInliers>30))
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());

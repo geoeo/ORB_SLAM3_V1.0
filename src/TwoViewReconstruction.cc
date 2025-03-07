@@ -20,6 +20,7 @@
 
 #include "Converter.h"
 #include "GeometricTools.h"
+#include "System.h"
 
 #include "DBoW2/DUtils/Random.h"
 
@@ -115,15 +116,16 @@ namespace ORB_SLAM3
 
         float minParallax = 1.0;
 
+        Verbose::PrintMess("Triangulate RH: " + std::to_string(RH), Verbose::VERBOSITY_DEBUG);
         // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
         if(RH>0.50) // if(RH>0.40)
         {
-            //cout << "Initialization from Homography" << endl;
+            Verbose::PrintMess("Initialization from Homography", Verbose::VERBOSITY_DEBUG);
             return ReconstructH(vbMatchesInliersH,H, mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
         else //if(pF_HF>0.6)
         {
-            //cout << "Initialization from Fundamental" << endl;
+            Verbose::PrintMess("Initialization from Fundamental", Verbose::VERBOSITY_DEBUG);
             return ReconstructF(vbMatchesInliersF,F,mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
     }
@@ -515,6 +517,12 @@ namespace ORB_SLAM3
             nsimilar++;
         if(nGood4>0.7*maxGood)
             nsimilar++;
+
+
+        
+        Verbose::PrintMess("Fundamental: Min Good " + std::to_string(nMinGood), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: Max Good " + std::to_string(maxGood), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nsimilar " + std::to_string(nsimilar), Verbose::VERBOSITY_DEBUG);
 
         // If there is not a clear winner or not enough triangulated points reject initialization
         if(maxGood<nMinGood || nsimilar>1)

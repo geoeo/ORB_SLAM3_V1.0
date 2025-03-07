@@ -23,6 +23,7 @@
 #include<opencv2/core/core.hpp>
 #include<stdint-gcc.h>
 
+#include "System.h"
 #include "DBoW2/DBoW2/FeatureVector.h"
 #include <tracy.hpp>
 
@@ -400,6 +401,8 @@ namespace ORB_SLAM3
             }
         }
 
+        Verbose::PrintMess("BoW 1: Matches after loop " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
         if(mbCheckOrientation)
         {
             int ind1=-1;
@@ -419,6 +422,8 @@ namespace ORB_SLAM3
                 }
             }
         }
+
+        Verbose::PrintMess("BoW 1: Matches final: " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
         return nmatches;
     }

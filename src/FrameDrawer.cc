@@ -98,7 +98,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             vCurrentKeys = mvCurrentKeys;
         }
     }
-    std::cout << imageScale << std::endl;
+    
     // if(imageScale != 1.f)
     // {
     //     int imWidth = im.cols / imageScale;
