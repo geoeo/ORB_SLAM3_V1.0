@@ -57,7 +57,7 @@ public:
 
             m_resized_img_gpu = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(new_rows*new_cols*3, new_rows, new_cols, CV_8UC3, new_cols*3),CUDAManagedMemoryDeleter());
 
-            
+            mClahe = cv::createCLAHE(4.0, cv::Size(8, 8));
       }
 
     void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
@@ -71,7 +71,6 @@ public:
     ImuGrabber *mpImuGb;
 
     const bool mbClahe;
-    cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(4, 4));
     double timeshift_cam_imu;
     uint64_t count;
     float img_resize_factor;
@@ -81,6 +80,7 @@ public:
     cv::cuda::GpuMat m_undistorted_image_gpu;
     CUDAManagedMemory::SharedPtr m_resized_img_gpu; 
     cv::cuda::Stream m_stream;
+    cv::Ptr<cv::CLAHE> mClahe;
 
 };
 
@@ -114,7 +114,6 @@ CUDAManagedMemory::SharedPtr ImageGrabber::GetImage(const sensor_msgs::msg::Imag
 
   CUDAManagedMemory::SharedPtr cuda_managed_memory_image_grey = std::shared_ptr<CUDAManagedMemory>(new CUDAManagedMemory(new_rows*new_cols, new_rows, new_cols, CV_8UC1, new_cols),CUDAManagedMemoryDeleter());
   cv::cvtColor(m_resized_img_gpu->getCvMat(),cuda_managed_memory_image_grey->getCvMat(),cv::COLOR_BGR2GRAY);
-
   return cuda_managed_memory_image_grey;
 }
 
@@ -253,7 +252,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 20;
+      cam.fps        = 25;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -265,22 +264,27 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 6000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 6;
+      orb.nLevels     = 5;
       orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
 
       ORB_SLAM3::ImuParameters m_imu;
 
-      // m_imu.accelWalk  = 0.0002924839041947549; // x10
-      // m_imu.gyroWalk   = 0.0000208262509525229; //x10
-      // m_imu.noiseAccel =  0.007404865822280363; // x5
-      // m_imu.noiseGyro  = 0.00092540410577810275; // x5
+      //m_imu.accelWalk  = 0.0002924839041947549; // x10
+      //m_imu.gyroWalk   = 0.0000208262509525229; //x10
+      //m_imu.noiseAccel =  0.007404865822280363; // x5
+      //m_imu.noiseGyro  = 0.00092540410577810275; // x5
 
       m_imu.accelWalk  = 0.0002924839041947549; // x10
-      m_imu.gyroWalk   = 0.0000208262509525229; //x10
-      m_imu.noiseAccel =  0.014809731644560726; // x10
+      m_imu.gyroWalk   = 0.0000416525019050458; //x20
+      m_imu.noiseAccel =  0.007404865822280363; // x5
       m_imu.noiseGyro  = 0.0018508082115562055; // x10
+
+      // m_imu.accelWalk  = 0.0002924839041947549; // x10
+      // m_imu.gyroWalk   = 0.0000208262509525229; //x10
+      // m_imu.noiseAccel =  0.014809731644560726; // x10
+      // m_imu.noiseGyro  = 0.0018508082115562055; // x10
 
       // m_imu.noiseGyro = 0.003701616423112411; // x20
       // m_imu.noiseAccel =  0.029619463289121452; // x20
@@ -317,8 +321,8 @@ class SlamNode : public rclcpp::Node
 
       double timeshift_cam_imu = 0.008644267484172375; // F5
 
-      const int frame_grid_cols = 64;
-      const int frame_grid_rows = 48;
+      const int frame_grid_cols = 92;
+      const int frame_grid_rows = 64;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);

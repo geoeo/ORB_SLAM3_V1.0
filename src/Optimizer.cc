@@ -4731,6 +4731,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                 pFrame->mvbOutlier[idx]=true;
                 e->setLevel(1);
                 nBadMono++;
+                Verbose::PrintMess("KEY it " +std::to_string(it) + " : chi2 " + std::to_string(chi2) + " close: " + std::to_string(bClose) + " depth pos: " + std::to_string(e->isDepthPositive()), Verbose::VERBOSITY_DEBUG);
             }
             else
             {
@@ -4742,6 +4743,8 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
             if (it==2)
                 e->setRobustKernel(0);
         }
+
+        Verbose::PrintMess("KEY after first: " + std::to_string(nInliersMono), Verbose::VERBOSITY_DEBUG);
 
         // For stereo observations
         for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
@@ -4860,6 +4863,8 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     }
 
     pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H);
+
+    Verbose::PrintMess("KEY initial: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_DEBUG);
 
     return nInitialCorrespondences-nBad;
 }
@@ -5131,6 +5136,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                 pFrame->mvbOutlier[idx]=true;
                 e->setLevel(1);
                 nBadMono++;
+                Verbose::PrintMess("FRAME it " +std::to_string(it) + " : chi2 " + std::to_string(chi2) + " close: " + std::to_string(bClose) + " depth pos: " +  std::to_string(e->isDepthPositive()), Verbose::VERBOSITY_DEBUG);
             }
             else
             {

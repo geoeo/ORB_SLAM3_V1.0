@@ -134,7 +134,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     if (mbMonocular)
-                        auto _ = InitializeIMU(1e2, 1e10, true);
+                        auto _ = InitializeIMU(1e1, 1e10, true);
                     else
                         auto _ = InitializeIMU(1e2, 1e5, true);
                 }
@@ -149,7 +149,7 @@ void LocalMapping::Run()
                     {
                         Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_NORMAL);
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
-                            if (mTinit>5.0f)
+                            if (mTinit>10.0f)
                             {
                                 Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
@@ -165,7 +165,7 @@ void LocalMapping::Run()
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>10.0f){
+                            if (mTinit>15.0f){
                                 Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)

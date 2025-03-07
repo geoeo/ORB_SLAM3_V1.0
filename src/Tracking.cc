@@ -1945,7 +1945,7 @@ bool Tracking::TrackLocalMap()
     {
         if(mCurrentFrame.mnId<=mnLastRelocFrameId+mnFramesToResetIMU)
         {
-            Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_NORMAL);
             Optimizer::PoseOptimization(&mCurrentFrame);
         }
         else
@@ -1953,15 +1953,15 @@ bool Tracking::TrackLocalMap()
             // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
             if(!mbMapUpdated && (mnMatchesInliers>30))
             {
-                Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_DEBUG);
+                Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
-                Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
+                Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
             }
             else
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
-                Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
+                Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
             }
         }
     }
