@@ -483,11 +483,9 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
                 const cv::KeyPoint &kpUn = mvKeysUn[vCell[j]];
                 if(bCheckLevels)
                 {
-                    if(kpUn.octave<minLevel)
+                    if(kpUn.octave<minLevel || (maxLevel>=0 && kpUn.octave>maxLevel)){
                         continue;
-                    if(maxLevel>=0)
-                        if(kpUn.octave>maxLevel)
-                            continue;
+                    }
                 }
 
                 const float distx = kpUn.pt.x-x;
