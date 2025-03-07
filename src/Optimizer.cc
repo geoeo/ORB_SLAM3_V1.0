@@ -4643,6 +4643,8 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     }
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
+    Verbose::PrintMess("KEY init: mono" + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
+
     KeyFrame* pKF = pFrame->mpLastKeyFrame;
     VertexPose* VPk = new VertexPose(pKF);
     VPk->setId(4);
@@ -5031,6 +5033,8 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     }
 
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
+
+    Verbose::PrintMess("Frame init: mono" + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
 
     // Set Previous Frame Vertex
     Frame* pFp = pFrame->mpPrevFrame;
