@@ -165,11 +165,11 @@ void LocalMapping::Run()
                             }
                         }
                         else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>15.0f){
+                            if (mTinit>17.0f){
                                 Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)
-                                    success = InitializeIMU(0.f, 0.f, true);
+                                    success = InitializeIMU(0.f, 0.0f, true);
                                 else
                                     success = InitializeIMU(0.f, 0.f, true);
 
@@ -1262,7 +1262,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         if (priorA!=0.f)
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, false);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, false, priorG, priorA);
     }
 
     std::chrono::steady_clock::time_point t5 = std::chrono::steady_clock::now();
