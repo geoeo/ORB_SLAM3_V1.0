@@ -158,14 +158,17 @@ void LocalMapping::Run()
                                 else
                                     success = InitializeIMU(1.f, 1e5, true);
 
-                                if(success)
+                                if(success){
                                     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+                                    mpCurrentKeyFrame->GetMap()->SetIniertialBA2(); // skip second BA
+                                }
+                                    
 
                                 Verbose::PrintMess("end VIBA " + std::to_string(success), Verbose::VERBOSITY_NORMAL);
                             }
                         }
-                        else if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
-                            if (mTinit>17.0f){
+                        if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
+                            if (mTinit>15.0f){
                                 Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)

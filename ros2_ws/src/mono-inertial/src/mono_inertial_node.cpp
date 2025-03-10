@@ -252,7 +252,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 40;
+      cam.fps        = 25;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -262,10 +262,10 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 6000;
+      orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 6;
-      orb.scaleFactor = 1.4;
+      orb.nLevels     = 5;
+      orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
 

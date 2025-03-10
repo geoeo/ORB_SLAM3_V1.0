@@ -1470,11 +1470,11 @@ void Tracking::Track()
 
 void Tracking::MonocularInitialization()
 {
-
+    const int FEAT_INIT_COUNT = 100;
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
-        if(mCurrentFrame.mvKeys.size()>100)
+        if(mCurrentFrame.mvKeys.size()>FEAT_INIT_COUNT)
         {
 
             mInitialFrame = Frame(mCurrentFrame);
@@ -1497,16 +1497,14 @@ void Tracking::MonocularInitialization()
             }
 
             mbReadyToInitializate = true;
-
             return;
         }
     }
     else
     {
-        if (((int)mCurrentFrame.mvKeys.size()<=100)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
+        if (((int)mCurrentFrame.mvKeys.size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
-
             return;
         }
 
