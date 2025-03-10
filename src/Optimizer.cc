@@ -724,6 +724,8 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
     optimizer.initializeOptimization();
     optimizer.optimize(its);
 
+    //std::cout << "chi2: " << optimizer.activeChi2()  << std::endl;
+
 
     // Recover optimized data
     //Keyframes
@@ -4643,7 +4645,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     }
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
-    Verbose::PrintMess("KEY init: mono" + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("KEY init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
 
     KeyFrame* pKF = pFrame->mpLastKeyFrame;
     VertexPose* VPk = new VertexPose(pKF);
@@ -5034,7 +5036,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
-    Verbose::PrintMess("Frame init: mono" + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Frame init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
 
     // Set Previous Frame Vertex
     Frame* pFp = pFrame->mpPrevFrame;

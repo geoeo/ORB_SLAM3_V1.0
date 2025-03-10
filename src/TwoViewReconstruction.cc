@@ -103,6 +103,7 @@ namespace ORB_SLAM3
         float SH, SF;
         Eigen::Matrix3f H, F;
 
+        //TODO: Profile if 2 threads are really necessary
         thread threadH(&TwoViewReconstruction::FindHomography,this,ref(vbMatchesInliersH), ref(SH), ref(H));
         thread threadF(&TwoViewReconstruction::FindFundamental,this,ref(vbMatchesInliersF), ref(SF), ref(F));
 
