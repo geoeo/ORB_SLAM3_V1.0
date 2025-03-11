@@ -70,9 +70,6 @@ public:
 
     ~Tracking();
 
-    // Parse the config file
-    bool ParseCamParamFile(cv::FileStorage &fSettings);
-
     Sophus::SE3f GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
