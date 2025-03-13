@@ -170,7 +170,7 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
-Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, string filename)
+tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, string filename)
 {
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
 
@@ -195,7 +195,9 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAMana
     lastID = mCurrentFrame.mnId;
     Track();
 
-    return mCurrentFrame.GetPose();
+    auto is_keyframe = mpReferenceKF ? mCurrentFrame.mnId == mpReferenceKF->mnFrameId : false;
+
+    return {mCurrentFrame.GetPose(),mCurrentFrame.mnId, is_keyframe};
 }
 
 
@@ -1437,11 +1439,9 @@ bool Tracking::TrackLocalMap()
 
 bool Tracking::NeedNewKeyFrame()
 {
-    if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && !mpAtlas->GetCurrentMap()->isImuInitialized())
+    if((mSensor == System::IMU_MONOCULAR) && !mpAtlas->GetCurrentMap()->isImuInitialized())
     {
-        if (mSensor == System::IMU_MONOCULAR && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
-            return true;
-        else if ((mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
+        if ((mSensor == System::IMU_MONOCULAR) && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
             return true;
         else
             return false;

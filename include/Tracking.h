@@ -44,6 +44,7 @@
 #include <mutex>
 #include <unordered_set>
 #include <atomic>
+#include <tuple>
 
 namespace ORB_SLAM3
 {
@@ -70,7 +71,7 @@ public:
 
     ~Tracking();
 
-    Sophus::SE3f GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
+    std::tuple<Sophus::SE3f, unsigned long int, bool> GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 

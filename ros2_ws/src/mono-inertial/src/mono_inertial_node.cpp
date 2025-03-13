@@ -173,7 +173,9 @@ void ImageGrabber::SyncWithImu()
         auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas);
         Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
         bool ba_complete_for_frame = std::get<1>(tracking_results);
-        auto scale_factors = std::get<2>(tracking_results);
+        bool is_keyframe = std::get<2>(tracking_results);
+        unsigned long int id = std::get<3>(tracking_results);
+        auto scale_factors = std::get<4>(tracking_results);
         vImuMeas.clear();
         cout << "BA completed: " << ba_complete_for_frame << endl;
         if(!scale_factors.empty())
@@ -181,6 +183,7 @@ void ImageGrabber::SyncWithImu()
         cout << "Current ts: " << tIm << endl;
         for(auto s : scale_factors)
           cout << " scale: " << s;
+        cout << endl << "is keyframe: " << is_keyframe;
         cout << endl;
         //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
         //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
@@ -265,21 +268,21 @@ class SlamNode : public rclcpp::Node
       orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
       orb.nLevels     = 5;
-      orb.scaleFactor = 1.2;
+      orb.scaleFactor = 1.4;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
 
       ORB_SLAM3::ImuParameters m_imu;
 
-      //m_imu.accelWalk  = 0.0002924839041947549; // x10
-      //m_imu.gyroWalk   = 0.0000208262509525229; //x10
-      //m_imu.noiseAccel =  0.007404865822280363; // x5
-      //m_imu.noiseGyro  = 0.00092540410577810275; // x5
-
       m_imu.accelWalk  = 0.0002924839041947549; // x10
-      m_imu.gyroWalk   = 0.0000416525019050458; //x20
+      m_imu.gyroWalk   = 0.0000208262509525229; //x10
       m_imu.noiseAccel =  0.007404865822280363; // x5
-      m_imu.noiseGyro  = 0.0018508082115562055; // x10
+      m_imu.noiseGyro  = 0.00092540410577810275; // x5
+
+      // m_imu.accelWalk  = 0.0002924839041947549; // x10
+      // m_imu.gyroWalk   = 0.0000416525019050458; //x20
+      // m_imu.noiseAccel =  0.007404865822280363; // x5
+      // m_imu.noiseGyro  = 0.0018508082115562055; // x10
 
       // m_imu.accelWalk  = 0.0002924839041947549; // x10
       // m_imu.gyroWalk   = 0.0000208262509525229; //x10

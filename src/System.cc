@@ -194,7 +194,7 @@ System::~System(){
     }
 }
 
-tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
@@ -204,7 +204,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_ma
         auto lock = scoped_mutex_lock( mMutexReset );
 
         if(mbShutDown)
-            return {Sophus::SE3f(),false, {}};
+            return {Sophus::SE3f(),false,false,0, {}};
     }
 
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
@@ -261,7 +261,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_ma
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    Sophus::SE3f Tcw = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
+    auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
 
     //unique_lock<mutex> lock2(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
@@ -271,7 +271,7 @@ tuple<Sophus::SE3f, bool, vector<float>> System::TrackMonocular(const cuda_cv_ma
     auto isBAComplete = mpTracker->isBACompleteForMap();
     auto computedScales = mpTracker->getMapScales();
 
-    return {Tcw,isBAComplete, computedScales};
+    return {Tcw,isBAComplete,isKeyframe,id, computedScales};
 }
 
 
@@ -371,6 +371,7 @@ bool System::isShutDown() {
     return mbShutDown;
 }
 
+//This is not really correct -> remove in future use bool value from tracking
 unsigned int System::GetLastKeyFrameId()
 {
   //unique_lock<mutex> lock(mMutexState);
