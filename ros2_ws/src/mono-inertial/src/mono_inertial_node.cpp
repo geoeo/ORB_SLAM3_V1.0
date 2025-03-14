@@ -255,7 +255,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 25;
+      cam.fps        = 6;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -267,7 +267,7 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 5;
+      orb.nLevels     = 6;
       orb.scaleFactor = 1.4;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
@@ -324,8 +324,8 @@ class SlamNode : public rclcpp::Node
 
       double timeshift_cam_imu = 0.008644267484172375; // F5
 
-      const int frame_grid_cols = 128;
-      const int frame_grid_rows = 92;
+      const int frame_grid_cols = 64;
+      const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
