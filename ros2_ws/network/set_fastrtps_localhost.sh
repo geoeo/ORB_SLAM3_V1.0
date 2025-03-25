@@ -1,0 +1,2 @@
+export FASTRTPS_DEFAULT_PROFILES_FILE=/workspaces/ORB_SLAM3_V1.0/ros2_ws/network/fastrtps_localhost_config.xml
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
