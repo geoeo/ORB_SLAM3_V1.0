@@ -267,22 +267,22 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 6;
+      orb.nLevels     = 5;
       orb.scaleFactor = 1.4;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
 
       ORB_SLAM3::ImuParameters m_imu;
 
-      m_imu.accelWalk  = 0.0002924839041947549; // x10
-      m_imu.gyroWalk   = 0.0000208262509525229; //x10
-      m_imu.noiseAccel =  0.007404865822280363; // x5
-      m_imu.noiseGyro  = 0.00092540410577810275; // x5
-
       // m_imu.accelWalk  = 0.0002924839041947549; // x10
-      // m_imu.gyroWalk   = 0.0000416525019050458; //x20
+      // m_imu.gyroWalk   = 0.0000208262509525229; //x10
       // m_imu.noiseAccel =  0.007404865822280363; // x5
-      // m_imu.noiseGyro  = 0.0018508082115562055; // x10
+      // m_imu.noiseGyro  = 0.00092540410577810275; // x5
+
+      m_imu.accelWalk  = 0.0002924839041947549; // x10
+      m_imu.gyroWalk   = 0.0000416525019050458; //x20
+      m_imu.noiseAccel =  0.007404865822280363; // x5
+      m_imu.noiseGyro  = 0.0018508082115562055; // x10
 
       // m_imu.accelWalk  = 0.0002924839041947549; // x10
       // m_imu.gyroWalk   = 0.0000208262509525229; //x10
@@ -295,7 +295,7 @@ class SlamNode : public rclcpp::Node
       // m_imu.accelWalk = 0.0005849678083895098; // x20
 
 
-      m_imu.InsertKFsWhenLost = false;
+      m_imu.InsertKFsWhenLost = true;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 

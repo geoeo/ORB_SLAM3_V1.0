@@ -341,9 +341,6 @@ bool Tracking::PredictStateIMU()
         Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
-        //cout << "Imu Key Update T: " << twb2 << endl;
-        //cout << "Imu Key Update V: " << Vwb2 << endl;
-        //cout << "Imu Key Update R: " << Rwb1 << endl;
         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
         mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
@@ -362,9 +359,6 @@ bool Tracking::PredictStateIMU()
         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
 
-        //cout << "Imu Frame Update T: " << twb2 << endl;
-        //cout << "Imu Frame Update V: " << Vwb2 << endl;
-        //cout << "Imu Frame Update R: " << Rwb2 << endl;
         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
 
         mCurrentFrame.mImuBias = mLastFrame.mImuBias;
@@ -418,8 +412,6 @@ void Tracking::Track()
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
         {
-            // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
-            // cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
             if(mpAtlas->isInertial())
             {
 
@@ -530,20 +522,23 @@ void Tracking::Track()
 
                 if (!bOK)
                 {
-                    if ( mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
+                    if ( !isGeoreferenced() && mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
                          (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
                         mState = LOST;
                     }
                     else if(pCurrentMap->KeyFramesInMap()>10)
                     {
-                        // cout << "KF in map: " << pCurrentMap->KeyFramesInMap() << endl;
                         mState = RECENTLY_LOST;
                         mTimeStampLost = mCurrentFrame.mTimeStamp;
                     }
-                    else
+                    else if(!isGeoreferenced())
                     {
                         mState = LOST;
+                    }
+                    else{
+                        mState = RECENTLY_LOST;
+                        mTimeStampLost = mCurrentFrame.mTimeStamp;
                     }
                 }
             }
@@ -557,56 +552,60 @@ void Tracking::Track()
                     bOK = true;
                     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
-                        if(pCurrentMap->isImuInitialized())
-                            PredictStateIMU();
+                        if(pCurrentMap->isImuInitialized()){
+                            const auto imu_preint = PredictStateIMU();
+                            if(imu_preint){
+                                bOK = Relocalization();
+                            }
+                        }
                         else
                             bOK = false;
 
-                        if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
-                        {
-                            mState = LOST;
-                            Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-                            bOK=false;
-                        }
+                        // if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
+                        // {
+                        //     mState = LOST;
+                        //     Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+                        //     bOK=false;
+                        // }
                     }
-                    else
-                    {
-                        // Relocalization
-                        bOK = Relocalization();
-                        // We reset only if the trajectory was not georeferenced.
-                        // This has to do with downstream application is not able to respond to change in an established map
-                        // May change in the future
-                        if(!isGeoreferenced() && mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
-                        {
-                            mState = LOST;
-                            Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
-                            bOK=false;
-                        }
-                    }
+                    // else
+                    // {
+                    //     // Relocalization
+                    //     bOK = Relocalization();
+                    //     // We reset only if the trajectory was not georeferenced.
+                    //     // This has to do with downstream application is not able to respond to change in an established map
+                    //     // May change in the future
+                    //     if(!isGeoreferenced() && mCurrentFrame.mTimeStamp-mTimeStampLost>3.0f && !bOK)
+                    //     {
+                    //         mState = LOST;
+                    //         Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
+                    //         bOK=false;
+                    //     }
+                    // }
                 }
-                else if (mState == LOST)
-                {
+                // else if (mState == LOST)
+                // {
 
-                    Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
+                //     Verbose::PrintMess("A new map is started...", Verbose::VERBOSITY_NORMAL);
 
-                    if (pCurrentMap->KeyFramesInMap()<10)
-                    {
-                        mpSystem->ResetActiveMap();
-                        Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
-                    }else
-                        CreateMapInAtlas();
+                //     if (pCurrentMap->KeyFramesInMap()<10)
+                //     {
+                //         mpSystem->ResetActiveMap();
+                //         Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
+                //     }else
+                //         CreateMapInAtlas();
 
-                    if(mpLastKeyFrame)
-                        mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
+                //     if(mpLastKeyFrame)
+                //         mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
 
-                    Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
+                //     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
-                    return;
-                }
+                //     return;
+                // }
             }
 
         }
-        else
+        else //TODO: this branch is not used since we always use the SLAM variant -> Investiation removing this
         {
             // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
             if(mState==LOST)
@@ -687,10 +686,9 @@ void Tracking::Track()
             if(bOK)
             {
                 bOK = TrackLocalMap();
-
+                if(!bOK)
+                    Verbose::PrintMess("Fail to track local map!", Verbose::VERBOSITY_NORMAL);
             }
-            if(!bOK)
-                cout << "Fail to track local map!" << endl;
         }
         else
         {
@@ -816,7 +814,7 @@ void Tracking::Track()
         }
 
         // Reset if the camera get lost soon after initialization
-        if(mState==LOST)
+        if(mState==LOST && !isGeoreferenced())
         {
             if(pCurrentMap->KeyFramesInMap()<=10)
             {
@@ -832,7 +830,6 @@ void Tracking::Track()
                 }
             mpLocalMapper->RequestReset();
             CreateMapInAtlas();
-
             return;
         }
 
@@ -1620,6 +1617,7 @@ void Tracking::CreateNewKeyFrame()
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
+    mpKeyFrameDB->add(pKF);
 }
 
 void Tracking::SearchLocalPoints()
@@ -1899,7 +1897,7 @@ bool Tracking::Relocalization()
     vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
 
     if(vpCandidateKFs.empty()) {
-        Verbose::PrintMess("There are not candidates", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("There are not enough candidates", Verbose::VERBOSITY_NORMAL);
         return false;
     }
 

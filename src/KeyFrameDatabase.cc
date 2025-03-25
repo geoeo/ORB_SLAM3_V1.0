@@ -20,6 +20,7 @@
 #include "KeyFrameDatabase.h"
 
 #include "KeyFrame.h"
+#include "Verbose.h"
 #include "DBoW2/DBoW2/BowVector.h"
 
 #include <mutex>
@@ -767,6 +768,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     }
 
     int minCommonWords = maxCommonWords*0.8f;
+    Verbose::PrintMess("Min Common Words: " + to_string(minCommonWords) + " Max Common: " + to_string(maxCommonWords), Verbose::VERBOSITY_NORMAL);
 
     list<pair<float,KeyFrame*> > lScoreAndMatch;
 
@@ -788,6 +790,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
 
     if(lScoreAndMatch.empty())
         return vector<KeyFrame*>();
+
+    Verbose::PrintMess("Similarities Found", Verbose::VERBOSITY_NORMAL);
 
     list<pair<float,KeyFrame*> > lAccScoreAndMatch;
     float bestAccScore = 0;

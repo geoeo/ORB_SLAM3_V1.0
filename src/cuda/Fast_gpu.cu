@@ -373,7 +373,8 @@ namespace ORB_SLAM3::cuda::fast {
     int minY = borderY;
     int maxX = std::max(image.cols - borderX, borderX);
     int maxY = std::max(image.rows - borderY, borderY);
-
+    
+    checkCudaErrors( cudaGetLastError() );
     tileCalcKeypoints_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, kpLoc, maxKeypoints, threshold, scoreMat, minX, maxX, minY, maxY, counter_ptr);
     checkCudaErrors( cudaGetLastError() );
     checkCudaErrors( cudaStreamSynchronize(stream));
