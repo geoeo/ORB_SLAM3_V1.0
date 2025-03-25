@@ -160,7 +160,7 @@ void LocalMapping::Run()
 
                                 if(success){
                                     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-                                    mpCurrentKeyFrame->GetMap()->SetIniertialBA2(); // skip second BA
+                                    //mpCurrentKeyFrame->GetMap()->SetIniertialBA2(); // skip second BA
                                 }
                                     
 
