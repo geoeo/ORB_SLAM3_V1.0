@@ -110,7 +110,7 @@ if(BUILD_EXAMPLES)
 endif()
 
 # Export package for use from the build tree
-set(SOPHUS_CMAKE_EXPORT_DIR ${CMAKE_INSTALL_DATADIR}/sophus/cmake)
+set(SOPHUS_CMAKE_EXPORT_DIR lib/cmake/Sophus)
 
 set_target_properties(sophus PROPERTIES EXPORT_NAME Sophus)
 
@@ -123,11 +123,17 @@ install(EXPORT SophusTargets
 export(TARGETS sophus NAMESPACE Sophus:: FILE SophusTargets.cmake)
 export(PACKAGE Sophus)
 
+
+set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_INCLUDEDIR}/Sophus
+    CACHE PATH "Location of header files" )
+    
+
 configure_package_config_file(
   SophusConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/SophusConfig.cmake
   INSTALL_DESTINATION ${SOPHUS_CMAKE_EXPORT_DIR}
   NO_CHECK_REQUIRED_COMPONENTS_MACRO
+  PATH_VARS INCLUDE_INSTALL_DIR
 )
 
 # Remove architecture dependence. Sophus is a header-only library.
@@ -154,5 +160,5 @@ install(
 # Install header files
 install(
   FILES ${SOPHUS_HEADER_FILES}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/sophus
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Sophus/sophus
 )

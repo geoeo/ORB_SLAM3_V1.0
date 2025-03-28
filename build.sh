@@ -18,7 +18,7 @@ cd ../Sophus
 
 echo "Configuring and building Thirdparty/Sophus ..."
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTS=OFF
 cmake --build build -j 6 --target install
 
 cd ../../
