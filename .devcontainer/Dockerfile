@@ -40,21 +40,9 @@ RUN tar -xzvf cmake-3.25.2.tar.gz
 RUN cd cmake-3.25.2 && ./bootstrap && make -j$(nproc) && make install
 RUN rm cmake-3.25.2.tar.gz
 
-RUN cd ~ && mkdir Eigen3 && cd Eigen3 \
-    && wget -q https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2 \
-    && tar xf eigen-3.4.0.tar.bz2 \
-    && rm -rf eigen-3.4.0.tar.bz2 \
-    && cd eigen-3.4.0 \
-    && mkdir -p build && cd build \
-    && cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
-        .. \
-    && make -j $(nproc --all) \
-    && make install
 
 WORKDIR /root
-RUN apt update && sudo apt install -y libgtk2.0-dev
+RUN apt update && sudo apt install -y libgtk2.0-dev libeigen3-dev 
 RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/4.9.0.zip 
 RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
 RUN unzip opencv.zip
@@ -81,7 +69,6 @@ RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
-    libeigen3-dev \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspaces/ORB_SLAM3_V1.0
