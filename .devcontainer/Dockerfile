@@ -42,7 +42,7 @@ RUN rm cmake-3.25.2.tar.gz
 
 
 WORKDIR /root
-RUN apt update && sudo apt install -y libgtk2.0-dev libeigen3-dev 
+RUN apt update && sudo apt install -y libgtk2.0-dev
 RUN wget -O opencv.zip https://github.com/opencv/opencv/archive/4.9.0.zip 
 RUN wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/4.9.0.zip
 RUN unzip opencv.zip
@@ -69,6 +69,7 @@ RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
+    libeigen3-dev \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspaces/ORB_SLAM3_V1.0
