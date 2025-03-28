@@ -85,6 +85,7 @@ find_package(G2O REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDACvManagedMemory REQUIRED)
 find_package(CUDAToolkit REQUIRED)
+find_package(DBoW2 REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -135,6 +136,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${G2O_INCLUDE_DIR}
      ${CUDACvManagedMemory_INCLUDE_DIRS}
      ${CUDAToolkit_INCLUDE_DIRS}
+     ${DBoW2_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -158,10 +160,10 @@ ${G2O_TYPES_SCLAM2D}
 ${G2O_TYPES_SIM3}
 ${G2O_TYPES_SLAM2D}
 ${G2O_TYPES_SLAM3D}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.a
 ${TRACY_LIB}
 ${CUDACvManagedMemory_LIBRARIES}
 ${CUDAToolkit_LIBRARIES}
+${DBoW2_LIBRARIES}
 -lcrypto
 )
 
@@ -190,17 +192,6 @@ install(
 
 install(
         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/CameraModels>
-        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
-        FILES_MATCHING # install only matched files
-        PATTERN "*.h" # select header files
-        PATTERN "*.hpp" # select header files
-        PATTERN "lib" EXCLUDE
-        PATTERN "build" EXCLUDE
-)
-
-
-install(
-        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/DBoW2>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
         FILES_MATCHING # install only matched files
         PATTERN "*.h" # select header files

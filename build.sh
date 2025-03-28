@@ -5,7 +5,7 @@ shift
 
 cd Thirdparty/DBoW2
 cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} "$@"
-make -C build
+cmake --build build -j $(nproc --all) --target install
 
 cd ../g2o
 

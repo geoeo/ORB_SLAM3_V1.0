@@ -24,7 +24,7 @@
 #include<stdint-gcc.h>
 
 #include "System.h"
-#include "DBoW2/DBoW2/FeatureVector.h"
+#include "DBoW2/FeatureVector.h"
 #include <tracy.hpp>
 
 using namespace std;

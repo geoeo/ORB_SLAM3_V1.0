@@ -24,8 +24,8 @@
 #include <map>
 #include <memory>
 
-#include "DBoW2/DBoW2/BowVector.h"
-#include "DBoW2/DBoW2/FeatureVector.h"
+#include "DBoW2/BowVector.h"
+#include "DBoW2/FeatureVector.h"
 
 #include "Sophus/sophus/geometry.hpp"
 
