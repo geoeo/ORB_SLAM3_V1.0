@@ -85,7 +85,7 @@ RUN apt-get update && apt-get install -y \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspaces/ORB_SLAM3_V1.0
-COPY scripts/install_ros_packages.sh /root
+COPY .devcontainer/build_scripts/install_ros_packages.sh /root
 WORKDIR /root
 RUN bash install_ros_packages.sh
     
