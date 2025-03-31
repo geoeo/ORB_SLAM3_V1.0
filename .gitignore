@@ -2,8 +2,8 @@ KeyFrameTrajectory.txt
 CameraTrajectory.txt
 kf_*.txt
 f_*.txt
-Thirdparty/DBoW2/build/
-Thirdparty/DBoW2/lib/
+Thirdparty/DBoW2/build/*
+Thirdparty/DBoW2/lib/*
 Vocabulary/ORBvoc.txt
 build/
 
@@ -19,8 +19,6 @@ LBA_Stats.txt
 LocalMapTimeStats.txt
 TrackLocalMapStats.txt
 TrackingTimeStats.txt
-time*
-Time*
 Table_Euroc
 Table_TUMVI_rooms/
 *.pyc
