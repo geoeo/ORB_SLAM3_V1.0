@@ -27,9 +27,9 @@ find_package(std_msgs REQUIRED)
 # further dependencies manually.
 
 find_package(OpenCV REQUIRED)
-find_package(Eigen3 3.3.9 REQUIRED NO_MODULE)
+find_package(Eigen3 3.4.0 REQUIRED NO_MODULE)
 find_package(Pangolin REQUIRED)
-find_package(G2O REQUIRED)
+find_package(g2o REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDACvManagedMemory REQUIRED)
