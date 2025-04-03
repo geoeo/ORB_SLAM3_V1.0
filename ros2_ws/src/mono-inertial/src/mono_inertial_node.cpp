@@ -110,7 +110,7 @@ cv::cuda::HostMem ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSha
   cv::cuda::resize(m_undistorted_image_gpu, m_resized_img_gpu.createGpuMatHeader(), new_im_size, 0, 0, cv::INTER_LINEAR, m_stream);
 
   cv::cuda::HostMem cuda_managed_memory_image_grey = cv::cuda::HostMem(new_rows, new_cols, CV_8UC1,cv::cuda::HostMem::AllocType::SHARED);
-  cv::cvtColor(m_resized_img_gpu.createMatHeader(),cuda_managed_memory_image_grey.createMatHeader(),cv::COLOR_BGR2GRAY);
+  cv::cuda::cvtColor(m_resized_img_gpu.createGpuMatHeader(),cuda_managed_memory_image_grey.createGpuMatHeader(),cv::COLOR_BGR2GRAY);
   return cuda_managed_memory_image_grey;
 }
 
