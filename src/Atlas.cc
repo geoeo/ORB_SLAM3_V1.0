@@ -212,7 +212,6 @@ bool Atlas::isBACompleteForMap() {
 
     if(mpCurrentMap)
         complete = mpCurrentMap->GetIniertialBA2();
-    
 
     return complete;   
 }

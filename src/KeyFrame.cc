@@ -1140,4 +1140,9 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
     mpKeyFrameDB = pKFDB;
 }
 
+KeyFrameDatabase* KeyFrame::GetKeyFrameDatabase()
+{
+    return mpKeyFrameDB;
+}
+
 } //namespace ORB_SLAM

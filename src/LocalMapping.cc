@@ -230,6 +230,8 @@ void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
+    if(pKF->GetMap()->GetIniertialBA2())
+        pKF->GetKeyFrameDatabase()->add(mpCurrentKeyFrame);
     mbAbortBA=true;
 }
 
@@ -852,6 +854,7 @@ void LocalMapping::KeyFrameCulling()
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
     // We only consider close stereo points
+    unique_lock<mutex> lock(mMutexReset);
     const int Nd = 21;
     mpCurrentKeyFrame->UpdateBestCovisibles();
     vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();

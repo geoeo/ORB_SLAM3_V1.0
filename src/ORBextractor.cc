@@ -554,13 +554,6 @@ namespace ORB_SLAM3
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
-        //cv::Mat image = im_managed->getCvMat();
-        //cout << "[ORBextractor]: Max Features: " << nfeatures << endl;
-        //if(image.empty())
-        //    return -1;
-
-        assert(im_managed->getCvType() == CV_8UC1 );
-
         // Pre-compute the scale pyramid
         ComputePyramid(im_managed);
 

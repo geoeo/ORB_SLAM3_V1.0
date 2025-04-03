@@ -791,7 +791,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     if(lScoreAndMatch.empty())
         return vector<KeyFrame*>();
 
-    Verbose::PrintMess("Similarities Found", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Similarities Found: " + std::to_string(lScoreAndMatch.size()), Verbose::VERBOSITY_NORMAL);
 
     list<pair<float,KeyFrame*> > lAccScoreAndMatch;
     float bestAccScore = 0;
@@ -844,6 +844,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
             }
         }
     }
+
+    Verbose::PrintMess("Reloc Candidate Size: " + std::to_string(vpRelocCandidates.size()), Verbose::VERBOSITY_NORMAL);
 
     return vpRelocCandidates;
 }
