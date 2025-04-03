@@ -35,7 +35,6 @@
 #include <tracy.hpp>
 
 using namespace std;
-using namespace cuda_cv_managed_memory;
 
 auto scoped_mutex_lock(std::mutex &m){
     ZoneScopedC(tracy::Color::Coral);
@@ -194,7 +193,7 @@ System::~System(){
     }
 }
 
-tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler

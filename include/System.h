@@ -30,7 +30,6 @@
 #include <utility>
 #include <tuple>
 #include<opencv2/core/core.hpp>
-#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include "Tracking.h"
 #include "FrameDrawer.h"
@@ -94,7 +93,7 @@ public:
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    std::tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> TrackMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
+    std::tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="");
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.

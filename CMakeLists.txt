@@ -13,7 +13,7 @@ ENDIF()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-set(ORB_SLAM3_INC_INSTALL_DIR git )
+set(ORB_SLAM3_INC_INSTALL_DIR "/usr/local/include/${PROJECT_NAME}")
 set(ORB_SLAM3_RUNTIME_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}")
 set(ORB_SLAM3_LIBRARY_INSTALL_DIR "/usr/local/lib")
 set(ORB_SLAM3_ARCHIVE_INSTALL_DIR "/usr/local/lib")
@@ -83,7 +83,6 @@ find_package(Eigen3 3.4.0 REQUIRED EXACT)
 find_package(Pangolin REQUIRED)
 find_package(g2o REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
-find_package(CUDACvManagedMemory REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 find_package(DBoW2 REQUIRED)
 find_package(Sophus REQUIRED)
@@ -134,7 +133,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${EIGEN3_INCLUDE_DIR}
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
-     ${CUDACvManagedMemory_INCLUDE_DIRS}
      ${CUDAToolkit_INCLUDE_DIRS}
      ${Sophus_INCLUDE_DIRS}
 )
@@ -161,7 +159,6 @@ g2o::solver_slam2d_linear
 g2o::solver_structure_only
 g2o::csparse_extension
 ${TRACY_LIB}
-${CUDACvManagedMemory_LIBRARIES}
 ${CUDAToolkit_LIBRARIES}
 ${DBoW2_LIBRARIES}
 -lcrypto

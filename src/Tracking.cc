@@ -34,9 +34,7 @@
 #include <chrono>
 #include <tracy.hpp>
 
-
 using namespace std;
-using namespace cuda_cv_managed_memory;
 
 namespace ORB_SLAM3
 {
@@ -170,7 +168,7 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
-tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, string filename)
+tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, string filename)
 {
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
 
@@ -182,7 +180,7 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     // else
     mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
     if(mpViewer){
-        im_managed->getCvMat().copyTo(mImGrayViewer);
+        im_managed.createMatHeader().copyTo(mImGrayViewer);
     }
 
 

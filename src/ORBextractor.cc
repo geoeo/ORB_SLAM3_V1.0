@@ -503,14 +503,14 @@ namespace ORB_SLAM3
 
         for (int level = 0; level < nlevels; ++level)
         {
-            const int width = mvImagePyramid[level]->getWidth();
-            const int height = mvImagePyramid[level]->getHeight();
+            const int width = mvImagePyramid[level].cols;
+            const int height = mvImagePyramid[level].rows;
             unsigned int fastKpCount;
 
             ////////// Gpu Version //////////
             {
                 ZoneNamedN(featCallGPU, "featCallGPU", true); 
-                auto im_managed = mvImagePyramid[level]->getCvGpuMat(gpuFast.getStream());
+                auto im_managed = mvImagePyramid[level].createGpuMatHeader();
                 fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY);
                 
                 //Try again with lower threshold.
@@ -543,13 +543,13 @@ namespace ORB_SLAM3
                 const auto kpCount = allKeypoints[level].size();
                 allKeypointsCount +=kpCount;
                 if (kpCount > 0)
-                    gpuAngle.launch_async(mvImagePyramid[level]->getCvGpuMat(gpuAngle.getStream()), allKeypoints[level].data(), allKeypoints[level].size(), HALF_PATCH_SIZE);
+                    gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level].data(), allKeypoints[level].size(), HALF_PATCH_SIZE);
             }
         }
         return allKeypointsCount;
     }
 
-    int ORBextractor::extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, vector<KeyPoint>& _keypoints,
+    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, vector<KeyPoint>& _keypoints,
                                   OutputArray _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
@@ -598,13 +598,13 @@ namespace ORB_SLAM3
                 // preprocess the resized image
                 {
                     ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);
-                    GaussianBlur(mvImagePyramid[level]->getCvMat(), mvBlurredImagePyramid[level]->getCvMat(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+                    GaussianBlur(mvImagePyramid[level].createMatHeader(), mvBlurredImagePyramid[level].createMatHeader(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
                 }
 
                 // Compute the descriptors - GPU
                 {
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
-                    cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level]->getCvGpuMat(gpuOrb.getStream());
+                    cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     gpuOrb.launch_async(gMat, keypointsLevel.data(), keypointsLevel.size());
                     
                     Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
@@ -633,7 +633,7 @@ namespace ORB_SLAM3
         ZoneNamedN(AllocatePyramid, "AllocatePyramid", true); 
 
         const auto size_in_bytes_level_0 = width*height;
-        mvBlurredImagePyramid[0] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes_level_0, height, width, CV_8UC1, width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
+        mvBlurredImagePyramid[0] = cv::cuda::HostMem(height, width, CV_8UC1,cv::cuda::HostMem::AllocType::SHARED);
         
         for (int level = 1; level < nlevels; ++level)
         {
@@ -643,12 +643,12 @@ namespace ORB_SLAM3
             Size sz(cvRound(scaled_cols), cvRound(scaled_rows));
 
             const auto size_in_bytes = sz.height*sz.width;
-            mvImagePyramid[level] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes, sz.height, sz.width, CV_8UC1, sz.width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
-            mvBlurredImagePyramid[level] = shared_ptr<cuda_cv_managed_memory::CUDAManagedMemory>(new cuda_cv_managed_memory::CUDAManagedMemory(size_in_bytes, sz.height, sz.width, CV_8UC1, sz.width),cuda_cv_managed_memory::CUDAManagedMemoryDeleter());
+            mvImagePyramid[level] = cv::cuda::HostMem(sz.height, sz.width, CV_8UC1,cv::cuda::HostMem::AllocType::SHARED);
+            mvBlurredImagePyramid[level] = cv::cuda::HostMem(sz.height, sz.width, CV_8UC1,cv::cuda::HostMem::AllocType::SHARED);
         }
     }
 
-    void ORBextractor::ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed)
+    void ORBextractor::ComputePyramid(cv::cuda::HostMem image_managed)
     {
         ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
         mvImagePyramid[0] = image_managed;
@@ -658,10 +658,10 @@ namespace ORB_SLAM3
             // Compute the resized image
             // Use Orb Stream for now
             cv::cuda::Stream cvStream = gpuOrb.getCvStream();
-            cv::cuda::GpuMat gpu_mat_prior_level = mvImagePyramid[level-1]->getCvGpuMat(gpuOrb.getStream());
+            cv::cuda::GpuMat gpu_mat_prior_level = mvImagePyramid[level-1].createGpuMatHeader();
             auto managed_image_level = mvImagePyramid[level];
-            cv::cuda::GpuMat gpu_mat_level = managed_image_level->getCvGpuMat(gpuOrb.getStream());
-            cv::Size sz = cv::Size(managed_image_level->getWidth(), managed_image_level->getHeight());
+            cv::cuda::GpuMat gpu_mat_level = managed_image_level.createGpuMatHeader();
+            cv::Size sz = cv::Size(managed_image_level.cols, managed_image_level.rows);
 
             cv::cuda::resize(gpu_mat_prior_level,gpu_mat_level , sz, 0, 0, cv::InterpolationFlags::INTER_LINEAR, cvStream);
             cvStream.waitForCompletion();

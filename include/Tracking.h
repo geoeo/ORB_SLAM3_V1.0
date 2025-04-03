@@ -22,7 +22,6 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 #include "Viewer.h"
 #include "FrameDrawer.h"
@@ -71,7 +70,7 @@ public:
 
     ~Tracking();
 
-    std::tuple<Sophus::SE3f, unsigned long int, bool> GrabImageMonocular(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed, const double &timestamp, std::string filename);
+    std::tuple<Sophus::SE3f, unsigned long int, bool> GrabImageMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, std::string filename);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 

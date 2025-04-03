@@ -88,7 +88,7 @@ Frame::Frame(const Frame &frame)
 }
 
 
-Frame::Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
@@ -214,7 +214,7 @@ void Frame::AssignFeaturesToGrid()
     }
 }
 
-void Frame::ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed)
+void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
     monoLeft = mpORBextractorLeft->extractFeatures(im_managed,mvKeys,mDescriptors);
 }
@@ -558,10 +558,10 @@ void Frame::UndistortKeyPoints()
 
 }
 
-void Frame::ComputeImageBounds(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &imLeftManaged)
+void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)
 {
 
-    cv::Mat imLeft = imLeftManaged->getCvMat();
+    cv::Mat imLeft = imLeftManaged.createMatHeader();
 
     if(mDistCoef.at<float>(0)!=0.0)
     {

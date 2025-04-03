@@ -32,7 +32,6 @@ find_package(Pangolin REQUIRED)
 find_package(g2o REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
-find_package(CUDACvManagedMemory REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
 
@@ -41,7 +40,6 @@ target_link_libraries(mono_inertial_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ${CUDA_LIBRARIES}
-  ${CUDACvManagedMemory_LIBRARIES}
   ORB_SLAM3
   -lfmt
   )
@@ -55,7 +53,7 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${G2O_INCLUDE_DIR}
 ${CUDAToolkit_INCLUDE_DIRS}
-${CUDACvManagedMemory_INCLUDE_DIRS}
+${ORB_SLAM3_INCLUDE_DIR}
 )
 
 # Install directories files.

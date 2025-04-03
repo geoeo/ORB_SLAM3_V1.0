@@ -25,7 +25,6 @@
 #include <cuda/Orb.hpp>
 #include <cuda/Angle.hpp>
 
-#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudafeatures2d.hpp>
 
@@ -66,7 +65,7 @@ namespace ORB_SLAM3
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        int extractFeatures(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed,
+        int extractFeatures(const cv::cuda::HostMem &im_managed,
                        std::vector<cv::KeyPoint> &_keypoints,
                        cv::OutputArray _descriptors);
 
@@ -100,14 +99,14 @@ namespace ORB_SLAM3
             return mvInvLevelSigma2;
         }
 
-        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvImagePyramid;
-        std::vector<cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr> mvBlurredImagePyramid;
+        std::vector<cv::cuda::HostMem> mvImagePyramid;
+        std::vector<cv::cuda::HostMem> mvBlurredImagePyramid;
 
     protected:
         void AllocatePyramid(int width, int height);
-        void ComputePyramid(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed);
+        void ComputePyramid(cv::cuda::HostMem image_managed);
         int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        void computeDescriptors(cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
+        void computeDescriptors(cv::cuda::HostMem image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
                                    const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
         static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);

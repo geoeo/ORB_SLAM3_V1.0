@@ -37,7 +37,6 @@
 
 #include <mutex>
 #include <opencv2/opencv.hpp>
-#include <CUDACvManagedMemory/cuda_cv_managed_memory.hpp>
 
 
 #include "Eigen/Core"
@@ -61,7 +60,7 @@ public:
     Frame(const Frame &frame);
 
     // Constructor for Monocular cameras.
-    Frame(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+    Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
@@ -69,7 +68,7 @@ public:
     // ~Frame();
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
-    void ExtractORB(int flag, const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &im_managed);
+    void ExtractORB(int flag, const cv::cuda::HostMem &im_managed);
 
     // Compute Bag of Words representation.
     void ComputeBoW();
@@ -299,7 +298,7 @@ private:
     void UndistortKeyPoints();
 
     // Computes image bounds for the undistorted image (called in the constructor).
-    void ComputeImageBounds(const cuda_cv_managed_memory::CUDAManagedMemory::SharedPtr &imLeft);
+    void ComputeImageBounds(const cv::cuda::HostMem &imLeft);
 
     // Assign keypoints to the grid for speed up feature matching (called in the constructor).
     void AssignFeaturesToGrid();
