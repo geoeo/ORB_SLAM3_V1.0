@@ -767,7 +767,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
             maxCommonWords=(*lit)->mnRelocWords;
     }
 
-    int minCommonWords = maxCommonWords*0.6f;
+    int minCommonWords = maxCommonWords*0.8f;
     Verbose::PrintMess("Min Common Words: " + to_string(minCommonWords) + " Max Common: " + to_string(maxCommonWords), Verbose::VERBOSITY_NORMAL);
 
     list<pair<float,KeyFrame*> > lScoreAndMatch;
@@ -825,7 +825,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     }
 
     // Return all those keyframes with a score higher than 0.75*bestScore
-    float minScoreToRetain = 0.55f*bestAccScore;
+    float minScoreToRetain = 0.75f*bestAccScore;
     set<KeyFrame*> spAlreadyAddedKF;
     vector<KeyFrame*> vpRelocCandidates;
     vpRelocCandidates.reserve(lAccScoreAndMatch.size());
