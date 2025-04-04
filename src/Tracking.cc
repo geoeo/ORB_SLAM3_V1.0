@@ -742,6 +742,21 @@ void Tracking::Track()
         // Reset if the camera get lost soon after initialization
         if(mState==LOST && !isGeoreferenced())
         {
+
+            if(pCurrentMap->KeyFramesInMap()<=10)
+            {
+                mpSystem->ResetActiveMap();
+                return;
+            }
+
+
+            if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+                if (!pCurrentMap->isImuInitialized())
+                {
+                    Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
+                    mpSystem->ResetActiveMap();
+                    return;
+                }
             mpLocalMapper->RequestReset();
             CreateMapInAtlas();
             return;
