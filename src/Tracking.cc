@@ -1530,8 +1530,8 @@ void Tracking::CreateNewKeyFrame()
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
-    if(mpAtlas->isImuInitialized())
-        mpKeyFrameDB->add(pKF);
+    //if(mpAtlas->isImuInitialized())
+    mpKeyFrameDB->add(pKF);
 }
 
 void Tracking::SearchLocalPoints()
