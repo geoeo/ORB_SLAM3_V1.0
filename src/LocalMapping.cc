@@ -230,8 +230,6 @@ void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
-    if(mpAtlas->isImuInitialized())
-        pKF->GetKeyFrameDatabase()->add(pKF);
     mbAbortBA=true;
 }
 
@@ -279,6 +277,9 @@ void LocalMapping::ProcessNewKeyFrame()
 
     // Update links in the Covisibility Graph
     mpCurrentKeyFrame->UpdateConnections();
+
+    if(mpAtlas->isImuInitialized())
+        mpCurrentKeyFrame->GetKeyFrameDatabase()->add(mpCurrentKeyFrame);
 
     // Insert Keyframe in Map
     mpAtlas->AddKeyFrame(mpCurrentKeyFrame);
