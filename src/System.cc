@@ -261,6 +261,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
     auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
+    
 
     //unique_lock<mutex> lock2(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );

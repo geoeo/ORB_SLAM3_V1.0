@@ -9,6 +9,7 @@ bag_start_offset = 180.0
 bag_path = '/bags/2025_03_04-Steinalpl-rec/seq0/bags/all/rosbag2_2025_03_04-11_31_57/'
 
 air_id = 5
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 
 def generate_launch_description():
@@ -29,7 +30,7 @@ def generate_launch_description():
             ]
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}', '--topics',f'{image_topic}', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu'],
+            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}','--rate', f'{rate}', '--topics',f'{image_topic}', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu'],
             output='log'
         )
 ])

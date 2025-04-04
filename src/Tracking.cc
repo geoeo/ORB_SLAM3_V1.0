@@ -183,7 +183,6 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
         im_managed.createMatHeader().copyTo(mImGrayViewer);
     }
 
-
     if (mState==NO_IMAGES_YET)
         t0=timestamp;
 
