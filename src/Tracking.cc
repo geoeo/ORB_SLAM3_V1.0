@@ -43,7 +43,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
-    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
+    mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
+    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
 
@@ -549,7 +550,7 @@ void Tracking::Track()
                     bOK = true;
                     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
-                        if(pCurrentMap->isImuInitialized()){
+                        if(pCurrentMap->isImuInitialized() & (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU)){
                             const auto imu_preint = PredictStateIMU();
                             if(imu_preint){
                                 bOK = Relocalization();
@@ -985,7 +986,7 @@ void Tracking::CreateInitialMapMonocular()
     mCurrentFrame.SetPose(pKFcur->GetPose());
     mnLastKeyFrameId=mCurrentFrame.mnId;
     mpLastKeyFrame = pKFcur;
-    //mnLastRelocFrameId = mInitialFrame.mnId;
+    mnLastRelocFrameId = mInitialFrame.mnId;
 
     mvpLocalKeyFrames.push_back(pKFcur);
     mvpLocalKeyFrames.push_back(pKFini);
@@ -1031,7 +1032,7 @@ void Tracking::CreateMapInAtlas()
 
     // Restart the variable with information about the last KF
     mbVelocity = false;
-    //mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the current id, because it is the new starting point for new map
+    mnLastRelocFrameId = mnLastInitFrameId; // The last relocation KF_id is the current id, because it is the new starting point for new map
     Verbose::PrintMess("First frame id in map: " + to_string(mnLastInitFrameId+1), Verbose::VERBOSITY_NORMAL);
     mbVO = false; // Init value for know if there are enough MapPoints in the last KF
     if(mSensor == System::MONOCULAR || mSensor == System::IMU_MONOCULAR)
@@ -2082,7 +2083,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     //KeyFrame::nNextId = mpAtlas->GetLastInitKFid();
     //Frame::nNextId = mnLastInitFrameId;
     mnLastInitFrameId = Frame::nNextId;
-    //mnLastRelocFrameId = mnLastInitFrameId;
+    mnLastRelocFrameId = mnLastInitFrameId;
     mState = NO_IMAGES_YET; //NOT_INITIALIZED;
 
     mbReadyToInitializate = false;
