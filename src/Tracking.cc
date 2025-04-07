@@ -547,17 +547,16 @@ void Tracking::Track()
                 {
                     Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
 
-                    bOK = true;
+                    bOK = false;
                     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
                         if(pCurrentMap->isImuInitialized() & (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU)){
+                            UpdateLastFrame();
                             const auto imu_preint = PredictStateIMU();
                             if(imu_preint){
                                 bOK = Relocalization();
                             }
                         }
-                        else
-                            bOK = false;
 
                         // if (mCurrentFrame.mTimeStamp-mTimeStampLost>time_recently_lost)
                         // {
