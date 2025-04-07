@@ -24,6 +24,7 @@
 #include "ORBextractor.h"
 #include "Converter.h"
 #include "ORBmatcher.h"
+#include "Verbose.h"
 
 #include <thread>
 #include <tracy.hpp>
@@ -253,6 +254,10 @@ void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f
 {
     mVw = Vwb;
     mbHasVelocity = true;
+
+    Verbose::PrintMess("Rwb - " + to_string(Rwb(0,0)) + ", " + to_string(Rwb(1,1)) + ", " + to_string(Rwb(2,2)), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("twb - " + to_string(twb(0)) + ", " + to_string(twb(1)) + ", " + to_string(twb(2)), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("Vwb - " + to_string(Vwb(0)) + ", " + to_string(Vwb(1)) + ", " + to_string(Vwb(2)), Verbose::VERBOSITY_DEBUG);
 
     Sophus::SE3f Twb(Rwb, twb);
     Sophus::SE3f Tbw = Twb.inverse();
