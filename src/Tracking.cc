@@ -1852,6 +1852,7 @@ bool Tracking::Relocalization()
         else
         {
             int nmatches = matcher.SearchByBoW(pKF,mCurrentFrame,vvpMapPointMatches[i]);
+            Verbose::PrintMess("Reloc SearchByBoW - Matches:  " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
             if(nmatches<15)
             {
                 vbDiscarded[i] = true;
@@ -1936,6 +1937,7 @@ bool Tracking::Relocalization()
                     if(nadditional+nGood>=50)
                     {
                         nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                        Verbose::PrintMess("Reloc PoseOptimization (2) - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
 
 
                         // If many inliers but still not enough, search by projection again in a narrower window
@@ -1947,6 +1949,7 @@ bool Tracking::Relocalization()
                                 if(mCurrentFrame.mvpMapPoints[ip])
                                     sFound.insert(mCurrentFrame.mvpMapPoints[ip]);
                             nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,3,64);
+                            Verbose::PrintMess("Reloc SearchByProjection (2)- Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_NORMAL);
 
                             // Final optimization
                             if(nGood+nadditional>=50)
