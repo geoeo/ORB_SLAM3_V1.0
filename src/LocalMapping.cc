@@ -61,7 +61,7 @@ void LocalMapping::Run()
 {
     mbFinished = false;
 
-    while(1)
+    while(true)
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
         // Tracking will see that Local Mapping is busy
@@ -246,6 +246,12 @@ void LocalMapping::ProcessNewKeyFrame()
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         mlNewKeyFrames.pop_front();
+    }
+
+    // If we dont use the IMU the intial map space is the final one
+    if(!mbInertial){
+        mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+        mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
     }
 
     // Compute Bags of Words structures
@@ -883,8 +889,6 @@ void LocalMapping::KeyFrameCulling()
         }
         last_ID = aux_KF->mnId;
     }
-
-
 
     for(vector<KeyFrame*>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
     {

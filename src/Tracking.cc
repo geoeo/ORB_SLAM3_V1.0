@@ -123,9 +123,6 @@ void Tracking::newParameterLoader(Settings *settings) {
 
     mpORBextractorLeft = new ORBextractor(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
 
-    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-    //     mpIniORBextractor = new ORBextractor(5*nFeatures,5*nFastFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST,newImSize.width, newImSize.height);
-
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
     mInsertKFsLost = settings->insertKFsWhenLost();
