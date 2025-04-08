@@ -1918,6 +1918,7 @@ bool Tracking::Relocalization()
                 }
 
                 int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                Verbose::PrintMess("Reloc PoseOptimization - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
 
                 if(nGood<10)
                     continue;
@@ -1930,10 +1931,12 @@ bool Tracking::Relocalization()
                 if(nGood<50)
                 {
                     int nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,10,100);
+                    Verbose::PrintMess("Reloc SearchByProjection - Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_NORMAL);
 
                     if(nadditional+nGood>=50)
                     {
                         nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+
 
                         // If many inliers but still not enough, search by projection again in a narrower window
                         // the camera has been already optimized with many points
@@ -1949,6 +1952,7 @@ bool Tracking::Relocalization()
                             if(nGood+nadditional>=50)
                             {
                                 nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+                                Verbose::PrintMess("Reloc PoseOptimization (F)- Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
 
                                 for(int io =0; io<mCurrentFrame.mNumKeypoints; io++)
                                     if(mCurrentFrame.mvbOutlier[io])
@@ -1971,12 +1975,13 @@ bool Tracking::Relocalization()
 
     if(!bMatch)
     {
+        Verbose::PrintMess("Relocalized Failed", Verbose::VERBOSITY_NORMAL);
         return false;
     }
     else
     {
         mnLastRelocFrameId = mCurrentFrame.mnId;
-        cout << "Relocalized!!" << endl;
+        Verbose::PrintMess("Relocalized Success", Verbose::VERBOSITY_NORMAL);
         return true;
     }
 
