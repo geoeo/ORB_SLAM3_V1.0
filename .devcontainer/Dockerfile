@@ -64,12 +64,16 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 RUN rm opencv_contrib.zip
 RUN rm opencv.zip 
 
+RUN git clone https://gitlab.com/libeigen/eigen.git \
+    && cd eigen && git checkout 63a40ffb951a8f6b7662d14c6613c5c2994a9b61 \
+    && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && cmake --build build -j 6 --target install
+
 # Deps for cv_image_transport
 RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
-    libeigen3-dev \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspaces/ORB_SLAM3_V1.0
@@ -88,11 +92,6 @@ RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
 
 # needed for g2o
 RUN apt-get update && apt-get install -y libsuitesparse-dev 
-
-RUN git clone https://github.com/geoeo/CUDACvManagedMemory.git \
-    && cd CUDACvManagedMemory \
-    && cmake -S . -B build \
-    && cmake --build build -j $(nproc --all) --target install
 
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
