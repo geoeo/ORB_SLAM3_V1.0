@@ -522,8 +522,13 @@ void Frame::ComputeBoW()
 {
     if(mBowVec.empty())
     {
+        ZoneNamedN(ComputeBoW, "ComputeBoW", true);
         vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
-        mpORBvocabulary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
+        {
+            ZoneNamedN(ComputeBoWTransform, "ComputeBoWTransform", true);
+            mpORBvocabulary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
+        }
+        
     }
 }
 

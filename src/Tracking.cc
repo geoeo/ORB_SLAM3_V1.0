@@ -169,7 +169,6 @@ bool Tracking::GetStepByStep()
 tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, string filename)
 {
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
-
     assert(mSensor == System::IMU_MONOCULAR);
 
         
@@ -204,7 +203,7 @@ void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
 
 void Tracking::PreintegrateIMU()
 {
-
+    ZoneNamedN(PreIntegrate, "PreIntegrate", true); 
     if(!mCurrentFrame.mpPrevFrame)
     {
         Verbose::PrintMess("non prev frame ", Verbose::VERBOSITY_NORMAL);
@@ -1075,6 +1074,7 @@ void Tracking::CheckReplacedInLastFrame()
 
 bool Tracking::TrackReferenceKeyFrame()
 {
+    ZoneNamedN(TrackReferenceKeyFrame, "TrackReferenceKeyFrame", true); 
     // Compute Bag of Words vector
     mCurrentFrame.ComputeBoW();
 
@@ -1087,7 +1087,6 @@ bool Tracking::TrackReferenceKeyFrame()
 
     if(nmatches<15)
     {
-        
         Verbose::PrintMess("TRACK_REF_KF: Less than 15 matches!! - " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         return false;
     }
@@ -1103,6 +1102,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // Discard outliers
     int nmatchesMap = 0;
+    
     for(int i =0; i<mCurrentFrame.mNumKeypoints; i++)
     {
         //if(i >= mCurrentFrame.Nleft) break;
@@ -1128,6 +1128,7 @@ bool Tracking::TrackReferenceKeyFrame()
                 nmatchesMap++;
         }
     }
+    
 
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
         return true;
@@ -1147,6 +1148,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
+    ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
     ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
@@ -1244,7 +1246,7 @@ bool Tracking::TrackWithMotionModel()
 
 bool Tracking::TrackLocalMap()
 {
-
+    ZoneNamedN(TrackLocalMap, "TrackLocalMap", true); 
     // We have an estimation of the camera pose and some map points tracked in the frame.
     // We retrieve the local map and try to find matches to points in the local map.
     mTrackedFr++;

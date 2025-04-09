@@ -17,12 +17,14 @@
 */
 
 #include "Converter.h"
+#include <tracy.hpp>
 
 namespace ORB_SLAM3
 {
 
 std::vector<cv::Mat> Converter::toDescriptorVector(const cv::Mat &Descriptors)
 {
+    ZoneNamedN(toDescriptorVector, "toDescriptorVector", true);
     std::vector<cv::Mat> vDesc;
     vDesc.reserve(Descriptors.rows);
     for (int j=0;j<Descriptors.rows;j++)
