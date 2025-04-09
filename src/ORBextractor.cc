@@ -527,15 +527,6 @@ namespace ORB_SLAM3
         }
 
         int allKeypointsCount = 0;
-        // {
-        //     ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
-        //     // compute orientations
-        //     for (int level = 0; level < nlevels; ++level){
-        //         allKeypointsCount +=allKeypoints[level].size();
-        //         ORBextractor::computeOrientation(mvImagePyramid[level]->getCvMat(), allKeypoints[level], umax);
-        //     }
-        // }
-
         {
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
             // compute orientations
