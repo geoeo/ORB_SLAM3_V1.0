@@ -34,6 +34,9 @@ RUN apt update && apt upgrade -y
 RUN apt update && apt install ros-humble-ros-base -y
 RUN apt update && apt install ros-dev-tools ros-humble-rosbag2-storage-mcap -y
 
+# Eigen3 is getting installed by some ROS package. Remove here so that we dont have runtime issues
+RUN rm -rf /usr/include/eigen3 && rm -rf /usr/share/eigen3
+
 WORKDIR /root
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.25.2/cmake-3.25.2.tar.gz
 RUN tar -xzvf cmake-3.25.2.tar.gz
