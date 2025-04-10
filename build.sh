@@ -1,17 +1,17 @@
 echo "Configuring and building Thirdparty/DBoW2 ..."
 
 export BUILD_TYPE=${1:-Release}
-shift
+export G20_MARCH_NATIVE=${2:-OFF} # Enable on Orin
 
 cd Thirdparty/DBoW2
-cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} "$@"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} 
 cmake --build build -j $(nproc --all) --target install
 
 cd ../g2o
 
 echo "Configuring and building Thirdparty/g2o ..."
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr/local -DG2O_BUILD_APPS=OFF -DBUILD_WITH_MARCH_NATIVE=OFF -DG2O_BUILD_EXAMPLES=OFF -DG2O_USE_OPENGL=OFF
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr/local -DG2O_BUILD_APPS=OFF -DBUILD_WITH_MARCH_NATIVE=${G20_MARCH_NATIVE} -DG2O_BUILD_EXAMPLES=OFF -DG2O_USE_OPENGL=OFF
 cmake --build build -j $(nproc --all) --target install
 
 cd ../Sophus
@@ -31,5 +31,5 @@ cd ..
 
 echo "Configuring and building ORB_SLAM3 ..."
 
-cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DTRACY_ENABLE=OFF "$@"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DTRACY_ENABLE=OFF
 cmake --build build -j 6 --target install
