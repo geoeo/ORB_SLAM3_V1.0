@@ -33,6 +33,7 @@ find_package(g2o REQUIRED)
 find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDAToolkit REQUIRED)
+find_package(Sophus REQUIRED)
 
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
@@ -51,7 +52,6 @@ target_include_directories(mono_inertial_node PUBLIC
 ${OpenCV_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
-${G2O_INCLUDE_DIR}
 ${CUDAToolkit_INCLUDE_DIRS}
 ${ORB_SLAM3_INCLUDE_DIR}
 )

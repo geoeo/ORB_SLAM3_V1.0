@@ -134,7 +134,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${Pangolin_INCLUDE_DIRS}
      ${DBoW2_INCLUDE_DIRS}
      ${CUDAToolkit_INCLUDE_DIRS}
-     ${Sophus_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -161,6 +160,7 @@ g2o::csparse_extension
 ${TRACY_LIB}
 ${CUDAToolkit_LIBRARIES}
 ${DBoW2_LIBRARIES}
+Sophus::Sophus
 -lcrypto
 )
 

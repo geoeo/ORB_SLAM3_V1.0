@@ -27,7 +27,7 @@
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
 
-#include "Sophus/sophus/geometry.hpp"
+#include <sophus/geometry.hpp>
 
 #include "ImuTypes.h"
 #include "ORBVocabulary.h"
@@ -40,7 +40,7 @@
 
 
 #include "Eigen/Core"
-#include "Sophus/sophus/se3.hpp"
+#include <sophus/se3.hpp>
 
 namespace ORB_SLAM3
 {

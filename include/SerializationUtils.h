@@ -22,7 +22,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
-#include "Sophus/sophus/se3.hpp"
+#include <sophus/se3.hpp>
 #include <Eigen/Core>
 
 #include <opencv2/core/core.hpp>

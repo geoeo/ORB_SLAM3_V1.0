@@ -26,7 +26,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/Dense>
-#include "Sophus/sophus/se3.hpp"
+#include <sophus/se3.hpp>
 #include <mutex>
 #include <iostream>
 
