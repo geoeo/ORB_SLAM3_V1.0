@@ -67,7 +67,7 @@ namespace ORB_SLAM3
         // Mask is ignored in the current implementation.
         int extractFeatures(const cv::cuda::HostMem &im_managed,
                        std::vector<cv::KeyPoint> &_keypoints,
-                       cv::OutputArray _descriptors);
+                       cv::cuda::HostMem& _descriptors);
 
         int inline GetLevels()
         {
@@ -121,6 +121,8 @@ namespace ORB_SLAM3
         int nlevels;
         int iniThFAST;
         int minThFAST;
+
+        cv::Ptr<cv::cuda::Filter> gpuGaussian;
 
         std::vector<int> mnFeaturesPerLevel;
         std::vector<int> umax;
