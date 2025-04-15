@@ -52,7 +52,10 @@ RUN unzip opencv.zip
 RUN unzip opencv_contrib.zip
 RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 && cmake \
+    -DWITH_CUBLAS=ON \
     -DWITH_CUDA=ON \
+    -DCUDA_ARCH_BIN=8.7 \
+    -DCUDA_ARCH_PTX="sm_87" \
     -DCMAKE_BUILD_TYPE=RELEASE \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_opencv_apps=OFF \
@@ -61,6 +64,10 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
     -DOPENCV_ENABLE_NONFREE=ON \
     -DOPENCV_GENERATE_PKGCONFIG=OFF \
     -DBUILD_TESTS=OFF \
+    -DCUDA_FAST_MATH=ON \
+    -DENABLE_NEON=ON \
+    -DBUILD_opencv_python2=OFF \
+    -DBUILD_opencv_python3=OFF \
     -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
     -DCMAKE_INSTALL_PREFIX=/usr/local .. \
 && make -j $(nproc --all) && make install
@@ -79,6 +86,7 @@ RUN apt-get update && apt-get install -y \
     libtheora-dev \
     libboost-all-dev \
     && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /workspaces/ORB_SLAM3_V1.0
 COPY .devcontainer/build_scripts/install_ros_packages.sh /root
 WORKDIR /root
@@ -90,7 +98,6 @@ RUN cd ~ && git clone --recursive https://github.com/stevenlovegrove/Pangolin.gi
 RUN cd ~/Pangolin && git checkout d25ec00
 RUN cd ~/Pangolin && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
 RUN cd ~/Pangolin && cmake --build build -j $(nproc --all) --target install
-
 
 
 # needed for g2o

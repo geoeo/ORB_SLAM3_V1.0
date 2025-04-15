@@ -94,7 +94,7 @@ public:
     }
 
     void CreateMapInAtlas();
-    //std::mutex mMutexTracks;
+    std::mutex mTrackingState;
 
     //--
     void NewDataset();
@@ -174,6 +174,8 @@ public:
 
 
     std::vector<MapPoint*> GetLocalMapMPS();
+    void setTrackingState(eTrackingState newState);
+    eTrackingState getTrackingState();
 
     bool mbWriteStats;
 
@@ -307,6 +309,7 @@ protected:
     unsigned int mnLastRelocFrameId;
     double mTimeStampLost;
     double time_recently_lost;
+    double mImageTimeout;
 
     unsigned int mnFirstFrameId;
     unsigned int mnInitialFrameId;

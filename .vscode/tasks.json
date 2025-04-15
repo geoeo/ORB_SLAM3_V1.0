@@ -4,7 +4,7 @@
           {
             "label": "source_orb3_ws",
             "type": "shell",
-            "command": "source /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/setup.bash && source /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/local_setup.bash && env | head -n -1 > /workspaces/ORB_SLAM3_V1.0/ros2_ws/build/temp_launch.env",
+            "command": "source /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/setup.bash && source /workspaces/ORB_SLAM3_V1.0/ros2_ws/install/local_setup.bash && source /workspaces/ORB_SLAM3_V1.0/ros2_ws/network/set_fastrtps_localhost.sh && env | head -n -1 > /workspaces/ORB_SLAM3_V1.0/ros2_ws/build/temp_launch.env",
             "presentation": {
               "reveal": "never",
               "panel": "shared"

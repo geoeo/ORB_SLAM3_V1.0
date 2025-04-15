@@ -35,14 +35,11 @@ namespace ORB_SLAM3
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
     mScale(1.0), mInitSect(0), mIdxInit(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
-    mbNotStop(false), mbAcceptKeyFrames(true), bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9))
+    mbNotStop(false), mbAcceptKeyFrames(true),mMutexPtrChangeKeyframe(std::make_shared<std::mutex>()), bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9))
 {
     mnMatchesInliers = 0;
-
     mbBadImu = false;
-
     mTinit = 0.f;
-
     mNumLM = 0;
     mNumKFCulling=0;
 }
@@ -890,6 +887,7 @@ void LocalMapping::KeyFrameCulling()
         last_ID = aux_KF->mnId;
     }
 
+    unique_lock<mutex> lock(*mMutexPtrChangeKeyframe);
     for(vector<KeyFrame*>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
     {
         count++;
@@ -1380,14 +1378,17 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     mnKFs=vpKF.size();
     mIdxInit++;
 
+    unique_lock<mutex> KFlock(*mMutexPtrChangeKeyframe);
     for(list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend=mlNewKeyFrames.end(); lit!=lend; lit++)
     {
         (*lit)->SetBadFlag();
         delete *lit;
     }
     mlNewKeyFrames.clear();
+    KFlock.unlock();
 
-    mpTracker->mState=Tracking::OK;
+    // TODO: Investigate this set
+    mpTracker->setTrackingState(Tracking::OK);
     bInitializing = false;
 
     mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
@@ -1487,6 +1488,10 @@ double LocalMapping::GetCurrKFTime()
 KeyFrame* LocalMapping::GetCurrKF()
 {
     return mpCurrentKeyFrame;
+}
+
+std::shared_ptr<std::mutex> LocalMapping::getKeyFrameChangeMutex(){
+    return mMutexPtrChangeKeyframe;
 }
 
 } //namespace ORB_SLAM

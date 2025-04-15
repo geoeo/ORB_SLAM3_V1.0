@@ -3,12 +3,12 @@ from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
 
-bag_start_offset = 180.0
-#bag_path = '/bags/240925_guenselsdorf/fighter4/2024_09_25-guenselsdorf/seq0/bags/all/rosbag2_2024_09_25-11_04_09'
+bag_start_offset = 5.0
+bag_path = '/bags/fighter4/2024_09_25-guenselsdorf/seq0/bags/all/rosbag2_2024_09_25-11_04_09'
 #bag_path = '/bags/240925_guenselsdorf/rosbag2_2024_09_25-11_04_09_uncompressed_fighter_4/rosbag2_2024_09_26-06_55_33/'
-bag_path = '/bags/2025_03_04-Steinalpl-rec/seq0/bags/all/rosbag2_2025_03_04-11_31_57/'
+#bag_path = '/bags/2025_03_04-Steinalpl-rec/seq0/bags/all/rosbag2_2025_03_04-11_31_57/'
 
-air_id = 5
+air_id = 4
 rate = 1.0
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 
@@ -30,7 +30,10 @@ def generate_launch_description():
             ]
         ),
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'bag', 'play', f'{bag_path}', '--start-offset',f'{bag_start_offset}','--rate', f'{rate}', '--topics',f'{image_topic}', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu'],
+            cmd=['ros2', 'bag', 'play', f'{bag_path}', 
+            '--start-offset',f'{bag_start_offset}', 
+            '--topics',f'{image_topic}', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu',
+            '--rate', f'{rate}'],
             output='log'
         )
 ])

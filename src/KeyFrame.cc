@@ -615,6 +615,13 @@ void KeyFrame::SetBadFlag()
                 vector<KeyFrame*> vpConnected = pKF->GetVectorCovisibleKeyFrames();
                 for(size_t i=0, iend=vpConnected.size(); i<iend; i++)
                 {
+                    const auto is_same = this == vpConnected[i];
+                    if(is_same)
+                        continue;
+
+                    if(vpConnected[i]->isBad())
+                        continue;
+
                     for(set<KeyFrame*>::iterator spcit=sParentCandidates.begin(), spcend=sParentCandidates.end(); spcit!=spcend; spcit++)
                     {
                         if(vpConnected[i]->mnId == (*spcit)->mnId)

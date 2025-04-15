@@ -38,9 +38,9 @@ public:
 void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
 {
   mBufMutex.lock();
+  const auto size = imuBuf.size();
   imuBuf.push(*imu_msg);
   mBufMutex.unlock();
-  return;
 }
 
 class ImageGrabber
@@ -85,10 +85,9 @@ public:
 void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
   mBufMutex.lock();
+  const auto size = img0Buf.size();
   img0Buf.push(img_msg);
   count = 0;
-  
-
   mBufMutex.unlock();
 }
 
@@ -126,23 +125,31 @@ void ImageGrabber::SyncWithImu()
     if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
     {
       mpImuGb->mBufMutex.lock();
-      auto ros_imu_ts = rclcpp::Time(mpImuGb->imuBuf.front().header.stamp);
+      auto imu_front = mpImuGb->imuBuf.front();
+      mpImuGb->mBufMutex.unlock();
+      auto ros_imu_ts = rclcpp::Time(imu_front.header.stamp);
       if(init_ts == 0)
         init_ts = ros_imu_ts.seconds();
-      mpImuGb->mBufMutex.unlock();
+
 
       this->mBufMutex.lock();
-      im_managed = GetImage(img0Buf.front());
-      auto ros_image_ts_front =  rclcpp::Time(img0Buf.front()->header.stamp);
+      auto im_front = img0Buf.front();
+      this->mBufMutex.unlock();
+      im_managed = GetImage(im_front);
+      auto ros_image_ts_front =  rclcpp::Time(im_front->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
       img0Buf.pop();
-      this->mBufMutex.unlock();
+
       
       vector<ORB_SLAM3::IMU::Point> vImuMeas;
       mpImuGb->mBufMutex.lock();
-      if(!mpImuGb->imuBuf.empty())
+      auto imu_empty = mpImuGb->imuBuf.empty();
+      mpImuGb->mBufMutex.unlock();
+      if(!imu_empty)
       {
+        mpImuGb->mBufMutex.lock();
         auto imu_meas = mpImuGb->imuBuf.front();
+        mpImuGb->mBufMutex.unlock();
         auto ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
         auto t = ros_imu_ts_front.seconds();
         t-=init_ts;
@@ -154,16 +161,17 @@ void ImageGrabber::SyncWithImu()
           cv::Point3f gyr(imu_meas.angular_velocity.x, imu_meas.angular_velocity.y, imu_meas.angular_velocity.z);
           vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
 
+          mpImuGb->mBufMutex.lock();
           mpImuGb->imuBuf.pop();
           if(mpImuGb->imuBuf.empty())
             break;
           imu_meas = mpImuGb->imuBuf.front();
+          mpImuGb->mBufMutex.unlock();
           ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
           t = ros_imu_ts_front.seconds();
           t-=init_ts;
         }
       }
-      mpImuGb->mBufMutex.unlock();
 
       if(!vImuMeas.empty() && init_ts != 0){
         std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
@@ -325,12 +333,12 @@ class SlamNode : public rclcpp::Node
       const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, false);
       cout << "SLAM Init" << endl;
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F5/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter5/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F4/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1));
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter4/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1));
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 

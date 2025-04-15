@@ -79,6 +79,8 @@ public:
     double GetCurrKFTime();
     KeyFrame* GetCurrKF();
 
+    std::shared_ptr<std::mutex> getKeyFrameChangeMutex();
+
     std::mutex mMutexImuInit;
 
     Eigen::MatrixXd mcovInertial;
@@ -159,6 +161,8 @@ protected:
 
     bool mbAcceptKeyFrames;
     std::mutex mMutexAccept;
+
+    std::shared_ptr<std::mutex> mMutexPtrChangeKeyframe;
 
     bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false);
     void ScaleRefinement();

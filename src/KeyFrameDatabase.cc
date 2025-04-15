@@ -115,7 +115,8 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
             for(list<KeyFrame*>::iterator lit=lKFs.begin(), lend= lKFs.end(); lit!=lend; lit++)
             {
                 KeyFrame* pKFi=*lit;
-                if(pKFi->GetMap()==pKF->GetMap()) // For consider a loop candidate it a candidate it must be in the same map
+                // pKFi->SetNotErase();
+                if(pKFi->GetMap()==pKF->GetMap() && !pKFi->isBad()) // For consider a loop candidate it a candidate it must be in the same map
                 {
                     if(pKFi->mnLoopQuery!=pKF->mnId)
                     {
@@ -128,8 +129,6 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
                     }
                     pKFi->mnLoopWords++;
                 }
-
-
             }
         }
     }
