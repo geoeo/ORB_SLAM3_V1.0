@@ -174,6 +174,10 @@ namespace ORB_SLAM3
             ++v0;
         }
 
+        gpuGaussian = cv::cuda::createGaussianFilter(CV_8UC1,CV_8UC1,Size(7, 7),1.2,1.2,BORDER_REFLECT_101);
+
+        //GaussianBlur(mvImagePyramid[level].createMatHeader(), mvBlurredImagePyramid[level].createMatHeader(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
+
         AllocatePyramid(imageWidth, imageHeight);
         ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
     }
@@ -565,11 +569,6 @@ namespace ORB_SLAM3
             _keypoints = vector<cv::KeyPoint>(nkeypoints);
         }
 
-
-        //Modified for speeding up stereo fisheye matching
-        int offset = 0;
-        int monoIndex = 0;
-
         vector<int> levels_vec(nlevels);
         iota(begin(levels_vec), end(levels_vec), 0);
 
@@ -587,50 +586,36 @@ namespace ORB_SLAM3
             {
                 vector<KeyPoint>& keypointsLevel = allKeypoints[level];
                 const auto nkeypointsLevel = keypoint_num_vec[level];
-                //const auto nkeypointsLevel = (int)keypointsLevel.size();
 
                 if(nkeypointsLevel==0)
                     return;
 
-                // preprocess the resized image
-                {
-                    ZoneNamedN(GaussianBlurCall, "GaussianBlurCall", true);
-                    GaussianBlur(mvImagePyramid[level].createMatHeader(), mvBlurredImagePyramid[level].createMatHeader(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
-                }
-
-                const auto my_offset = level==0 ? 0 : keypoints_acc[level-1];
-                const auto my_offset_end = my_offset+nkeypointsLevel;
-
-
+                const auto offset = level==0 ? 0 : keypoints_acc[level-1];
+                const auto offset_end = offset+nkeypointsLevel;
                 // Compute the descriptors - GPU
                 {
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     gpuOrb.launch_async(gMat, keypointsLevel.data(), keypointsLevel.size());
                     
-                    std::cout << "OFFSET: " << std::to_string(offset) << " MY OFFSET: " << std::to_string(my_offset) << std::endl;
-                    Mat desc = descriptors.rowRange(my_offset, my_offset_end);
+                    Mat desc = descriptors.rowRange(offset, offset_end);
                     gpuOrb.join(desc);
 
-                    offset += nkeypointsLevel;
-
-                    std::cout << "OFFSET END: " << std::to_string(offset) << " MY OFFSET END: " << std::to_string(my_offset_end) << std::endl;
-    
                     float scale = mvScaleFactor[level]; 
-                    for (size_t i = 0; i < keypointsLevel.size(); i++){
+                    vector<int> keypoint_indices(keypointsLevel.size());
+                    iota(begin(keypoint_indices), end(keypoint_indices), 0);
+                    for_each(execution::par_unseq,keypoint_indices.begin(),keypoint_indices.end(),[&](const auto i){
                         auto keypoint = keypointsLevel[i];
-                        const auto index = my_offset +i;
+                        const auto index = offset +i;
                         // Scale keypoint coordinates
                         keypoint.pt *= scale;
                         _keypoints.at(index) = keypoint;
                         desc.row(i).copyTo(descriptors.row(index));
-                        monoIndex++;
-                    }
+                    });
                 }
             });
         }
 
-        std::cout << "MONO: " + std::to_string(monoIndex) + " ACC: " + std::to_string(keypoints_acc.back()) << std::endl;
         return keypoints_acc.back();
     }
 
@@ -657,21 +642,21 @@ namespace ORB_SLAM3
     void ORBextractor::ComputePyramid(cv::cuda::HostMem image_managed)
     {
         ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
+        cv::cuda::Stream cvStream = gpuOrb.getCvStream();
         mvImagePyramid[0] = image_managed;
-
+        gpuGaussian->apply(mvImagePyramid[0].createGpuMatHeader(),mvBlurredImagePyramid[0].createGpuMatHeader(),cvStream);
         for (int level = 1; level < nlevels; ++level)
         {
             // Compute the resized image
             // Use Orb Stream for now
-            cv::cuda::Stream cvStream = gpuOrb.getCvStream();
             cv::cuda::GpuMat gpu_mat_prior_level = mvImagePyramid[level-1].createGpuMatHeader();
             auto managed_image_level = mvImagePyramid[level];
             cv::cuda::GpuMat gpu_mat_level = managed_image_level.createGpuMatHeader();
             cv::Size sz = cv::Size(managed_image_level.cols, managed_image_level.rows);
-
             cv::cuda::resize(gpu_mat_prior_level,gpu_mat_level , sz, 0, 0, cv::InterpolationFlags::INTER_LINEAR, cvStream);
-            cvStream.waitForCompletion();
+            gpuGaussian->apply(mvImagePyramid[level].createGpuMatHeader(),mvBlurredImagePyramid[level].createGpuMatHeader(),cvStream);
         }
+        cvStream.waitForCompletion();
 
     }
 
