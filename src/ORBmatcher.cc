@@ -96,7 +96,7 @@ namespace ORB_SLAM3
                                 continue;
                         }
 
-                        const cv::Mat &d = F.mDescriptors.row(idx);
+                        const cv::Mat &d = F.mDescriptors.createMatHeader().row(idx);
 
                         const int dist = DescriptorDistance(MPdescriptor,d);
 
@@ -170,7 +170,7 @@ namespace ORB_SLAM3
                                 continue;
 
 
-                        const cv::Mat &d = F.mDescriptors.row(idx + F.Nleft);
+                        const cv::Mat &d = F.mDescriptors.createMatHeader().row(idx + F.Nleft);
 
                         const int dist = DescriptorDistance(MPdescriptor,d);
 
@@ -278,7 +278,7 @@ namespace ORB_SLAM3
                             if(vpMapPointMatches[realIdxF])
                                 continue;
 
-                            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+                            const cv::Mat &dF = F.mDescriptors.createMatHeader().row(realIdxF);
 
                             const int dist =  DescriptorDistance(dKF,dF);
 
@@ -299,7 +299,7 @@ namespace ORB_SLAM3
                             if(vpMapPointMatches[realIdxF])
                                 continue;
 
-                            const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+                            const cv::Mat &dF = F.mDescriptors.createMatHeader().row(realIdxF);
 
                             const int dist =  DescriptorDistance(dKF,dF);
 
@@ -669,7 +669,7 @@ namespace ORB_SLAM3
             if(vIndices2.empty())
                 continue;
 
-            cv::Mat d1 = F1.mDescriptors.row(i1);
+            cv::Mat d1 = F1.mDescriptors.createMatHeader().row(i1);
 
             int bestDist = INT_MAX;
             int bestDist2 = INT_MAX;
@@ -679,7 +679,7 @@ namespace ORB_SLAM3
             {
                 size_t i2 = *vit;
 
-                cv::Mat d2 = F2.mDescriptors.row(i2);
+                cv::Mat d2 = F2.mDescriptors.createMatHeader().row(i2);
 
                 int dist = DescriptorDistance(d1,d2);
 
@@ -1748,7 +1748,7 @@ namespace ORB_SLAM3
                                 continue;
                         }
 
-                        const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                        const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2);
 
                         const int dist = DescriptorDistance(dMP,d);
 
@@ -1814,7 +1814,7 @@ namespace ORB_SLAM3
                                 if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]->Observations()>0)
                                     continue;
 
-                            const cv::Mat &d = CurrentFrame.mDescriptors.row(i2 + CurrentFrame.Nleft);
+                            const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2 + CurrentFrame.Nleft);
 
                             const int dist = DescriptorDistance(dMP,d);
 
@@ -1945,7 +1945,7 @@ namespace ORB_SLAM3
                         if(CurrentFrame.mvpMapPoints[i2])
                             continue;
 
-                        const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                        const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2);
 
                         const int dist = DescriptorDistance(dMP,d);
 

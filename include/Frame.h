@@ -37,6 +37,7 @@
 
 #include <mutex>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/cuda.hpp>
 
 
 #include "Eigen/Core"
@@ -226,7 +227,7 @@ public:
     DBoW2::FeatureVector mFeatVec;
 
     // ORB descriptor, each row associated to a keypoint.
-    cv::Mat mDescriptors, mDescriptorsRight;
+    cv::cuda::HostMem mDescriptors, mDescriptorsRight;
 
     // MapPoints associated to keypoints, NULL pointer if no association.
     // Flag to identify outlier associations.

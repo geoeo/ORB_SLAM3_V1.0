@@ -534,7 +534,7 @@ void Tracking::Track()
                     bOK = false;
                     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
-                        if(pCurrentMap->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU)){
+                        if(pCurrentMap->GetIniertialBA1() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU)){
                             UpdateLastFrame();
                             const auto imu_preint = PredictStateIMU();
                             if(imu_preint){

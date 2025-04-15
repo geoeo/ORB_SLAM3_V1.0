@@ -108,7 +108,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
     mfMaxDistance = dist*levelScaleFactor;
     mfMinDistance = mfMaxDistance/pFrame->mvScaleFactors[nLevels-1];
 
-    pFrame->mDescriptors.row(idxF).copyTo(mDescriptor);
+    pFrame->mDescriptors.createMatHeader().row(idxF).copyTo(mDescriptor);
 
     // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
     unique_lock<mutex> lock(mpMap->mMutexPointCreation);

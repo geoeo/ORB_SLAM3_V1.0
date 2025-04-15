@@ -53,6 +53,7 @@
 
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/core/cuda.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -175,8 +176,6 @@ namespace ORB_SLAM3
         }
 
         gpuGaussian = cv::cuda::createGaussianFilter(CV_8UC1,CV_8UC1,Size(7, 7),1.2,1.2,BORDER_REFLECT_101);
-
-        //GaussianBlur(mvImagePyramid[level].createMatHeader(), mvBlurredImagePyramid[level].createMatHeader(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
 
         AllocatePyramid(imageWidth, imageHeight);
         ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
@@ -545,7 +544,7 @@ namespace ORB_SLAM3
     }
 
     int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, vector<KeyPoint>& _keypoints,
-                                  OutputArray _descriptors)
+            cv::cuda::HostMem& _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
@@ -555,16 +554,12 @@ namespace ORB_SLAM3
         vector < vector<KeyPoint> > allKeypoints;
         int nkeypoints = ComputeKeyPointsOctTree(allKeypoints);
 
-        Mat descriptors;
+        cv::Mat descriptors;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
-            if( nkeypoints == 0 )
-                _descriptors.release();
-            else
-            {
-                _descriptors.create(nkeypoints, 32, CV_8U);
-                descriptors = _descriptors.getMat();
-            }
+            _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
+            descriptors = _descriptors.createMatHeader();
+            
 
             _keypoints = vector<cv::KeyPoint>(nkeypoints);
         }
@@ -596,11 +591,8 @@ namespace ORB_SLAM3
                 {
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
-                    gpuOrb.launch_async(gMat, keypointsLevel.data(), keypointsLevel.size());
+                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel.data(), keypointsLevel.size());
                     
-                    Mat desc = descriptors.rowRange(offset, offset_end);
-                    gpuOrb.join(desc);
-
                     float scale = mvScaleFactor[level]; 
                     vector<int> keypoint_indices(keypointsLevel.size());
                     iota(begin(keypoint_indices), end(keypoint_indices), 0);
@@ -610,7 +602,6 @@ namespace ORB_SLAM3
                         // Scale keypoint coordinates
                         keypoint.pt *= scale;
                         _keypoints.at(index) = keypoint;
-                        desc.row(i).copyTo(descriptors.row(index));
                     });
                 }
             });

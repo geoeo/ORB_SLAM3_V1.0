@@ -523,7 +523,7 @@ void Frame::ComputeBoW()
     if(mBowVec.empty())
     {
         ZoneNamedN(ComputeBoW, "ComputeBoW", true);
-        vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
+        vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors.createMatHeader());
         {
             ZoneNamedN(ComputeBoWTransform, "ComputeBoWTransform", true);
             mpORBvocabulary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
@@ -617,8 +617,8 @@ void Frame::ComputeStereoFishEyeMatches() {
     vector<cv::KeyPoint> stereoLeft(mvKeys.begin() + monoLeft, mvKeys.end());
     vector<cv::KeyPoint> stereoRight(mvKeysRight.begin() + monoRight, mvKeysRight.end());
 
-    cv::Mat stereoDescLeft = mDescriptors.rowRange(monoLeft, mDescriptors.rows);
-    cv::Mat stereoDescRight = mDescriptorsRight.rowRange(monoRight, mDescriptorsRight.rows);
+    cv::Mat stereoDescLeft = mDescriptors.createMatHeader().rowRange(monoLeft, mDescriptors.rows);
+    cv::Mat stereoDescRight = mDescriptorsRight.createMatHeader().rowRange(monoRight, mDescriptorsRight.rows);
 
     mvLeftToRightMatch = vector<int>(Nleft,-1);
     mvRightToLeftMatch = vector<int>(Nright,-1);
