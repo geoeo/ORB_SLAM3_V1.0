@@ -569,15 +569,28 @@ namespace ORB_SLAM3
         //Modified for speeding up stereo fisheye matching
         int offset = 0;
         int monoIndex = 0;
+
+        vector<int> levels_vec(nlevels);
+        iota(begin(levels_vec), end(levels_vec), 0);
+
+        vector<int> keypoint_num_vec (levels_vec.size());
+        transform(execution::par_unseq, levels_vec.begin(), levels_vec.end(), keypoint_num_vec.begin(), [&] (const auto level) {
+            return allKeypoints[level].size();
+        });
+
+        vector<int> keypoints_acc(levels_vec.size());
+        partial_sum(keypoint_num_vec.begin(), keypoint_num_vec.end(), keypoints_acc.begin());
+
         {
             ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
-            for (int level = 0; level < nlevels; ++level)
+            for_each(execution::seq,levels_vec.begin(),levels_vec.end(),[&](const auto level)
             {
                 vector<KeyPoint>& keypointsLevel = allKeypoints[level];
-                int nkeypointsLevel = (int)keypointsLevel.size();
+                const auto nkeypointsLevel = keypoint_num_vec[level];
+                //const auto nkeypointsLevel = (int)keypointsLevel.size();
 
                 if(nkeypointsLevel==0)
-                    continue;
+                    return;
 
                 // preprocess the resized image
                 {
@@ -585,31 +598,40 @@ namespace ORB_SLAM3
                     GaussianBlur(mvImagePyramid[level].createMatHeader(), mvBlurredImagePyramid[level].createMatHeader(), Size(7, 7), 1.2, 1.2, BORDER_REFLECT_101);
                 }
 
+                const auto my_offset = level==0 ? 0 : keypoints_acc[level-1];
+                const auto my_offset_end = my_offset+nkeypointsLevel;
+
+
                 // Compute the descriptors - GPU
                 {
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     gpuOrb.launch_async(gMat, keypointsLevel.data(), keypointsLevel.size());
                     
-                    Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
+                    std::cout << "OFFSET: " << std::to_string(offset) << " MY OFFSET: " << std::to_string(my_offset) << std::endl;
+                    Mat desc = descriptors.rowRange(my_offset, my_offset_end);
                     gpuOrb.join(desc);
-    
+
                     offset += nkeypointsLevel;
+
+                    std::cout << "OFFSET END: " << std::to_string(offset) << " MY OFFSET END: " << std::to_string(my_offset_end) << std::endl;
     
                     float scale = mvScaleFactor[level]; 
                     for (size_t i = 0; i < keypointsLevel.size(); i++){
-                        auto keypoint= keypointsLevel[i];
+                        auto keypoint = keypointsLevel[i];
+                        const auto index = my_offset +i;
                         // Scale keypoint coordinates
                         keypoint.pt *= scale;
-                        _keypoints.at(monoIndex) = keypoint;
-                        desc.row(i).copyTo(descriptors.row(monoIndex));
+                        _keypoints.at(index) = keypoint;
+                        desc.row(i).copyTo(descriptors.row(index));
                         monoIndex++;
                     }
                 }
-            }
+            });
         }
 
-        return monoIndex;
+        std::cout << "MONO: " + std::to_string(monoIndex) + " ACC: " + std::to_string(keypoints_acc.back()) << std::endl;
+        return keypoints_acc.back();
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)
