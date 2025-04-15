@@ -19,7 +19,7 @@ cd ../Sophus
 echo "Configuring and building Thirdparty/Sophus ..."
 
 cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_SOPHUS_TESTS=OFF
-cmake --build build -j 6 --target install
+cmake --build build -j $(nproc --all) --target install
 
 cd ../../
 
@@ -32,4 +32,4 @@ cd ..
 echo "Configuring and building ORB_SLAM3 ..."
 
 cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DTRACY_ENABLE=OFF
-cmake --build build -j 6 --target install
+cmake --build build -j $(nproc --all) --target install
