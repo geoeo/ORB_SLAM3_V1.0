@@ -998,7 +998,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={5.991,5.991,5.991,5.991};
+    const float chi2Mono[4]={7.815,7.815,7.815, 7.815};
     const float chi2Stereo[4]={7.815,7.815,7.815, 7.815};
     const int its[4]={10,10,10,10};    
 
@@ -4693,10 +4693,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={12,7.5,7.5,5.991};
+    float chi2Mono[4]={15.6,9.8,7.815,7.815};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={10,10,10,10};
+    int its[4]={10,10,20,20};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -5103,7 +5103,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={12,7.5,7.5,5.991};
+    const float chi2Mono[4]={15.6f,9.8f,7.815f,7.815f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
     const int its[4]={10,10,10,10};
 

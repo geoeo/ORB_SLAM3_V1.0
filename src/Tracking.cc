@@ -44,7 +44,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
-    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0),
+    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(50),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
 
@@ -504,43 +504,48 @@ void Tracking::Track()
 
                 if (!bOK)
                 {
-                    if ( !isGeoreferenced() && mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
-                         (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
-                    {
-                        setTrackingState(LOST);
-                    }
-                    else if(pCurrentMap->KeyFramesInMap()>10)
-                    {
-                        setTrackingState(RECENTLY_LOST);
-                        mTimeStampLost = mCurrentFrame.mTimeStamp;
-                    }
-                    else if(!isGeoreferenced())
-                    {
-                        setTrackingState(LOST);
-                    }
-                    else{
-                        setTrackingState(RECENTLY_LOST);
-                        mTimeStampLost = mCurrentFrame.mTimeStamp;
-                    }
+
+                    setTrackingState(RECENTLY_LOST);
+                    mTimeStampLost = mCurrentFrame.mTimeStamp;
+
+                    // if ( !isGeoreferenced() && mCurrentFrame.mnId<=(mnLastRelocFrameId+mnFramesToResetIMU) &&
+                    //      (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
+                    // {
+                    //     setTrackingState(LOST);
+                    // }
+                    // else if(pCurrentMap->KeyFramesInMap()>10)
+                    // {
+                    //     setTrackingState(RECENTLY_LOST);
+                    //     mTimeStampLost = mCurrentFrame.mTimeStamp;
+                    // }
+                    // else if(!isGeoreferenced())
+                    // {
+                    //     setTrackingState(LOST);
+                    // }
+                    // else{
+                    //     setTrackingState(RECENTLY_LOST);
+                    //     mTimeStampLost = mCurrentFrame.mTimeStamp;
+                    // }
                 }
             }
-            else
-            {
+            // else
+            // {
 
                 if (getTrackingState() == RECENTLY_LOST)
                 {
                     Verbose::PrintMess("Lost for a short time", Verbose::VERBOSITY_NORMAL);
-
                     bOK = false;
                     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                     {
-                        if(pCurrentMap->GetIniertialBA1() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU)){
+                        if(pCurrentMap->isImuInitialized() && (mRelocCount < mRelocThresh)){
                             UpdateLastFrame();
                             const auto imu_preint = PredictStateIMU();
                             if(imu_preint){
                                 bOK = Relocalization();
+                                mRelocCount++;
                                 if(bOK){
                                     mCurrentFrame.mpPrevFrame = &mLastFrame;
+                                    mRelocCount = 0;
                                 }
                             }
                         } else {
@@ -588,7 +593,7 @@ void Tracking::Track()
 
                 //     return;
                 // }
-            }
+            //}
 
         }
 
@@ -625,9 +630,10 @@ void Tracking::Track()
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
                     mpSystem->ResetActiveMap();
+                    setTrackingState(LOST);
                 }
-
-                setTrackingState(RECENTLY_LOST);
+                else
+                    setTrackingState(RECENTLY_LOST);
             }
             else
                 setTrackingState(RECENTLY_LOST); // visual to lost
@@ -1219,12 +1225,9 @@ bool Tracking::TrackWithMotionModel()
     {
         mbVO = nmatchesMap<10;
         return nmatches>20;
-    }
-
-    if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        return true;
-    else
+    } else{
         return nmatchesMap>=10;
+    }
 }
 
 bool Tracking::TrackLocalMap()

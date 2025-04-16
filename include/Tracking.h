@@ -310,6 +310,8 @@ protected:
     double mTimeStampLost;
     double time_recently_lost;
     double mImageTimeout;
+    int mRelocCount;
+    int mRelocThresh;
 
     unsigned int mnFirstFrameId;
     unsigned int mnInitialFrameId;
