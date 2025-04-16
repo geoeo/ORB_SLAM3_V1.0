@@ -348,7 +348,6 @@ class SlamNode : public rclcpp::Node
 
     ~SlamNode(){
       cout << "Trigger Shutdown" << endl;
-      sync_thread_.join();
       SLAM_->Shutdown();
       sync_thread_->join();
     }
