@@ -45,7 +45,7 @@ namespace ORB_SLAM3
         mvKeys1.clear();
         mvKeys2.clear();
 
-        //TODO: move to ptr
+        //TODO: investigate move to ptr
         mvKeys1 = *vKeys1;
         mvKeys2 = *vKeys2;
 
