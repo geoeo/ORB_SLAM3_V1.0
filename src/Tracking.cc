@@ -331,14 +331,16 @@ bool Tracking::PredictStateIMU()
 
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float t12 = mpImuPreintegratedFromLastKF->dT;
-
+        auto b = mpLastKeyFrame->GetImuBias();
         try{
-            Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(mpLastKeyFrame->GetImuBias()));
-            Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
-            Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(mpLastKeyFrame->GetImuBias());
+            Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
+            Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
+            Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
             mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
         } catch(...){
-            Verbose::PrintMess("Update branch: IMU Prediction crashed! Bias: " + std::to_string(mpLastKeyFrame->GetImuBias()), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias ax: " + std::to_string(b.bwx) + "  ay: " + std::to_string(b.bwy) + " az: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
             return false;
         }
 
@@ -354,14 +356,17 @@ bool Tracking::PredictStateIMU()
         const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float t12 = mCurrentFrame.mpImuPreintegratedFrame->dT;
+        auto b = mLastFrame.mImuBias;
 
         try {
-            Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(mLastFrame.mImuBias));
-            Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(mLastFrame.mImuBias);
-            Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(mLastFrame.mImuBias);
+            Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaRotation(b));
+            Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaPosition(b);
+            Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mCurrentFrame.mpImuPreintegratedFrame->GetDeltaVelocity(b);
             mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
         } catch(...){
-            Verbose::PrintMess("No Update branch: IMU Prediction crashed! Bias: " + std::to_string(mLastFrame.mImuBias), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("No Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias ax: " + std::to_string(b.bwx) + "  ay: " + std::to_string(b.bwy) + " az: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
             return false;
         }
 
