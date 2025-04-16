@@ -9,8 +9,6 @@
 #include<tuple>
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaimgproc.hpp>
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/core/core.hpp>
