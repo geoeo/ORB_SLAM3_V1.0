@@ -9,9 +9,10 @@
 #include<tuple>
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
+#include <opencv2/cudaimgproc.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <cv_bridge/cv_bridge.h>
-#include <opencv2/core/core.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -331,7 +332,7 @@ class SlamNode : public rclcpp::Node
       const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, false);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();
