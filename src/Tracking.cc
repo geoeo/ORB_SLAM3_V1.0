@@ -340,7 +340,7 @@ bool Tracking::PredictStateIMU()
         } catch(...){
             Verbose::PrintMess("Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
             Verbose::PrintMess("Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
-            Verbose::PrintMess("Bias ax: " + std::to_string(b.bwx) + "  ay: " + std::to_string(b.bwy) + " az: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias wx: " + std::to_string(b.bwx) + "  ẃy: " + std::to_string(b.bwy) + " wz: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
             return false;
         }
 
@@ -366,7 +366,7 @@ bool Tracking::PredictStateIMU()
         } catch(...){
             Verbose::PrintMess("No Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
             Verbose::PrintMess("Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
-            Verbose::PrintMess("Bias ax: " + std::to_string(b.bwx) + "  ay: " + std::to_string(b.bwy) + " az: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Bias wx: " + std::to_string(b.bwx) + "  wy: " + std::to_string(b.bwy) + " wz: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
             return false;
         }
 
