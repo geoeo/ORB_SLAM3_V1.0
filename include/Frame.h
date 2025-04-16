@@ -213,8 +213,8 @@ public:
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
-    std::vector<cv::KeyPoint> mvKeys, mvKeysRight;
-    std::vector<cv::KeyPoint> mvKeysUn;
+    std::shared_ptr<std::vector<cv::KeyPoint>> mvKeys, mvKeysRight;
+    std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;
@@ -341,7 +341,7 @@ public:
     int getFrameGridCols() const;
 
     //Stereo fisheye
-    void ComputeStereoFishEyeMatches();
+    //void ComputeStereoFishEyeMatches();
 
     bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 

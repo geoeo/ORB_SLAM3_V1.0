@@ -80,7 +80,7 @@ namespace ORB_SLAM3 {
         return Jac;
     }
 
-    bool Pinhole::ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const std::vector<int> &vMatches12,
+    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                                  Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();

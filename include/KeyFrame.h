@@ -34,6 +34,7 @@
 #include <mutex>
 #include <vector>
 #include <set>
+#include <memory>
 
 #include <boost/serialization/base_object.hpp>
 #include <boost/serialization/vector.hpp>
@@ -121,8 +122,8 @@ class KeyFrame
         // Number of Keypoints
         ar & const_cast<int&>(N);
         // KeyPoints
-        serializeVectorKeyPoints<Archive>(ar, mvKeys, version);
-        serializeVectorKeyPoints<Archive>(ar, mvKeysUn, version);
+        serializeVectorKeyPoints<Archive>(ar, *mvKeys, version);
+        serializeVectorKeyPoints<Archive>(ar, *mvKeysUn, version);
         ar & const_cast<std::vector<float>& >(mvuRight);
         ar & const_cast<std::vector<float>& >(mvDepth);
         serializeMatrix<Archive>(ar,mDescriptors,version);
@@ -177,7 +178,7 @@ class KeyFrame
         ar & const_cast<int&>(NLeft);
         ar & const_cast<int&>(NRight);
         serializeSophusSE3<Archive>(ar, mTlr, version);
-        serializeVectorKeyPoints<Archive>(ar, mvKeysRight, version);
+        serializeVectorKeyPoints<Archive>(ar, *mvKeysRight, version);
 
         // Inertial variables
         ar & mImuBias;
@@ -376,8 +377,8 @@ public:
     const int N;
 
     // KeyPoints, stereo coordinate and descriptors (all associated by an index)
-    const std::vector<cv::KeyPoint> mvKeys;
-    const std::vector<cv::KeyPoint> mvKeysUn;
+    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeys;
+    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysUn;
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
@@ -509,7 +510,7 @@ public:
     Sophus::SE3f GetRelativePoseTlr();
 
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
-    const std::vector<cv::KeyPoint> mvKeysRight;
+    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysRight;
 
     const int NLeft, NRight;
 

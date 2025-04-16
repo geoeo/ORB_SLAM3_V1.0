@@ -375,12 +375,12 @@ void FrameDrawer::Update(Tracking *pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     pTracker->mImGrayViewer.copyTo(mIm);
-    mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
+    mvCurrentKeys=*pTracker->mCurrentFrame.mvKeys;
     mThDepth = pTracker->mCurrentFrame.mThDepth;
     mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;
 
     if(both){
-        mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
+        mvCurrentKeysRight = *pTracker->mCurrentFrame.mvKeysRight;
         pTracker->mImRight.copyTo(mImRight);
         N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
     }
@@ -409,7 +409,7 @@ void FrameDrawer::Update(Tracking *pTracker)
 
     if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
     {
-        mvIniKeys=pTracker->mInitialFrame.mvKeys;
+        mvIniKeys=*pTracker->mInitialFrame.mvKeys;
         mvIniMatches=pTracker->mvIniMatches;
     }
     else if(pTracker->mLastProcessedState==Tracking::OK)

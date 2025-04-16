@@ -543,7 +543,7 @@ namespace ORB_SLAM3
         return allKeypointsCount;
     }
 
-    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, vector<KeyPoint>& _keypoints,
+    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, shared_ptr<vector<KeyPoint>>& _keypoints,
             cv::cuda::HostMem& _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
@@ -557,7 +557,7 @@ namespace ORB_SLAM3
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
-            _keypoints = vector<cv::KeyPoint>(nkeypoints);
+            _keypoints = make_shared<vector<cv::KeyPoint>>(nkeypoints);
         }
 
         vector<int> levels_vec(nlevels);
@@ -597,7 +597,7 @@ namespace ORB_SLAM3
                         const auto index = offset +i;
                         // Scale keypoint coordinates
                         keypoint.pt *= scale;
-                        _keypoints.at(index) = keypoint;
+                        _keypoints->at(index) = keypoint;
                     });
                 }
             });

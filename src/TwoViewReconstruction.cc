@@ -39,14 +39,15 @@ namespace ORB_SLAM3
         mMaxIterations = iterations;
     }
 
-    bool TwoViewReconstruction::Reconstruct(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const vector<int> &vMatches12,
+    bool TwoViewReconstruction::Reconstruct(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const vector<int> &vMatches12,
                                              Sophus::SE3f &T21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
     {
         mvKeys1.clear();
         mvKeys2.clear();
 
-        mvKeys1 = vKeys1;
-        mvKeys2 = vKeys2;
+        //TODO: move to ptr
+        mvKeys1 = *vKeys1;
+        mvKeys2 = *vKeys2;
 
         // Fill structures with current keypoints and matches with reference frame
         // Reference Frame: 1, Current Frame: 2

@@ -174,7 +174,7 @@ namespace ORB_SLAM3 {
         return JacGood;
     }
 
-    bool KannalaBrandt8::ReconstructWithTwoViews(const std::vector<cv::KeyPoint>& vKeys1, const std::vector<cv::KeyPoint>& vKeys2, const std::vector<int> &vMatches12,
+    bool KannalaBrandt8::ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
@@ -182,11 +182,11 @@ namespace ORB_SLAM3 {
         }
 
         //Correct FishEye distortion
-        std::vector<cv::KeyPoint> vKeysUn1 = vKeys1, vKeysUn2 = vKeys2;
-        std::vector<cv::Point2f> vPts1(vKeys1.size()), vPts2(vKeys2.size());
+        auto vKeysUn1 = vKeys1, vKeysUn2 = vKeys2;
+        std::vector<cv::Point2f> vPts1(vKeys1->size()), vPts2(vKeys2->size());
 
-        for(size_t i = 0; i < vKeys1.size(); i++) vPts1[i] = vKeys1[i].pt;
-        for(size_t i = 0; i < vKeys2.size(); i++) vPts2[i] = vKeys2[i].pt;
+        for(size_t i = 0; i < vKeys1->size(); i++) vPts1[i] = vKeys1->operator[](i).pt;
+        for(size_t i = 0; i < vKeys2->size(); i++) vPts2[i] = vKeys2->operator[](i).pt;
 
         cv::Mat D = (cv::Mat_<float>(4,1) << mvParameters[4], mvParameters[5], mvParameters[6], mvParameters[7]);
         cv::Mat R = cv::Mat::eye(3,3,CV_32F);
@@ -194,8 +194,8 @@ namespace ORB_SLAM3 {
         cv::fisheye::undistortPoints(vPts1,vPts1,K,D,R,K);
         cv::fisheye::undistortPoints(vPts2,vPts2,K,D,R,K);
 
-        for(size_t i = 0; i < vKeys1.size(); i++) vKeysUn1[i].pt = vPts1[i];
-        for(size_t i = 0; i < vKeys2.size(); i++) vKeysUn2[i].pt = vPts2[i];
+        for(size_t i = 0; i < vKeys1->size(); i++) vKeysUn1->operator[](i).pt = vPts1[i];
+        for(size_t i = 0; i < vKeys2->size(); i++) vKeysUn2->operator[](i).pt = vPts2[i];
 
         return tvr->Reconstruct(vKeysUn1,vKeysUn2,vMatches12,T21,vP3D,vbTriangulated);
     }

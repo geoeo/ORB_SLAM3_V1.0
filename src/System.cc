@@ -267,7 +267,8 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
+    //TODO: move to ptr 
+    mTrackedKeyPointsUn = *mpTracker->mCurrentFrame.mvKeysUn;
     auto isBAComplete = mpTracker->isBACompleteForMap();
     auto computedScales = mpTracker->getMapScales();
 

@@ -68,8 +68,8 @@ namespace ORB_SLAM3 {
 
             if(pMP){
                 if(!pMP -> isBad()){
-                    if(i >= F.mvKeysUn.size()) continue;
-                    const cv::KeyPoint &kp = F.mvKeysUn[i];
+                    if(i >= F.mvKeysUn->size()) continue;
+                    const cv::KeyPoint &kp = F.mvKeysUn->operator[](i);
 
                     mvP2D.push_back(kp.pt);
                     mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);

@@ -160,7 +160,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
 
             if(leftIndex != -1 && pKF->mvuRight[get<0>(mit->second)]<0)
             {
-                const cv::KeyPoint &kpUn = pKF->mvKeysUn[leftIndex];
+                const cv::KeyPoint &kpUn = pKF->mvKeysUn->operator[](leftIndex);
 
                 Eigen::Matrix<double,2,1> obs;
                 obs << kpUn.pt.x, kpUn.pt.y;
@@ -190,7 +190,7 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
             }
             else if(leftIndex != -1 && pKF->mvuRight[leftIndex] >= 0) //Stereo observation
             {
-                const cv::KeyPoint &kpUn = pKF->mvKeysUn[leftIndex];
+                const cv::KeyPoint &kpUn = pKF->mvKeysUn->operator[](leftIndex);
 
                 Eigen::Matrix<double,3,1> obs;
                 const float kp_ur = pKF->mvuRight[get<0>(mit->second)];
@@ -225,39 +225,39 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
                 vpMapPointEdgeStereo.push_back(pMP);
             }
 
-            if(pKF->mpCamera2){
-                int rightIndex = get<1>(mit->second);
+            // if(pKF->mpCamera2){
+            //     int rightIndex = get<1>(mit->second);
 
-                if(rightIndex != -1 && rightIndex < pKF->mvKeysRight.size()){
-                    rightIndex -= pKF->NLeft;
+            //     if(rightIndex != -1 && rightIndex < pKF->mvKeysRight->size()){
+            //         rightIndex -= pKF->NLeft;
 
-                    Eigen::Matrix<double,2,1> obs;
-                    cv::KeyPoint kp = pKF->mvKeysRight[rightIndex];
-                    obs << kp.pt.x, kp.pt.y;
+            //         Eigen::Matrix<double,2,1> obs;
+            //         cv::KeyPoint kp = pKF->mvKeysRight[rightIndex];
+            //         obs << kp.pt.x, kp.pt.y;
 
-                    ORB_SLAM3::EdgeSE3ProjectXYZToBody *e = new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
+            //         ORB_SLAM3::EdgeSE3ProjectXYZToBody *e = new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
 
-                    e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
-                    e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
-                    e->setMeasurement(obs);
-                    const float &invSigma2 = pKF->mvInvLevelSigma2[kp.octave];
-                    e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+            //         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+            //         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKF->mnId)));
+            //         e->setMeasurement(obs);
+            //         const float &invSigma2 = pKF->mvInvLevelSigma2[kp.octave];
+            //         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuber2D);
+            //         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+            //         e->setRobustKernel(rk);
+            //         rk->setDelta(thHuber2D);
 
-                    Sophus::SE3f Trl = pKF-> GetRelativePoseTrl();
-                    e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(), Trl.translation().cast<double>());
+            //         Sophus::SE3f Trl = pKF-> GetRelativePoseTrl();
+            //         e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(), Trl.translation().cast<double>());
 
-                    e->pCamera = pKF->mpCamera2;
+            //         e->pCamera = pKF->mpCamera2;
 
-                    optimizer.addEdge(e);
-                    vpEdgesBody.push_back(e);
-                    vpEdgeKFBody.push_back(pKF);
-                    vpMapPointEdgeBody.push_back(pMP);
-                }
-            }
+            //         optimizer.addEdge(e);
+            //         vpEdgesBody.push_back(e);
+            //         vpEdgeKFBody.push_back(pKF);
+            //         vpMapPointEdgeBody.push_back(pMP);
+            //     }
+            // }
         }
 
 
@@ -624,7 +624,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
                 if(leftIndex != -1 && pKFi->mvuRight[get<0>(mit->second)]<0) // Monocular observation
                 {
-                    kpUn = pKFi->mvKeysUn[leftIndex];
+                    kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     Eigen::Matrix<double,2,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -650,7 +650,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
                 }
                 else if(leftIndex != -1 && pKFi->mvuRight[leftIndex] >= 0) // stereo observation
                 {
-                    kpUn = pKFi->mvKeysUn[leftIndex];
+                    kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     const float kp_ur = pKFi->mvuRight[leftIndex];
                     Eigen::Matrix<double,3,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
@@ -676,36 +676,36 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
                     optimizer.addEdge(e);
                 }
 
-                if(pKFi->mpCamera2){ // Monocular right observation
-                    int rightIndex = get<1>(mit->second);
+                // if(pKFi->mpCamera2){ // Monocular right observation
+                //     int rightIndex = get<1>(mit->second);
 
-                    if(rightIndex != -1 && rightIndex < pKFi->mvKeysRight.size()){
-                        rightIndex -= pKFi->NLeft;
+                //     if(rightIndex != -1 && rightIndex < pKFi->mvKeysRight.size()){
+                //         rightIndex -= pKFi->NLeft;
 
-                        Eigen::Matrix<double,2,1> obs;
-                        kpUn = pKFi->mvKeysRight[rightIndex];
-                        obs << kpUn.pt.x, kpUn.pt.y;
+                //         Eigen::Matrix<double,2,1> obs;
+                //         kpUn = pKFi->mvKeysRight[rightIndex];
+                //         obs << kpUn.pt.x, kpUn.pt.y;
 
-                        EdgeMono *e = new EdgeMono(1);
+                //         EdgeMono *e = new EdgeMono(1);
 
-                        g2o::OptimizableGraph::Vertex* VP = dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId));
-                        if(bAllFixed)
-                            if(!VP->fixed())
-                                bAllFixed=false;
+                //         g2o::OptimizableGraph::Vertex* VP = dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId));
+                //         if(bAllFixed)
+                //             if(!VP->fixed())
+                //                 bAllFixed=false;
 
-                        e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
-                        e->setVertex(1, VP);
-                        e->setMeasurement(obs);
-                        const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
-                        e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+                //         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+                //         e->setVertex(1, VP);
+                //         e->setMeasurement(obs);
+                //         const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+                //         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
-                        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(thHuberMono);
+                //         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //         e->setRobustKernel(rk);
+                //         rk->setDelta(thHuberMono);
 
-                        optimizer.addEdge(e);
-                    }
-                }
+                //         optimizer.addEdge(e);
+                //     }
+                // }
             }
         }
 
@@ -869,7 +869,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     pFrame->mvbOutlier[i] = false;
 
                     Eigen::Matrix<double,2,1> obs;
-                    const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                    const cv::KeyPoint &kpUn = pFrame->mvKeysUn->operator[](i);
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose* e = new ORB_SLAM3::EdgeSE3ProjectXYZOnlyPose();
@@ -897,7 +897,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     pFrame->mvbOutlier[i] = false;
 
                     Eigen::Matrix<double,3,1> obs;
-                    const cv::KeyPoint &kpUn = pFrame->mvKeysUn[i];
+                    const cv::KeyPoint &kpUn = pFrame->mvKeysUn->operator[](i);
                     const float &kp_ur = pFrame->mvuRight[i];
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
@@ -933,7 +933,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                 cv::KeyPoint kpUn;
 
                 if (i < pFrame->Nleft) {    //Left camera observation
-                    kpUn = pFrame->mvKeys[i];
+                    kpUn = pFrame->mvKeys->operator[](i);
 
                     pFrame->mvbOutlier[i] = false;
 
@@ -960,7 +960,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
                     vnIndexEdgeMono.push_back(i);
                 }
                 else {
-                    kpUn = pFrame->mvKeysRight[i - pFrame->Nleft];
+                    kpUn = pFrame->mvKeysRight->operator[](i - pFrame->Nleft);
 
                     Eigen::Matrix<double, 2, 1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
@@ -1303,7 +1303,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
                 // Monocular observation
                 if(leftIndex != -1 && pKFi->mvuRight[get<0>(mit->second)]<0)
                 {
-                    const cv::KeyPoint &kpUn = pKFi->mvKeysUn[leftIndex];
+                    const cv::KeyPoint &kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     Eigen::Matrix<double,2,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -1330,7 +1330,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
                 }
                 else if(leftIndex != -1 && pKFi->mvuRight[get<0>(mit->second)]>=0)// Stereo observation
                 {
-                    const cv::KeyPoint &kpUn = pKFi->mvKeysUn[leftIndex];
+                    const cv::KeyPoint &kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     Eigen::Matrix<double,3,1> obs;
                     const float kp_ur = pKFi->mvuRight[get<0>(mit->second)];
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
@@ -1362,41 +1362,41 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
                     nEdges++;
                 }
 
-                if(pKFi->mpCamera2){
-                    int rightIndex = get<1>(mit->second);
+                // if(pKFi->mpCamera2){
+                //     int rightIndex = get<1>(mit->second);
 
-                    if(rightIndex != -1 ){
-                        rightIndex -= pKFi->NLeft;
+                //     if(rightIndex != -1 ){
+                //         rightIndex -= pKFi->NLeft;
 
-                        Eigen::Matrix<double,2,1> obs;
-                        cv::KeyPoint kp = pKFi->mvKeysRight[rightIndex];
-                        obs << kp.pt.x, kp.pt.y;
+                //         Eigen::Matrix<double,2,1> obs;
+                //         cv::KeyPoint kp = pKFi->mvKeysRight[rightIndex];
+                //         obs << kp.pt.x, kp.pt.y;
 
-                        ORB_SLAM3::EdgeSE3ProjectXYZToBody *e = new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
+                //         ORB_SLAM3::EdgeSE3ProjectXYZToBody *e = new ORB_SLAM3::EdgeSE3ProjectXYZToBody();
 
-                        e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
-                        e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
-                        e->setMeasurement(obs);
-                        const float &invSigma2 = pKFi->mvInvLevelSigma2[kp.octave];
-                        e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+                //         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+                //         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
+                //         e->setMeasurement(obs);
+                //         const float &invSigma2 = pKFi->mvInvLevelSigma2[kp.octave];
+                //         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
-                        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(thHuberMono);
+                //         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //         e->setRobustKernel(rk);
+                //         rk->setDelta(thHuberMono);
 
-                        Sophus::SE3f Trl = pKFi-> GetRelativePoseTrl();
-                        e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(), Trl.translation().cast<double>());
+                //         Sophus::SE3f Trl = pKFi-> GetRelativePoseTrl();
+                //         e->mTrl = g2o::SE3Quat(Trl.unit_quaternion().cast<double>(), Trl.translation().cast<double>());
 
-                        e->pCamera = pKFi->mpCamera2;
+                //         e->pCamera = pKFi->mpCamera2;
 
-                        optimizer.addEdge(e);
-                        vpEdgesBody.push_back(e);
-                        vpEdgeKFBody.push_back(pKFi);
-                        vpMapPointEdgeBody.push_back(pMP);
+                //         optimizer.addEdge(e);
+                //         vpEdgesBody.push_back(e);
+                //         vpEdgeKFBody.push_back(pKFi);
+                //         vpMapPointEdgeBody.push_back(pMP);
 
-                        nEdges++;
-                    }
-                }
+                //         nEdges++;
+                //     }
+                // }
             }
         }
     }
@@ -2240,7 +2240,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
         // Set edge x1 = S12*X2
         Eigen::Matrix<double,2,1> obs1;
-        const cv::KeyPoint &kpUn1 = pKF1->mvKeysUn[i];
+        const cv::KeyPoint &kpUn1 = pKF1->mvKeysUn->operator[](i);
         obs1 << kpUn1.pt.x, kpUn1.pt.y;
 
         ORB_SLAM3::EdgeSim3ProjectXYZ* e12 = new ORB_SLAM3::EdgeSim3ProjectXYZ();
@@ -2262,7 +2262,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         bool inKF2;
         if(i2 >= 0)
         {
-            kpUn2 = pKF2->mvKeysUn[i2];
+            kpUn2 = pKF2->mvKeysUn->operator[](i2);
             obs2 << kpUn2.pt.x, kpUn2.pt.y;
             inKF2 = true;
 
@@ -2734,7 +2734,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 {
                     mVisEdges[pKFi->mnId]++;
 
-                    kpUn = pKFi->mvKeysUn[leftIndex];
+                    kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     Eigen::Matrix<double,2,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -2762,7 +2762,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 // Stereo-observation
                 else if(leftIndex != -1)// Stereo observation
                 {
-                    kpUn = pKFi->mvKeysUn[leftIndex];
+                    kpUn = pKFi->mvKeysUn->operator[](leftIndex);
                     mVisEdges[pKFi->mnId]++;
 
                     const float kp_ur = pKFi->mvuRight[leftIndex];
@@ -2792,39 +2792,39 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 }
 
                 // Monocular right observation
-                if(pKFi->mpCamera2){
-                    int rightIndex = get<1>(mit->second);
+                // if(pKFi->mpCamera2){
+                //     int rightIndex = get<1>(mit->second);
 
-                    if(rightIndex != -1 ){
-                        rightIndex -= pKFi->NLeft;
-                        mVisEdges[pKFi->mnId]++;
+                //     if(rightIndex != -1 ){
+                //         rightIndex -= pKFi->NLeft;
+                //         mVisEdges[pKFi->mnId]++;
 
-                        Eigen::Matrix<double,2,1> obs;
-                        cv::KeyPoint kp = pKFi->mvKeysRight[rightIndex];
-                        obs << kp.pt.x, kp.pt.y;
+                //         Eigen::Matrix<double,2,1> obs;
+                //         cv::KeyPoint kp = pKFi->mvKeysRight->operator[](rightIndex);
+                //         obs << kp.pt.x, kp.pt.y;
 
-                        EdgeMono* e = new EdgeMono(1);
+                //         EdgeMono* e = new EdgeMono(1);
 
-                        e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
-                        e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
-                        e->setMeasurement(obs);
+                //         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+                //         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
+                //         e->setMeasurement(obs);
 
-                        // Add here uncerteinty
-                        const float unc2 = pKFi->mpCamera->uncertainty2(obs);
+                //         // Add here uncerteinty
+                //         const float unc2 = pKFi->mpCamera->uncertainty2(obs);
 
-                        const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
-                        e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+                //         const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
+                //         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
-                        g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                        e->setRobustKernel(rk);
-                        rk->setDelta(thHuberMono);
+                //         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //         e->setRobustKernel(rk);
+                //         rk->setDelta(thHuberMono);
 
-                        optimizer.addEdge(e);
-                        vpEdgesMono.push_back(e);
-                        vpEdgeKFMono.push_back(pKFi);
-                        vpMapPointEdgeMono.push_back(pMP);
-                    }
-                }
+                //         optimizer.addEdge(e);
+                //         vpEdgesMono.push_back(e);
+                //         vpEdgeKFMono.push_back(pKFi);
+                //         vpMapPointEdgeMono.push_back(pMP);
+                //     }
+                // }
             }
         }
     }
@@ -3643,7 +3643,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
 
             nEdges++;
 
-            const cv::KeyPoint &kpUn = pKF->mvKeysUn[get<0>(mit->second)];
+            const cv::KeyPoint &kpUn = pKF->mvKeysUn->operator[](get<0>(mit->second));
 
             if(pKF->mvuRight[get<0>(mit->second)]<0) //Monocular
             {
@@ -4313,7 +4313,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
 
             if(!pKFi->isBad())
             {
-                const cv::KeyPoint &kpUn = pKFi->mvKeysUn[get<0>(mit->second)];
+                const cv::KeyPoint &kpUn = pKFi->mvKeysUn->operator[](get<0>(mit->second));
 
                 if(pKFi->mvuRight[get<0>(mit->second)]<0) // Monocular observation
                 {
@@ -4550,9 +4550,9 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                 if((!bRight && pFrame->mvuRight[i]<0) || i < Nleft)
                 {
                     if(i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
+                        kpUn = pFrame->mvKeys->operator[](i);
                     else
-                        kpUn = pFrame->mvKeysUn[i];
+                        kpUn = pFrame->mvKeysUn->operator[](i);
 
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -4586,7 +4586,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     nInitialStereoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysUn[i];
+                    kpUn = pFrame->mvKeysUn->operator[](i);
                     const float kp_ur = pFrame->mvuRight[i];
                     Eigen::Matrix<double,3,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
@@ -4618,7 +4618,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
+                    kpUn = pFrame->mvKeysRight->operator[](i - Nleft);
                     Eigen::Matrix<double,2,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -4941,9 +4941,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                 if((!bRight && pFrame->mvuRight[i]<0) || i < Nleft)
                 {
                     if(i < Nleft) // pair left-right
-                        kpUn = pFrame->mvKeys[i];
+                        kpUn = pFrame->mvKeys->operator[](i);
                     else
-                        kpUn = pFrame->mvKeysUn[i];
+                        kpUn = pFrame->mvKeysUn->operator[](i);
 
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
@@ -4977,7 +4977,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     nInitialStereoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysUn[i];
+                    kpUn = pFrame->mvKeysUn->operator[](i);
                     const float kp_ur = pFrame->mvuRight[i];
                     Eigen::Matrix<double,3,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
@@ -5009,7 +5009,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
                     nInitialMonoCorrespondences++;
                     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysRight[i - Nleft];
+                    kpUn = pFrame->mvKeysRight->operator[](i - Nleft);
                     Eigen::Matrix<double,2,1> obs;
                     obs << kpUn.pt.x, kpUn.pt.y;
 

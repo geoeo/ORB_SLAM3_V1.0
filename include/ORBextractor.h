@@ -66,7 +66,7 @@ namespace ORB_SLAM3
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
         int extractFeatures(const cv::cuda::HostMem &im_managed,
-                       std::vector<cv::KeyPoint> &_keypoints,
+                       std::shared_ptr<std::vector<cv::KeyPoint>> &_keypoints,
                        cv::cuda::HostMem& _descriptors);
 
         int inline GetLevels()

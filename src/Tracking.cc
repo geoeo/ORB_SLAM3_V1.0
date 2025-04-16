@@ -44,7 +44,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
-    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(50),
+    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(100),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
 
@@ -788,14 +788,14 @@ void Tracking::MonocularInitialization()
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
-        if(mCurrentFrame.mvKeys.size()>FEAT_INIT_COUNT)
+        if(mCurrentFrame.mvKeys->size()>FEAT_INIT_COUNT)
         {
 
             mInitialFrame = Frame(mCurrentFrame);
             mLastFrame = Frame(mCurrentFrame);
-            mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
-            for(size_t i=0; i<mCurrentFrame.mvKeysUn.size(); i++)
-                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn[i].pt;
+            mvbPrevMatched.resize(mCurrentFrame.mvKeysUn->size());
+            for(size_t i=0; i<mCurrentFrame.mvKeysUn->size(); i++)
+                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn->operator[](i).pt;
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
@@ -816,7 +816,7 @@ void Tracking::MonocularInitialization()
     }
     else
     {
-        if (((int)mCurrentFrame.mvKeys.size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
+        if (((int)mCurrentFrame.mvKeys->size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
             return;
@@ -2195,6 +2195,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
     unsigned int index = mnFirstFrameId;
     list<ORB_SLAM3::KeyFrame*>::iterator lRit = mlpReferences.begin();
     list<bool>::iterator lbL = mlbLost.begin();
+
     for(auto lit=mlRelativeFramePoses.begin(),lend=mlRelativeFramePoses.end();lit!=lend;lit++, lRit++, lbL++)
     {
         if(*lbL)
@@ -2204,8 +2205,14 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
 
         while(pKF->isBad())
         {
+            auto parent = pKF->GetParent();
+            if(parent == nullptr)
+                break;
             pKF = pKF->GetParent();
         }
+
+        if(pKF->isBad())
+            break;
 
         if(pKF->GetMap() == pMap)
         {
