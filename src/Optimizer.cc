@@ -849,7 +849,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     vpEdgesStereo.reserve(N);
     vnIndexEdgeStereo.reserve(N);
 
-    const float deltaMono = sqrt(5.991);
+    const float deltaMono = sqrt(7.815);
     const float deltaStereo = sqrt(7.815);
 
     {
@@ -4693,10 +4693,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={12,7.5,5.991,5.991};
+    float chi2Mono[4]={12,7.5,7.5,5.991};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={10,10,30,50};
+    int its[4]={10,10,10,10};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -5103,7 +5103,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={12,7.5,5.991,5.991};
+    const float chi2Mono[4]={12,7.5,7.5,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
     const int its[4]={10,10,10,10};
 

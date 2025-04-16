@@ -539,6 +539,9 @@ void Tracking::Track()
                             const auto imu_preint = PredictStateIMU();
                             if(imu_preint){
                                 bOK = Relocalization();
+                                if(bOK){
+                                    mCurrentFrame.mpPrevFrame = &mLastFrame;
+                                }
                             }
                         } else {
                             setTrackingState(LOST);
@@ -635,32 +638,32 @@ void Tracking::Track()
             //}
         }
 
-        // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it shluld be once mCurrFrame is completely modified)
+        // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it should be once mCurrFrame is completely modified)
         if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
            (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && pCurrentMap->isImuInitialized())
         {
-            // TODO check this situation
+/*             // TODO check this situation
             Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
             Frame* pF = new Frame(mCurrentFrame);
             pF->mpPrevFrame = new Frame(mLastFrame);
 
             // Load preintegration
-            pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame);
+            pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame); */
         }
 
-        if(pCurrentMap->isImuInitialized())
-        {
-            if(bOK)
-            {
-                if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
-                {
-                    cout << "RESETING FRAME!!!" << endl;
-                    ResetFrameIMU();
-                }
-                else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
-                    mLastBias = mCurrentFrame.mImuBias;
-            }
-        }
+        // if(pCurrentMap->isImuInitialized())
+        // {
+        //     if(bOK)
+        //     {
+        //         if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
+        //         {
+        //             Verbose::PrintMess("resetting Imu Frame", Verbose::VERBOSITY_NORMAL);
+        //             ResetFrameIMU();
+        //         }
+        //         else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
+        //             mLastBias = mCurrentFrame.mImuBias;
+        //     }
+        // }
 
         // Update drawer
         if(mpViewer)
@@ -1256,17 +1259,18 @@ bool Tracking::TrackLocalMap()
         }
         else
         {
-            // if(!mbMapUpdated && mState == OK) //  && (mnMatchesInliers>30))
-            if(!mbMapUpdated && (mnMatchesInliers>30))
+            const auto prevFrameExists = nullptr != mCurrentFrame.mpPrevFrame;
+            const auto mpcpiExists = prevFrameExists ? mCurrentFrame.mpPrevFrame->mpcpi != nullptr : false;
+            if(!mbMapUpdated && (mnMatchesInliers>30) && mpcpiExists)
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
-                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
             }
             else
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
-                inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame); // , !mpLastKeyFrame->GetMap()->GetIniertialBA1());
+                inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
                 Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
             }
         }

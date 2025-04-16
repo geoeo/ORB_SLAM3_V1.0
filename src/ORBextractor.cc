@@ -554,13 +554,9 @@ namespace ORB_SLAM3
         vector < vector<KeyPoint> > allKeypoints;
         int nkeypoints = ComputeKeyPointsOctTree(allKeypoints);
 
-        cv::Mat descriptors;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
-            descriptors = _descriptors.createMatHeader();
-            
-
             _keypoints = vector<cv::KeyPoint>(nkeypoints);
         }
 
