@@ -109,8 +109,6 @@ namespace ORB_SLAM3
         void computeDescriptors(cv::cuda::HostMem image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
                                    const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
-        static void computeOrientation(const cv::Mat& image, std::vector<cv::KeyPoint>& keypoints, const std::vector<int>& umax);
-        static float IC_Angle(const cv::Mat& image, cv::Point2f pt,  const std::vector<int> & u_max);
         std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
                                                     const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 

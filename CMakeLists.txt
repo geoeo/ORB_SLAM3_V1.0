@@ -186,6 +186,16 @@ install(
 )
 
 install(
+        DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/cuda>
+        DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
+        FILES_MATCHING # install only matched files
+        PATTERN "*.h" # select header files
+        PATTERN "*.hpp" # select header files
+        PATTERN "lib" EXCLUDE
+        PATTERN "build" EXCLUDE
+)
+
+install(
         DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/CameraModels>
         DESTINATION ${ORB_SLAM3_INC_INSTALL_DIR}
         FILES_MATCHING # install only matched files
