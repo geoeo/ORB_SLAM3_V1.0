@@ -333,7 +333,7 @@ class SlamNode : public rclcpp::Node
       const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();
@@ -343,8 +343,8 @@ class SlamNode : public rclcpp::Node
       sub_imu_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F4/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter4/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F5/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter5/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
@@ -352,6 +352,7 @@ class SlamNode : public rclcpp::Node
       cout << "Trigger Shutdown" << endl;
       sync_thread_.join();
       SLAM_->Shutdown();
+      sync_thread_->join();
     }
 
   private:
