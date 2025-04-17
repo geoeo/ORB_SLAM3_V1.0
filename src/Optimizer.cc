@@ -4693,7 +4693,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={15.6,9.8,7.815,7.815};
+    float chi2Mono[4]={15.6,15.6,15.6,15.6};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
     int its[4]={10,10,20,20};
