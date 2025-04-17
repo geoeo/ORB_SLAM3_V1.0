@@ -164,12 +164,12 @@ void LocalMapping::Run()
                                 Verbose::PrintMess("end VIBA " + std::to_string(success), Verbose::VERBOSITY_NORMAL);
                             }
                         }
-                        if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2()){
+                        if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2() && mpCurrentKeyFrame->GetMap()->GetIniertialBA1()){
                             if (mTinit>15.0f){
                                 Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                                 auto success = false;
                                 if (mbMonocular)
-                                    success = InitializeIMU(0.f, 0.0f, true);
+                                    success = InitializeIMU(0.f, 1e5, true); // TODO: priorA is small causes reloc issues. Investigate
                                 else
                                     success = InitializeIMU(0.f, 0.f, true);
 
