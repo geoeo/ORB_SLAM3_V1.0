@@ -1100,7 +1100,7 @@ bool Tracking::TrackWithMotionModel()
     // Create "visual odometry" points if in Localization Mode
     UpdateLastFrame();
     auto pred_success = false;
-    if (mpAtlas->isImuInitialized() && !mpLocalMapper->IsInitializing())
+    if (mpAtlas->isImuInitialized())
     {
         // Predict state with IMU if it is initialized and it doesnt need reset
         Verbose::PrintMess("TrackWithMotionModel - Preduct IMU state", Verbose::VERBOSITY_NORMAL);
