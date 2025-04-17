@@ -1026,14 +1026,14 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.7,true);
+    ORBmatcher matcher(0.65,true);
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
-    if(nmatches<15)
+    if(nmatches<10)
     {
-        Verbose::PrintMess("TRACK_REF_KF: Less than 15 matches!! - " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TRACK_REF_KF: Less than 10 matches - " + std::to_string(nmatches), Verbose::VERBOSITY_NORMAL);
         return false;
     }
 
@@ -1095,13 +1095,13 @@ void Tracking::UpdateLastFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.9,true);
+    ORBmatcher matcher(0.75,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
     UpdateLastFrame();
 
-    if (mpAtlas->isImuInitialized() && (mCurrentFrame.mnId>mnLastRelocFrameId+mnFramesToResetIMU))
+    if (mpAtlas->isImuInitialized() && !mpLocalMapper->IsInitializing())
     {
         // Predict state with IMU if it is initialized and it doesnt need reset
         Verbose::PrintMess("TrackWithMotionModel - Preduct IMU state", Verbose::VERBOSITY_NORMAL);
@@ -1124,28 +1124,24 @@ bool Tracking::TrackWithMotionModel()
     if(mSensor==System::STEREO)
         th=7;
     else
-        th=30;
+        th=60;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
     // If few matches, uses a wider window search
     if(nmatches<20)
     {
-        Verbose::PrintMess("Not enough matches, wider window search!!", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_NORMAL);
         fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-        Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TrackWithMotionModel: Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
     }
 
     if(nmatches<20)
     {
-        Verbose::PrintMess("Not enough matches!!", Verbose::VERBOSITY_NORMAL);
-        if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-            return true;
-        else
-            return false;
+        return false;
     }
 
     // Optimize frame pose with all matches
@@ -1472,8 +1468,6 @@ void Tracking::CreateNewKeyFrame()
 
     mnLastKeyFrameId = mCurrentFrame.mnId;
     mpLastKeyFrame = pKF;
-    //if(mpAtlas->isImuInitialized())
-    //mpKeyFrameDB->add(pKF);
 }
 
 void Tracking::SearchLocalPoints()
@@ -1510,7 +1504,7 @@ void Tracking::SearchLocalPoints()
         if(pMP->isBad())
             continue;
         // Project (this fills MapPoint variables for matching)
-        if(mCurrentFrame.isInFrustum(pMP,0.5))
+        if(mCurrentFrame.isInFrustum(pMP,0.75))
         {
             pMP->IncreaseVisible();
             nToMatch++;
@@ -1548,6 +1542,7 @@ void Tracking::SearchLocalPoints()
             th=15; // 15
 
         auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
+        Verbose::PrintMess("SearchLocalPoints matches: " +std::to_string(matches), Verbose::VERBOSITY_NORMAL);
     }
 }
 
