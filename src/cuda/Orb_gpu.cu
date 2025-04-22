@@ -314,13 +314,13 @@ namespace ORB_SLAM3::cuda::orb {
           loc.x + __float2int_rn(pattern[idx].x * a - pattern[idx].y * b)));
   }
 
-  __global__ void calcOrb_kernel(const PtrStepb image, KeyPoint * keypoints, const int npoints, PtrStepb descriptors) {
+  __global__ void calcOrb_kernel(const PtrStepb image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, float scale ,PtrStepb descriptors) {
     int id = blockIdx.x;
     int tid = threadIdx.x;
     if (id >= npoints) return;
 
-    const KeyPoint &kpt = keypoints[id];
-    short2 loc = make_short2(kpt.pt.x, kpt.pt.y);
+    const ORB_SLAM3::cuda::managed::KeyPoint &kpt = keypoints[id];
+    short2 loc = make_short2(kpt.x, kpt.y);
     const Point * pattern = ((Point *)c_pattern) + 16 * tid;
 
     uchar * desc = descriptors.ptr(id);
@@ -347,19 +347,24 @@ namespace ORB_SLAM3::cuda::orb {
     val |= (t0 < t1) << 7;
 
     desc[tid] = (uchar)val;
+
+    // Finally we scale the keypoints to the correct scale
+    //kpt.pt.x *= scale;
+    //kpt.pt.y *= scale;
+    //keypoints[id] = kpt;
+    //keypoints[id].x *= 2;
+    //keypoints[id].y *= 2; // Problematic write
   }
 
 
 
-  GpuOrb::GpuOrb(int maxKeypoints) : maxKeypoints(maxKeypoints) {
+  GpuOrb::GpuOrb() {
     checkCudaErrors( cudaStreamCreate(&stream) );
     cvStream = StreamAccessor::wrapStream(stream);
-    //checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
   }
 
   GpuOrb::~GpuOrb() {
     cvStream.~Stream();
-    //checkCudaErrors( cudaFree(keypoints) );
     checkCudaErrors( cudaStreamDestroy(stream) );
   }
 
@@ -371,15 +376,20 @@ namespace ORB_SLAM3::cuda::orb {
     return cvStream;
   }
 
-  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, KeyPoint * keypoints, const int npoints) {
-    //checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
+  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, float scale) {
     cv::cuda::GpuMat desc = descriptors.rowRange(offset, offset_end);
     desc.setTo(Scalar::all(0), cvStream);
 
     dim3 dimBlock(32);
     dim3 dimGrid(npoints);
-    calcOrb_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, keypoints, npoints, desc);
-    checkCudaErrors( cudaGetLastError() );
+    //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints));
     checkCudaErrors( cudaStreamSynchronize(stream) );
+    cudaDeviceSynchronize();
+    calcOrb_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, keypoints, npoints, scale, desc);
+    checkCudaErrors( cudaGetLastError() );
+    checkCudaErrors(cudaDeviceSynchronize());
+    checkCudaErrors( cudaStreamSynchronize(stream) );
+    //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints,0,cudaMemAttachHost) );
+    //checkCudaErrors( cudaStreamSynchronize(stream) );
   }
 }

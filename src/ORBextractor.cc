@@ -90,8 +90,8 @@ namespace ORB_SLAM3
             nfeatures(_nFeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST),
             gpuFast(imageHeight, imageWidth ,_nFastFeatures), 
-            gpuOrb(nfeatures),
-            gpuAngle(nfeatures)
+            gpuOrb(),
+            gpuAngle()
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -185,15 +185,15 @@ namespace ORB_SLAM3
         //Associate points to childs
         for(size_t i=0;i<vKeys.size();i++)
         {
-            const cv::KeyPoint &kp = vKeys[i];
-            if(kp.pt.x<n1.UR.x)
+            const ORB_SLAM3::cuda::managed::KeyPoint &kp = vKeys[i];
+            if(kp.x<n1.UR.x)
             {
-                if(kp.pt.y<n1.BR.y)
+                if(kp.y<n1.BR.y)
                     n1.vKeys.push_back(kp);
                 else
                     n3.vKeys.push_back(kp);
             }
-            else if(kp.pt.y<n1.BR.y)
+            else if(kp.y<n1.BR.y)
                 n2.vKeys.push_back(kp);
             else
                 n4.vKeys.push_back(kp);
@@ -259,7 +259,7 @@ namespace ORB_SLAM3
         for(size_t i=0;i<fastKpCount;i++)
         {   
             const int kp_x = location[i].x;
-            vpIniNodes[kp_x/hX]->vKeys.emplace_back(kp_x, location[i].y, -1, -1, static_cast<float>(response[i]));
+            vpIniNodes[kp_x/hX]->vKeys.emplace_back(kp_x, location[i].y, response[i], -1, -1, 0);
         }
 
         list<ExtractorNode>::iterator lit = lNodes.begin();
@@ -437,8 +437,8 @@ namespace ORB_SLAM3
         auto i = 0;
         for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
         {
-            vector<cv::KeyPoint> &vNodeKeys = lit->vKeys;
-            cv::KeyPoint* pKP = &vNodeKeys[0];
+            vector<ORB_SLAM3::cuda::managed::KeyPoint> &vNodeKeys = lit->vKeys;
+            ORB_SLAM3::cuda::managed::KeyPoint* pKP = &vNodeKeys[0];
             float maxResponse = pKP->response;
 
             for(size_t k=1;k<vNodeKeys.size();k++)
@@ -454,7 +454,7 @@ namespace ORB_SLAM3
             pKP->octave=level;
             pKP->size = scaledPatchSize;
 
-            vResultKeys->at(i++) = *pKP;
+            vResultKeys->at(i++, gpuAngle.getStream()) = *pKP;
         }
 
         return vResultKeys;
@@ -497,15 +497,16 @@ namespace ORB_SLAM3
             // compute orientations
             for (int level = 0; level < nlevels; ++level){
                 const auto kpCount = allKeypoints[level]->getSize();
+
                 allKeypointsCount +=kpCount;
                 if (kpCount > 0)
-                    gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level]->getPtr(), kpCount, HALF_PATCH_SIZE);
+                    gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level]->getDevicePtr(gpuAngle.getStream()), kpCount, HALF_PATCH_SIZE);
             }
         }
         return {allKeypointsCount, allKeypoints};
     }
 
-    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, shared_ptr<vector<KeyPoint>>& _keypoints,
+    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, shared_ptr<vector<cv::KeyPoint>>& _keypoints,
             cv::cuda::HostMem& _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
@@ -548,17 +549,16 @@ namespace ORB_SLAM3
                 {
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
-                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getPtr(), keypointsLevel->getSize());
-                    
                     float scale = mvScaleFactor[level]; 
-                    vector<int> keypoint_indices(keypointsLevel->getSize());
+                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()), nkeypointsLevel, scale);
+                    
+
+                    vector<int> keypoint_indices(nkeypointsLevel);
                     iota(begin(keypoint_indices), end(keypoint_indices), 0);
                     for_each(execution::par_unseq,keypoint_indices.begin(),keypoint_indices.end(),[&](const auto i){
-                        auto keypoint = keypointsLevel->at(i);
+                        auto keypoint = keypointsLevel->at(i,gpuOrb.getStream());
                         const auto index = offset +i;
-                        // Scale keypoint coordinates
-                        keypoint.pt *= scale;
-                        _keypoints->at(index) = keypoint;
+                        _keypoints->at(index) = cv::KeyPoint(keypoint.x,keypoint.y,keypoint.size,keypoint.angle,keypoint.response,keypoint.octave,-1);
                     });
                 }
             });

@@ -119,6 +119,10 @@ src/cuda/Orb_gpu.cu
 src/cuda/Angle_gpu.cu
 )
 
+set_source_files_properties(src/cuda/Fast_gpu.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/cuda/Orb_gpu.cu PROPERTIES LANGUAGE CUDA)
+set_source_files_properties(src/cuda/Angle_gpu.cu PROPERTIES LANGUAGE CUDA)
+
 
 message("---------------: ${BUILD_INTERFACE}")
 
@@ -133,6 +137,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${DBoW2_INCLUDE_DIRS}
      ${CUDAToolkit_INCLUDE_DIRS}
 )
+
+set(
+    CUDA_NVCC_FLAGS
+    ${CUDA_NVCC_FLAGS};
+    -O3 --DUSE_STREAM_ATTACH
+    )
+
+# target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+#                        --generate-line-info
+#                        --use_fast_math
+#                        --relocatable-device-code=true
+#                        --DUSE_STREAM_ATTACH
+#                        >)
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}

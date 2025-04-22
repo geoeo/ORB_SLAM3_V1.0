@@ -3,13 +3,25 @@
 #include <cstddef>
 #include <memory>
 #include <cuda_runtime.h>
-#include <opencv2/core/types.hpp>
 #include "cuda/HelperCuda.h"
 
 #define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
 
 namespace ORB_SLAM3::cuda::managed
 {
+
+    struct KeyPoint {
+        int x;
+        int y;
+        int response;
+        int size;
+        int octave;
+        float angle;
+
+        KeyPoint(short x_in, short y_in, int response_in, int size_in, int octave_in, float angle_in)
+            : x(x_in), y(y_in), response(response_in), size(size_in), octave(octave_in), angle(angle_in) {
+        }
+    };
 
     /**
      * This struct wrapped a CUDA unified memory ptr. 
@@ -29,7 +41,7 @@ namespace ORB_SLAM3::cuda::managed
         ManagedVector & operator=(const ManagedVector& other) = delete;
         
         static ManagedVector::SharedPtr CreateManagedVector(size_t numberOfKeypoints){
-            const auto sizeInBytes = numberOfKeypoints*sizeof(cv::KeyPoint);
+            const auto sizeInBytes = numberOfKeypoints*sizeof(KeyPoint);
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
 
@@ -37,30 +49,40 @@ namespace ORB_SLAM3::cuda::managed
          * This function exposes the raw ptr. 
          * Make sure the lifetime of the bound datastructures are less than the CUDAManagedMemory struct.
          */
-        void * getRawPtr() {
+
+        KeyPoint * getHostPtr(cudaStream_t stream) {
+
+            cudaDeviceSynchronize();
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
+            checkCudaErrors( cudaStreamSynchronize(stream) );
+            cudaDeviceSynchronize();
             return unified_ptr_;
         }
 
-        cv::KeyPoint * getPtr() {
-            return (cv::KeyPoint *) unified_ptr_;
+        KeyPoint * getDevicePtr(cudaStream_t stream) {
+            cudaDeviceSynchronize();
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
+            checkCudaErrors( cudaStreamSynchronize(stream) );
+            cudaDeviceSynchronize();
+            return unified_ptr_;
         }
 
-        uint32_t getSize() const {
-            return  size_in_bytes_ / sizeof(cv::KeyPoint);
+        size_t getSize() const {
+            return  size_in_bytes_ / sizeof(KeyPoint);
         }
 
-        uint32_t sizeInBytes() const {
+        size_t sizeInBytes() const {
             return size_in_bytes_;
         }
         
-        cv::KeyPoint& at(unsigned int i){ 
-            return getPtr()[i];
+        KeyPoint& at(unsigned int i, cudaStream_t stream ){ 
+            return getHostPtr(stream)[i];
         }
 
         private:
             // Using unified memory
-            void *unified_ptr_;
-            uint32_t size_in_bytes_;
+            KeyPoint *unified_ptr_;
+            size_t size_in_bytes_;
 
             ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes) {
                 checkCudaErrors(cudaMallocManaged(&unified_ptr_, sizeInBytes));

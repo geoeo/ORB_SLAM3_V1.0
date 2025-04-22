@@ -23,7 +23,7 @@ namespace ORB_SLAM3::cuda::angle {
         checkCudaErrors( cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int)));
     }
 
-    __global__ void IC_Angle_kernel(const PtrStepb image, KeyPoint * keypoints, const int npoints, const int half_k)
+    __global__ void IC_Angle_kernel(const PtrStepb image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, const int half_k)
     {
         __shared__ int smem0[8 * 32];
         __shared__ int smem1[8 * 32];
@@ -34,11 +34,11 @@ namespace ORB_SLAM3::cuda::angle {
         cv::cuda::device::plus<int> op;
 
         const int ptidx = blockIdx.x * blockDim.y + threadIdx.y;
-
+        
         if (ptidx < npoints) {
             int m_01 = 0, m_10 = 0;
-
-            const short2 loc = make_short2(keypoints[ptidx].pt.x, keypoints[ptidx].pt.y);
+            ORB_SLAM3::cuda::managed::KeyPoint kp = keypoints[ptidx];
+            const short2 loc = make_short2(kp.x, kp.y);
 
             // Treat the center line differently, v=0
             for (int u = threadIdx.x - half_k; u <= half_k; u += blockDim.x)
@@ -74,28 +74,28 @@ namespace ORB_SLAM3::cuda::angle {
                 kp_dir += (kp_dir < 0) * (2.0f * CV_PI_F);
                 kp_dir *= 180.0f / CV_PI_F;
 
-                keypoints[ptidx].angle = kp_dir;
+                keypoints[ptidx].angle = kp_dir; // problematic write
             }
         }
     }
 
-    Angle::Angle(unsigned int maxKeypoints) : maxKeypoints(maxKeypoints) {
+    Angle::Angle() {
         checkCudaErrors( cudaStreamCreate(&stream) );
-        //checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
     }
 
     Angle::~Angle() {
-        //checkCudaErrors( cudaFree(keypoints) );
         checkCudaErrors( cudaStreamDestroy(stream) );
     }
 
-    void Angle::launch_async(cv::cuda::GpuMat image, KeyPoint * keypoints, int npoints, int half_k) {
-        //checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
+    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k) {
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
+        //dim3 grid(8);
+        //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints,0,cudaMemAttachSingle));
+        //checkCudaErrors( cudaStreamSynchronize(stream) );
         IC_Angle_kernel<<<grid, block, 0, stream>>>(image, keypoints, npoints, half_k);
         checkCudaErrors( cudaGetLastError() );
-        //checkCudaErrors( cudaMemcpyAsync(_keypoints, keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyDeviceToHost, stream) );
+        cudaDeviceSynchronize();
         checkCudaErrors( cudaStreamSynchronize(stream) );
         
     }
