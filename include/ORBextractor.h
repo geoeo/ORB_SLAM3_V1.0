@@ -24,6 +24,7 @@
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
 #include <cuda/Angle.hpp>
+#include <cuda/ManagedVector.hpp>
 
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudafeatures2d.hpp>

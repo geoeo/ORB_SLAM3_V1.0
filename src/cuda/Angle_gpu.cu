@@ -1,6 +1,4 @@
-
-
-#include "cuda/helper_cuda.h"
+#include "cuda/HelperCuda.h"
 #include <cuda/Angle.hpp>
 #include <algorithm>
 #include <iostream>

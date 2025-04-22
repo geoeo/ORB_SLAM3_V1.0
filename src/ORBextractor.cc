@@ -67,7 +67,7 @@
 #include <cuda_runtime.h>
 
 #include "ORBextractor.h"
-#include "cuda/managed_vector.hpp"
+#include "cuda/ManagedVector.hpp"
 #include <tracy.hpp>
 
  	
@@ -236,7 +236,8 @@ namespace ORB_SLAM3
         const float hX = static_cast<float>(maxX-minX)/nIni;
 
         list<ExtractorNode> lNodes;
-
+        
+        // These pointers are references to lNodes elements with in this function.
         vector<ExtractorNode*> vpIniNodes;
         vpIniNodes.resize(nIni);
 
@@ -515,10 +516,12 @@ namespace ORB_SLAM3
         vector < vector<KeyPoint> > allKeypoints;
         int nkeypoints = ComputeKeyPointsOctTree(allKeypoints);
 
+        //ORB_SLAM3::cuda::managed::SharedPtr managedKeypoints;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
             _keypoints = make_shared<vector<cv::KeyPoint>>(nkeypoints);
+            //managedKeypoints = ORB_SLAM3::cuda::managed::CreateManagedVector(nkeypoints);
         }
 
         vector<int> levels_vec(nlevels);

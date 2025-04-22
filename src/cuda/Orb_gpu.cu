@@ -39,8 +39,7 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //M*/
-
-#include "cuda/helper_cuda.h"
+#include "cuda/HelperCuda.h"
 #include <cuda/Orb.hpp>
 
 using namespace cv;

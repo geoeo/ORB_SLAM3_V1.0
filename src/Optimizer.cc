@@ -4707,7 +4707,13 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     for(size_t it=0; it<4; it++)
     {
         optimizer.initializeOptimization(0);
-        optimizer.optimize(its[it]);
+
+
+        {
+            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastKeyFrame - Optimize", true); 
+            optimizer.optimize(its[it]);
+        }
+
 
         nBad = 0;
         nBadMono = 0;
@@ -5116,7 +5122,11 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     for(size_t it=0; it<4; it++)
     {
         optimizer.initializeOptimization(0);
-        optimizer.optimize(its[it]);
+
+        {
+            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastFrame - Optimize", true); 
+            optimizer.optimize(its[it]);
+        }
 
         nBad=0;
         nBadMono = 0;

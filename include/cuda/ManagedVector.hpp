@@ -4,6 +4,9 @@
 #include <memory>
 #include <cuda_runtime.h>
 #include <opencv2/core/types.hpp>
+#include "cuda/HelperCuda.h"
+
+#define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
 
 namespace ORB_SLAM3::cuda::managed
 {
@@ -25,7 +28,8 @@ namespace ORB_SLAM3::cuda::managed
         ManagedVector(const ManagedVector&) = delete;
         ManagedVector & operator=(const ManagedVector& other) = delete;
         
-        static ManagedVector::SharedPtr CreateManagedVector(size_t sizeInBytes){
+        static ManagedVector::SharedPtr CreateManagedVector(size_t numberOfKeypoints){
+            const auto sizeInBytes = numberOfKeypoints*sizeof(cv::KeyPoint);
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
 
@@ -59,20 +63,12 @@ namespace ORB_SLAM3::cuda::managed
             uint32_t size_in_bytes_;
 
             ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes) {
-                checkCudaError(cudaMallocManaged(&unified_ptr_, sizeInBytes), __FILE__, __LINE__);
+                checkCudaErrors(cudaMallocManaged(&unified_ptr_, sizeInBytes));
             }
 
             ~ManagedVector() {
-                checkCudaError(cudaFree(unified_ptr_), __FILE__, __LINE__);
+                checkCudaErrors(cudaFree(unified_ptr_));
             };
-
-            static void checkCudaError(cudaError_t result, const char *const file, int const line){
-                if(result != cudaError_t::cudaSuccess){
-                    std::stringstream ss;
-                    ss << "CUDA error at " << file <<":"<<line << " "<< cudaGetErrorString(result) << std::endl;
-                    throw std::runtime_error(ss.str());
-                }
-            }
     };
 
 }
