@@ -67,6 +67,7 @@
 #include <cuda_runtime.h>
 
 #include "ORBextractor.h"
+#include "cuda/managed_vector.hpp"
 #include <tracy.hpp>
 
  	
@@ -82,37 +83,6 @@ namespace ORB_SLAM3
     const int PATCH_SIZE = 31;
     const int HALF_PATCH_SIZE = 15;
     const int EDGE_THRESHOLD = 25; // Seems to have be important for using the pattern
-
-    float ORBextractor::IC_Angle(const Mat& image, Point2f pt,  const vector<int> & u_max)
-    {
-        int m_01 = 0, m_10 = 0;
-
-        const uchar* center = &image.at<uchar> (cvRound(pt.y), cvRound(pt.x));
-
-        // Treat the center line differently, v=0
-        for (int u = -HALF_PATCH_SIZE; u <= HALF_PATCH_SIZE; ++u)
-            m_10 += u * center[u];
-
-        // Go line by line in the circuI853lar patch
-        int step = (int)image.step1();
-        for (int v = 1; v <= HALF_PATCH_SIZE; ++v)
-        {
-            // Proceed over the two lines
-            int v_sum = 0;
-            int d = u_max[v];
-            for (int u = -d; u <= d; ++u)
-            {
-                int val_plus = center[u + v*step], val_minus = center[u - v*step];
-                v_sum += (val_plus - val_minus);
-                m_10 += u * (val_plus + val_minus);
-            }
-            m_01 += v * v_sum;
-        }
-
-        return fastAtan2((float)m_01, (float)m_10);
-    }
-
-
 
     ORBextractor::ORBextractor(int _nFeatures, int _nFastFeatures, float _scaleFactor, int _nlevels,
                                int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):
@@ -179,15 +149,6 @@ namespace ORB_SLAM3
 
         AllocatePyramid(imageWidth, imageHeight);
         ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());
-    }
-
-    void ORBextractor::computeOrientation(const cv::Mat& image, std::vector<KeyPoint>& keypoints, const std::vector<int>& umax)
-    {
-        for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                     keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
-        {
-            keypoint->angle = ORBextractor::IC_Angle(image, keypoint->pt, umax);
-        }
     }
 
     void ExtractorNode::DivideNode(ExtractorNode &n1, ExtractorNode &n2, ExtractorNode &n3, ExtractorNode &n4)
@@ -543,7 +504,7 @@ namespace ORB_SLAM3
         return allKeypointsCount;
     }
 
-    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, vector<KeyPoint>& _keypoints,
+    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, shared_ptr<vector<KeyPoint>>& _keypoints,
             cv::cuda::HostMem& _descriptors)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
@@ -557,7 +518,7 @@ namespace ORB_SLAM3
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
-            _keypoints = vector<cv::KeyPoint>(nkeypoints);
+            _keypoints = make_shared<vector<cv::KeyPoint>>(nkeypoints);
         }
 
         vector<int> levels_vec(nlevels);
@@ -597,7 +558,7 @@ namespace ORB_SLAM3
                         const auto index = offset +i;
                         // Scale keypoint coordinates
                         keypoint.pt *= scale;
-                        _keypoints.at(index) = keypoint;
+                        _keypoints->at(index) = keypoint;
                     });
                 }
             });

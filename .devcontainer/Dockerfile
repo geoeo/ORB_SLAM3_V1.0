@@ -54,8 +54,8 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
 && cmake \
     -DWITH_CUBLAS=ON \
     -DWITH_CUDA=ON \
-    -DCUDA_ARCH_BIN=8.7 \
-    -DCUDA_ARCH_PTX="sm_87" \
+    #-DCUDA_ARCH_BIN=8.7 \
+    #-DCUDA_ARCH_PTX="sm_87" \
     -DCMAKE_BUILD_TYPE=RELEASE \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_opencv_apps=OFF \
@@ -65,9 +65,9 @@ RUN cd opencv-4.9.0 && mkdir -p build && cd build \
     -DOPENCV_GENERATE_PKGCONFIG=OFF \
     -DBUILD_TESTS=OFF \
     -DCUDA_FAST_MATH=ON \
-    -DENABLE_NEON=ON \
-    -DBUILD_opencv_python2=OFF \
-    -DBUILD_opencv_python3=OFF \
+    #-DENABLE_NEON=ON \
+    #-DBUILD_opencv_python2=OFF \
+    #-DBUILD_opencv_python3=OFF \
     -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-4.9.0/modules \
     -DCMAKE_INSTALL_PREFIX=/usr/local .. \
 && make -j $(nproc --all) && make install

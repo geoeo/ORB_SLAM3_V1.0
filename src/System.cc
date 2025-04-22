@@ -263,7 +263,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
     
 
-    //unique_lock<mutex> lock2(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
@@ -400,7 +399,7 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
     return pActiveMap->GetReferenceMapPoints();
 }
 
-vector<cv::KeyPoint> System::GetTrackedKeyPointsUn()
+shared_ptr<vector<cv::KeyPoint>> System::GetTrackedKeyPointsUn()
 {
     //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );

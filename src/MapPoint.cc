@@ -99,9 +99,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
 
     Eigen::Vector3f PC = mWorldPos - Ow;
     const float dist = PC.norm();
-    const int level = (pFrame -> Nleft == -1) ? pFrame->mvKeysUn[idxF].octave
-                                              : (idxF < pFrame -> Nleft) ? pFrame->mvKeys[idxF].octave
-                                                                         : pFrame -> mvKeysRight[idxF].octave;
+    const int level = pFrame->mvKeysUn->operator[](idxF).octave;
     const float levelScaleFactor =  pFrame->mvScaleFactors[level];
     const int nLevels = pFrame->mnScaleLevels;
 
@@ -470,16 +468,7 @@ void MapPoint::UpdateNormalAndDepth()
 
     tuple<int ,int> indexes = observations[pRefKF];
     int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-    int level;
-    if(pRefKF -> NLeft == -1){
-        level = pRefKF->mvKeysUn[leftIndex].octave;
-    }
-    else if(leftIndex != -1){
-        level = pRefKF -> mvKeys[leftIndex].octave;
-    }
-    else{
-        level = pRefKF -> mvKeysRight[rightIndex - pRefKF -> NLeft].octave;
-    }
+    int level = pRefKF->mvKeysUn->operator[](leftIndex).octave;
 
     //const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
     const float levelScaleFactor =  pRefKF->mvScaleFactors[level];
