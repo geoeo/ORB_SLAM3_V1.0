@@ -9,14 +9,14 @@ namespace ORB_SLAM3::cuda::orb {
 
   class GpuOrb {
     unsigned int maxKeypoints;
-    cv::KeyPoint * keypoints;
+    //cv::KeyPoint * keypoints;
     cudaStream_t stream;
     cv::cuda::Stream cvStream;
   public:
     GpuOrb(int maxKeypoints);
     ~GpuOrb();
 
-    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, const cv::KeyPoint * _keypoints, const int npoints);
+    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, cv::KeyPoint * keypoints, const int npoints);
     cudaStream_t getStream();
     cv::cuda::Stream getCvStream();
 

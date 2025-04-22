@@ -53,7 +53,7 @@ namespace ORB_SLAM3::cuda::managed
             return size_in_bytes_;
         }
         
-        cv::KeyPoint& operator[](unsigned int i){ 
+        cv::KeyPoint& at(unsigned int i){ 
             return getPtr()[i];
         }
 

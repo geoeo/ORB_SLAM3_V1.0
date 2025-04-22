@@ -354,12 +354,12 @@ namespace ORB_SLAM3::cuda::orb {
   GpuOrb::GpuOrb(int maxKeypoints) : maxKeypoints(maxKeypoints) {
     checkCudaErrors( cudaStreamCreate(&stream) );
     cvStream = StreamAccessor::wrapStream(stream);
-    checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
+    //checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
   }
 
   GpuOrb::~GpuOrb() {
     cvStream.~Stream();
-    checkCudaErrors( cudaFree(keypoints) );
+    //checkCudaErrors( cudaFree(keypoints) );
     checkCudaErrors( cudaStreamDestroy(stream) );
   }
 
@@ -371,8 +371,8 @@ namespace ORB_SLAM3::cuda::orb {
     return cvStream;
   }
 
-  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, const KeyPoint * _keypoints, const int npoints) {
-    checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
+  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, KeyPoint * keypoints, const int npoints) {
+    //checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
     cv::cuda::GpuMat desc = descriptors.rowRange(offset, offset_end);
     desc.setTo(Scalar::all(0), cvStream);
 

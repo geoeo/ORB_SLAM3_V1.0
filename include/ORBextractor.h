@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <list>
+#include <tuple>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
@@ -106,12 +107,12 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
+        std::tuple<int,std::vector<cuda::managed::ManagedVector::SharedPtr>> ComputeKeyPointsOctTree();
         void computeDescriptors(cv::cuda::HostMem image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
                                    const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
-        std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
-                                                    const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
+        cuda::managed::ManagedVector::SharedPtr DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
+                                                    const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);
 
         
         constexpr static float factorPI = (float)(CV_PI/180.f);

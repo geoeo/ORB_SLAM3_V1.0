@@ -81,21 +81,21 @@ namespace ORB_SLAM3::cuda::angle {
 
     Angle::Angle(unsigned int maxKeypoints) : maxKeypoints(maxKeypoints) {
         checkCudaErrors( cudaStreamCreate(&stream) );
-        checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
+        //checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
     }
 
     Angle::~Angle() {
-        checkCudaErrors( cudaFree(keypoints) );
+        //checkCudaErrors( cudaFree(keypoints) );
         checkCudaErrors( cudaStreamDestroy(stream) );
     }
 
-    void Angle::launch_async(cv::cuda::GpuMat image, KeyPoint * _keypoints, int npoints, int half_k) {
-        checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
+    void Angle::launch_async(cv::cuda::GpuMat image, KeyPoint * keypoints, int npoints, int half_k) {
+        //checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
         IC_Angle_kernel<<<grid, block, 0, stream>>>(image, keypoints, npoints, half_k);
         checkCudaErrors( cudaGetLastError() );
-        checkCudaErrors( cudaMemcpyAsync(_keypoints, keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyDeviceToHost, stream) );
+        //checkCudaErrors( cudaMemcpyAsync(_keypoints, keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyDeviceToHost, stream) );
         checkCudaErrors( cudaStreamSynchronize(stream) );
         
     }
