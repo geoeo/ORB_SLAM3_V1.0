@@ -16,14 +16,10 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "CameraModels/KannalaBrandt8.h"
+#include <CameraModels/KannalaBrandt8.h>
 
-#include <boost/serialization/export.hpp>
-
-//BOOST_CLASS_EXPORT_IMPLEMENT(ORB_SLAM3::KannalaBrandt8)
 
 namespace ORB_SLAM3 {
-//BOOST_CLASS_EXPORT_GUID(KannalaBrandt8, "KannalaBrandt8")
 
     cv::Point2f KannalaBrandt8::project(const cv::Point3f &p3D) {
         const float x2_plus_y2 = p3D.x * p3D.x + p3D.y * p3D.y;

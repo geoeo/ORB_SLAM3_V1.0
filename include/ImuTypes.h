@@ -28,10 +28,6 @@
 #include <mutex>
 #include <iostream>
 
-
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
-
 namespace ORB_SLAM3
 {
 
@@ -76,19 +72,6 @@ public:
 //IMU calibration (Tbc, Tcb, noise)
 class Calib
 {
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        serializeSophusSE3(ar,mTcb,version);
-        serializeSophusSE3(ar,mTbc,version);
-
-        ar & boost::serialization::make_array(Cov.diagonal().data(), Cov.diagonal().size());
-        ar & boost::serialization::make_array(CovWalk.diagonal().data(), CovWalk.diagonal().size());
-
-        ar & mbIsSet;
-    }
-
 public:
 
     Calib(const Sophus::SE3<float> &Tbc, const float &ng, const float &na, const float &ngw, const float &naw)

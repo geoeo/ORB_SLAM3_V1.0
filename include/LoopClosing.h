@@ -17,18 +17,15 @@
 */
 
 
-#ifndef LOOPCLOSING_H
-#define LOOPCLOSING_H
+#pragma once
 
-#include "KeyFrame.h"
-#include "LocalMapping.h"
-#include "Atlas.h"
-#include "ORBVocabulary.h"
-#include "Tracking.h"
+#include <KeyFrame.h>
+#include <LocalMapping.h>
+#include <Atlas.h>
+#include <ORBVocabulary.h>
+#include <Tracking.h>
+#include <KeyFrameDatabase.h>
 
-#include "KeyFrameDatabase.h"
-
-#include <boost/algorithm/string.hpp>
 #include <thread>
 #include <mutex>
 #include <vector>
@@ -86,36 +83,6 @@ public:
     bool isFinished();
 
     Viewer* mpViewer;
-
-#ifdef REGISTER_TIMES
-
-    vector<double> vdDataQuery_ms;
-    vector<double> vdEstSim3_ms;
-    vector<double> vdPRTotal_ms;
-
-    vector<double> vdMergeMaps_ms;
-    vector<double> vdWeldingBA_ms;
-    vector<double> vdMergeOptEss_ms;
-    vector<double> vdMergeTotal_ms;
-    vector<int> vnMergeKFs;
-    vector<int> vnMergeMPs;
-    int nMerges;
-
-    vector<double> vdLoopFusion_ms;
-    vector<double> vdLoopOptEss_ms;
-    vector<double> vdLoopTotal_ms;
-    vector<int> vnLoopKFs;
-    int nLoop;
-
-    vector<double> vdGBA_ms;
-    vector<double> vdUpdateMap_ms;
-    vector<double> vdFGBATotal_ms;
-    vector<int> vnGBAKFs;
-    vector<int> vnGBAMPs;
-    int nFGBA_exec;
-    int nFGBA_abort;
-
-#endif
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -248,4 +215,3 @@ protected:
 
 } //namespace ORB_SLAM
 
-#endif // LOOPCLOSING_H

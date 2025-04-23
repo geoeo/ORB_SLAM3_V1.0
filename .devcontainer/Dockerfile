@@ -79,12 +79,12 @@ RUN git clone https://gitlab.com/libeigen/eigen.git \
     && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
     && cmake --build build -j 6 --target install
 
-# Deps for cv_image_transport
+# Deps for cv_image_transport - might be able to remove boost
 RUN apt-get update && apt-get install -y \
     libturbojpeg0-dev \
     libogg-dev \
     libtheora-dev \
-    libboost-all-dev \
+    libboost-all-dev \ 
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspaces/ORB_SLAM3_V1.0

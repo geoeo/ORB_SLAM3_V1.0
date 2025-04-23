@@ -259,7 +259,7 @@ namespace ORB_SLAM3
         for(size_t i=0;i<fastKpCount;i++)
         {   
             const int kp_x = location[i].x;
-            vpIniNodes[kp_x/hX]->vKeys.emplace_back(kp_x, location[i].y, response[i], -1, -1, 0);
+            vpIniNodes[kp_x/hX]->vKeys.emplace_back(kp_x, location[i].y, -1, response[i], 0, -1);
         }
 
         list<ExtractorNode>::iterator lit = lNodes.begin();
