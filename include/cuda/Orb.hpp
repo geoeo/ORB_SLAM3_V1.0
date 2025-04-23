@@ -15,7 +15,7 @@ namespace ORB_SLAM3::cuda::orb {
     GpuOrb();
     ~GpuOrb();
 
-    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints, float scale);
+    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints);
     cudaStream_t getStream();
     cv::cuda::Stream getCvStream();
 

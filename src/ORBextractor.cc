@@ -534,9 +534,9 @@ namespace ORB_SLAM3
 
         {
             ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
-            for_each(execution::seq,levels_vec.begin(),levels_vec.end(),[&](const auto level)
+            for_each(execution::par,levels_vec.begin(),levels_vec.end(),[&](const auto level)
             {
-                cuda::managed::ManagedVector<KeyPoint>::SharedPtr keypointsLevel = allKeypoints[level];
+                auto keypointsLevel = allKeypoints[level];
                 const auto nkeypointsLevel = keypoint_num_vec[level];
 
                 if(nkeypointsLevel==0)
@@ -549,13 +549,14 @@ namespace ORB_SLAM3
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     float scale = mvScaleFactor[level]; 
-                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()), nkeypointsLevel, scale);
+                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()),nkeypointsLevel);
                     
                     auto keypointsHostPtr = keypointsLevel->getHostPtr();
-                    std::memcpy(&_keypoints->operator[](offset),keypointsHostPtr,keypointsLevel->sizeInBytes());
+                    memcpy(&_keypoints->operator[](offset),keypointsHostPtr,keypointsLevel->sizeInBytes());
                 }
             });
         }
+
 
         return keypoints_acc.back();
     }
