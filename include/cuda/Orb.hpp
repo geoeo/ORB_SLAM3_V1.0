@@ -2,8 +2,9 @@
 
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/core/cuda_stream_accessor.hpp>
-#include "cuda/ManagedVector.hpp"
+#include <cuda/ManagedVector.hpp>
 #include <cuda_runtime.h>
+#include <KeyPoint.h>
 
 namespace ORB_SLAM3::cuda::orb {
 
@@ -14,7 +15,7 @@ namespace ORB_SLAM3::cuda::orb {
     GpuOrb();
     ~GpuOrb();
 
-    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, float scale);
+    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints, float scale);
     cudaStream_t getStream();
     cv::cuda::Stream getCvStream();
 

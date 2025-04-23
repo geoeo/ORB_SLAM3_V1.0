@@ -23,7 +23,7 @@ namespace ORB_SLAM3::cuda::angle {
         checkCudaErrors( cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int)));
     }
 
-    __global__ void IC_Angle_kernel(const PtrStepb image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, const int half_k)
+    __global__ void IC_Angle_kernel(const PtrStepb image, ORB_SLAM3::KeyPoint * keypoints, const int npoints, const int half_k)
     {
         __shared__ int smem0[8 * 32];
         __shared__ int smem1[8 * 32];
@@ -37,7 +37,7 @@ namespace ORB_SLAM3::cuda::angle {
         
         if (ptidx < npoints) {
             int m_01 = 0, m_10 = 0;
-            ORB_SLAM3::cuda::managed::KeyPoint kp = keypoints[ptidx];
+            ORB_SLAM3::KeyPoint kp = keypoints[ptidx];
             const short2 loc = make_short2(kp.x, kp.y);
 
             // Treat the center line differently, v=0
@@ -79,13 +79,7 @@ namespace ORB_SLAM3::cuda::angle {
         }
     }
 
-    Angle::Angle() {
-    }
-
-    Angle::~Angle() {
-    }
-
-    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream) {
+    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream) {
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
         IC_Angle_kernel<<<grid, block,0, stream>>>(image, keypoints, npoints, half_k);

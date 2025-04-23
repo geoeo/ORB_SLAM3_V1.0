@@ -185,7 +185,7 @@ namespace ORB_SLAM3
         //Associate points to childs
         for(size_t i=0;i<vKeys.size();i++)
         {
-            const ORB_SLAM3::cuda::managed::KeyPoint &kp = vKeys[i];
+            const ORB_SLAM3::KeyPoint &kp = vKeys[i];
             if(kp.x<n1.UR.x)
             {
                 if(kp.y<n1.BR.y)
@@ -438,8 +438,8 @@ namespace ORB_SLAM3
         auto i = 0;
         for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
         {
-            vector<ORB_SLAM3::cuda::managed::KeyPoint> &vNodeKeys = lit->vKeys;
-            ORB_SLAM3::cuda::managed::KeyPoint* pKP = &vNodeKeys[0];
+            vector<ORB_SLAM3::KeyPoint> &vNodeKeys = lit->vKeys;
+            ORB_SLAM3::KeyPoint* pKP = &vNodeKeys[0];
             float maxResponse = pKP->response;
 
             for(size_t k=1;k<vNodeKeys.size();k++)

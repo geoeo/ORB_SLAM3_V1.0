@@ -314,12 +314,12 @@ namespace ORB_SLAM3::cuda::orb {
           loc.x + __float2int_rn(pattern[idx].x * a - pattern[idx].y * b)));
   }
 
-  __global__ void calcOrb_kernel(const PtrStepb image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, float scale ,PtrStepb descriptors) {
+  __global__ void calcOrb_kernel(const PtrStepb image, ORB_SLAM3::KeyPoint * keypoints, const int npoints, float scale ,PtrStepb descriptors) {
     int id = blockIdx.x;
     int tid = threadIdx.x;
     if (id >= npoints) return;
 
-    ORB_SLAM3::cuda::managed::KeyPoint& kpt = keypoints[id];
+    ORB_SLAM3::KeyPoint& kpt = keypoints[id];
     short2 loc = make_short2(kpt.x, kpt.y);
 
     const Point * pattern = ((Point *)c_pattern) + 16 * tid;
@@ -373,7 +373,7 @@ namespace ORB_SLAM3::cuda::orb {
     return cvStream;
   }
 
-  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, const int npoints, float scale) {
+  void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints, float scale) {
     cv::cuda::GpuMat desc = descriptors.rowRange(offset, offset_end);
     desc.setTo(Scalar::all(0), cvStream);
 

@@ -26,6 +26,7 @@
 #include <cuda/Orb.hpp>
 #include <cuda/Angle.hpp>
 #include <cuda/ManagedVector.hpp>
+#include <KeyPoint.h>
 
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudafeatures2d.hpp>
@@ -44,7 +45,7 @@ namespace ORB_SLAM3
 
         void DivideNode(ExtractorNode &n1, ExtractorNode &n2, ExtractorNode &n3, ExtractorNode &n4);
 
-        std::vector<ORB_SLAM3::cuda::managed::KeyPoint> vKeys;
+        std::vector<ORB_SLAM3::KeyPoint> vKeys;
         cv::Point2i UL, UR, BL, BR;
         std::list<ExtractorNode>::iterator lit;
         bool bNoMore;
@@ -108,8 +109,6 @@ namespace ORB_SLAM3
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
         std::tuple<int,std::vector<cuda::managed::ManagedVector::SharedPtr>> ComputeKeyPointsOctTree();
-        void computeDescriptors(cv::cuda::HostMem image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
-                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
         
         cuda::managed::ManagedVector::SharedPtr DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                     const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);

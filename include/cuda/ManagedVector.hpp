@@ -4,25 +4,13 @@
 #include <memory>
 #include <cuda_runtime.h>
 #include "cuda/HelperCuda.h"
-#include <iostream>
+#include "KeyPoint.h"
 
 #define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
 
 namespace ORB_SLAM3::cuda::managed
 {
 
-    struct KeyPoint {
-        int x;
-        int y;
-        int response;
-        int size;
-        int octave;
-        float angle;
-
-        KeyPoint(short x_in, short y_in, int response_in, int size_in, int octave_in, float angle_in)
-            : x(x_in), y(y_in), response(response_in), size(size_in), octave(octave_in), angle(angle_in) {
-        }
-    };
 
     /**
      * This struct wrapped a CUDA unified memory ptr. 
@@ -42,18 +30,18 @@ namespace ORB_SLAM3::cuda::managed
         ManagedVector & operator=(const ManagedVector& other) = delete;
         
         static ManagedVector::SharedPtr CreateManagedVector(size_t numberOfKeypoints){
-            const auto sizeInBytes = numberOfKeypoints*sizeof(KeyPoint);
+            const auto sizeInBytes = numberOfKeypoints*sizeof(ORB_SLAM3::KeyPoint);
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
 
         
-        KeyPoint * getHostPtr(cudaStream_t stream = 0) {
+        ORB_SLAM3::KeyPoint * getHostPtr(cudaStream_t stream = 0) {
             checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
             checkCudaErrors( cudaStreamSynchronize(stream) );
             return unified_ptr_;
         }
 
-        KeyPoint * getDevicePtr(cudaStream_t stream = 0) {
+        ORB_SLAM3::KeyPoint * getDevicePtr(cudaStream_t stream = 0) {
             checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachSingle) );
             checkCudaErrors( cudaStreamSynchronize(stream) );
             return unified_ptr_;
@@ -72,7 +60,7 @@ namespace ORB_SLAM3::cuda::managed
 
         private:
             // Using unified memory
-            KeyPoint *unified_ptr_;
+            ORB_SLAM3::KeyPoint *unified_ptr_;
             size_t size_in_bytes_;
 
             ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes) {
