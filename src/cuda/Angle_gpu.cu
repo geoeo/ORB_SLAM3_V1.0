@@ -38,7 +38,7 @@ namespace ORB_SLAM3::cuda::angle {
         if (ptidx < npoints) {
             int m_01 = 0, m_10 = 0;
             ORB_SLAM3::KeyPoint kp = keypoints[ptidx];
-            const short2 loc = make_short2(kp.x, kp.y);
+            const int2 loc = make_short2(kp.pt.x, kp.pt.y);
 
             // Treat the center line differently, v=0
             for (int u = threadIdx.x - half_k; u <= half_k; u += blockDim.x)

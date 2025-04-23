@@ -186,14 +186,14 @@ namespace ORB_SLAM3
         for(size_t i=0;i<vKeys.size();i++)
         {
             const ORB_SLAM3::KeyPoint &kp = vKeys[i];
-            if(kp.x<n1.UR.x)
+            if(kp.pt.x<n1.UR.x)
             {
-                if(kp.y<n1.BR.y)
+                if(kp.pt.y<n1.BR.y)
                     n1.vKeys.push_back(kp);
                 else
                     n3.vKeys.push_back(kp);
             }
-            else if(kp.y<n1.BR.y)
+            else if(kp.pt.y<n1.BR.y)
                 n2.vKeys.push_back(kp);
             else
                 n4.vKeys.push_back(kp);
@@ -560,7 +560,7 @@ namespace ORB_SLAM3
                     for_each(execution::par_unseq,keypoint_indices.begin(),keypoint_indices.end(),[&](const auto i){
                         auto& keypoint = keypointsHostPtr[i];
                         const auto index = offset +i;
-                        _keypoints->at(index) = cv::KeyPoint(keypoint.x,keypoint.y,keypoint.size,keypoint.angle,keypoint.response,keypoint.octave,-1);
+                        _keypoints->at(index) = cv::KeyPoint(keypoint.pt.x,keypoint.pt.y,keypoint.size,keypoint.angle,keypoint.response,keypoint.octave,-1);
                     });
                 }
             });
