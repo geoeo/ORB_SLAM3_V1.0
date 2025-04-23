@@ -88,13 +88,8 @@ namespace ORB_SLAM3::cuda::angle {
     void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream) {
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
-        //dim3 grid(8);
-        //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints,0,cudaMemAttachSingle));
-        //checkCudaErrors( cudaStreamSynchronize(stream) );
-        checkCudaErrors(cudaDeviceSynchronize());
-        IC_Angle_kernel<<<grid, block>>>(image, keypoints, npoints, half_k);
+        IC_Angle_kernel<<<grid, block,0, stream>>>(image, keypoints, npoints, half_k);
         checkCudaErrors( cudaGetLastError() );
-        checkCudaErrors(cudaDeviceSynchronize());
         checkCudaErrors( cudaStreamSynchronize(stream) );
         
     }

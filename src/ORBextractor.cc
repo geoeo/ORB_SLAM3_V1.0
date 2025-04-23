@@ -433,9 +433,8 @@ namespace ORB_SLAM3
 
         // Retain the best point in each node - We assume maxFeatures << nFastFeatures which is what is given to this function
         auto vResultKeys = cuda::managed::ManagedVector::CreateManagedVector(lNodes.size());
-        const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvScaleFactor[level]);
-        std::cout << "lNodes: " << lNodes.size() << std::endl;
-        std::cout << "Max Features: " << maxFeatures << std::endl;
+        auto vResultKeysHostPtr = vResultKeys->getHostPtr();
+        const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvInvScaleFactor[level]);
         auto i = 0;
         for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
         {
@@ -456,7 +455,7 @@ namespace ORB_SLAM3
             pKP->octave=level;
             pKP->size = scaledPatchSize;
 
-            vResultKeys->at(i++, gpuOrb.getStream()) = *pKP;
+            vResultKeysHostPtr[i++] = *pKP;
         }
 
         return vResultKeys;
@@ -555,10 +554,11 @@ namespace ORB_SLAM3
                     gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()), nkeypointsLevel, scale);
                     
 
+                    auto keypointsHostPtr = keypointsLevel->getHostPtr();
                     vector<int> keypoint_indices(nkeypointsLevel);
                     iota(begin(keypoint_indices), end(keypoint_indices), 0);
                     for_each(execution::par_unseq,keypoint_indices.begin(),keypoint_indices.end(),[&](const auto i){
-                        auto keypoint = keypointsLevel->at(i,gpuOrb.getStream());
+                        auto& keypoint = keypointsHostPtr[i];
                         const auto index = offset +i;
                         _keypoints->at(index) = cv::KeyPoint(keypoint.x,keypoint.y,keypoint.size,keypoint.angle,keypoint.response,keypoint.octave,-1);
                     });

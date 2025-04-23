@@ -18,8 +18,6 @@ namespace ORB_SLAM3::cuda::managed
         int size;
         int octave;
         float angle;
-        int _pad1;
-        int _pad2;
 
         KeyPoint(short x_in, short y_in, int response_in, int size_in, int octave_in, float angle_in)
             : x(x_in), y(y_in), response(response_in), size(size_in), octave(octave_in), angle(angle_in) {
@@ -44,8 +42,6 @@ namespace ORB_SLAM3::cuda::managed
         ManagedVector & operator=(const ManagedVector& other) = delete;
         
         static ManagedVector::SharedPtr CreateManagedVector(size_t numberOfKeypoints){
-            std::cout << "Num: " << numberOfKeypoints << std::endl;
-            std::cout << "Size: " << sizeof(KeyPoint) << std::endl;
             const auto sizeInBytes = numberOfKeypoints*sizeof(KeyPoint);
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
@@ -55,22 +51,28 @@ namespace ORB_SLAM3::cuda::managed
          * Make sure the lifetime of the bound datastructures are less than the CUDAManagedMemory struct.
          */
 
-        KeyPoint * getHostPtr(cudaStream_t stream) {
+
+
+        
+        
+        KeyPoint * getHostPtr(cudaStream_t stream = 0) {
 
             // cudaDeviceSynchronize();
-            // checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
-            // checkCudaErrors( cudaStreamSynchronize(stream) );
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
+            checkCudaErrors( cudaStreamSynchronize(stream) );
             // cudaDeviceSynchronize();
             return unified_ptr_;
         }
 
-        KeyPoint * getDevicePtr(cudaStream_t stream) {
+        KeyPoint * getDevicePtr(cudaStream_t stream = 0) {
             // cudaDeviceSynchronize();
-            // checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
-            // checkCudaErrors( cudaStreamSynchronize(stream) );
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
+            checkCudaErrors( cudaStreamSynchronize(stream) );
             // cudaDeviceSynchronize();
             return unified_ptr_;
         }
+        
+        
 
         size_t getSize() const {
             return  size_in_bytes_ / sizeof(KeyPoint);
@@ -80,9 +82,6 @@ namespace ORB_SLAM3::cuda::managed
             return size_in_bytes_;
         }
         
-        KeyPoint& at(unsigned int i, cudaStream_t stream ){ 
-            return getHostPtr(stream)[i];
-        }
 
         private:
             // Using unified memory

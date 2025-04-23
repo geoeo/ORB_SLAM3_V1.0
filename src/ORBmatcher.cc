@@ -69,7 +69,7 @@ namespace ORB_SLAM3
                     r*=th;
 
                 const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjX,pMP->mTrackProjY,r*F.mvScaleFactors[nPredictedLevel],nPredictedLevel-1,nPredictedLevel);
+                        F.GetFeaturesInArea(pMP->mTrackProjX,pMP->mTrackProjY,r*F.mvInvScaleFactors[nPredictedLevel],nPredictedLevel-1,nPredictedLevel);
 
                 if(!vIndices.empty()){
                     const cv::Mat MPdescriptor = pMP->GetDescriptor();
@@ -92,7 +92,7 @@ namespace ORB_SLAM3
                         if(F.Nleft == -1 && F.mvuRight[idx]>0)
                         {
                             const float er = fabs(pMP->mTrackProjXR-F.mvuRight[idx]);
-                            if(er>r*F.mvScaleFactors[nPredictedLevel])
+                            if(er>r*F.mvInvScaleFactors[nPredictedLevel])
                                 continue;
                         }
 
@@ -468,7 +468,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius);
 
@@ -582,7 +582,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -1006,7 +1006,7 @@ namespace ORB_SLAM3
                         {
                             const float distex = ep(0)-kp2.pt.x;
                             const float distey = ep(1)-kp2.pt.y;
-                            if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
+                            if(distex*distex+distey*distey<100*pKF2->mvInvScaleFactors[kp2.octave])
                             {
                                 continue;
                             }
@@ -1214,7 +1214,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius,bRight);
 
@@ -1365,7 +1365,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius);
 
@@ -1499,7 +1499,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF2);
 
             // Search in a radius
-            const float radius = th*pKF2->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF2->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF2->GetFeaturesInArea(u,v,radius);
 
@@ -1579,7 +1579,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF1);
 
             // Search in a radius of 2.5*sigma(ScaleLevel)
-            const float radius = th*pKF1->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF1->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF1->GetFeaturesInArea(u,v,radius);
 
@@ -1685,7 +1685,7 @@ namespace ORB_SLAM3
                     int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
 
                     // Search in a window. Size depends on scale
-                    float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+                    float radius = th*CurrentFrame.mvInvScaleFactors[nLastOctave];
 
                     vector<size_t> vIndices2;
 
@@ -1892,7 +1892,7 @@ namespace ORB_SLAM3
                     int nPredictedLevel = pMP->PredictScale(dist3D,&CurrentFrame);
 
                     // Search in a window
-                    const float radius = th*CurrentFrame.mvScaleFactors[nPredictedLevel];
+                    const float radius = th*CurrentFrame.mvInvScaleFactors[nPredictedLevel];
 
                     const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nPredictedLevel-1, nPredictedLevel+1);
 

@@ -395,6 +395,7 @@ public:
     const float mfScaleFactor;
     const float mfLogScaleFactor;
     const std::vector<float> mvScaleFactors;
+    const std::vector<float> mvInvScaleFactors;
     const std::vector<float> mvLevelSigma2;
     const std::vector<float> mvInvLevelSigma2;
 
