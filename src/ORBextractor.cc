@@ -89,8 +89,8 @@ namespace ORB_SLAM3
                                int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):
             nfeatures(_nFeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST),
-            gpuFast(imageHeight, imageWidth ,_nFastFeatures), 
             gpuOrb(),
+            gpuFast(imageHeight, imageWidth ,_nFastFeatures, gpuOrb.getStream()), 
             gpuAngle()
     {
         mvScaleFactor.resize(nlevels);
@@ -432,8 +432,10 @@ namespace ORB_SLAM3
         }
 
         // Retain the best point in each node - We assume maxFeatures << nFastFeatures which is what is given to this function
-        auto vResultKeys = cuda::managed::ManagedVector::CreateManagedVector(maxFeatures);
+        auto vResultKeys = cuda::managed::ManagedVector::CreateManagedVector(lNodes.size());
         const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvScaleFactor[level]);
+        std::cout << "lNodes: " << lNodes.size() << std::endl;
+        std::cout << "Max Features: " << maxFeatures << std::endl;
         auto i = 0;
         for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
         {
@@ -454,7 +456,7 @@ namespace ORB_SLAM3
             pKP->octave=level;
             pKP->size = scaledPatchSize;
 
-            vResultKeys->at(i++, gpuAngle.getStream()) = *pKP;
+            vResultKeys->at(i++, gpuOrb.getStream()) = *pKP;
         }
 
         return vResultKeys;
@@ -477,15 +479,15 @@ namespace ORB_SLAM3
             {
                 ZoneNamedN(featCallGPU, "featCallGPU", true); 
                 auto im_managed = mvImagePyramid[level].createGpuMatHeader();
-                fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY);
+                fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
                 
                 //Try again with lower threshold.
                 if(fastKpCount == 0)
-                    fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY);
+                    fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
             }
             
             if(fastKpCount >0) {
-                allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(), gpuFast.getResp(), 0, width,
+                allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(gpuOrb.getStream()), gpuFast.getResp(gpuOrb.getStream()), 0, width,
                                               0, height,mnFeaturesPerLevel[level], level);
             }
 
@@ -500,7 +502,7 @@ namespace ORB_SLAM3
 
                 allKeypointsCount +=kpCount;
                 if (kpCount > 0)
-                    gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level]->getDevicePtr(gpuAngle.getStream()), kpCount, HALF_PATCH_SIZE);
+                    gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level]->getDevicePtr(gpuOrb.getStream()), kpCount, HALF_PATCH_SIZE, gpuOrb.getStream());
             }
         }
         return {allKeypointsCount, allKeypoints};

@@ -6,13 +6,11 @@
 
 namespace ORB_SLAM3::cuda::angle {
     class Angle {
-        cudaStream_t stream;
       public:
         Angle();
         ~Angle();
-        void launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k);
+        void launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream);
 
-        cudaStream_t getStream() { return stream;}
         static void loadUMax(const int* u_max, int count);
       };
 }

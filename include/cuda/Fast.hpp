@@ -13,15 +13,12 @@ namespace ORB_SLAM3::cuda::fast {
     unsigned int maxKeypoints;
     int imHeight;
     int imWidth;
-
     int* scoreMat;
-    cudaStream_t stream;
   public:
-    GpuFast(int imHeight, int imWidth, int maxKeypoints);
+    GpuFast(int imHeight, int imWidth, int maxKeypoints, cudaStream_t stream);
     ~GpuFast();
-    unsigned int detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY);
-    cudaStream_t getStream();
-    short2 * getLoc();
-    int* getResp();
+    unsigned int detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, cudaStream_t stream);
+    short2 * getLoc(cudaStream_t stream);
+    int* getResp(cudaStream_t stream);
   };
 }

@@ -4,6 +4,7 @@
 #include <memory>
 #include <cuda_runtime.h>
 #include "cuda/HelperCuda.h"
+#include <iostream>
 
 #define checkCudaErrors(val) ORB_SLAM3::cuda::CUDAHelper::check((val), #val, __FILE__, __LINE__)
 
@@ -17,6 +18,8 @@ namespace ORB_SLAM3::cuda::managed
         int size;
         int octave;
         float angle;
+        int _pad1;
+        int _pad2;
 
         KeyPoint(short x_in, short y_in, int response_in, int size_in, int octave_in, float angle_in)
             : x(x_in), y(y_in), response(response_in), size(size_in), octave(octave_in), angle(angle_in) {
@@ -41,6 +44,8 @@ namespace ORB_SLAM3::cuda::managed
         ManagedVector & operator=(const ManagedVector& other) = delete;
         
         static ManagedVector::SharedPtr CreateManagedVector(size_t numberOfKeypoints){
+            std::cout << "Num: " << numberOfKeypoints << std::endl;
+            std::cout << "Size: " << sizeof(KeyPoint) << std::endl;
             const auto sizeInBytes = numberOfKeypoints*sizeof(KeyPoint);
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
@@ -52,18 +57,18 @@ namespace ORB_SLAM3::cuda::managed
 
         KeyPoint * getHostPtr(cudaStream_t stream) {
 
-            cudaDeviceSynchronize();
-            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
-            checkCudaErrors( cudaStreamSynchronize(stream) );
-            cudaDeviceSynchronize();
+            // cudaDeviceSynchronize();
+            // checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
+            // checkCudaErrors( cudaStreamSynchronize(stream) );
+            // cudaDeviceSynchronize();
             return unified_ptr_;
         }
 
         KeyPoint * getDevicePtr(cudaStream_t stream) {
-            cudaDeviceSynchronize();
-            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
-            checkCudaErrors( cudaStreamSynchronize(stream) );
-            cudaDeviceSynchronize();
+            // cudaDeviceSynchronize();
+            // checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
+            // checkCudaErrors( cudaStreamSynchronize(stream) );
+            // cudaDeviceSynchronize();
             return unified_ptr_;
         }
 
@@ -86,10 +91,12 @@ namespace ORB_SLAM3::cuda::managed
 
             ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes) {
                 checkCudaErrors(cudaMallocManaged(&unified_ptr_, sizeInBytes));
+                cudaDeviceSynchronize();
             }
 
             ~ManagedVector() {
                 checkCudaErrors(cudaFree(unified_ptr_));
+                cudaDeviceSynchronize();
             };
     };
 

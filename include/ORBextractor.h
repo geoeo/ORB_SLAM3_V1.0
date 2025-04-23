@@ -132,8 +132,8 @@ namespace ORB_SLAM3
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
 
-        cuda::fast::GpuFast gpuFast;
         cuda::orb::GpuOrb gpuOrb;
+        cuda::fast::GpuFast gpuFast;
         cuda::angle::Angle gpuAngle;
     };
 

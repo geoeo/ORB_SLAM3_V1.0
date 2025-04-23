@@ -319,8 +319,9 @@ namespace ORB_SLAM3::cuda::orb {
     int tid = threadIdx.x;
     if (id >= npoints) return;
 
-    const ORB_SLAM3::cuda::managed::KeyPoint &kpt = keypoints[id];
+    const ORB_SLAM3::cuda::managed::KeyPoint kpt = keypoints[id];
     short2 loc = make_short2(kpt.x, kpt.y);
+
     const Point * pattern = ((Point *)c_pattern) + 16 * tid;
 
     uchar * desc = descriptors.ptr(id);
@@ -348,12 +349,16 @@ namespace ORB_SLAM3::cuda::orb {
 
     desc[tid] = (uchar)val;
 
-    // Finally we scale the keypoints to the correct scale
+        // Finally we scale the keypoints to the correct scale
     //kpt.pt.x *= scale;
     //kpt.pt.y *= scale;
     //keypoints[id] = kpt;
-    //keypoints[id].x *= 2;
-    //keypoints[id].y *= 2; // Problematic write
+    int new_x = kpt.x*scale;
+    int new_y = kpt.y*scale;
+    keypoints[id].x = new_x;
+    keypoints[id].y = new_y; // Problematic write
+
+
   }
 
 
@@ -383,9 +388,10 @@ namespace ORB_SLAM3::cuda::orb {
     dim3 dimBlock(32);
     dim3 dimGrid(npoints);
     //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints));
+    checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors( cudaStreamSynchronize(stream) );
     cudaDeviceSynchronize();
-    calcOrb_kernel<<<dimGrid, dimBlock, 0, stream>>>(image, keypoints, npoints, scale, desc);
+    calcOrb_kernel<<<dimGrid, dimBlock>>>(image, keypoints, npoints, scale, desc);
     checkCudaErrors( cudaGetLastError() );
     checkCudaErrors(cudaDeviceSynchronize());
     checkCudaErrors( cudaStreamSynchronize(stream) );

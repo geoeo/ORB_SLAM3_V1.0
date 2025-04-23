@@ -74,28 +74,27 @@ namespace ORB_SLAM3::cuda::angle {
                 kp_dir += (kp_dir < 0) * (2.0f * CV_PI_F);
                 kp_dir *= 180.0f / CV_PI_F;
 
-                keypoints[ptidx].angle = kp_dir; // problematic write
+                keypoints[ptidx].angle = kp_dir;
             }
         }
     }
 
     Angle::Angle() {
-        checkCudaErrors( cudaStreamCreate(&stream) );
     }
 
     Angle::~Angle() {
-        checkCudaErrors( cudaStreamDestroy(stream) );
     }
 
-    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k) {
+    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::cuda::managed::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream) {
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
         //dim3 grid(8);
         //checkCudaErrors( cudaStreamAttachMemAsync(stream, keypoints,0,cudaMemAttachSingle));
         //checkCudaErrors( cudaStreamSynchronize(stream) );
-        IC_Angle_kernel<<<grid, block, 0, stream>>>(image, keypoints, npoints, half_k);
+        checkCudaErrors(cudaDeviceSynchronize());
+        IC_Angle_kernel<<<grid, block>>>(image, keypoints, npoints, half_k);
         checkCudaErrors( cudaGetLastError() );
-        cudaDeviceSynchronize();
+        checkCudaErrors(cudaDeviceSynchronize());
         checkCudaErrors( cudaStreamSynchronize(stream) );
         
     }
