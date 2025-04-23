@@ -46,29 +46,16 @@ namespace ORB_SLAM3::cuda::managed
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
 
-        /**
-         * This function exposes the raw ptr. 
-         * Make sure the lifetime of the bound datastructures are less than the CUDAManagedMemory struct.
-         */
-
-
-
-        
         
         KeyPoint * getHostPtr(cudaStream_t stream = 0) {
-
-            // cudaDeviceSynchronize();
             checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
             checkCudaErrors( cudaStreamSynchronize(stream) );
-            // cudaDeviceSynchronize();
             return unified_ptr_;
         }
 
         KeyPoint * getDevicePtr(cudaStream_t stream = 0) {
-            // cudaDeviceSynchronize();
-            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachSingle) );
             checkCudaErrors( cudaStreamSynchronize(stream) );
-            // cudaDeviceSynchronize();
             return unified_ptr_;
         }
         

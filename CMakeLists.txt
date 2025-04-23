@@ -119,12 +119,8 @@ src/cuda/Orb_gpu.cu
 src/cuda/Angle_gpu.cu
 )
 
-set_source_files_properties(src/cuda/Fast_gpu.cu PROPERTIES LANGUAGE CUDA)
-set_source_files_properties(src/cuda/Orb_gpu.cu PROPERTIES LANGUAGE CUDA)
-set_source_files_properties(src/cuda/Angle_gpu.cu PROPERTIES LANGUAGE CUDA)
 
-
-message("---------------: ${BUILD_INTERFACE}")
+cmake_print_variables(BUILD_INTERFACE)
 
 include_directories(${TRACY_INCLUDE_DIR})
 
@@ -137,12 +133,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${DBoW2_INCLUDE_DIRS}
      ${CUDAToolkit_INCLUDE_DIRS}
 )
-
-set(
-    CUDA_NVCC_FLAGS
-    ${CUDA_NVCC_FLAGS};
-    -O3 --DUSE_STREAM_ATTACH
-    )
 
 # target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 #                        --generate-line-info
