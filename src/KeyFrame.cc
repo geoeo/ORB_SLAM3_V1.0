@@ -725,7 +725,7 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
             const vector<size_t> vCell = mGrid[linearIndex];
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = mvKeysUn->operator[](vCell[j]);
+                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
                 const float distx = kpUn.pt.x-x;
                 const float disty = kpUn.pt.y-y;
 

@@ -308,7 +308,7 @@ namespace ORB_SLAM3::cuda::orb {
     -1,-6, 0,-11/*mean (0.127148), correlation (0.547401)*/
 };
 
-  __device__ int getOrbValue(const PtrStepb image, const int2 loc, const Point* pattern, int idx, float a, float b) {
+  __device__ int getOrbValue(const PtrStepb image, const short2 loc, const Point* pattern, int idx, float a, float b) {
 
     return static_cast<int>(image(loc.y + __float2int_rn(pattern[idx].x * b + pattern[idx].y * a),
           loc.x + __float2int_rn(pattern[idx].x * a - pattern[idx].y * b)));
@@ -320,7 +320,7 @@ namespace ORB_SLAM3::cuda::orb {
     if (id >= npoints) return;
 
     ORB_SLAM3::KeyPoint& kpt = keypoints[id];
-    int2 loc = make_short2(kpt.pt.x, kpt.pt.y);
+    short2 loc = make_short2(kpt.pt.x, kpt.pt.y);
 
     const Point * pattern = ((Point *)c_pattern) + 16 * tid;
 

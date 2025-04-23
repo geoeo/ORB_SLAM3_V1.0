@@ -326,11 +326,11 @@ namespace ORB_SLAM3
                         {
                             vpMapPointMatches[bestIdxF]=pMP;
 
-                            const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                            const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
                             if(mbCheckOrientation)
                             {
-                                cv::KeyPoint &Fkp = F.mvKeys->operator[](bestIdxF);
+                                auto &Fkp = F.mvKeys->operator[](bestIdxF);
 
                                 float rot = kp.angle-Fkp.angle;
                                 if(rot<0.0)
@@ -350,11 +350,11 @@ namespace ORB_SLAM3
                             {
                                 vpMapPointMatches[bestIdxFR]=pMP;
 
-                                const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                                const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
                                 if(mbCheckOrientation)
                                 {
-                                    cv::KeyPoint &Fkp = F.mvKeys->operator[](bestIdxFR);
+                                    auto &Fkp = F.mvKeys->operator[](bestIdxFR);
 
                                     float rot = kp.angle-Fkp.angle;
                                     if(rot<0.0)
@@ -643,7 +643,7 @@ namespace ORB_SLAM3
 
         for(size_t i1=0, iend1=F1.mvKeysUn->size(); i1<iend1; i1++)
         {
-            cv::KeyPoint kp1 = F1.mvKeysUn->operator[](i1);
+            auto kp1 = F1.mvKeysUn->operator[](i1);
             int level1 = kp1.octave;
             if(level1>0)
                 continue;
@@ -967,7 +967,7 @@ namespace ORB_SLAM3
                         if(!bStereo1)
                             continue;
 
-                    const cv::KeyPoint &kp1 = pKF1->mvKeysUn->operator[](idx1);
+                    const auto &kp1 = pKF1->mvKeysUn->operator[](idx1);
 
                     const bool bRight1 = false;
 
@@ -999,7 +999,7 @@ namespace ORB_SLAM3
                         if(dist>TH_LOW || dist>bestDist)
                             continue;
 
-                        const cv::KeyPoint &kp2 = pKF2->mvKeysUn->operator[](idx2);
+                        const auto &kp2 = pKF2->mvKeysUn->operator[](idx2);
                         const bool bRight2 = false;
 
                         if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
@@ -1057,7 +1057,7 @@ namespace ORB_SLAM3
 
                     if(bestIdx2>=0)
                     {
-                        const cv::KeyPoint &kp2 = pKF2->mvKeysUn->operator[](bestIdx2);
+                        const auto &kp2 = pKF2->mvKeysUn->operator[](bestIdx2);
                         vMatches12[idx1]=bestIdx2;
                         nmatches++;
 
@@ -1233,7 +1233,7 @@ namespace ORB_SLAM3
             for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
             {
                 size_t idx = *vit;
-                const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](idx);
+                const auto &kp = pKF->mvKeysUn->operator[](idx);
                 const int &kpLevel= kp.octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
@@ -1515,7 +1515,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const cv::KeyPoint &kp = pKF2->mvKeysUn->operator[](idx);
+                const auto &kp = pKF2->mvKeysUn->operator[](idx);
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1595,7 +1595,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const cv::KeyPoint &kp = pKF1->mvKeysUn->operator[](idx);
+                const auto &kp = pKF1->mvKeysUn->operator[](idx);
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1738,9 +1738,9 @@ namespace ORB_SLAM3
 
                         if(mbCheckOrientation)
                         {
-                            cv::KeyPoint kpLF = LastFrame.mvKeysUn->operator[](i);
+                            auto kpLF = LastFrame.mvKeysUn->operator[](i);
 
-                            cv::KeyPoint kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
+                            auto kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
                             float rot = kpLF.angle-kpCF.angle;
                             if(rot<0.0)
                                 rot+=360.0f;
@@ -1751,69 +1751,6 @@ namespace ORB_SLAM3
                             rotHist[bin].push_back(bestIdx2);
                         }
                     }
-                    // if(CurrentFrame.Nleft != -1){
-                    //     Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
-                    //     Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
-
-                    //     int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
-
-                    //     // Search in a window. Size depends on scale
-                    //     float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
-
-                    //     vector<size_t> vIndices2;
-
-                    //     if(bForward)
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave, -1,true);
-                    //     else if(bBackward)
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave, true);
-                    //     else
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1, true);
-
-                    //     const cv::Mat dMP = pMP->GetDescriptor();
-
-                    //     int bestDist = 256;
-                    //     int bestIdx2 = -1;
-
-                    //     for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
-                    //     {
-                    //         const size_t i2 = *vit;
-                    //         if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
-                    //             if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]->Observations()>0)
-                    //                 continue;
-
-                    //         const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2 + CurrentFrame.Nleft);
-
-                    //         const int dist = DescriptorDistance(dMP,d);
-
-                    //         if(dist<bestDist)
-                    //         {
-                    //             bestDist=dist;
-                    //             bestIdx2=i2;
-                    //         }
-                    //     }
-
-                    //     if(bestDist<=TH_HIGH)
-                    //     {
-                    //         CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft]=pMP;
-                    //         nmatches++;
-                    //         if(mbCheckOrientation)
-                    //         {
-                    //             cv::KeyPoint kpLF = LastFrame.mvKeysUn->operator[](i);
-
-                    //             cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
-
-                    //             float rot = kpLF.angle-kpCF.angle;
-                    //             if(rot<0.0)
-                    //                 rot+=360.0f;
-                    //             int bin = round(rot*factor);
-                    //             if(bin==HISTO_LENGTH)
-                    //                 bin=0;
-                    //             assert(bin>=0 && bin<HISTO_LENGTH);
-                    //             rotHist[bin].push_back(bestIdx2  + CurrentFrame.Nleft);
-                    //         }
-                    //     }
-
-                    // }
                 }
             }
         }

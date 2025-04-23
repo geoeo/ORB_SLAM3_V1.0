@@ -16,14 +16,13 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TwoViewReconstruction_H
-#define TwoViewReconstruction_H
+#pragma once
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Core>
 #include <unordered_set>
-
 #include <sophus/se3.hpp>
+#include <KeyPoint.h>
 
 namespace ORB_SLAM3
 {
@@ -39,7 +38,7 @@ namespace ORB_SLAM3
 
         // Computes in parallel a fundamental matrix and a homography
         // Selects a model and tries to recover the motion and the structure from motion
-        bool Reconstruct(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+        bool Reconstruct(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated);
 
     private:
@@ -60,10 +59,10 @@ namespace ORB_SLAM3
         bool ReconstructH(std::vector<bool> &vbMatchesInliers, Eigen::Matrix3f &H21, Eigen::Matrix3f &K,
                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D,std:: vector<bool> &vbTriangulated, float minParallax, int minTriangulated);
 
-        void Normalize(const std::vector<cv::KeyPoint> &vKeys, std::vector<cv::Point2f> &vNormalizedPoints, Eigen::Matrix3f &T);
+        void Normalize(const std::vector<KeyPoint> &vKeys, std::vector<cv::Point2f> &vNormalizedPoints, Eigen::Matrix3f &T);
 
 
-        int CheckRT(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, const std::vector<cv::KeyPoint> &vKeys1, const std::vector<cv::KeyPoint> &vKeys2,
+        int CheckRT(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, const std::vector<KeyPoint> &vKeys1, const std::vector<KeyPoint> &vKeys2,
                     const std::vector<Match> &vMatches12, std::vector<bool> &vbMatchesInliers,
                     const Eigen::Matrix3f &K, std::vector<cv::Point3f> &vP3D, float th2, std::vector<bool> &vbGood, float &parallax);
 
@@ -71,10 +70,10 @@ namespace ORB_SLAM3
 
 
         // Keypoints from Reference Frame (Frame 1)
-        std::vector<cv::KeyPoint> mvKeys1;
+        std::vector<KeyPoint> mvKeys1;
 
         // Keypoints from Current Frame (Frame 2)
-        std::vector<cv::KeyPoint> mvKeys2;
+        std::vector<KeyPoint> mvKeys2;
 
         // Current Matches from Reference to Current
         std::vector<Match> mvMatches12;
@@ -96,4 +95,3 @@ namespace ORB_SLAM3
 
 } //namespace ORB_SLAM
 
-#endif // TwoViewReconstruction_H

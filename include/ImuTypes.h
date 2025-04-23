@@ -16,9 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#ifndef IMUTYPES_H
-#define IMUTYPES_H
+#pragma once
 
 #include <vector>
 #include <utility>
@@ -30,7 +28,6 @@
 #include <mutex>
 #include <iostream>
 
-#include "SerializationUtils.h"
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
@@ -62,19 +59,6 @@ public:
 //IMU biases (gyro and accelerometer)
 class Bias
 {
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & bax;
-        ar & bay;
-        ar & baz;
-
-        ar & bwx;
-        ar & bwy;
-        ar & bwz;
-    }
-
 public:
     Bias():bax(0),bay(0),baz(0),bwx(0),bwy(0),bwz(0){}
     Bias(const float &b_acc_x, const float &b_acc_y, const float &b_acc_z,
@@ -143,32 +127,6 @@ public:
 //Preintegration of Imu Measurements
 class Preintegrated
 {
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & dT;
-        ar & boost::serialization::make_array(C.data(), C.size());
-        ar & boost::serialization::make_array(Info.data(), Info.size());
-        ar & boost::serialization::make_array(Nga.diagonal().data(), Nga.diagonal().size());
-        ar & boost::serialization::make_array(NgaWalk.diagonal().data(), NgaWalk.diagonal().size());
-        ar & b;
-        ar & boost::serialization::make_array(dR.data(), dR.size());
-        ar & boost::serialization::make_array(dV.data(), dV.size());
-        ar & boost::serialization::make_array(dP.data(), dP.size());
-        ar & boost::serialization::make_array(JRg.data(), JRg.size());
-        ar & boost::serialization::make_array(JVg.data(), JVg.size());
-        ar & boost::serialization::make_array(JVa.data(), JVa.size());
-        ar & boost::serialization::make_array(JPg.data(), JPg.size());
-        ar & boost::serialization::make_array(JPa.data(), JPa.size());
-        ar & boost::serialization::make_array(avgA.data(), avgA.size());
-        ar & boost::serialization::make_array(avgW.data(), avgW.size());
-
-        ar & bu;
-        ar & boost::serialization::make_array(db.data(), db.size());
-        ar & mvMeasurements;
-    }
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Preintegrated(const Bias &b_, const Calib &calib);
@@ -231,14 +189,6 @@ private:
 
     struct integrable
     {
-        template<class Archive>
-        void serialize(Archive & ar, const unsigned int version)
-        {
-            ar & boost::serialization::make_array(a.data(), a.size());
-            ar & boost::serialization::make_array(w.data(), w.size());
-            ar & t;
-        }
-
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         integrable(){}
         integrable(const Eigen::Vector3f &a_, const Eigen::Vector3f &w_ , const float &t_):a(a_),w(w_),t(t_){}
@@ -262,6 +212,5 @@ Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f &R);
 
 }
 
-} //namespace ORB_SLAM2
+} //namespace ORB_SLAM3
 
-#endif // IMUTYPES_H

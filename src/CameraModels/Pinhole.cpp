@@ -80,7 +80,7 @@ namespace ORB_SLAM3 {
         return Jac;
     }
 
-    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                                  Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
@@ -104,7 +104,7 @@ namespace ORB_SLAM3 {
     }
 
 
-    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
+    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const KeyPoint &kp1, const KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
         //Compute Fundamental Matrix
         Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
         Eigen::Matrix3f K1 = this->toK_();

@@ -432,11 +432,11 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx1 = vMatchedIndices[ikp].first;
             const int &idx2 = vMatchedIndices[ikp].second;
 
-            const cv::KeyPoint &kp1 = mpCurrentKeyFrame->mvKeysUn->operator[](idx1);
+            const auto &kp1 = mpCurrentKeyFrame->mvKeysUn->operator[](idx1);
             const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
             bool bStereo1 = (!mpCurrentKeyFrame->mpCamera2 && kp1_ur>=0);
             const bool bRight1 = false;
-            const cv::KeyPoint &kp2 = pKF2->mvKeysUn->operator[](idx2);
+            const auto &kp2 = pKF2->mvKeysUn->operator[](idx2);
 
             const float kp2_ur = pKF2->mvuRight[idx2];
             bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);

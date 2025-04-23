@@ -17,8 +17,7 @@
 */
 
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#pragma once
 
 
 #include <unistd.h>
@@ -29,20 +28,21 @@
 #include <vector>
 #include <utility>
 #include <tuple>
-#include<opencv2/core/core.hpp>
+#include <opencv2/core/core.hpp>
 
-#include "Tracking.h"
-#include "FrameDrawer.h"
-#include "MapDrawer.h"
-#include "Atlas.h"
-#include "LocalMapping.h"
-#include "LoopClosing.h"
-#include "KeyFrameDatabase.h"
-#include "ORBVocabulary.h"
-#include "Viewer.h"
-#include "ImuTypes.h"
-#include "Settings.h"
-#include "Verbose.h"
+#include <Tracking.h>
+#include <FrameDrawer.h>
+#include <MapDrawer.h>
+#include <Atlas.h>
+#include <LocalMapping.h>
+#include <LoopClosing.h>
+#include <KeyFrameDatabase.h>
+#include <ORBVocabulary.h>
+#include <Viewer.h>
+#include <ImuTypes.h>
+#include <Settings.h>
+#include <Verbose.h>
+#include <KeyPoint.h>
 
 
 namespace ORB_SLAM3
@@ -124,7 +124,7 @@ public:
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
-    std::shared_ptr<std::vector<cv::KeyPoint>> GetTrackedKeyPointsUn();
+    std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
     std::vector<KeyFrame*> GetAllKeyframes();
 
     // For debugging
@@ -139,18 +139,8 @@ public:
     bool isGeoreferenced();
     void setGeoreference(bool is_georeferenced);
 
-#ifdef REGISTER_TIMES
-    void InsertRectTime(double& time);
-    void InsertResizeTime(double& time);
-    void InsertTrackTime(double& time);
-#endif
 
 private:
-
-    void SaveAtlas(int type);
-    bool LoadAtlas(int type);
-
-    std::string CalculateCheckSum(std::string filename, int type);
     bool has_suffix(const std::string &str, const std::string &suffix);
 
     // Input sensor
@@ -206,7 +196,7 @@ private:
     // Tracking state
     int mTrackingState;
     std::vector<MapPoint*> mTrackedMapPoints;
-    std::shared_ptr<std::vector<cv::KeyPoint>> mTrackedKeyPointsUn;
+    std::shared_ptr<std::vector<KeyPoint>> mTrackedKeyPointsUn;
     std::mutex mMutexState;
 
     //
@@ -220,4 +210,3 @@ private:
 
 }// namespace ORB_SLAM
 
-#endif // SYSTEM_H

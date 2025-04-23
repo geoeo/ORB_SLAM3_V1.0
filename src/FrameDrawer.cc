@@ -16,8 +16,8 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "FrameDrawer.h"
-#include "Tracking.h"
+#include <FrameDrawer.h>
+#include <Tracking.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -37,9 +37,9 @@ FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 cv::Mat FrameDrawer::DrawFrame(float imageScale)
 {
     cv::Mat im;
-    vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
+    vector<KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
+    vector<KeyPoint> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     vector<pair<cv::Point2f, cv::Point2f> > vTracks;
     int state; // Tracking state
@@ -48,9 +48,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 
     Frame currentFrame;
     vector<MapPoint*> vpLocalMap;
-    vector<cv::KeyPoint> vMatchesKeys;
+    vector<KeyPoint> vMatchesKeys;
     vector<MapPoint*> vpMatchedMPs;
-    vector<cv::KeyPoint> vOutlierKeys;
+    vector<KeyPoint> vOutlierKeys;
     vector<MapPoint*> vpOutlierMPs;
     map<long unsigned int, cv::Point2f> mProjectPoints;
     map<long unsigned int, cv::Point2f> mMatchedInImage;
@@ -208,9 +208,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
 {
     cv::Mat im;
-    vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
+    vector<KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
+    vector<KeyPoint> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     int state; // Tracking state
 

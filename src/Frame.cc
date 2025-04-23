@@ -206,7 +206,7 @@ void Frame::AssignFeaturesToGrid()
 
     for(int i=0;i<mNumKeypoints;i++)
     {
-        const cv::KeyPoint &kp = mvKeysUn->operator[](i);
+        const auto &kp = mvKeysUn->operator[](i);
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
             auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
@@ -485,7 +485,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const cv::KeyPoint &kpUn = mvKeysUn->operator[](vCell[j]);
+                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel || (maxLevel>=0 && kpUn.octave>maxLevel)){
@@ -505,7 +505,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
     return vIndices;
 }
 
-bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
+bool Frame::PosInGrid(const KeyPoint &kp, int &posX, int &posY)
 {
     posX = round((kp.pt.x-mnMinX)*mfGridElementWidthInv);
     posY = round((kp.pt.y-mnMinY)*mfGridElementHeightInv);
@@ -560,7 +560,7 @@ void Frame::UndistortKeyPoints()
     mvKeysUn->resize(mNumKeypoints);
     for(int i=0; i<mNumKeypoints; i++)
     {
-        cv::KeyPoint kp = mvKeys->operator[](i);
+        auto kp = mvKeys->operator[](i);
         kp.pt.x=mat.at<float>(i,0);
         kp.pt.y=mat.at<float>(i,1);
         mvKeysUn->operator[](i)=kp;
@@ -611,48 +611,6 @@ void Frame::setIntegrated()
     unique_lock<std::mutex> lock(*mpMutexImu);
     mbImuPreintegrated = true;
 }
-
-// void Frame::ComputeStereoFishEyeMatches() {
-//     //Speed it up by matching keypoints in the lapping area
-//     vector<cv::KeyPoint> stereoLeft(mvKeys->begin() + monoLeft, mvKeys->end());
-//     vector<cv::KeyPoint> stereoRight(mvKeysRight->begin() + monoRight, mvKeysRight->end());
-
-//     cv::Mat stereoDescLeft = mDescriptors.createMatHeader().rowRange(monoLeft, mDescriptors.rows);
-//     cv::Mat stereoDescRight = mDescriptorsRight.createMatHeader().rowRange(monoRight, mDescriptorsRight.rows);
-
-//     mvLeftToRightMatch = vector<int>(Nleft,-1);
-//     mvRightToLeftMatch = vector<int>(Nright,-1);
-//     mvDepth = vector<float>(Nleft,-1.0f);
-//     mvuRight = vector<float>(Nleft,-1);
-//     mvStereo3Dpoints = vector<Eigen::Vector3f>(Nleft);
-//     mnCloseMPs = 0;
-
-//     //Perform a brute force between Keypoint in the left and right image
-//     vector<vector<cv::DMatch>> matches;
-
-//     BFmatcher.knnMatch(stereoDescLeft,stereoDescRight,matches,2);
-
-//     int nMatches = 0;
-//     int descMatches = 0;
-
-//     //Check matches using Lowe's ratio
-//     for(vector<vector<cv::DMatch>>::iterator it = matches.begin(); it != matches.end(); ++it){
-//         if((*it).size() >= 2 && (*it)[0].distance < (*it)[1].distance * 0.7){
-//             //For every good match, check parallax and reprojection error to discard spurious matches
-//             Eigen::Vector3f p3D;
-//             descMatches++;
-//             float sigma1 = mvLevelSigma2[mvKeys->operator[]((*it)[0].queryIdx + monoLeft).octave], sigma2 = mvLevelSigma2[mvKeysRight[(*it)[0].trainIdx + monoRight].octave];
-//             float depth = static_cast<KannalaBrandt8*>(mpCamera)->TriangulateMatches(mpCamera2,mvKeys[(*it)[0].queryIdx + monoLeft],mvKeysRight[(*it)[0].trainIdx + monoRight],mRlr,mtlr,sigma1,sigma2,p3D);
-//             if(depth > 0.0001f){
-//                 mvLeftToRightMatch[(*it)[0].queryIdx + monoLeft] = (*it)[0].trainIdx + monoRight;
-//                 mvRightToLeftMatch[(*it)[0].trainIdx + monoRight] = (*it)[0].queryIdx + monoLeft;
-//                 mvStereo3Dpoints[(*it)[0].queryIdx + monoLeft] = p3D;
-//                 mvDepth[(*it)[0].queryIdx + monoLeft] = depth;
-//                 nMatches++;
-//             }
-//         }
-//     }
-// }
 
 bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {
     // 3D in absolute coordinates

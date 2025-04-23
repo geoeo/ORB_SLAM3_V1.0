@@ -16,8 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CAMERAMODELS_GEOMETRICCAMERA_H
-#define CAMERAMODELS_GEOMETRICCAMERA_H
+#pragma once
 
 #include <vector>
 
@@ -25,34 +24,15 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/assume_abstract.hpp>
-
 #include <sophus/se3.hpp>
-
 #include <Eigen/Geometry>
 
-#include "Converter.h"
-#include "GeometricTools.h"
+#include <Converter.h>
+#include <GeometricTools.h>
+#include <KeyPoint.h>
 
 namespace ORB_SLAM3 {
     class GeometricCamera {
-
-        friend class boost::serialization::access;
-
-        template<class Archive>
-        void serialize(Archive& ar, const unsigned int version)
-        {
-            ar & mnId;
-            ar & mnType;
-            ar & mvParameters;
-        }
-
-
     public:
         GeometricCamera() {}
         GeometricCamera(const std::vector<float> &_vParameters) : mvParameters(_vParameters) {}
@@ -70,20 +50,20 @@ namespace ORB_SLAM3 {
 
         virtual Eigen::Matrix<double,2,3> projectJac(const Eigen::Vector3d& v3D) = 0;
 
-        virtual bool ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+        virtual bool ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                                              Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated) = 0;
 
         virtual cv::Mat toK() = 0;
         virtual Eigen::Matrix3f toK_() = 0;
 
-        virtual bool epipolarConstrain(GeometricCamera* otherCamera, const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) = 0;
+        virtual bool epipolarConstrain(GeometricCamera* otherCamera, const KeyPoint& kp1, const KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) = 0;
 
         float getParameter(const int i){return mvParameters[i];}
         void setParameter(const float p, const size_t i){mvParameters[i] = p;}
 
         size_t size(){return mvParameters.size();}
 
-        virtual bool matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, GeometricCamera* pOther,
+        virtual bool matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, GeometricCamera* pOther,
                                  Sophus::SE3f& Tcw1, Sophus::SE3f& Tcw2,
                                  const float sigmaLevel1, const float sigmaLevel2,
                                  Eigen::Vector3f& x3Dtriangulated) = 0;
@@ -105,6 +85,3 @@ namespace ORB_SLAM3 {
         unsigned int mnType;
     };
 }
-
-
-#endif //CAMERAMODELS_GEOMETRICCAMERA_H

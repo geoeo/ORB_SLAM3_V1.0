@@ -18,8 +18,8 @@
 
 
 
-#include "System.h"
-#include "Converter.h"
+#include <System.h>
+#include <Converter.h>
 #include <thread>
 #include <pangolin/pangolin.h>
 #include <iomanip>
@@ -56,6 +56,9 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
+
+
+//TODO: Use Verbose struct
   // Output welcome message
   cout << endl <<
        "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
@@ -108,15 +111,12 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
     mpAtlas->SetInertialSensor();
 
   settings_ = new Settings(cam, imu, orb,mSensor, frameGridCols, frameGridRows);
+//TODO: Use Verbose struct
   cout << (*settings_) << endl;
 
-    mpFrameDrawer = nullptr;
-    mpMapDrawer = nullptr;
-    //if(bUseViewer){
-        //Create Drawers. These are used by the Viewer
-        mpFrameDrawer = new FrameDrawer(mpAtlas);
-        mpMapDrawer = new MapDrawer(mpAtlas, std::string(), settings_);
-    //}
+    mpFrameDrawer = new FrameDrawer(mpAtlas);
+    mpMapDrawer = new MapDrawer(mpAtlas, std::string(), settings_);
+    
 
 
 
@@ -135,6 +135,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
         mpLocalMapper->mThFarPoints = settings_->thFarPoints();
     if(mpLocalMapper->mThFarPoints!=0)
     {
+        //TODO: Use Verbose struct
         cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
         mpLocalMapper->mbFarPoints = true;
     }
@@ -250,6 +251,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
         }
         else if(mbResetActiveMap)
         {
+            //TODO: Use Verbose struct
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
             mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
@@ -324,44 +326,12 @@ void System::Shutdown()
         mbShutDown = true;
     }
 
+    //TODO: Use Verbose struct
     cout << "Shutdown" << endl;
 
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
-    /*if(mpViewer)
-    {
-        mpViewer->RequestFinish();
-        while(!mpViewer->isFinished())
-            usleep(5000);
-    }*/
 
-    // Wait until all thread have effectively stopped
-    /*while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
-    {
-        if(!mpLocalMapper->isFinished())
-            cout << "mpLocalMapper is not finished" << endl;*/
-        /*if(!mpLoopCloser->isFinished())
-            cout << "mpLoopCloser is not finished" << endl;
-        if(mpLoopCloser->isRunningGBA()){
-            cout << "mpLoopCloser is running GBA" << endl;
-            cout << "break anyway..." << endl;
-            break;
-        }*/
-        /*usleep(5000);
-    }*/
-
-    if(!mStrSaveAtlasToFile.empty())
-    {
-        Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_NORMAL);
-        SaveAtlas(FileType::BINARY_FILE);
-    }
-
-    /*if(mpViewer)
-        pangolin::BindToContext("ORB-SLAM2: Map Viewer");*/
-
-#ifdef REGISTER_TIMES
-    mpTracker->PrintTimeStats();
-#endif
 }
 
 bool System::isShutDown() {
@@ -399,7 +369,7 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
     return pActiveMap->GetReferenceMapPoints();
 }
 
-shared_ptr<vector<cv::KeyPoint>> System::GetTrackedKeyPointsUn()
+shared_ptr<vector<KeyPoint>> System::GetTrackedKeyPointsUn()
 {
     //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
@@ -466,148 +436,6 @@ void System::setGeoreference(bool is_georeferenced){
     mpTracker->setGeoreference(is_georeferenced);
 }
 
-void System::SaveAtlas(int type){
-    if(!mStrSaveAtlasToFile.empty())
-    {
-        // Save the current session
-        mpAtlas->PreSave();
-
-        string pathSaveFileName = "./";
-        pathSaveFileName = pathSaveFileName.append(mStrSaveAtlasToFile);
-        pathSaveFileName = pathSaveFileName.append(".osa");
-
-        string strVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath,TEXT_FILE);
-        std::size_t found = mStrVocabularyFilePath.find_last_of("/\\");
-        string strVocabularyName = mStrVocabularyFilePath.substr(found+1);
-
-        if(type == TEXT_FILE) // File text
-        {
-            cout << "Starting to write the save text file " << endl;
-            std::remove(pathSaveFileName.c_str());
-            std::ofstream ofs(pathSaveFileName, std::ios::binary);
-            boost::archive::text_oarchive oa(ofs);
-
-            oa << strVocabularyName;
-            oa << strVocabularyChecksum;
-            oa << mpAtlas;
-            cout << "End to write the save text file" << endl;
-        }
-        else if(type == BINARY_FILE) // File binary
-        {
-            cout << "Starting to write the save binary file" << endl;
-            std::remove(pathSaveFileName.c_str());
-            std::ofstream ofs(pathSaveFileName, std::ios::binary);
-            boost::archive::binary_oarchive oa(ofs);
-            oa << strVocabularyName;
-            oa << strVocabularyChecksum;
-            oa << mpAtlas;
-            cout << "End to write save binary file" << endl;
-        }
-    }
-}
-
-bool System::LoadAtlas(int type)
-{
-    string strFileVoc, strVocChecksum;
-    bool isRead = false;
-
-    string pathLoadFileName = "./";
-    pathLoadFileName = pathLoadFileName.append(mStrLoadAtlasFromFile);
-    pathLoadFileName = pathLoadFileName.append(".osa");
-
-    if(type == TEXT_FILE) // File text
-    {
-        cout << "Starting to read the save text file " << endl;
-        std::ifstream ifs(pathLoadFileName, std::ios::binary);
-        if(!ifs.good())
-        {
-            cout << "Load file not found" << endl;
-            return false;
-        }
-        boost::archive::text_iarchive ia(ifs);
-        ia >> strFileVoc;
-        ia >> strVocChecksum;
-        ia >> mpAtlas;
-        cout << "End to load the save text file " << endl;
-        isRead = true;
-    }
-    else if(type == BINARY_FILE) // File binary
-    {
-        cout << "Starting to read the save binary file"  << endl;
-        std::ifstream ifs(pathLoadFileName, std::ios::binary);
-        if(!ifs.good())
-        {
-            cout << "Load file not found" << endl;
-            return false;
-        }
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> strFileVoc;
-        ia >> strVocChecksum;
-        ia >> mpAtlas;
-        cout << "End to load the save binary file" << endl;
-        isRead = true;
-    }
-
-    if(isRead)
-    {
-        //Check if the vocabulary is the same
-        string strInputVocabularyChecksum = CalculateCheckSum(mStrVocabularyFilePath,TEXT_FILE);
-
-        if(strInputVocabularyChecksum.compare(strVocChecksum) != 0)
-        {
-            cout << "The vocabulary load isn't the same which the load session was created " << endl;
-            cout << "-Vocabulary name: " << strFileVoc << endl;
-            return false; // Both are differents
-        }
-
-        mpAtlas->SetKeyFrameDababase(mpKeyFrameDatabase);
-        mpAtlas->SetORBVocabulary(mpVocabulary);
-        mpAtlas->PostLoad();
-
-        return true;
-    }
-    return false;
-}
-
-string System::CalculateCheckSum(string filename, int type)
-{
-    string checksum = "";
-
-    unsigned char c[MD5_DIGEST_LENGTH];
-
-    std::ios_base::openmode flags = std::ios::in;
-    if(type == BINARY_FILE) // Binary file
-        flags = std::ios::in | std::ios::binary;
-
-    ifstream f(filename.c_str(), flags);
-    if ( !f.is_open() )
-    {
-        cout << "[E] Unable to open the in file " << filename << " for Md5 hash." << endl;
-        return checksum;
-    }
-
-    MD5_CTX md5Context;
-    char buffer[1024];
-
-    MD5_Init (&md5Context);
-    while ( int count = f.readsome(buffer, sizeof(buffer)))
-    {
-        MD5_Update(&md5Context, buffer, count);
-    }
-
-    f.close();
-
-    MD5_Final(c, &md5Context );
-
-    for(int i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        char aux[10];
-        sprintf(aux,"%02x", c[i]);
-        checksum = checksum + aux;
-    }
-
-    return checksum;
-}
 
 } //namespace ORB_SLAM
 

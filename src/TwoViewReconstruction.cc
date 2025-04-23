@@ -39,7 +39,7 @@ namespace ORB_SLAM3
         mMaxIterations = iterations;
     }
 
-    bool TwoViewReconstruction::Reconstruct(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const vector<int> &vMatches12,
+    bool TwoViewReconstruction::Reconstruct(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const vector<int> &vMatches12,
                                              Sophus::SE3f &T21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
     {
         mvKeys1.clear();
@@ -347,8 +347,8 @@ namespace ORB_SLAM3
         {
             bool bIn = true;
 
-            const cv::KeyPoint &kp1 = mvKeys1[mvMatches12[i].first];
-            const cv::KeyPoint &kp2 = mvKeys2[mvMatches12[i].second];
+            const auto &kp1 = mvKeys1[mvMatches12[i].first];
+            const auto &kp2 = mvKeys2[mvMatches12[i].second];
 
             const float u1 = kp1.pt.x;
             const float v1 = kp1.pt.y;
@@ -423,8 +423,8 @@ namespace ORB_SLAM3
         {
             bool bIn = true;
 
-            const cv::KeyPoint &kp1 = mvKeys1[mvMatches12[i].first];
-            const cv::KeyPoint &kp2 = mvKeys2[mvMatches12[i].second];
+            const auto &kp1 = mvKeys1[mvMatches12[i].first];
+            const auto &kp2 = mvKeys2[mvMatches12[i].second];
 
             const float u1 = kp1.pt.x;
             const float v1 = kp1.pt.y;
@@ -744,7 +744,7 @@ namespace ORB_SLAM3
     }
 
 
-    void TwoViewReconstruction::Normalize(const vector<cv::KeyPoint> &vKeys, vector<cv::Point2f> &vNormalizedPoints, Eigen::Matrix3f &T)
+    void TwoViewReconstruction::Normalize(const vector<KeyPoint> &vKeys, vector<cv::Point2f> &vNormalizedPoints, Eigen::Matrix3f &T)
     {
         float meanX = 0;
         float meanY = 0;
@@ -793,7 +793,7 @@ namespace ORB_SLAM3
         T(2,2) = 1.f;
     }
 
-    int TwoViewReconstruction::CheckRT(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, const vector<cv::KeyPoint> &vKeys1, const vector<cv::KeyPoint> &vKeys2,
+    int TwoViewReconstruction::CheckRT(const Eigen::Matrix3f &R, const Eigen::Vector3f &t, const vector<KeyPoint> &vKeys1, const vector<KeyPoint> &vKeys2,
                                        const vector<Match> &vMatches12, vector<bool> &vbMatchesInliers,
                                        const Eigen::Matrix3f &K, vector<cv::Point3f> &vP3D, float th2, vector<bool> &vbGood, float &parallax)
     {
@@ -832,8 +832,8 @@ namespace ORB_SLAM3
             if(!vbMatchesInliers[i])
                 continue;
 
-            const cv::KeyPoint &kp1 = vKeys1[vMatches12[i].first];
-            const cv::KeyPoint &kp2 = vKeys2[vMatches12[i].second];
+            const auto &kp1 = vKeys1[vMatches12[i].first];
+            const auto &kp2 = vKeys2[vMatches12[i].second];
 
             Eigen::Vector3f p3dC1;
             Eigen::Vector3f x_p1(kp1.pt.x, kp1.pt.y, 1);

@@ -17,35 +17,32 @@
 */
 
 
-#ifndef FRAME_H
-#define FRAME_H
+#pragma once
 
 #include <vector>
 #include <map>
 #include <memory>
-
-#include "DBoW2/BowVector.h"
-#include "DBoW2/FeatureVector.h"
-
-#include <sophus/geometry.hpp>
-
-#include "ImuTypes.h"
-#include "ORBVocabulary.h"
-
-#include "Converter.h"
-#include "Settings.h"
-
 #include <mutex>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/cuda.hpp>
-
-
-#include "Eigen/Core"
+#include <Eigen/Core>
 #include <sophus/se3.hpp>
+#include <sophus/geometry.hpp>
+
+#include <KeyPoint.h>
+#include <DBoW2/BowVector.h>
+#include <DBoW2/FeatureVector.h>
+#include <ImuTypes.h>
+#include <ORBVocabulary.h>
+#include <Converter.h>
+#include <Settings.h>
+
+
 
 namespace ORB_SLAM3
 {
 
+//TODO: Investigate these forward declarations
 class MapPoint;
 class KeyFrame;
 class ConstraintPoseImu;
@@ -105,7 +102,7 @@ public:
     Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
 
     // Compute the cell of a keypoint (return false if outside the grid)
-    bool PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY);
+    bool PosInGrid(const KeyPoint &kp, int &posX, int &posY);
 
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
 
@@ -213,8 +210,8 @@ public:
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
-    std::shared_ptr<std::vector<cv::KeyPoint>> mvKeys, mvKeysRight;
-    std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysUn;
+    std::shared_ptr<std::vector<KeyPoint>> mvKeys, mvKeysRight;
+    std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;
@@ -365,5 +362,3 @@ public:
 };
 
 }// namespace ORB_SLAM
-
-#endif // FRAME_H

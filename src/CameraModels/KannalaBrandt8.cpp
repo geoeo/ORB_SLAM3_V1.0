@@ -174,7 +174,7 @@ namespace ORB_SLAM3 {
         return JacGood;
     }
 
-    bool KannalaBrandt8::ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+    bool KannalaBrandt8::ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
                                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
@@ -213,13 +213,13 @@ namespace ORB_SLAM3 {
     }
 
 
-    bool KannalaBrandt8::epipolarConstrain(GeometricCamera* pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2,
+    bool KannalaBrandt8::epipolarConstrain(GeometricCamera* pCamera2, const KeyPoint &kp1, const KeyPoint &kp2,
                                            const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
         Eigen::Vector3f p3D;
         return this->TriangulateMatches(pCamera2,kp1,kp2,R12,t12,sigmaLevel,unc,p3D) > 0.0001f;
     }
 
-    bool KannalaBrandt8::matchAndtriangulate(const cv::KeyPoint& kp1, const cv::KeyPoint& kp2, GeometricCamera* pOther,
+    bool KannalaBrandt8::matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, GeometricCamera* pOther,
                                              Sophus::SE3f& Tcw1, Sophus::SE3f& Tcw2,
                                              const float sigmaLevel1, const float sigmaLevel2,
                                              Eigen::Vector3f& x3Dtriangulated){
@@ -303,7 +303,7 @@ namespace ORB_SLAM3 {
         return true;
     }
 
-    float KannalaBrandt8::TriangulateMatches(GeometricCamera *pCamera2, const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc, Eigen::Vector3f& p3D) {
+    float KannalaBrandt8::TriangulateMatches(GeometricCamera *pCamera2, const KeyPoint &kp1, const KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc, Eigen::Vector3f& p3D) {
 
         Eigen::Vector3f r1 = this->unprojectEig(kp1.pt);
         Eigen::Vector3f r2 = pCamera2->unprojectEig(kp2.pt);
