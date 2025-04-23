@@ -80,7 +80,6 @@ MESSAGE(${OpenCV_VERSION})
 find_package(Eigen3 3.4.0 REQUIRED EXACT)
 find_package(Pangolin REQUIRED)
 find_package(g2o REQUIRED)
-find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDAToolkit REQUIRED)
 find_package(DBoW2 REQUIRED)
 find_package(Sophus REQUIRED)
@@ -144,7 +143,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${Pangolin_LIBRARIES}
-${Boost_LIBRARIES}
 g2o::core
 g2o::stuff
 g2o::types_sba
@@ -166,7 +164,6 @@ ${TRACY_LIB}
 ${CUDAToolkit_LIBRARIES}
 ${DBoW2_LIBRARIES}
 Sophus::Sophus
--lcrypto
 )
 
 
