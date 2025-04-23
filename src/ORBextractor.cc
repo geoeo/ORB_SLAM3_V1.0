@@ -59,20 +59,18 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
+
 #include <vector>
 #include <iostream>
 #include <memory>
 #include <numeric>
 #include <execution>
+#include <cstring>
 #include <cuda_runtime.h>
 
-#include "ORBextractor.h"
-#include "cuda/ManagedVector.hpp"
+#include <ORBextractor.h>
+#include <cuda/ManagedVector.hpp>
 #include <tracy.hpp>
-
- 	
-#include <opencv2/cudaarithm.hpp>
-#include <opencv2/cudawarping.hpp>
 
 using namespace cv;
 using namespace std;
@@ -227,7 +225,7 @@ namespace ORB_SLAM3
         }
     }
 
-    cuda::managed::ManagedVector::SharedPtr ORBextractor::DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
+    cuda::managed::ManagedVector<KeyPoint>::SharedPtr ORBextractor::DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                          const int maxX, const int minY, const int maxY, const int maxFeatures, const int level)
     {
         ZoneNamedN(DistributeOctTree, "DistributeOctTree", true);  // NOLINT: Profiler
@@ -432,7 +430,7 @@ namespace ORB_SLAM3
         }
 
         // Retain the best point in each node - We assume maxFeatures << nFastFeatures which is what is given to this function
-        auto vResultKeys = cuda::managed::ManagedVector::CreateManagedVector(lNodes.size());
+        auto vResultKeys = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(lNodes.size());
         auto vResultKeysHostPtr = vResultKeys->getHostPtr();
         const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvInvScaleFactor[level]);
         auto i = 0;
@@ -461,10 +459,10 @@ namespace ORB_SLAM3
         return vResultKeys;
     }
 
-    tuple<int,vector<cuda::managed::ManagedVector::SharedPtr>> ORBextractor::ComputeKeyPointsOctTree()
+    tuple<int,vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr>> ORBextractor::ComputeKeyPointsOctTree()
     {
         ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
-        vector<cuda::managed::ManagedVector::SharedPtr> allKeypoints(nlevels, nullptr);
+        vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr> allKeypoints(nlevels, nullptr);
         const int BorderX = EDGE_THRESHOLD;
         const int BorderY = BorderX;
 
@@ -538,7 +536,7 @@ namespace ORB_SLAM3
             ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
             for_each(execution::seq,levels_vec.begin(),levels_vec.end(),[&](const auto level)
             {
-                cuda::managed::ManagedVector::SharedPtr keypointsLevel = allKeypoints[level];
+                cuda::managed::ManagedVector<KeyPoint>::SharedPtr keypointsLevel = allKeypoints[level];
                 const auto nkeypointsLevel = keypoint_num_vec[level];
 
                 if(nkeypointsLevel==0)
@@ -553,15 +551,8 @@ namespace ORB_SLAM3
                     float scale = mvScaleFactor[level]; 
                     gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()), nkeypointsLevel, scale);
                     
-
                     auto keypointsHostPtr = keypointsLevel->getHostPtr();
-                    vector<int> keypoint_indices(nkeypointsLevel);
-                    iota(begin(keypoint_indices), end(keypoint_indices), 0);
-                    for_each(execution::par_unseq,keypoint_indices.begin(),keypoint_indices.end(),[&](const auto i){
-                        auto& keypoint = keypointsHostPtr[i];
-                        const auto index = offset +i;
-                        _keypoints->at(index) = KeyPoint(keypoint.pt.x,keypoint.pt.y,keypoint.size,keypoint.response,keypoint.octave,keypoint.angle);
-                    });
+                    std::memcpy(&_keypoints->operator[](offset),keypointsHostPtr,keypointsLevel->sizeInBytes());
                 }
             });
         }

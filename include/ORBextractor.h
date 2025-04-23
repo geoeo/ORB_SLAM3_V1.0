@@ -30,9 +30,7 @@
 
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudafeatures2d.hpp>
-
 #include <opencv2/features2d/features2d.hpp>
-#include <opencv2/cudafeatures2d.hpp>
 #include <opencv2/core/cuda.hpp>
 
 namespace ORB_SLAM3
@@ -108,9 +106,9 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        std::tuple<int,std::vector<cuda::managed::ManagedVector::SharedPtr>> ComputeKeyPointsOctTree();
+        std::tuple<int,std::vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr>> ComputeKeyPointsOctTree();
         
-        cuda::managed::ManagedVector::SharedPtr DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
+        cuda::managed::ManagedVector<KeyPoint>::SharedPtr DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                     const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);
 
         
