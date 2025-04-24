@@ -16,15 +16,11 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <ORBmatcher.h>
 
-#include "ORBmatcher.h"
-
-#include<limits.h>
-#include<opencv2/core/core.hpp>
-#include<stdint-gcc.h>
-
-#include "System.h"
-#include "DBoW2/FeatureVector.h"
+#include <limits.h>
+#include <Verbose.h>
+#include <DBoW2/FeatureVector.h>
 #include <tracy.hpp>
 
 using namespace std;
