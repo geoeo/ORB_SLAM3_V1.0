@@ -32,11 +32,6 @@
 namespace ORB_SLAM3
 {
 
-//TODO Forward 
-class KeyFrame;
-class Map;
-class Frame;
-
 class MapPoint
 {
 public:
