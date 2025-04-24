@@ -43,20 +43,20 @@ namespace ORB_SLAM3::cuda::managed
         }
 
         
-        T * getHostPtr(cudaStream_t stream = 0) {
+        T * getHostPtr(cudaStream_t stream = 0, size_t offset = 0) {
             if(!prefetchCPU_){
                 checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
                 checkCudaErrors( cudaStreamSynchronize(stream) ); //TODO: check if this is necessary  - maybe use prefetch async
                 prefetchCPU_ = true;
             }
-            return unified_ptr_;
+            return unified_ptr_ + offset;
         }
 
-        T * getDevicePtr(cudaStream_t stream = 0) {
+        T * getDevicePtr(cudaStream_t stream = 0, size_t offset = 0) {
             prefetchCPU_ = false;
             checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachSingle) );
             checkCudaErrors( cudaStreamSynchronize(stream) ); //TODO: check if this is necessary - maybe use prefetch async
-            return unified_ptr_;
+            return unified_ptr_ + offset;
         }
 
         std::shared_ptr<std::vector<T>> toVector() {

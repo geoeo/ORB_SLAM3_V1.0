@@ -104,9 +104,9 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        std::tuple<int,std::vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr>> ComputeKeyPointsOctTree();
+        std::tuple<std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ComputeKeyPointsOctTree();
         
-        cuda::managed::ManagedVector<KeyPoint>::SharedPtr DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
+        std::list<ExtractorNode> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                     const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);
 
         
