@@ -432,7 +432,7 @@ namespace ORB_SLAM3
         return lNodes;
     }
 
-    tuple<vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ORBextractor::ComputeKeyPointsOctTree()
+    tuple<vector<size_t>, vector<size_t>, cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ORBextractor::ComputeKeyPointsOctTree()
     {
         ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
         //vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr> allKeypoints(nlevels, nullptr);
@@ -470,64 +470,59 @@ namespace ORB_SLAM3
         }
 
 
-        vector<int> keypoints_acc(nlevels);
-        partial_sum(keypointsCountPerLevel.begin(), keypointsCountPerLevel.end(), keypoints_acc.begin());
+        vector<size_t> keypointsAcc(nlevels);
+        partial_sum(keypointsCountPerLevel.begin(), keypointsCountPerLevel.end(), keypointsAcc.begin());
 
         auto allKeypoints = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(allKeypointsCount);
-        for (int level = 0; level < nlevels; ++level)
+
         {
-            // Retain the best point in each node
-            //allKeypoints[level] = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(keypointsCountPerLevel[level]);
-            const auto nPoints = keypointsCountPerLevel[level];
-            const auto offset = level==0 ? 0 : keypoints_acc[level-1];
-            auto vResultKeysHostPtr = allKeypoints->getHostPtr(0,offset);
-            const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvInvScaleFactor[level]);
-            auto i = 0;
-            auto& lNodes = lNodesPerLevel[level];
-            for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
+            ZoneNamedN(AllocAndOrientationLoop, "AllocAndOrientationLoop", true);
+            for (int level = 0; level < nlevels; ++level)
             {
-                vector<ORB_SLAM3::KeyPoint> &vNodeKeys = lit->vKeys;
-                ORB_SLAM3::KeyPoint* pKP = &vNodeKeys[0];
-                float maxResponse = pKP->response;
-
-                for(size_t k=1;k<vNodeKeys.size();k++)
-                {
-                    if(vNodeKeys[k].response>maxResponse)
-                    {
-                        pKP = &vNodeKeys[k];
-                        maxResponse = vNodeKeys[k].response;
-                    }
-                }
-
-                // Add border to coordinates and scale information
-                pKP->octave=level;
-                pKP->size = scaledPatchSize;
-
-                vResultKeysHostPtr[i++] = *pKP;
-            }
-        }
-
-        {
-            ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
-            // compute orientations
-            for (int level = 0; level < nlevels; ++level){
+                // Retain the best point in each node
                 const auto nPoints = keypointsCountPerLevel[level];
-                const auto offset = level==0 ? 0 : keypoints_acc[level-1];
+                const auto offset = level==0 ? 0 : keypointsAcc[level-1];
+                auto vResultKeysHostPtr = allKeypoints->getHostPtr(0,offset);
+                const int scaledPatchSize = static_cast<int>(PATCH_SIZE*mvInvScaleFactor[level]);
+                auto i = 0;
+                auto& lNodes = lNodesPerLevel[level];
+                for(list<ExtractorNode>::iterator lit=lNodes.begin(); lit!=lNodes.end(); lit++)
+                {
+                    vector<ORB_SLAM3::KeyPoint> &vNodeKeys = lit->vKeys;
+                    ORB_SLAM3::KeyPoint* pKP = &vNodeKeys[0];
+                    float maxResponse = pKP->response;
+    
+                    for(size_t k=1;k<vNodeKeys.size();k++)
+                    {
+                        if(vNodeKeys[k].response>maxResponse)
+                        {
+                            pKP = &vNodeKeys[k];
+                            maxResponse = vNodeKeys[k].response;
+                        }
+                    }
+    
+                    // Add border to coordinates and scale information
+                    pKP->octave=level;
+                    pKP->size = scaledPatchSize;
+                    vResultKeysHostPtr[i++] = *pKP;
+                }
+    
                 if (nPoints > 0)
                     gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints->getDevicePtr(gpuOrb.getStream(),offset), nPoints, HALF_PATCH_SIZE, gpuOrb.getStream());
             }
         }
-        return {keypointsCountPerLevel, allKeypoints};
+
+        return {keypointsCountPerLevel, keypointsAcc ,allKeypoints};
     }
 
-    tuple<int,cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
+    tuple<cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
         // Pre-compute the scale pyramid
         ComputePyramid(im_managed);
 
-        auto [keypointsCountPerLevel,allKeypoints] = ComputeKeyPointsOctTree();
+        auto [keypointsCountPerLevel, keypointsAcc, allKeypoints] = ComputeKeyPointsOctTree();
         cv::cuda::HostMem _descriptors;
         cuda::managed::ManagedVector<KeyPoint>::SharedPtr _keypoints;
         {
@@ -538,26 +533,15 @@ namespace ORB_SLAM3
 
         vector<int> levelsVec(nlevels);
         iota(begin(levelsVec), end(levelsVec), 0);
-
-        vector<int> keypointNumPerLevel (levelsVec.size());
-        transform(execution::par_unseq, levelsVec.begin(), levelsVec.end(), keypointNumPerLevel.begin(), [&] (const auto level) {
-            return keypointsCountPerLevel[level];
-        });
-
-        vector<int> keypoints_acc(levelsVec.size());
-        partial_sum(keypointNumPerLevel.begin(), keypointNumPerLevel.end(), keypoints_acc.begin());
-
         {
             ZoneNamedN(DescriptorLoop, "DescriptorLoop", true);
             for_each(execution::par,levelsVec.begin(),levelsVec.end(),[&](const auto level)
             {
-                //auto keypointsLevel = allKeypoints[level];
-                const auto nPoints = keypointNumPerLevel[level];
-
+                const auto nPoints = keypointsCountPerLevel[level];
                 if(nPoints==0)
                     return;
 
-                const auto offset = level==0 ? 0 : keypoints_acc[level-1];
+                const auto offset = level==0 ? 0 : keypointsAcc[level-1];
                 const auto offset_end = offset+nPoints;
                 // Compute the descriptors - GPU
                 {
@@ -565,19 +549,12 @@ namespace ORB_SLAM3
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     float scale = mvScaleFactor[level]; 
                     gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, _keypoints->getDevicePtr(gpuOrb.getStream(),offset),nPoints);
-                    
-                    //{
-                        //ZoneNamedN(computeDescriptors_Copy, "computeDescriptors_Copy", true); 
-                        //auto keypointsHostPtr = keypointsLevel->getHostPtr();
-                        //memcpy(&_keypoints->getHostPtr()[offset],keypointsHostPtr,keypointsLevel->sizeInBytes());
-                    //}
-
                 }
             });
         }
 
         _keypoints->prefetchToCPU();
-        return {keypoints_acc.back(), _keypoints, _descriptors};
+        return {_keypoints, _descriptors};
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)

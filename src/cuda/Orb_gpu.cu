@@ -347,9 +347,6 @@ namespace ORB_SLAM3::cuda::orb {
     val |= (t0 < t1) << 7;
 
     desc[tid] = (uchar)val;
-
-
-
   }
 
 
@@ -374,7 +371,6 @@ namespace ORB_SLAM3::cuda::orb {
 
   void GpuOrb::launch_async(cv::cuda::GpuMat image,cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints) {
     cv::cuda::GpuMat desc = descriptors.rowRange(offset, offset_end);
-    desc.setTo(Scalar::all(0), cvStream);
 
     dim3 dimBlock(32);
     dim3 dimGrid(npoints);

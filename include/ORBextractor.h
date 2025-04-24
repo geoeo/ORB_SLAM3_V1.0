@@ -66,7 +66,7 @@ namespace ORB_SLAM3
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
         // Mask is ignored in the current implementation.
-        std::tuple<int,cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
+        std::tuple<cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()
         {
@@ -104,7 +104,7 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        std::tuple<std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ComputeKeyPointsOctTree();
+        std::tuple<std::vector<size_t>,std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ComputeKeyPointsOctTree();
         
         std::list<ExtractorNode> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                     const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);
