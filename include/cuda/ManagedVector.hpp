@@ -36,16 +36,26 @@ namespace ORB_SLAM3::cuda::managed
             return std::shared_ptr<ManagedVector>(new ManagedVector(sizeInBytes),ManagedVectorDeleter{}); 
         }
 
+        void prefetchToCPU(cudaStream_t stream = 0) {
+            checkCudaErrors( cudaMemPrefetchAsync(unified_ptr_, size_in_bytes_, cudaCpuDeviceId, stream));
+            checkCudaErrors( cudaStreamSynchronize(stream) );
+            prefetchCPU_ = true;
+        }
+
         
         T * getHostPtr(cudaStream_t stream = 0) {
-            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
-            checkCudaErrors( cudaStreamSynchronize(stream) );
+            if(!prefetchCPU_){
+                checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
+                checkCudaErrors( cudaStreamSynchronize(stream) ); //TODO: check if this is necessary  - maybe use prefetch async
+                prefetchCPU_ = true;
+            }
             return unified_ptr_;
         }
 
         T * getDevicePtr(cudaStream_t stream = 0) {
+            prefetchCPU_ = false;
             checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachSingle) );
-            checkCudaErrors( cudaStreamSynchronize(stream) );
+            checkCudaErrors( cudaStreamSynchronize(stream) ); //TODO: check if this is necessary - maybe use prefetch async
             return unified_ptr_;
         }
 
@@ -68,8 +78,9 @@ namespace ORB_SLAM3::cuda::managed
             // Using unified memory
             T *unified_ptr_;
             size_t size_in_bytes_;
+            bool prefetchCPU_;
 
-            ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes) {
+            ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes), prefetchCPU_(false) {
                 checkCudaErrors(cudaMallocManaged(&unified_ptr_, sizeInBytes));
             }
 
