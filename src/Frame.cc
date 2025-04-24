@@ -118,10 +118,10 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     ExtractORB(0,im_managed_gray);
 
     mNumKeypoints = mvKeys->size();
-    if(mvKeys->empty())
+    if(mNumKeypoints == 0)
         return;
 
-    UndistortKeyPoints();
+    mvKeysUn = mvKeys;
 
     // Set no stereo information
     mvuRight = vector<float>(mNumKeypoints,-1);
@@ -206,7 +206,7 @@ void Frame::AssignFeaturesToGrid()
 
     for(int i=0;i<mNumKeypoints;i++)
     {
-        const auto &kp = mvKeysUn->operator[](i);
+        const auto &kp = mvKeysUn->getHostPtr()[i];
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
             auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
@@ -217,7 +217,11 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
-    monoLeft = mpORBextractorLeft->extractFeatures(im_managed,mvKeys,mDescriptors);
+    auto [mLeft,keys,descriptors] = mpORBextractorLeft->extractFeatures(im_managed);
+
+    monoLeft = mLeft;
+    mvKeys = keys;
+    mDescriptors = descriptors;
 }
 
 bool Frame::isSet() const {
@@ -485,7 +489,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
+                const auto &kpUn = mvKeysUn->getHostPtr()[vCell[j]];
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel || (maxLevel>=0 && kpUn.octave>maxLevel)){
@@ -530,42 +534,6 @@ void Frame::ComputeBoW()
         }
         
     }
-}
-
-void Frame::UndistortKeyPoints()
-{
-    ZoneNamedN(UndistortKeyPoints, "UndistortKeyPoints", true); 
-    if(mDistCoef.at<float>(0)==0.0)
-    {
-        mvKeysUn=mvKeys;
-        return;
-    }
-
-    // Fill matrix with points
-    cv::Mat mat(mNumKeypoints,2,CV_32F);
-
-    for(int i=0; i<mNumKeypoints; i++)
-    {
-        mat.at<float>(i,0)=mvKeys->operator[](i).pt.x;
-        mat.at<float>(i,1)=mvKeys->operator[](i).pt.y;
-    }
-
-    // Undistort points
-    mat=mat.reshape(2);
-    cv::undistortPoints(mat,mat, static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
-    mat=mat.reshape(1);
-
-
-    // Fill undistorted keypoint vector
-    mvKeysUn->resize(mNumKeypoints);
-    for(int i=0; i<mNumKeypoints; i++)
-    {
-        auto kp = mvKeys->operator[](i);
-        kp.pt.x=mat.at<float>(i,0);
-        kp.pt.y=mat.at<float>(i,1);
-        mvKeysUn->operator[](i)=kp;
-    }
-
 }
 
 void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)

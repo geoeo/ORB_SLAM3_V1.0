@@ -105,12 +105,12 @@ namespace ORB_SLAM3
                             bestDist2=bestDist;
                             bestDist=dist;
                             bestLevel2 = bestLevel;
-                            bestLevel = F.mvKeysUn->operator[](idx).octave;
+                            bestLevel = F.mvKeysUn->getHostPtr()[idx].octave;
                             bestIdx=idx;
                         }
                         else if(dist<bestDist2)
                         {
-                            bestLevel2 = F.mvKeysUn->operator[](idx).octave;
+                            bestLevel2 = F.mvKeysUn->getHostPtr()[idx].octave;
                             bestDist2=dist;
                         }
                     }
@@ -326,11 +326,11 @@ namespace ORB_SLAM3
                         {
                             vpMapPointMatches[bestIdxF]=pMP;
 
-                            const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                            const auto &kp = pKF->mvKeysUn->getHostPtr()[realIdxKF];
 
                             if(mbCheckOrientation)
                             {
-                                auto &Fkp = F.mvKeys->operator[](bestIdxF);
+                                auto &Fkp = F.mvKeys->getHostPtr()[bestIdxF];
 
                                 float rot = kp.angle-Fkp.angle;
                                 if(rot<0.0)
@@ -350,11 +350,11 @@ namespace ORB_SLAM3
                             {
                                 vpMapPointMatches[bestIdxFR]=pMP;
 
-                                const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                                const auto &kp = pKF->mvKeysUn->getHostPtr()[realIdxKF];
 
                                 if(mbCheckOrientation)
                                 {
-                                    auto &Fkp = F.mvKeys->operator[](bestIdxFR);
+                                    auto &Fkp = F.mvKeys->getHostPtr()[bestIdxFR];
 
                                     float rot = kp.angle-Fkp.angle;
                                     if(rot<0.0)
@@ -486,7 +486,7 @@ namespace ORB_SLAM3
                 if(vpMatched[idx])
                     continue;
 
-                const int &kpLevel= pKF->mvKeysUn->operator[](idx).octave;
+                const int &kpLevel= pKF->mvKeysUn->getHostPtr()[idx].octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                     continue;
@@ -600,7 +600,7 @@ namespace ORB_SLAM3
                 if(vpMatched[idx])
                     continue;
 
-                const int &kpLevel= pKF->mvKeysUn->operator[](idx).octave;
+                const int &kpLevel= pKF->mvKeysUn->getHostPtr()[idx].octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                     continue;
@@ -643,7 +643,7 @@ namespace ORB_SLAM3
 
         for(size_t i1=0, iend1=F1.mvKeysUn->size(); i1<iend1; i1++)
         {
-            auto kp1 = F1.mvKeysUn->operator[](i1);
+            auto kp1 = F1.mvKeysUn->getHostPtr()[i1];
             int level1 = kp1.octave;
             if(level1>0)
                 continue;
@@ -698,7 +698,7 @@ namespace ORB_SLAM3
 
                     if(mbCheckOrientation)
                     {
-                        float rot = F1.mvKeysUn->operator[](i1).angle-F2.mvKeysUn->operator[](bestIdx2).angle;
+                        float rot = F1.mvKeysUn->getHostPtr()[i1].angle-F2.mvKeysUn->getHostPtr()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);
@@ -740,7 +740,7 @@ namespace ORB_SLAM3
         //Update prev matched
         for(size_t i1=0, iend1=vnMatches12.size(); i1<iend1; i1++)
             if(vnMatches12[i1]>=0)
-                vbPrevMatched[i1]=F2.mvKeysUn->operator[](vnMatches12[i1]).pt;
+                vbPrevMatched[i1]=F2.mvKeysUn->getHostPtr()[vnMatches12[i1]].pt;
 
         return nmatches;
     }
@@ -838,7 +838,7 @@ namespace ORB_SLAM3
 
                             if(mbCheckOrientation)
                             {
-                                float rot = vKeysUn1->operator[](idx1).angle-vKeysUn2->operator[](bestIdx2).angle;
+                                float rot = vKeysUn1->getHostPtr()[idx1].angle-vKeysUn2->getHostPtr()[bestIdx2].angle;
                                 if(rot<0.0)
                                     rot+=360.0f;
                                 int bin = round(rot*factor);
@@ -967,7 +967,7 @@ namespace ORB_SLAM3
                         if(!bStereo1)
                             continue;
 
-                    const auto &kp1 = pKF1->mvKeysUn->operator[](idx1);
+                    const auto &kp1 = pKF1->mvKeysUn->getHostPtr()[idx1];
 
                     const bool bRight1 = false;
 
@@ -999,7 +999,7 @@ namespace ORB_SLAM3
                         if(dist>TH_LOW || dist>bestDist)
                             continue;
 
-                        const auto &kp2 = pKF2->mvKeysUn->operator[](idx2);
+                        const auto &kp2 = pKF2->mvKeysUn->getHostPtr()[idx2];
                         const bool bRight2 = false;
 
                         if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
@@ -1057,7 +1057,7 @@ namespace ORB_SLAM3
 
                     if(bestIdx2>=0)
                     {
-                        const auto &kp2 = pKF2->mvKeysUn->operator[](bestIdx2);
+                        const auto &kp2 = pKF2->mvKeysUn->getHostPtr()[bestIdx2];
                         vMatches12[idx1]=bestIdx2;
                         nmatches++;
 
@@ -1233,7 +1233,7 @@ namespace ORB_SLAM3
             for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
             {
                 size_t idx = *vit;
-                const auto &kp = pKF->mvKeysUn->operator[](idx);
+                const auto &kp = pKF->mvKeysUn->getHostPtr()[idx];
                 const int &kpLevel= kp.octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
@@ -1381,7 +1381,7 @@ namespace ORB_SLAM3
             for(vector<size_t>::const_iterator vit=vIndices.begin(); vit!=vIndices.end(); vit++)
             {
                 const size_t idx = *vit;
-                const int &kpLevel = pKF->mvKeysUn->operator[](idx).octave;
+                const int &kpLevel = pKF->mvKeysUn->getHostPtr()[idx].octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                     continue;
@@ -1515,7 +1515,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const auto &kp = pKF2->mvKeysUn->operator[](idx);
+                const auto &kp = pKF2->mvKeysUn->getHostPtr()[idx];
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1595,7 +1595,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const auto &kp = pKF1->mvKeysUn->operator[](idx);
+                const auto &kp = pKF1->mvKeysUn->getHostPtr()[idx];
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1682,7 +1682,7 @@ namespace ORB_SLAM3
                     if(uv(1)<CurrentFrame.mnMinY || uv(1)>CurrentFrame.mnMaxY)
                         continue;
 
-                    int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
+                    int nLastOctave = LastFrame.mvKeys->getHostPtr()[i].octave;
 
                     // Search in a window. Size depends on scale
                     float radius = th*CurrentFrame.mvInvScaleFactors[nLastOctave];
@@ -1738,9 +1738,9 @@ namespace ORB_SLAM3
 
                         if(mbCheckOrientation)
                         {
-                            auto kpLF = LastFrame.mvKeysUn->operator[](i);
+                            auto kpLF = LastFrame.mvKeysUn->getHostPtr()[i];
 
-                            auto kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
+                            auto kpCF = CurrentFrame.mvKeysUn->getHostPtr()[bestIdx2];
                             float rot = kpLF.angle-kpCF.angle;
                             if(rot<0.0)
                                 rot+=360.0f;
@@ -1865,7 +1865,7 @@ namespace ORB_SLAM3
 
                         if(mbCheckOrientation)
                         {
-                            float rot = pKF->mvKeysUn->operator[](i).angle-CurrentFrame.mvKeysUn->operator[](bestIdx2).angle;
+                            float rot = pKF->mvKeysUn->getHostPtr()[i].angle-CurrentFrame.mvKeysUn->getHostPtr()[bestIdx2].angle;
                             if(rot<0.0)
                                 rot+=360.0f;
                             int bin = round(rot*factor);

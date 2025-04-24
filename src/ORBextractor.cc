@@ -495,7 +495,7 @@ namespace ORB_SLAM3
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
             // compute orientations
             for (int level = 0; level < nlevels; ++level){
-                const auto kpCount = allKeypoints[level]->getSize();
+                const auto kpCount = allKeypoints[level]->size();
 
                 allKeypointsCount +=kpCount;
                 if (kpCount > 0)
@@ -505,8 +505,7 @@ namespace ORB_SLAM3
         return {allKeypointsCount, allKeypoints};
     }
 
-    int ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed, shared_ptr<vector<KeyPoint>>& _keypoints,
-            cv::cuda::HostMem& _descriptors)
+    tuple<int,cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
@@ -514,11 +513,12 @@ namespace ORB_SLAM3
         ComputePyramid(im_managed);
 
         auto [nkeypoints,allKeypoints] = ComputeKeyPointsOctTree();
-
+        cv::cuda::HostMem _descriptors;
+        cuda::managed::ManagedVector<KeyPoint>::SharedPtr _keypoints;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
-            _keypoints = make_shared<vector<KeyPoint>>(nkeypoints);
+            _keypoints = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(nkeypoints);
         }
 
         vector<int> levels_vec(nlevels);
@@ -526,7 +526,7 @@ namespace ORB_SLAM3
 
         vector<int> keypoint_num_vec (levels_vec.size());
         transform(execution::par_unseq, levels_vec.begin(), levels_vec.end(), keypoint_num_vec.begin(), [&] (const auto level) {
-            return allKeypoints[level]->getSize();
+            return allKeypoints[level]->size();
         });
 
         vector<int> keypoints_acc(levels_vec.size());
@@ -552,13 +552,13 @@ namespace ORB_SLAM3
                     gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()),nkeypointsLevel);
                     
                     auto keypointsHostPtr = keypointsLevel->getHostPtr();
-                    memcpy(&_keypoints->operator[](offset),keypointsHostPtr,keypointsLevel->sizeInBytes());
+                    memcpy(&_keypoints->getHostPtr()[offset],keypointsHostPtr,keypointsLevel->sizeInBytes());
                 }
             });
         }
 
 
-        return keypoints_acc.back();
+        return {keypoints_acc.back(), _keypoints, _descriptors};
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)

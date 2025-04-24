@@ -29,6 +29,7 @@
 #include <sophus/se3.hpp>
 #include <sophus/geometry.hpp>
 
+#include <cuda/ManagedVector.hpp>
 #include <KeyPoint.h>
 #include <DBoW2/BowVector.h>
 #include <DBoW2/FeatureVector.h>
@@ -210,8 +211,8 @@ public:
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
-    std::shared_ptr<std::vector<KeyPoint>> mvKeys, mvKeysRight;
-    std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
+    cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeys, mvKeysRight;
+    cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;
@@ -289,12 +290,6 @@ public:
 #endif
 
 private:
-
-    // Undistort keypoints given OpenCV distortion parameters.
-    // Only for the RGB-D case. Stereo must be already rectified!
-    // (called in the constructor).
-    void UndistortKeyPoints();
-
     // Computes image bounds for the undistorted image (called in the constructor).
     void ComputeImageBounds(const cv::cuda::HostMem &imLeft);
 

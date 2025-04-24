@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <memory>
+#include <vector>
+#include <cstring>
 #include <cuda_runtime.h>
 #include <cuda/HelperCuda.h>
 
@@ -46,8 +48,15 @@ namespace ORB_SLAM3::cuda::managed
             checkCudaErrors( cudaStreamSynchronize(stream) );
             return unified_ptr_;
         }
+
+        std::shared_ptr<std::vector<T>> toVector() {
+            auto vec = std::make_shared<std::vector<T>>(size());
+            auto hostPtr = getHostPtr();
+            std::memcpy(vec->data(), hostPtr, size_in_bytes_);
+            return vec;
+        }
         
-        size_t getSize() const {
+        size_t size() const {
             return  size_in_bytes_ / sizeof(T);
         }
 

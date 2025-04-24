@@ -22,6 +22,7 @@
 #include <CameraModels/GeometricCamera.h>
 #include <TwoViewReconstruction.h>
 #include <KeyPoint.h>
+#include <cuda/ManagedVector.hpp>
 
 namespace ORB_SLAM3 {
     class KannalaBrandt8 : public GeometricCamera {
@@ -63,7 +64,7 @@ namespace ORB_SLAM3 {
         Eigen::Matrix<double,2,3> projectJac(const Eigen::Vector3d& v3D);
 
 
-        bool ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+        bool ReconstructWithTwoViews(const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys1, const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys2, const std::vector<int> &vMatches12,
                                      Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated);
 
         cv::Mat toK();

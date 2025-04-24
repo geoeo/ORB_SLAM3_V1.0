@@ -725,7 +725,7 @@ vector<size_t> KeyFrame::GetFeaturesInArea(const float &x, const float &y, const
             const vector<size_t> vCell = mGrid[linearIndex];
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
+                const auto &kpUn = mvKeysUn->getHostPtr()[vCell[j]];
                 const float distx = kpUn.pt.x-x;
                 const float disty = kpUn.pt.y-y;
 
@@ -748,8 +748,8 @@ bool KeyFrame::UnprojectStereo(int i, Eigen::Vector3f &x3D)
     const float z = mvDepth[i];
     if(z>0)
     {
-        const float u = mvKeys->operator[](i).pt.x;
-        const float v = mvKeys->operator[](i).pt.y;
+        const float u = mvKeys->getHostPtr()[i].pt.x;
+        const float v = mvKeys->getHostPtr()[i].pt.y;
         const float x = (u-cx)*z*invfx;
         const float y = (v-cy)*z*invfy;
         Eigen::Vector3f x3Dc(x, y, z);

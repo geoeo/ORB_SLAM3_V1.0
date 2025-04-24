@@ -28,6 +28,7 @@
 #include <KeyFrameDatabase.h>
 #include <ImuTypes.h>
 #include <CameraModels/GeometricCamera.h>
+#include <cuda/ManagedVector.hpp>
 
 #include <mutex>
 #include <vector>
@@ -235,8 +236,8 @@ public:
     const int N;
 
     // KeyPoints, stereo coordinate and descriptors (all associated by an index)
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeys;
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
+    const cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeys;
+    const cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeysUn;
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
@@ -369,7 +370,7 @@ public:
     Sophus::SE3f GetRelativePoseTlr();
 
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeysRight;
+    const cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeysRight;
 
     const int NLeft, NRight;
 

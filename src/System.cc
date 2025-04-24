@@ -259,7 +259,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     auto lock = scoped_mutex_lock( mMutexState );
     mTrackingState = mpTracker->mState;
-    mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
     mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     auto isBAComplete = mpTracker->isBACompleteForMap();
     auto computedScales = mpTracker->getMapScales();
@@ -361,7 +360,7 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
     return pActiveMap->GetReferenceMapPoints();
 }
 
-shared_ptr<vector<KeyPoint>> System::GetTrackedKeyPointsUn()
+cuda::managed::ManagedVector<KeyPoint>::SharedPtr System::GetTrackedKeyPointsUn()
 {
     //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
