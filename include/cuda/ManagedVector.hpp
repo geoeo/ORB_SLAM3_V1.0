@@ -37,7 +37,7 @@ namespace ORB_SLAM3::cuda::managed
         }
 
         void prefetchToCPU(cudaStream_t stream = 0) {
-            checkCudaErrors( cudaMemPrefetchAsync(unified_ptr_, size_in_bytes_, cudaCpuDeviceId, stream));
+            checkCudaErrors( cudaMemPrefetchAsync(unified_ptr_, sizeInBytes_, cudaCpuDeviceId, stream));
             checkCudaErrors( cudaStreamSynchronize(stream) );
             prefetchCPU_ = true;
         }
@@ -62,25 +62,25 @@ namespace ORB_SLAM3::cuda::managed
         std::shared_ptr<std::vector<T>> toVector() {
             auto vec = std::make_shared<std::vector<T>>(size());
             auto hostPtr = getHostPtr();
-            std::memcpy(vec->data(), hostPtr, size_in_bytes_);
+            std::memcpy(vec->data(), hostPtr, sizeInBytes_);
             return vec;
         }
         
         size_t size() const {
-            return  size_in_bytes_ / sizeof(T);
+            return  sizeInBytes_ / sizeof(T);
         }
 
         size_t sizeInBytes() const {
-            return size_in_bytes_;
+            return sizeInBytes_;
         }
         
         private:
             // Using unified memory
             T *unified_ptr_;
-            size_t size_in_bytes_;
+            size_t sizeInBytes_;
             bool prefetchCPU_;
 
-            ManagedVector(size_t sizeInBytes) : size_in_bytes_(sizeInBytes), prefetchCPU_(false) {
+            ManagedVector(size_t sizeInBytes) : sizeInBytes_(sizeInBytes), prefetchCPU_(false) {
                 checkCudaErrors(cudaMallocManaged(&unified_ptr_, sizeInBytes));
             }
 

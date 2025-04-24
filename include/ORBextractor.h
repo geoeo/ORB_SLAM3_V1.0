@@ -30,7 +30,6 @@
 
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudafeatures2d.hpp>
-#include <opencv2/features2d/features2d.hpp>
 #include <opencv2/core/cuda.hpp>
 
 namespace ORB_SLAM3
@@ -52,12 +51,6 @@ namespace ORB_SLAM3
     class ORBextractor
     {
     public:
-        enum
-        {
-            HARRIS_SCORE = 0,
-            FAST_SCORE = 1
-        };
-
         ORBextractor(int nFeatures,int nFastFeatures, float scaleFactor, int nlevels,
                      int iniThFAST, int minThFAST, int imageWidth, int imageHeight);
 
@@ -65,7 +58,6 @@ namespace ORB_SLAM3
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
-        // Mask is ignored in the current implementation.
         std::tuple<cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()

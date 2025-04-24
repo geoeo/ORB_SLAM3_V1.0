@@ -52,11 +52,6 @@
 */
 
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/features2d/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudawarping.hpp>
 
@@ -434,8 +429,7 @@ namespace ORB_SLAM3
 
     tuple<vector<size_t>, vector<size_t>, cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ORBextractor::ComputeKeyPointsOctTree()
     {
-        ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);  // NOLINT: Profiler
-        //vector<cuda::managed::ManagedVector<KeyPoint>::SharedPtr> allKeypoints(nlevels, nullptr);
+        ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);
         vector<list<ExtractorNode>> lNodesPerLevel(nlevels);
         vector<size_t> keypointsCountPerLevel(nlevels);
         const int BorderX = EDGE_THRESHOLD;
@@ -579,14 +573,13 @@ namespace ORB_SLAM3
 
     void ORBextractor::ComputePyramid(cv::cuda::HostMem image_managed)
     {
-        ZoneNamedN(ComputePyramid, "ComputePyramid", true);  // NOLINT: Profiler
+        ZoneNamedN(ComputePyramid, "ComputePyramid", true); 
         cv::cuda::Stream cvStream = gpuOrb.getCvStream();
         mvImagePyramid[0] = image_managed;
         gpuGaussian->apply(mvImagePyramid[0].createGpuMatHeader(),mvBlurredImagePyramid[0].createGpuMatHeader(),cvStream);
         for (int level = 1; level < nlevels; ++level)
         {
             // Compute the resized image
-            // Use Orb Stream for now
             cv::cuda::GpuMat gpu_mat_prior_level = mvImagePyramid[level-1].createGpuMatHeader();
             auto managed_image_level = mvImagePyramid[level];
             cv::cuda::GpuMat gpu_mat_level = managed_image_level.createGpuMatHeader();
@@ -594,8 +587,6 @@ namespace ORB_SLAM3
             cv::cuda::resize(gpu_mat_prior_level,gpu_mat_level , sz, 0, 0, cv::InterpolationFlags::INTER_LINEAR, cvStream);
             gpuGaussian->apply(mvImagePyramid[level].createGpuMatHeader(),mvBlurredImagePyramid[level].createGpuMatHeader(),cvStream);
         }
-        cvStream.waitForCompletion();
-
     }
 
 } //namespace ORB_SLAM
