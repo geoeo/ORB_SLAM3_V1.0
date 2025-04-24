@@ -43,8 +43,6 @@ class MapPoint;
 class Frame;
 class KeyFrameDatabase;
 
-class GeometricCamera;
-
 class KeyFrame
 {
 

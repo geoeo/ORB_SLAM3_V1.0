@@ -17,8 +17,7 @@
 */
 
 
-#ifndef CONVERTER_H
-#define CONVERTER_H
+#pragma once
 
 #include <opencv2/core/core.hpp>
 
@@ -77,5 +76,3 @@ public:
 };
 
 }// namespace ORB_SLAM
-
-#endif // CONVERTER_H

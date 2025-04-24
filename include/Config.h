@@ -16,8 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <unistd.h>
 #include <stdio.h>
@@ -63,5 +62,3 @@ private:
 };
 
 }
-
-#endif // CONFIG_H

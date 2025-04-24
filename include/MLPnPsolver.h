@@ -46,14 +46,13 @@
 * SUCH DAMAGE.                                                               *
 ******************************************************************************/
 
-#ifndef ORB_SLAM3_MLPNPSOLVER_H
-#define ORB_SLAM3_MLPNPSOLVER_H
+#pragma once
 
-#include "MapPoint.h"
-#include "Frame.h"
+#include <MapPoint.h>
+#include <Frame.h>
 
-#include<Eigen/Dense>
-#include<Eigen/Sparse>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 namespace ORB_SLAM3{
     class MLPnPsolver {
@@ -250,8 +249,3 @@ namespace ORB_SLAM3{
     };
 
 }
-
-
-
-
-#endif //ORB_SLAM3_MLPNPSOLVER_H

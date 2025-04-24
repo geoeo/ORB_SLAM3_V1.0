@@ -38,7 +38,6 @@ namespace ORB_SLAM3
 
 class Tracking;
 class LocalMapping;
-class KeyFrameDatabase;
 class Map;
 
 

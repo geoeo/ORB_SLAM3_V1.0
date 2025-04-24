@@ -16,30 +16,27 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ATLAS_H
-#define ATLAS_H
+#pragma once
 
-#include "Map.h"
-#include "MapPoint.h"
-#include "KeyFrame.h"
-#include "CameraModels/GeometricCamera.h"
-#include "CameraModels/Pinhole.h"
-#include "CameraModels/KannalaBrandt8.h"
+#include <Map.h>
+#include <MapPoint.h>
+#include <KeyFrame.h>
+#include <CameraModels/GeometricCamera.h>
+#include <CameraModels/Pinhole.h>
+#include <CameraModels/KannalaBrandt8.h>
 
 #include <set>
 #include <mutex>
 
 namespace ORB_SLAM3
 {
-    //TODO: FOrward
+//TODO: Forward
 class Viewer;
 class Map;
 class MapPoint;
 class KeyFrame;
 class KeyFrameDatabase;
 class Frame;
-class KannalaBrandt8;
-class Pinhole;
 
 class Atlas
 {
@@ -142,5 +139,3 @@ protected:
 }; // class Atlas
 
 } // namespace ORB_SLAM3
-
-#endif // ATLAS_H

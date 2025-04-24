@@ -36,7 +36,6 @@ namespace ORB_SLAM3
 class System;
 class Tracking;
 class LoopClosing;
-class Atlas;
 
 class LocalMapping
 {
