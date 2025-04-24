@@ -17,20 +17,19 @@
 */
 
 
-#include "Tracking.h"
+#include <Tracking.h>
 
-#include "ORBmatcher.h"
-#include "FrameDrawer.h"
-#include "Converter.h"
-#include "G2oTypes.h"
-#include "Optimizer.h"
-#include "CameraModels/Pinhole.h"
-#include "CameraModels/KannalaBrandt8.h"
-#include "MLPnPsolver.h"
-#include "GeometricTools.h"
+#include <ORBmatcher.h>
+#include <FrameDrawer.h>
+#include <Converter.h>
+#include <G2oTypes.h>
+#include <Optimizer.h>
+#include <CameraModels/Pinhole.h>
+#include <CameraModels/KannalaBrandt8.h>
+#include <MLPnPsolver.h>
+#include <GeometricTools.h>
 
 #include <iostream>
-#include <mutex>
 #include <chrono>
 #include <tracy.hpp>
 

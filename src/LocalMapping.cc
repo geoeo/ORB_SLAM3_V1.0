@@ -17,17 +17,16 @@
 */
 
 
-#include "LocalMapping.h"
-#include "LoopClosing.h"
-#include "ORBmatcher.h"
-#include "Optimizer.h"
-#include "Converter.h"
-#include "GeometricTools.h"
-#include "System.h" //for debug verbosity
-#include "tracy.hpp"
+#include <LocalMapping.h>
+#include <LoopClosing.h>
+#include <ORBmatcher.h>
+#include <Optimizer.h>
+#include <Converter.h>
+#include <GeometricTools.h>
+#include <Verbose.h>
+#include <tracy.hpp>
 
-#include<mutex>
-#include<chrono>
+#include <chrono>
 
 namespace ORB_SLAM3
 {

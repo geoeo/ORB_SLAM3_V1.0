@@ -17,8 +17,7 @@
 */
 
 
-#ifndef GEOMETRIC_TOOLS_H
-#define GEOMETRIC_TOOLS_H
+#pragma once
 
 #include <opencv2/core/core.hpp>
 #include <sophus/se3.hpp>
@@ -76,5 +75,3 @@ public:
 };
 
 }// namespace ORB_SLAM
-
-#endif // GEOMETRIC_TOOLS_H

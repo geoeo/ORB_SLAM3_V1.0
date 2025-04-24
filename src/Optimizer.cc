@@ -36,7 +36,6 @@
 #include "G2oTypes.h"
 #include "Converter.h"
 
-#include <mutex>
 #include <tracy.hpp>
 
 #include <OptimizableTypes.h>

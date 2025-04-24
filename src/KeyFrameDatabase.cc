@@ -17,13 +17,11 @@
 */
 
 
-#include "KeyFrameDatabase.h"
+#include <KeyFrameDatabase.h>
 
-#include "KeyFrame.h"
-#include "Verbose.h"
-#include "DBoW2/BowVector.h"
-
-#include <mutex>
+#include <KeyFrame.h>
+#include <Verbose.h>
+#include <DBoW2/BowVector.h>
 
 using namespace std;
 

@@ -208,9 +208,6 @@ protected:
     // To (de)activate LC
     bool mbActiveLC = true;
 
-#ifdef REGISTER_LOOP
-    string mstrFolderLoop;
-#endif
 };
 
 } //namespace ORB_SLAM

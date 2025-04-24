@@ -18,7 +18,6 @@
 
 #include <ORBmatcher.h>
 
-#include <limits.h>
 #include <Verbose.h>
 #include <DBoW2/FeatureVector.h>
 #include <tracy.hpp>

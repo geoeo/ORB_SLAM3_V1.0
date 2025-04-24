@@ -17,16 +17,15 @@
 */
 
 
-#ifndef MAPDRAWER_H
-#define MAPDRAWER_H
+#pragma once
 
-#include"Atlas.h"
-#include"MapPoint.h"
-#include"KeyFrame.h"
-#include "Settings.h"
-#include<pangolin/pangolin.h>
+#include <Atlas.h>
+#include <MapPoint.h>
+#include <KeyFrame.h>
+#include <Settings.h>
+#include <pangolin/pangolin.h>
 
-#include<mutex>
+#include <mutex>
 
 namespace ORB_SLAM3
 {
@@ -77,4 +76,3 @@ private:
 
 } //namespace ORB_SLAM
 
-#endif // MAPDRAWER_H

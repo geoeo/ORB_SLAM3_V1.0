@@ -16,14 +16,12 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "TwoViewReconstruction.h"
+#include <TwoViewReconstruction.h>
 
-#include "Converter.h"
-#include "GeometricTools.h"
-#include "System.h"
-
-#include "DBoW2/DUtils/Random.h"
-
+#include <Converter.h>
+#include <GeometricTools.h>
+#include <Verbose.h>
+#include <DBoW2/DUtils/Random.h>
 #include <thread>
 
 
