@@ -52,28 +52,25 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
 
 //TODO: Use Verbose struct
   // Output welcome message
-  cout << endl <<
-       "ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
-       "ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." << endl <<
-       "This program comes with ABSOLUTELY NO WARRANTY;" << endl  <<
-       "This is free software, and you are welcome to redistribute it" << endl <<
-       "under certain conditions. See LICENSE.txt." << endl << endl;
-
-  cout << "Input sensor was set to: ";
+  Verbose::PrintMess("ORB-SLAM3 Copyright (C) 2017-2020 Carlos Campos, Richard Elvira, Juan J. Gómez, José M.M. Montiel and Juan D. Tardós, University of Zaragoza", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("ORB-SLAM2 Copyright (C) 2014-2016 Raúl Mur-Artal, José M.M. Montiel and Juan D. Tardós, University of Zaragoza." , Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("This program comes with ABSOLUTELY NO WARRANTY", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("This is free software, and you are welcome to redistribute it", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("under certain conditions. See LICENSE.txt.", Verbose::VERBOSITY_NORMAL);
 
   if(mSensor==MONOCULAR)
-    cout << "Monocular" << endl;
+    Verbose::PrintMess("Monocular", Verbose::VERBOSITY_NORMAL);
   else if(mSensor==STEREO)
-    cout << "Stereo" << endl;
+    Verbose::PrintMess("Stereo", Verbose::VERBOSITY_NORMAL);
   else if(mSensor==RGBD)
-    cout << "RGB-D" << endl;
+    Verbose::PrintMess("RGB-D", Verbose::VERBOSITY_NORMAL);
   else if(mSensor==IMU_MONOCULAR)
-    cout << "Monocular-Inertial" << endl;
+  Verbose::PrintMess("Monocular-Inertial", Verbose::VERBOSITY_NORMAL);
   else if(mSensor==IMU_STEREO)
-    cout << "Stereo-Inertial" << endl;
+    Verbose::PrintMess("Stereo-Inertial", Verbose::VERBOSITY_NORMAL);
 
   //Load ORB Vocabulary
-  cout << endl << "Loading ORB Vocabulary from " << strVocFile << endl;
+  Verbose::PrintMess("Loading ORB Vocabulary from " + strVocFile, Verbose::VERBOSITY_NORMAL);
 
   mpVocabulary = new ORB_SLAM3::ORBVocabulary();
   bool bVocLoad = false;
@@ -85,8 +82,8 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
 
   if(!bVocLoad)
   {
-    cerr << "Wrong path to vocabulary. " << endl;
-    cerr << "Falied to open at: " << strVocFile << endl;
+    Verbose::PrintMess("Error: Wrong path to vocabulary.", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Failed to open at: " + strVocFile, Verbose::VERBOSITY_NORMAL);
     exit(-1);
   }
   cout << "Vocabulary loaded!" << endl << endl;
@@ -95,15 +92,13 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
   mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
   //Create the Atlas
-  //mpMap = new Map();
   mpAtlas = new Atlas(0);
-  //----
 
   if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
     mpAtlas->SetInertialSensor();
 
   settings_ = new Settings(cam, imu, orb,mSensor, frameGridCols, frameGridRows);
-//TODO: Use Verbose struct
+
   cout << (*settings_) << endl;
 
     mpFrameDrawer = new FrameDrawer(mpAtlas);
@@ -127,8 +122,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
         mpLocalMapper->mThFarPoints = settings_->thFarPoints();
     if(mpLocalMapper->mThFarPoints!=0)
     {
-        //TODO: Use Verbose struct
-        cout << "Discard points further than " << mpLocalMapper->mThFarPoints << " m from current camera" << endl;
+        Verbose::PrintMess("Discard points further than " +to_string(mpLocalMapper->mThFarPoints) + " m from current camera", Verbose::VERBOSITY_NORMAL);
         mpLocalMapper->mbFarPoints = true;
     }
     else
@@ -243,8 +237,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
         }
         else if(mbResetActiveMap)
         {
-            //TODO: Use Verbose struct
-            cout << "SYSTEM-> Reseting active map in monocular case" << endl;
+            Verbose::PrintMess("SYSTEM-> Reseting active map in monocular case", Verbose::VERBOSITY_NORMAL);
             mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
@@ -317,8 +310,7 @@ void System::Shutdown()
         mbShutDown = true;
     }
 
-    //TODO: Use Verbose struct
-    cout << "Shutdown" << endl;
+    Verbose::PrintMess("Shutdown", Verbose::VERBOSITY_NORMAL);
 
     mpLocalMapper->RequestFinish();
     mpLoopCloser->RequestFinish();
