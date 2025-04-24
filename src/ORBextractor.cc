@@ -466,6 +466,7 @@ namespace ORB_SLAM3
         const int BorderX = EDGE_THRESHOLD;
         const int BorderY = BorderX;
 
+        int allKeypointsCount = 0;
         for (int level = 0; level < nlevels; ++level)
         {
             const int width = mvImagePyramid[level].cols;
@@ -487,17 +488,15 @@ namespace ORB_SLAM3
                 allKeypoints[level] = DistributeOctTree(fastKpCount,gpuFast.getLoc(gpuOrb.getStream()), gpuFast.getResp(gpuOrb.getStream()), 0, width,
                                               0, height,mnFeaturesPerLevel[level], level);
             }
-
+            allKeypointsCount += allKeypoints[level]->size();
         }
 
-        int allKeypointsCount = 0;
+
         {
             ZoneNamedN(computeOrientationLoop, "computeOrientationLoop", true);  // NOLINT: Profiler
             // compute orientations
             for (int level = 0; level < nlevels; ++level){
                 const auto kpCount = allKeypoints[level]->size();
-
-                allKeypointsCount +=kpCount;
                 if (kpCount > 0)
                     gpuAngle.launch_async(mvImagePyramid[level].createGpuMatHeader(), allKeypoints[level]->getDevicePtr(gpuOrb.getStream()), kpCount, HALF_PATCH_SIZE, gpuOrb.getStream());
             }
@@ -519,6 +518,7 @@ namespace ORB_SLAM3
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(nkeypoints, 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
             _keypoints = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(nkeypoints);
+            _keypoints->prefetchToCPU();
         }
 
         vector<int> levels_vec(nlevels);
@@ -551,8 +551,12 @@ namespace ORB_SLAM3
                     float scale = mvScaleFactor[level]; 
                     gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, keypointsLevel->getDevicePtr(gpuOrb.getStream()),nkeypointsLevel);
                     
-                    auto keypointsHostPtr = keypointsLevel->getHostPtr();
-                    memcpy(&_keypoints->getHostPtr()[offset],keypointsHostPtr,keypointsLevel->sizeInBytes());
+                    {
+                        ZoneNamedN(computeDescriptors_Copy, "computeDescriptors_Copy", true); 
+                        auto keypointsHostPtr = keypointsLevel->getHostPtr();
+                        memcpy(&_keypoints->getHostPtr()[offset],keypointsHostPtr,keypointsLevel->sizeInBytes());
+                    }
+
                 }
             });
         }
