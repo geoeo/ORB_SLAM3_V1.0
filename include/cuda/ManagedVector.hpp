@@ -37,6 +37,7 @@ namespace ORB_SLAM3::cuda::managed
         }
 
         void prefetchToCPU(cudaStream_t stream = 0) {
+            // Not supported on Orin NX - https://docs.nvidia.com/cuda/cuda-for-tegra-appnote/#cuda-features-not-supported-on-tegra
             checkCudaErrors( cudaMemPrefetchAsync(unified_ptr_, sizeInBytes_, cudaCpuDeviceId, stream));
             checkCudaErrors( cudaStreamSynchronize(stream) );
             prefetchCPU_ = true;
@@ -54,7 +55,7 @@ namespace ORB_SLAM3::cuda::managed
 
         T * getDevicePtr(cudaStream_t stream = 0, size_t offset = 0) {
             prefetchCPU_ = false;
-            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachSingle) );
+            checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachGlobal) );
             checkCudaErrors( cudaStreamSynchronize(stream) ); //TODO: check if this is necessary - maybe use prefetch async
             return unified_ptr_ + offset;
         }

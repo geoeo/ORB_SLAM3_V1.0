@@ -546,8 +546,6 @@ namespace ORB_SLAM3
                 }
             });
         }
-
-        _keypoints->prefetchToCPU();
         return {_keypoints, _descriptors};
     }
 
