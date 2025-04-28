@@ -272,7 +272,7 @@ class SlamNode : public rclcpp::Node
       orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
       orb.nLevels     = 5;
-      orb.scaleFactor = 1.4;
+      orb.scaleFactor = 1.2;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
 
