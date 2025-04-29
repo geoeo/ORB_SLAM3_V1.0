@@ -59,10 +59,10 @@ namespace ORB_SLAM3::cuda::managed
             return unified_ptr_ + offset;
         }
 
-        std::shared_ptr<std::vector<T>> toSharedVector(cudaStream_t stream = 0) {
-            auto vec = std::make_shared<std::vector<T>>(size());
+        std::vector<T> toSharedVector(cudaStream_t stream = 0) {
+            auto vec = std::vector<T>(size());
             auto hostPtr = getHostPtr(stream);
-            std::memcpy(vec->data(), hostPtr, sizeInBytes());
+            std::memcpy(vec.data(), hostPtr, sizeInBytes());
             return vec;
         }
         

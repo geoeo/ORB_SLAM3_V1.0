@@ -39,9 +39,9 @@ FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 cv::Mat FrameDrawer::DrawFrame(float imageScale)
 {
     cv::Mat im;
-    shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
+    vector<KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
+    vector<KeyPoint> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     vector<pair<cv::Point2f, cv::Point2f> > vTracks;
     int state; // Tracking state
@@ -125,13 +125,13 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys->at(i).pt / imageScale;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt / imageScale;
+                    pt1 = vIniKeys.at(i).pt / imageScale;
+                    pt2 = vCurrentKeys.at(vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys->at(i).pt;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt;
+                    pt1 = vIniKeys.at(i).pt;
+                    pt2 = vCurrentKeys.at(vMatches[i]).pt;
                 }
                 cv::line(im,pt1,pt2,standardColor);
             }
@@ -158,7 +158,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
         mnTracked=0;
         mnTrackedVO=0;
         const float r = 5;
-        int n = vCurrentKeys->size();
+        int n = vCurrentKeys.size();
         for(int i=0;i<n;i++)
         {
             if(vbVO[i] || vbMap[i])
@@ -167,7 +167,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    const auto p = vCurrentKeys->at(i).pt;
+                    const auto p = vCurrentKeys.at(i).pt;
                     point = p / imageScale;
                     float px = p.x / imageScale;
                     float py = p.y / imageScale;
@@ -178,7 +178,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 }
                 else
                 {
-                    const auto p = vCurrentKeys->at(i).pt;
+                    const auto p = vCurrentKeys.at(i).pt;
                     point = p;
                     pt1.x=p.x-r;
                     pt1.y=p.y-r;
@@ -212,9 +212,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
 {
     cv::Mat im;
-    shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
+    vector<KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
+    vector<KeyPoint> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     int state; // Tracking state
 
@@ -265,13 +265,13 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys->at(i).pt / imageScale;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt / imageScale;
+                    pt1 = vIniKeys.at(i).pt / imageScale;
+                    pt2 = vCurrentKeys.at(vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys->at(i).pt;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt;
+                    pt1 = vIniKeys.at(i).pt;
+                    pt2 = vCurrentKeys.at(vMatches[i]).pt;
                 }
 
                 cv::line(im,pt1,pt2,cv::Scalar(0,255,0));
@@ -283,8 +283,8 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
         mnTracked=0;
         mnTrackedVO=0;
         const float r = 5;
-        const int n = mvCurrentKeysRight->size();
-        const int Nleft = mvCurrentKeys->size();
+        const int n = mvCurrentKeysRight.size();
+        const int Nleft = mvCurrentKeys.size();
 
         for(int i=0;i<n;i++)
         {
@@ -294,7 +294,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    const auto p = mvCurrentKeysRight->at(i).pt;
+                    const auto p = mvCurrentKeysRight[i].pt;
                     point = p / imageScale;
                     float px = p.x / imageScale;
                     float py = p.y / imageScale;
@@ -305,7 +305,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 }
                 else
                 {
-                    const auto p = mvCurrentKeysRight->at(i).pt;
+                    const auto p = mvCurrentKeysRight[i].pt;
                     point = p;
                     pt1.x=p.x-r;
                     pt1.y=p.y-r;
@@ -388,10 +388,10 @@ void FrameDrawer::Update(Tracking *pTracker)
     if(both){
         mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
         pTracker->mImRight.copyTo(mImRight);
-        N = mvCurrentKeys->size() + mvCurrentKeysRight->size();
+        N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
     }
     else{
-        N = mvCurrentKeys->size();
+        N = mvCurrentKeys.size();
     }
 
     mvbVO = vector<bool>(N,false);
@@ -432,12 +432,12 @@ void FrameDrawer::Update(Tracking *pTracker)
                     else
                         mvbVO[i]=true;
 
-                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys->at(i).pt;
+                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys[i].pt;
                 }
                 else
                 {
                     mvpOutlierMPs.push_back(pMP);
-                    mvOutlierKeys.push_back(mvCurrentKeys->at(i));
+                    mvOutlierKeys.push_back(mvCurrentKeys[i]);
                 }
             }
         }

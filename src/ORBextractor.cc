@@ -509,7 +509,7 @@ namespace ORB_SLAM3
         return {keypointsCountPerLevel, keypointsAcc ,allKeypoints};
     }
 
-    tuple<shared_ptr<vector<KeyPoint>>,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
+    tuple<vector<KeyPoint>,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 

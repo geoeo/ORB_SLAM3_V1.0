@@ -117,7 +117,7 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     // ORB extraction
     ExtractORB(0,im_managed_gray);
 
-    mNumKeypoints = mvKeys->size();
+    mNumKeypoints = mvKeys.size();
     if(mNumKeypoints == 0)
         return;
 
@@ -206,7 +206,7 @@ void Frame::AssignFeaturesToGrid()
 
     for(int i=0;i<mNumKeypoints;i++)
     {
-        const auto &kp = mvKeysUn->operator[](i);
+        const auto &kp = mvKeysUn[i];
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
             auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
@@ -219,7 +219,7 @@ void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
     auto [keys,descriptors] = mpORBextractorLeft->extractFeatures(im_managed);
 
-    monoLeft = keys->size();
+    monoLeft = keys.size();
     mvKeys = keys;
     mDescriptors = descriptors;
 }
@@ -489,7 +489,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
+                const auto &kpUn = mvKeysUn[vCell[j]];
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel || (maxLevel>=0 && kpUn.octave>maxLevel)){

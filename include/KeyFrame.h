@@ -233,8 +233,8 @@ public:
     const int N;
 
     // KeyPoints, stereo coordinate and descriptors (all associated by an index)
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeys;
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
+    const std::vector<KeyPoint> mvKeys;
+    const std::vector<KeyPoint> mvKeysUn;
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
@@ -367,7 +367,7 @@ public:
     Sophus::SE3f GetRelativePoseTlr();
 
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
-    const std::shared_ptr<std::vector<KeyPoint>> mvKeysRight;
+    const std::vector<KeyPoint> mvKeysRight;
 
     const int NLeft, NRight;
 

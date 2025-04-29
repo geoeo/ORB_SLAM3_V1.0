@@ -352,7 +352,7 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
     return pActiveMap->GetReferenceMapPoints();
 }
 
-std::shared_ptr<std::vector<KeyPoint>> System::GetTrackedKeyPointsUn()
+std::vector<KeyPoint> System::GetTrackedKeyPointsUn()
 {
     //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );

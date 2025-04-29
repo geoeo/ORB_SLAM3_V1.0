@@ -58,7 +58,7 @@ namespace ORB_SLAM3
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
-        std::tuple<std::shared_ptr<std::vector<KeyPoint>>, cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
+        std::tuple<std::vector<KeyPoint>, cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()
         {

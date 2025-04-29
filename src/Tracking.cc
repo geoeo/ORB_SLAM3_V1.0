@@ -729,14 +729,14 @@ void Tracking::MonocularInitialization()
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
-        if(mCurrentFrame.mvKeys->size()>FEAT_INIT_COUNT)
+        if(mCurrentFrame.mvKeys.size()>FEAT_INIT_COUNT)
         {
 
             mInitialFrame = Frame(mCurrentFrame);
             mLastFrame = Frame(mCurrentFrame);
-            mvbPrevMatched.resize(mCurrentFrame.mvKeysUn->size());
-            for(size_t i=0; i<mCurrentFrame.mvKeysUn->size(); i++)
-                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn->operator[](i).pt;
+            mvbPrevMatched.resize(mCurrentFrame.mvKeysUn.size());
+            for(size_t i=0; i<mCurrentFrame.mvKeysUn.size(); i++)
+                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn[i].pt;
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
@@ -757,7 +757,7 @@ void Tracking::MonocularInitialization()
     }
     else
     {
-        if (((int)mCurrentFrame.mvKeys->size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
+        if (((int)mCurrentFrame.mvKeys.size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame.mTimeStamp-mInitialFrame.mTimeStamp>1.0)))
         {
             mbReadyToInitializate = false;
             return;

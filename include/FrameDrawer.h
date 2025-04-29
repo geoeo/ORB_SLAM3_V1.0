@@ -60,11 +60,11 @@ protected:
     // Info of the frame to be drawn
     cv::Mat mIm,mImRight;
     int N;
-    std::shared_ptr<std::vector<KeyPoint>> mvCurrentKeys,mvCurrentKeysRight;
+    std::vector<KeyPoint> mvCurrentKeys,mvCurrentKeysRight;
     std::vector<bool> mvbMap, mvbVO;
     bool mbOnlyTracking;
     int mnTracked, mnTrackedVO;
-    std::shared_ptr<std::vector<KeyPoint>> mvIniKeys;
+    std::vector<KeyPoint> mvIniKeys;
     std::vector<int> mvIniMatches;
     int mState;
     std::vector<float> mvCurrentDepth;
