@@ -341,8 +341,8 @@ namespace ORB_SLAM3
         {
             bool bIn = true;
 
-            const auto &kp1 = mvKeys1->at(mvMatches12[i].first);
-            const auto &kp2 = mvKeys2->at(mvMatches12[i].second);
+            const auto &kp1 = mvKeys1->operator[](mvMatches12[i].first);
+            const auto &kp2 = mvKeys2->operator[](mvMatches12[i].second);
 
             const float u1 = kp1.pt.x;
             const float v1 = kp1.pt.y;
@@ -417,8 +417,8 @@ namespace ORB_SLAM3
         {
             bool bIn = true;
 
-            const auto &kp1 = mvKeys1->at(mvMatches12[i].first);
-            const auto &kp2 = mvKeys2->at(mvMatches12[i].second);
+            const auto &kp1 = mvKeys1->operator[](mvMatches12[i].first);
+            const auto &kp2 = mvKeys2->operator[](mvMatches12[i].second);
 
             const float u1 = kp1.pt.x;
             const float v1 = kp1.pt.y;
@@ -748,8 +748,8 @@ namespace ORB_SLAM3
 
         for(int i=0; i<N; i++)
         {
-            meanX += vKeys->at(i).pt.x;
-            meanY += vKeys->at(i).pt.y;
+            meanX += vKeys->operator[](i).pt.x;
+            meanY += vKeys->operator[](i).pt.y;
         }
 
         meanX = meanX/N;
@@ -760,8 +760,8 @@ namespace ORB_SLAM3
 
         for(int i=0; i<N; i++)
         {
-            vNormalizedPoints[i].x = vKeys->at(i).pt.x - meanX;
-            vNormalizedPoints[i].y = vKeys->at(i).pt.y - meanY;
+            vNormalizedPoints[i].x = vKeys->operator[](i).pt.x - meanX;
+            vNormalizedPoints[i].y = vKeys->operator[](i).pt.y - meanY;
 
             meanDevX += fabs(vNormalizedPoints[i].x);
             meanDevY += fabs(vNormalizedPoints[i].y);
@@ -826,8 +826,8 @@ namespace ORB_SLAM3
             if(!vbMatchesInliers[i])
                 continue;
 
-            const auto &kp1 = vKeys1->at(vMatches12[i].first);
-            const auto &kp2 = vKeys2->at(vMatches12[i].second);
+            const auto &kp1 = vKeys1->operator[](vMatches12[i].first);
+            const auto &kp2 = vKeys2->operator[](vMatches12[i].second);
 
             Eigen::Vector3f p3dC1;
             Eigen::Vector3f x_p1(kp1.pt.x, kp1.pt.y, 1);

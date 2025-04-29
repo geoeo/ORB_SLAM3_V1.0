@@ -125,13 +125,13 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys->at(i).pt / imageScale;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt / imageScale;
+                    pt1 = vIniKeys->operator[](i).pt / imageScale;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys->at(i).pt;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt;
+                    pt1 = vIniKeys->operator[](i).pt;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt;
                 }
                 cv::line(im,pt1,pt2,standardColor);
             }
@@ -167,7 +167,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    const auto p = vCurrentKeys->at(i).pt;
+                    const auto p = vCurrentKeys->operator[](i).pt;
                     point = p / imageScale;
                     float px = p.x / imageScale;
                     float py = p.y / imageScale;
@@ -178,7 +178,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 }
                 else
                 {
-                    const auto p = vCurrentKeys->at(i).pt;
+                    const auto p = vCurrentKeys->operator[](i).pt;
                     point = p;
                     pt1.x=p.x-r;
                     pt1.y=p.y-r;
@@ -265,13 +265,13 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys->at(i).pt / imageScale;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt / imageScale;
+                    pt1 = vIniKeys->operator[](i).pt / imageScale;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys->at(i).pt;
-                    pt2 = vCurrentKeys->at(vMatches[i]).pt;
+                    pt1 = vIniKeys->operator[](i).pt;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt;
                 }
 
                 cv::line(im,pt1,pt2,cv::Scalar(0,255,0));
@@ -294,7 +294,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    const auto p = mvCurrentKeysRight->at(i).pt;
+                    const auto p = mvCurrentKeysRight->operator[](i).pt;
                     point = p / imageScale;
                     float px = p.x / imageScale;
                     float py = p.y / imageScale;
@@ -305,7 +305,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 }
                 else
                 {
-                    const auto p = mvCurrentKeysRight->at(i).pt;
+                    const auto p = mvCurrentKeysRight->operator[](i).pt;
                     point = p;
                     pt1.x=p.x-r;
                     pt1.y=p.y-r;
@@ -432,12 +432,12 @@ void FrameDrawer::Update(Tracking *pTracker)
                     else
                         mvbVO[i]=true;
 
-                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys->at(i).pt;
+                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys->operator[](i).pt;
                 }
                 else
                 {
                     mvpOutlierMPs.push_back(pMP);
-                    mvOutlierKeys.push_back(mvCurrentKeys->at(i));
+                    mvOutlierKeys.push_back(mvCurrentKeys->operator[](i));
                 }
             }
         }
