@@ -736,7 +736,7 @@ void Tracking::MonocularInitialization()
             mLastFrame = Frame(mCurrentFrame);
             mvbPrevMatched.resize(mCurrentFrame.mvKeysUn->size());
             for(size_t i=0; i<mCurrentFrame.mvKeysUn->size(); i++)
-                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn->getHostPtr()[i].pt;
+                mvbPrevMatched[i]=mCurrentFrame.mvKeysUn->operator[](i).pt;
 
             fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 

@@ -509,7 +509,7 @@ namespace ORB_SLAM3
         return {keypointsCountPerLevel, keypointsAcc ,allKeypoints};
     }
 
-    tuple<cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
+    tuple<shared_ptr<vector<KeyPoint>>,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
@@ -518,11 +518,9 @@ namespace ORB_SLAM3
 
         auto [keypointsCountPerLevel, keypointsAcc, allKeypoints] = ComputeKeyPointsOctTree();
         cv::cuda::HostMem _descriptors;
-        cuda::managed::ManagedVector<KeyPoint>::SharedPtr _keypoints;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
             _descriptors = cv::cuda::HostMem(allKeypoints->size(), 32, CV_8UC1, cv::cuda::HostMem::AllocType::SHARED);
-            _keypoints = allKeypoints;
         }
 
         vector<int> levelsVec(nlevels);
@@ -542,11 +540,11 @@ namespace ORB_SLAM3
                     ZoneNamedN(computeDescriptors, "computeDescriptors", true); 
                     cv::cuda::GpuMat gMat = mvBlurredImagePyramid[level].createGpuMatHeader();
                     float scale = mvScaleFactor[level]; 
-                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, _keypoints->getDevicePtr(gpuOrb.getStream(),offset),nPoints);
+                    gpuOrb.launch_async(gMat,_descriptors.createGpuMatHeader(),offset,offset_end, allKeypoints->getDevicePtr(gpuOrb.getStream(),offset),nPoints);
                 }
             });
         }
-        return {_keypoints, _descriptors};
+        return {allKeypoints->toSharedVector(), _descriptors};
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)

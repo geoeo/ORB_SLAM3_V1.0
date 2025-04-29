@@ -431,11 +431,11 @@ void LocalMapping::CreateNewMapPoints()
             const int &idx1 = vMatchedIndices[ikp].first;
             const int &idx2 = vMatchedIndices[ikp].second;
 
-            const auto &kp1 = mpCurrentKeyFrame->mvKeysUn->getHostPtr()[idx1];
+            const auto &kp1 = mpCurrentKeyFrame->mvKeysUn->operator[](idx1);
             const float kp1_ur=mpCurrentKeyFrame->mvuRight[idx1];
             bool bStereo1 = (!mpCurrentKeyFrame->mpCamera2 && kp1_ur>=0);
             const bool bRight1 = false;
-            const auto &kp2 = pKF2->mvKeysUn->getHostPtr()[idx2];
+            const auto &kp2 = pKF2->mvKeysUn->operator[](idx2);
 
             const float kp2_ur = pKF2->mvuRight[idx2];
             bool bStereo2 = (!pKF2->mpCamera2 && kp2_ur>=0);
@@ -910,7 +910,7 @@ void LocalMapping::KeyFrameCulling()
                     nMPs++;
                     if(pMP->Observations()>thObs)
                     {
-                        const int &scaleLevel =  pKF->mvKeysUn->getHostPtr()[i].octave;
+                        const int &scaleLevel =  pKF->mvKeysUn->operator[](i).octave;
                         const map<KeyFrame*, tuple<int,int>> observations = pMP->GetObservations();
                         int nObs=0;
                         for(map<KeyFrame*, tuple<int,int>>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
@@ -920,7 +920,7 @@ void LocalMapping::KeyFrameCulling()
                                 continue;
                             tuple<int,int> indexes = mit->second;
                             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
-                            int scaleLeveli = pKFi->mvKeysUn->getHostPtr()[leftIndex].octave;
+                            int scaleLeveli = pKFi->mvKeysUn->operator[](leftIndex).octave;
 
                             if(scaleLeveli<=scaleLevel+1)
                             {

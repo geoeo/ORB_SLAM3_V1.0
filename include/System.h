@@ -43,7 +43,6 @@
 #include <Settings.h>
 #include <Verbose.h>
 #include <KeyPoint.h>
-#include <cuda/ManagedVector.hpp>
 
 
 namespace ORB_SLAM3
@@ -125,7 +124,7 @@ public:
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
-    cuda::managed::ManagedVector<KeyPoint>::SharedPtr GetTrackedKeyPointsUn();
+    std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
     std::vector<KeyFrame*> GetAllKeyframes();
 
     // For debugging
@@ -196,7 +195,7 @@ private:
 
     // Tracking state
     int mTrackingState;
-    cuda::managed::ManagedVector<KeyPoint>::SharedPtr mTrackedKeyPointsUn;
+    std::shared_ptr<std::vector<KeyPoint>> mTrackedKeyPointsUn;
     std::mutex mMutexState;
 
     //

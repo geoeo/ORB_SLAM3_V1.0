@@ -43,7 +43,6 @@ namespace ORB_SLAM3::cuda::managed
             prefetchCPU_ = true;
         }
 
-        
         T * getHostPtr(cudaStream_t stream = 0, size_t offset = 0) {
             if(!prefetchCPU_){
                 checkCudaErrors( cudaStreamAttachMemAsync(stream, unified_ptr_, 0, cudaMemAttachHost) );
@@ -60,10 +59,10 @@ namespace ORB_SLAM3::cuda::managed
             return unified_ptr_ + offset;
         }
 
-        std::shared_ptr<std::vector<T>> toVector() {
+        std::shared_ptr<std::vector<T>> toSharedVector(cudaStream_t stream = 0) {
             auto vec = std::make_shared<std::vector<T>>(size());
-            auto hostPtr = getHostPtr();
-            std::memcpy(vec->data(), hostPtr, sizeInBytes_);
+            auto hostPtr = getHostPtr(stream);
+            std::memcpy(vec->data(), hostPtr, sizeInBytes());
             return vec;
         }
         

@@ -29,7 +29,6 @@
 #include <sophus/se3.hpp>
 #include <sophus/geometry.hpp>
 
-#include <cuda/ManagedVector.hpp>
 #include <KeyPoint.h>
 #include <DBoW2/BowVector.h>
 #include <DBoW2/FeatureVector.h>
@@ -37,8 +36,6 @@
 #include <ORBVocabulary.h>
 #include <Converter.h>
 #include <Settings.h>
-
-
 
 namespace ORB_SLAM3
 {
@@ -211,8 +208,8 @@ public:
     // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
     // In the stereo case, mvKeysUn is redundant as images must be rectified.
     // In the RGB-D case, RGB images can be distorted.
-    cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeys, mvKeysRight;
-    cuda::managed::ManagedVector<KeyPoint>::SharedPtr mvKeysUn;
+    std::shared_ptr<std::vector<KeyPoint>> mvKeys, mvKeysRight;
+    std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
     std::vector<MapPoint*> mvpMapPoints;
@@ -331,9 +328,6 @@ public:
     int getFrameGridRows() const;
     
     int getFrameGridCols() const;
-
-    //Stereo fisheye
-    //void ComputeStereoFishEyeMatches();
 
     bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
 

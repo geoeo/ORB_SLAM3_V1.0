@@ -21,11 +21,11 @@
 #include <vector>
 #include <list>
 #include <tuple>
+#include <memory>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
 #include <cuda/Angle.hpp>
-#include <cuda/ManagedVector.hpp>
 #include <KeyPoint.h>
 
 #include <opencv2/cudafilters.hpp>
@@ -58,7 +58,7 @@ namespace ORB_SLAM3
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
-        std::tuple<cuda::managed::ManagedVector<KeyPoint>::SharedPtr,cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
+        std::tuple<std::shared_ptr<std::vector<KeyPoint>>, cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()
         {

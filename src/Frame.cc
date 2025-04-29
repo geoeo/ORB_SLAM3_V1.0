@@ -206,7 +206,7 @@ void Frame::AssignFeaturesToGrid()
 
     for(int i=0;i<mNumKeypoints;i++)
     {
-        const auto &kp = mvKeysUn->getHostPtr()[i];
+        const auto &kp = mvKeysUn->operator[](i);
         int nGridPosX, nGridPosY;
         if(PosInGrid(kp,nGridPosX,nGridPosY)){
             auto linear_index = computeLinearGridIndex(nGridPosX,nGridPosY,mFrameGridCols);
@@ -489,7 +489,7 @@ vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const f
 
             for(size_t j=0, jend=vCell.size(); j<jend; j++)
             {
-                const auto &kpUn = mvKeysUn->getHostPtr()[vCell[j]];
+                const auto &kpUn = mvKeysUn->operator[](vCell[j]);
                 if(bCheckLevels)
                 {
                     if(kpUn.octave<minLevel || (maxLevel>=0 && kpUn.octave>maxLevel)){

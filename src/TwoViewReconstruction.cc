@@ -37,11 +37,11 @@ namespace ORB_SLAM3
         mMaxIterations = iterations;
     }
 
-    bool TwoViewReconstruction::Reconstruct(const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys1, const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys2, const vector<int> &vMatches12,
+    bool TwoViewReconstruction::Reconstruct(const std::shared_ptr<std::vector<KeyPoint>> vKeys1, const std::shared_ptr<std::vector<KeyPoint>> vKeys2, const vector<int> &vMatches12,
                                              Sophus::SE3f &T21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated)
     {
-        mvKeys1 = vKeys1->toVector();
-        mvKeys2 = vKeys2->toVector();
+        mvKeys1 = vKeys1;
+        mvKeys2 = vKeys2;
 
         // Fill structures with current keypoints and matches with reference frame
         // Reference Frame: 1, Current Frame: 2

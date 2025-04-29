@@ -24,7 +24,6 @@
 #include <memory>
 #include <sophus/se3.hpp>
 #include <KeyPoint.h>
-#include <cuda/ManagedVector.hpp>
 
 namespace ORB_SLAM3
 {
@@ -40,7 +39,7 @@ namespace ORB_SLAM3
 
         // Computes in parallel a fundamental matrix and a homography
         // Selects a model and tries to recover the motion and the structure from motion
-        bool Reconstruct(const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys1, const cuda::managed::ManagedVector<KeyPoint>::SharedPtr vKeys2, const std::vector<int> &vMatches12,
+        bool Reconstruct(const std::shared_ptr<std::vector<KeyPoint>> vKeys1, const std::shared_ptr<std::vector<KeyPoint>> vKeys2, const std::vector<int> &vMatches12,
                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated);
 
     private:
