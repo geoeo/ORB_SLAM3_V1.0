@@ -19,27 +19,20 @@
 
 #pragma once
 
-#include "MapPoint.h"
-#include "DBoW2/BowVector.h"
-#include "DBoW2/FeatureVector.h"
-#include "ORBVocabulary.h"
-#include "ORBextractor.h"
-#include "Frame.h"
-#include "KeyFrameDatabase.h"
-#include "ImuTypes.h"
-
-#include "CameraModels/GeometricCamera.h"
-#include "SerializationUtils.h"
+#include <MapPoint.h>
+#include <DBoW2/BowVector.h>
+#include <DBoW2/FeatureVector.h>
+#include <ORBVocabulary.h>
+#include <ORBextractor.h>
+#include <Frame.h>
+#include <KeyFrameDatabase.h>
+#include <ImuTypes.h>
+#include <CameraModels/GeometricCamera.h>
 
 #include <mutex>
 #include <vector>
 #include <set>
 #include <memory>
-
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/map.hpp>
-
 
 namespace ORB_SLAM3
 {
@@ -49,148 +42,11 @@ class MapPoint;
 class Frame;
 class KeyFrameDatabase;
 
-class GeometricCamera;
-
 class KeyFrame
 {
-    friend class boost::serialization::access;
 
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        ar & mnId;
-        ar & const_cast<long unsigned int&>(mnFrameId);
-        ar & const_cast<double&>(mTimeStamp);
-        // Grid
-        ar & const_cast<int&>(mnGridCols);
-        ar & const_cast<int&>(mnGridRows);
-        ar & const_cast<float&>(mfGridElementWidthInv);
-        ar & const_cast<float&>(mfGridElementHeightInv);
 
-        // Variables of tracking
-        //ar & mnTrackReferenceForFrame;
-        //ar & mnFuseTargetForKF;
-        // Variables of local mapping
-        //ar & mnBALocalForKF;
-        //ar & mnBAFixedForKF;
-        //ar & mnNumberOfOpt;
-        // Variables used by KeyFrameDatabase
-        //ar & mnLoopQuery;
-        //ar & mnLoopWords;
-        //ar & mLoopScore;
-        //ar & mnRelocQuery;
-        //ar & mnRelocWords;
-        //ar & mRelocScore;
-        //ar & mnMergeQuery;
-        //ar & mnMergeWords;
-        //ar & mMergeScore;
-        //ar & mnPlaceRecognitionQuery;
-        //ar & mnPlaceRecognitionWords;
-        //ar & mPlaceRecognitionScore;
-        //ar & mbCurrentPlaceRecognition;
-        // Variables of loop closing
-        //serializeMatrix(ar,mTcwGBA,version);
-        //serializeMatrix(ar,mTcwBefGBA,version);
-        //serializeMatrix(ar,mVwbGBA,version);
-        //serializeMatrix(ar,mVwbBefGBA,version);
-        //ar & mBiasGBA;
-        //ar & mnBAGlobalForKF;
-        // Variables of Merging
-        //serializeMatrix(ar,mTcwMerge,version);
-        //serializeMatrix(ar,mTcwBefMerge,version);
-        //serializeMatrix(ar,mTwcBefMerge,version);
-        //serializeMatrix(ar,mVwbMerge,version);
-        //serializeMatrix(ar,mVwbBefMerge,version);
-        //ar & mBiasMerge;
-        //ar & mnMergeCorrectedForKF;
-        //ar & mnMergeForKF;
-        //ar & mnBALocalForMerge;
-
-        // Scale
-        ar & mfScale;
-        // Calibration parameters
-        ar & const_cast<float&>(fx);
-        ar & const_cast<float&>(fy);
-        ar & const_cast<float&>(invfx);
-        ar & const_cast<float&>(invfy);
-        ar & const_cast<float&>(cx);
-        ar & const_cast<float&>(cy);
-        ar & const_cast<float&>(mbf);
-        ar & const_cast<float&>(mb);
-        ar & const_cast<float&>(mThDepth);
-        serializeMatrix(ar, mDistCoef, version);
-        // Number of Keypoints
-        ar & const_cast<int&>(N);
-        // KeyPoints
-        serializeVectorKeyPoints<Archive>(ar, *mvKeys, version);
-        serializeVectorKeyPoints<Archive>(ar, *mvKeysUn, version);
-        ar & const_cast<std::vector<float>& >(mvuRight);
-        ar & const_cast<std::vector<float>& >(mvDepth);
-        serializeMatrix<Archive>(ar,mDescriptors,version);
-        // BOW
-        ar & mBowVec;
-        ar & mFeatVec;
-        // Pose relative to parent
-        serializeSophusSE3<Archive>(ar, mTcp, version);
-        // Scale
-        ar & const_cast<int&>(mnScaleLevels);
-        ar & const_cast<float&>(mfScaleFactor);
-        ar & const_cast<float&>(mfLogScaleFactor);
-        ar & const_cast<std::vector<float>& >(mvScaleFactors);
-        ar & const_cast<std::vector<float>& >(mvLevelSigma2);
-        ar & const_cast<std::vector<float>& >(mvInvLevelSigma2);
-        // Image bounds and calibration
-        ar & const_cast<int&>(mnMinX);
-        ar & const_cast<int&>(mnMinY);
-        ar & const_cast<int&>(mnMaxX);
-        ar & const_cast<int&>(mnMaxY);
-        ar & boost::serialization::make_array(mK_.data(), mK_.size());
-        // Pose
-        serializeSophusSE3<Archive>(ar, mTcw, version);
-        // MapPointsId associated to keypoints
-        ar & mvBackupMapPointsId;
-        // Grid
-        ar & mGrid;
-        // Connected KeyFrameWeight
-        ar & mBackupConnectedKeyFrameIdWeights;
-        // Spanning Tree and Loop Edges
-        ar & mbFirstConnection;
-        ar & mBackupParentId;
-        ar & mvBackupChildrensId;
-        ar & mvBackupLoopEdgesId;
-        ar & mvBackupMergeEdgesId;
-        // Bad flags
-        ar & mbNotErase;
-        ar & mbToBeErased;
-        ar & mbBad;
-
-        ar & mHalfBaseline;
-
-        ar & mnOriginMapId;
-
-        // Camera variables
-        ar & mnBackupIdCamera;
-        ar & mnBackupIdCamera2;
-
-        // Fisheye variables
-        ar & mvLeftToRightMatch;
-        ar & mvRightToLeftMatch;
-        ar & const_cast<int&>(NLeft);
-        ar & const_cast<int&>(NRight);
-        serializeSophusSE3<Archive>(ar, mTlr, version);
-        serializeVectorKeyPoints<Archive>(ar, *mvKeysRight, version);
-
-        // Inertial variables
-        ar & mImuBias;
-        ar & mBackupImuPreintegrated;
-        ar & mImuCalib;
-        ar & mBackupPrevKFId;
-        ar & mBackupNextKFId;
-        ar & bImu;
-        ar & boost::serialization::make_array(mVw.data(), mVw.size());
-        ar & boost::serialization::make_array(mOwb.data(), mOwb.size());
-        ar & mbHasVelocity;
-    }
+    
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -377,8 +233,8 @@ public:
     const int N;
 
     // KeyPoints, stereo coordinate and descriptors (all associated by an index)
-    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeys;
-    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysUn;
+    const std::shared_ptr<std::vector<KeyPoint>> mvKeys;
+    const std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
     const std::vector<float> mvuRight; // negative value for monocular points
     const std::vector<float> mvDepth; // negative value for monocular points
     const cv::Mat mDescriptors;
@@ -395,6 +251,7 @@ public:
     const float mfScaleFactor;
     const float mfLogScaleFactor;
     const std::vector<float> mvScaleFactors;
+    const std::vector<float> mvInvScaleFactors;
     const std::vector<float> mvLevelSigma2;
     const std::vector<float> mvInvLevelSigma2;
 
@@ -510,7 +367,7 @@ public:
     Sophus::SE3f GetRelativePoseTlr();
 
     //KeyPoints in the right image (for stereo fisheye, coordinates are needed)
-    const std::shared_ptr<std::vector<cv::KeyPoint>> mvKeysRight;
+    const std::shared_ptr<std::vector<KeyPoint>> mvKeysRight;
 
     const int NLeft, NRight;
 

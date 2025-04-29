@@ -17,17 +17,16 @@
 */
 
 
-#ifndef ORBMATCHER_H
-#define ORBMATCHER_H
+#pragma once
 
-#include<vector>
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
-#include"Sophus/sophus/sim3.hpp"
+#include <vector>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <Sophus/sophus/sim3.hpp>
 
-#include"MapPoint.h"
-#include"KeyFrame.h"
-#include"Frame.h"
+#include <MapPoint.h>
+#include <KeyFrame.h>
+#include <Frame.h>
 
 
 namespace ORB_SLAM3
@@ -103,5 +102,3 @@ namespace ORB_SLAM3
     };
 
 }// namespace ORB_SLAM
-
-#endif // ORBMATCHER_H

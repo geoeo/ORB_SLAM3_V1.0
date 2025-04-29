@@ -16,59 +16,30 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ATLAS_H
-#define ATLAS_H
+#pragma once
 
-#include "Map.h"
-#include "MapPoint.h"
-#include "KeyFrame.h"
-#include "CameraModels/GeometricCamera.h"
-#include "CameraModels/Pinhole.h"
-#include "CameraModels/KannalaBrandt8.h"
+#include <Map.h>
+#include <MapPoint.h>
+#include <KeyFrame.h>
+#include <CameraModels/GeometricCamera.h>
+#include <CameraModels/Pinhole.h>
+#include <CameraModels/KannalaBrandt8.h>
 
 #include <set>
 #include <mutex>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/export.hpp>
-
 
 namespace ORB_SLAM3
 {
+//TODO: Forward
 class Viewer;
 class Map;
 class MapPoint;
 class KeyFrame;
 class KeyFrameDatabase;
 class Frame;
-class KannalaBrandt8;
-class Pinhole;
-
-//BOOST_CLASS_EXPORT_GUID(Pinhole, "Pinhole")
-//BOOST_CLASS_EXPORT_GUID(KannalaBrandt8, "KannalaBrandt8")
 
 class Atlas
 {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar.template register_type<Pinhole>();
-        ar.template register_type<KannalaBrandt8>();
-
-        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
-        //ar & mspMaps;
-        ar & mvpBackupMaps;
-        ar & mvpCameras;
-        // Need to save/load the static Id from Frame, KeyFrame, MapPoint and Map
-        ar & Map::nNextId;
-        ar & Frame::nNextId;
-        ar & KeyFrame::nNextId;
-        ar & MapPoint::nNextId;
-        ar & GeometricCamera::nNextId;
-        ar & mnLastInitKFidMap;
-    }
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -168,5 +139,3 @@ protected:
 }; // class Atlas
 
 } // namespace ORB_SLAM3
-
-#endif // ATLAS_H

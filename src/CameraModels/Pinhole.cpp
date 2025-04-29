@@ -16,14 +16,9 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "CameraModels/Pinhole.h"
-
-#include <boost/serialization/export.hpp>
-
-//BOOST_CLASS_EXPORT_IMPLEMENT(ORB_SLAM3::Pinhole)
+#include <CameraModels/Pinhole.h>
 
 namespace ORB_SLAM3 {
-//BOOST_CLASS_EXPORT_GUID(Pinhole, "Pinhole")
 
     long unsigned int GeometricCamera::nNextId=0;
 
@@ -80,13 +75,12 @@ namespace ORB_SLAM3 {
         return Jac;
     }
 
-    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys1, const std::shared_ptr<std::vector<cv::KeyPoint>>& vKeys2, const std::vector<int> &vMatches12,
+    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>> vKeys1, const std::shared_ptr<std::vector<KeyPoint>> vKeys2, const std::vector<int> &vMatches12,
                                  Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
             tvr = new TwoViewReconstruction(K);
         }
-
         return tvr->Reconstruct(vKeys1,vKeys2,vMatches12,T21,vP3D,vbTriangulated);
     }
 
@@ -104,7 +98,7 @@ namespace ORB_SLAM3 {
     }
 
 
-    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const cv::KeyPoint &kp1, const cv::KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
+    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const KeyPoint &kp1, const KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
         //Compute Fundamental Matrix
         Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
         Eigen::Matrix3f K1 = this->toK_();

@@ -79,6 +79,7 @@
         "ranges": "cpp",
         "valarray": "cpp",
         "charconv": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "*.inc": "cpp"
     }
 }

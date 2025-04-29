@@ -16,13 +16,15 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "FrameDrawer.h"
-#include "Tracking.h"
+#include <FrameDrawer.h>
+#include <Tracking.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 #include <mutex>
+
+using namespace std;
 
 namespace ORB_SLAM3
 {
@@ -37,9 +39,9 @@ FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 cv::Mat FrameDrawer::DrawFrame(float imageScale)
 {
     cv::Mat im;
-    vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
+    shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
+    shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     vector<pair<cv::Point2f, cv::Point2f> > vTracks;
     int state; // Tracking state
@@ -48,9 +50,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 
     Frame currentFrame;
     vector<MapPoint*> vpLocalMap;
-    vector<cv::KeyPoint> vMatchesKeys;
+    vector<KeyPoint> vMatchesKeys;
     vector<MapPoint*> vpMatchedMPs;
-    vector<cv::KeyPoint> vOutlierKeys;
+    vector<KeyPoint> vOutlierKeys;
     vector<MapPoint*> vpOutlierMPs;
     map<long unsigned int, cv::Point2f> mProjectPoints;
     map<long unsigned int, cv::Point2f> mMatchedInImage;
@@ -123,13 +125,13 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys[i].pt / imageScale;
-                    pt2 = vCurrentKeys[vMatches[i]].pt / imageScale;
+                    pt1 = vIniKeys->operator[](i).pt / imageScale;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys[i].pt;
-                    pt2 = vCurrentKeys[vMatches[i]].pt;
+                    pt1 = vIniKeys->operator[](i).pt;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt;
                 }
                 cv::line(im,pt1,pt2,standardColor);
             }
@@ -156,7 +158,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
         mnTracked=0;
         mnTrackedVO=0;
         const float r = 5;
-        int n = vCurrentKeys.size();
+        int n = vCurrentKeys->size();
         for(int i=0;i<n;i++)
         {
             if(vbVO[i] || vbMap[i])
@@ -165,9 +167,10 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    point = vCurrentKeys[i].pt / imageScale;
-                    float px = vCurrentKeys[i].pt.x / imageScale;
-                    float py = vCurrentKeys[i].pt.y / imageScale;
+                    const auto p = vCurrentKeys->operator[](i).pt;
+                    point = p / imageScale;
+                    float px = p.x / imageScale;
+                    float py = p.y / imageScale;
                     pt1.x=px-r;
                     pt1.y=py-r;
                     pt2.x=px+r;
@@ -175,11 +178,12 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                 }
                 else
                 {
-                    point = vCurrentKeys[i].pt;
-                    pt1.x=vCurrentKeys[i].pt.x-r;
-                    pt1.y=vCurrentKeys[i].pt.y-r;
-                    pt2.x=vCurrentKeys[i].pt.x+r;
-                    pt2.y=vCurrentKeys[i].pt.y+r;
+                    const auto p = vCurrentKeys->operator[](i).pt;
+                    point = p;
+                    pt1.x=p.x-r;
+                    pt1.y=p.y-r;
+                    pt2.x=p.x+r;
+                    pt2.y=p.y+r;
                 }
 
                 // This is a match to a MapPoint in the map
@@ -208,9 +212,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
 {
     cv::Mat im;
-    vector<cv::KeyPoint> vIniKeys; // Initialization: KeyPoints in reference frame
+    shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
     vector<int> vMatches; // Initialization: correspondeces with reference keypoints
-    vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
+    shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     int state; // Tracking state
 
@@ -261,13 +265,13 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f pt1,pt2;
                 if(imageScale != 1.f)
                 {
-                    pt1 = vIniKeys[i].pt / imageScale;
-                    pt2 = vCurrentKeys[vMatches[i]].pt / imageScale;
+                    pt1 = vIniKeys->operator[](i).pt / imageScale;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt / imageScale;
                 }
                 else
                 {
-                    pt1 = vIniKeys[i].pt;
-                    pt2 = vCurrentKeys[vMatches[i]].pt;
+                    pt1 = vIniKeys->operator[](i).pt;
+                    pt2 = vCurrentKeys->operator[](vMatches[i]).pt;
                 }
 
                 cv::line(im,pt1,pt2,cv::Scalar(0,255,0));
@@ -279,8 +283,8 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
         mnTracked=0;
         mnTrackedVO=0;
         const float r = 5;
-        const int n = mvCurrentKeysRight.size();
-        const int Nleft = mvCurrentKeys.size();
+        const int n = mvCurrentKeysRight->size();
+        const int Nleft = mvCurrentKeys->size();
 
         for(int i=0;i<n;i++)
         {
@@ -290,9 +294,10 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 cv::Point2f point;
                 if(imageScale != 1.f)
                 {
-                    point = mvCurrentKeysRight[i].pt / imageScale;
-                    float px = mvCurrentKeysRight[i].pt.x / imageScale;
-                    float py = mvCurrentKeysRight[i].pt.y / imageScale;
+                    const auto p = mvCurrentKeysRight->operator[](i).pt;
+                    point = p / imageScale;
+                    float px = p.x / imageScale;
+                    float py = p.y / imageScale;
                     pt1.x=px-r;
                     pt1.y=py-r;
                     pt2.x=px+r;
@@ -300,11 +305,12 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
                 }
                 else
                 {
-                    point = mvCurrentKeysRight[i].pt;
-                    pt1.x=mvCurrentKeysRight[i].pt.x-r;
-                    pt1.y=mvCurrentKeysRight[i].pt.y-r;
-                    pt2.x=mvCurrentKeysRight[i].pt.x+r;
-                    pt2.y=mvCurrentKeysRight[i].pt.y+r;
+                    const auto p = mvCurrentKeysRight->operator[](i).pt;
+                    point = p;
+                    pt1.x=p.x-r;
+                    pt1.y=p.y-r;
+                    pt2.x=p.x+r;
+                    pt2.y=p.y+r;
                 }
 
                 // This is a match to a MapPoint in the map
@@ -375,17 +381,17 @@ void FrameDrawer::Update(Tracking *pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     pTracker->mImGrayViewer.copyTo(mIm);
-    mvCurrentKeys=*pTracker->mCurrentFrame.mvKeys;
+    mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
     mThDepth = pTracker->mCurrentFrame.mThDepth;
     mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;
 
     if(both){
-        mvCurrentKeysRight = *pTracker->mCurrentFrame.mvKeysRight;
+        mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
         pTracker->mImRight.copyTo(mImRight);
-        N = mvCurrentKeys.size() + mvCurrentKeysRight.size();
+        N = mvCurrentKeys->size() + mvCurrentKeysRight->size();
     }
     else{
-        N = mvCurrentKeys.size();
+        N = mvCurrentKeys->size();
     }
 
     mvbVO = vector<bool>(N,false);
@@ -409,7 +415,7 @@ void FrameDrawer::Update(Tracking *pTracker)
 
     if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
     {
-        mvIniKeys=*pTracker->mInitialFrame.mvKeys;
+        mvIniKeys=pTracker->mInitialFrame.mvKeys;
         mvIniMatches=pTracker->mvIniMatches;
     }
     else if(pTracker->mLastProcessedState==Tracking::OK)
@@ -426,12 +432,12 @@ void FrameDrawer::Update(Tracking *pTracker)
                     else
                         mvbVO[i]=true;
 
-                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys[i].pt;
+                    mmMatchedInImage[pMP->mnId] = mvCurrentKeys->operator[](i).pt;
                 }
                 else
                 {
                     mvpOutlierMPs.push_back(pMP);
-                    mvOutlierKeys.push_back(mvCurrentKeys[i]);
+                    mvOutlierKeys.push_back(mvCurrentKeys->operator[](i));
                 }
             }
         }

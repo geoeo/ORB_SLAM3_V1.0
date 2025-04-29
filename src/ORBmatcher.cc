@@ -16,15 +16,10 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <ORBmatcher.h>
 
-#include "ORBmatcher.h"
-
-#include<limits.h>
-#include<opencv2/core/core.hpp>
-#include<stdint-gcc.h>
-
-#include "System.h"
-#include "DBoW2/FeatureVector.h"
+#include <Verbose.h>
+#include <DBoW2/FeatureVector.h>
 #include <tracy.hpp>
 
 using namespace std;
@@ -69,7 +64,7 @@ namespace ORB_SLAM3
                     r*=th;
 
                 const vector<size_t> vIndices =
-                        F.GetFeaturesInArea(pMP->mTrackProjX,pMP->mTrackProjY,r*F.mvScaleFactors[nPredictedLevel],nPredictedLevel-1,nPredictedLevel);
+                        F.GetFeaturesInArea(pMP->mTrackProjX,pMP->mTrackProjY,r*F.mvInvScaleFactors[nPredictedLevel],nPredictedLevel-1,nPredictedLevel);
 
                 if(!vIndices.empty()){
                     const cv::Mat MPdescriptor = pMP->GetDescriptor();
@@ -92,7 +87,7 @@ namespace ORB_SLAM3
                         if(F.Nleft == -1 && F.mvuRight[idx]>0)
                         {
                             const float er = fabs(pMP->mTrackProjXR-F.mvuRight[idx]);
-                            if(er>r*F.mvScaleFactors[nPredictedLevel])
+                            if(er>r*F.mvInvScaleFactors[nPredictedLevel])
                                 continue;
                         }
 
@@ -326,11 +321,11 @@ namespace ORB_SLAM3
                         {
                             vpMapPointMatches[bestIdxF]=pMP;
 
-                            const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                            const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
                             if(mbCheckOrientation)
                             {
-                                cv::KeyPoint &Fkp = F.mvKeys->operator[](bestIdxF);
+                                auto &Fkp = F.mvKeys->operator[](bestIdxF);
 
                                 float rot = kp.angle-Fkp.angle;
                                 if(rot<0.0)
@@ -350,11 +345,11 @@ namespace ORB_SLAM3
                             {
                                 vpMapPointMatches[bestIdxFR]=pMP;
 
-                                const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](realIdxKF);
+                                const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
                                 if(mbCheckOrientation)
                                 {
-                                    cv::KeyPoint &Fkp = F.mvKeys->operator[](bestIdxFR);
+                                    auto &Fkp = F.mvKeys->operator[](bestIdxFR);
 
                                     float rot = kp.angle-Fkp.angle;
                                     if(rot<0.0)
@@ -468,7 +463,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius);
 
@@ -582,7 +577,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -643,7 +638,7 @@ namespace ORB_SLAM3
 
         for(size_t i1=0, iend1=F1.mvKeysUn->size(); i1<iend1; i1++)
         {
-            cv::KeyPoint kp1 = F1.mvKeysUn->operator[](i1);
+            auto kp1 = F1.mvKeysUn->operator[](i1);
             int level1 = kp1.octave;
             if(level1>0)
                 continue;
@@ -967,7 +962,7 @@ namespace ORB_SLAM3
                         if(!bStereo1)
                             continue;
 
-                    const cv::KeyPoint &kp1 = pKF1->mvKeysUn->operator[](idx1);
+                    const auto &kp1 = pKF1->mvKeysUn->operator[](idx1);
 
                     const bool bRight1 = false;
 
@@ -999,14 +994,14 @@ namespace ORB_SLAM3
                         if(dist>TH_LOW || dist>bestDist)
                             continue;
 
-                        const cv::KeyPoint &kp2 = pKF2->mvKeysUn->operator[](idx2);
+                        const auto &kp2 = pKF2->mvKeysUn->operator[](idx2);
                         const bool bRight2 = false;
 
                         if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
                         {
                             const float distex = ep(0)-kp2.pt.x;
                             const float distey = ep(1)-kp2.pt.y;
-                            if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
+                            if(distex*distex+distey*distey<100*pKF2->mvInvScaleFactors[kp2.octave])
                             {
                                 continue;
                             }
@@ -1057,7 +1052,7 @@ namespace ORB_SLAM3
 
                     if(bestIdx2>=0)
                     {
-                        const cv::KeyPoint &kp2 = pKF2->mvKeysUn->operator[](bestIdx2);
+                        const auto &kp2 = pKF2->mvKeysUn->operator[](bestIdx2);
                         vMatches12[idx1]=bestIdx2;
                         nmatches++;
 
@@ -1214,7 +1209,7 @@ namespace ORB_SLAM3
             int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius,bRight);
 
@@ -1233,7 +1228,7 @@ namespace ORB_SLAM3
             for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
             {
                 size_t idx = *vit;
-                const cv::KeyPoint &kp = pKF->mvKeysUn->operator[](idx);
+                const auto &kp = pKF->mvKeysUn->operator[](idx);
                 const int &kpLevel= kp.octave;
 
                 if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
@@ -1365,7 +1360,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
             // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius);
 
@@ -1499,7 +1494,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF2);
 
             // Search in a radius
-            const float radius = th*pKF2->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF2->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF2->GetFeaturesInArea(u,v,radius);
 
@@ -1515,7 +1510,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const cv::KeyPoint &kp = pKF2->mvKeysUn->operator[](idx);
+                const auto &kp = pKF2->mvKeysUn->operator[](idx);
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1579,7 +1574,7 @@ namespace ORB_SLAM3
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF1);
 
             // Search in a radius of 2.5*sigma(ScaleLevel)
-            const float radius = th*pKF1->mvScaleFactors[nPredictedLevel];
+            const float radius = th*pKF1->mvInvScaleFactors[nPredictedLevel];
 
             const vector<size_t> vIndices = pKF1->GetFeaturesInArea(u,v,radius);
 
@@ -1595,7 +1590,7 @@ namespace ORB_SLAM3
             {
                 const size_t idx = *vit;
 
-                const cv::KeyPoint &kp = pKF1->mvKeysUn->operator[](idx);
+                const auto &kp = pKF1->mvKeysUn->operator[](idx);
 
                 if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                     continue;
@@ -1685,7 +1680,7 @@ namespace ORB_SLAM3
                     int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
 
                     // Search in a window. Size depends on scale
-                    float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+                    float radius = th*CurrentFrame.mvInvScaleFactors[nLastOctave];
 
                     vector<size_t> vIndices2;
 
@@ -1738,9 +1733,9 @@ namespace ORB_SLAM3
 
                         if(mbCheckOrientation)
                         {
-                            cv::KeyPoint kpLF = LastFrame.mvKeysUn->operator[](i);
+                            auto kpLF = LastFrame.mvKeysUn->operator[](i);
 
-                            cv::KeyPoint kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
+                            auto kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
                             float rot = kpLF.angle-kpCF.angle;
                             if(rot<0.0)
                                 rot+=360.0f;
@@ -1751,69 +1746,6 @@ namespace ORB_SLAM3
                             rotHist[bin].push_back(bestIdx2);
                         }
                     }
-                    // if(CurrentFrame.Nleft != -1){
-                    //     Eigen::Vector3f x3Dr = CurrentFrame.GetRelativePoseTrl() * x3Dc;
-                    //     Eigen::Vector2f uv = CurrentFrame.mpCamera->project(x3Dr);
-
-                    //     int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
-
-                    //     // Search in a window. Size depends on scale
-                    //     float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
-
-                    //     vector<size_t> vIndices2;
-
-                    //     if(bForward)
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave, -1,true);
-                    //     else if(bBackward)
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave, true);
-                    //     else
-                    //         vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1, true);
-
-                    //     const cv::Mat dMP = pMP->GetDescriptor();
-
-                    //     int bestDist = 256;
-                    //     int bestIdx2 = -1;
-
-                    //     for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
-                    //     {
-                    //         const size_t i2 = *vit;
-                    //         if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft])
-                    //             if(CurrentFrame.mvpMapPoints[i2 + CurrentFrame.Nleft]->Observations()>0)
-                    //                 continue;
-
-                    //         const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2 + CurrentFrame.Nleft);
-
-                    //         const int dist = DescriptorDistance(dMP,d);
-
-                    //         if(dist<bestDist)
-                    //         {
-                    //             bestDist=dist;
-                    //             bestIdx2=i2;
-                    //         }
-                    //     }
-
-                    //     if(bestDist<=TH_HIGH)
-                    //     {
-                    //         CurrentFrame.mvpMapPoints[bestIdx2 + CurrentFrame.Nleft]=pMP;
-                    //         nmatches++;
-                    //         if(mbCheckOrientation)
-                    //         {
-                    //             cv::KeyPoint kpLF = LastFrame.mvKeysUn->operator[](i);
-
-                    //             cv::KeyPoint kpCF = CurrentFrame.mvKeysRight[bestIdx2];
-
-                    //             float rot = kpLF.angle-kpCF.angle;
-                    //             if(rot<0.0)
-                    //                 rot+=360.0f;
-                    //             int bin = round(rot*factor);
-                    //             if(bin==HISTO_LENGTH)
-                    //                 bin=0;
-                    //             assert(bin>=0 && bin<HISTO_LENGTH);
-                    //             rotHist[bin].push_back(bestIdx2  + CurrentFrame.Nleft);
-                    //         }
-                    //     }
-
-                    // }
                 }
             }
         }
@@ -1892,7 +1824,7 @@ namespace ORB_SLAM3
                     int nPredictedLevel = pMP->PredictScale(dist3D,&CurrentFrame);
 
                     // Search in a window
-                    const float radius = th*CurrentFrame.mvScaleFactors[nPredictedLevel];
+                    const float radius = th*CurrentFrame.mvInvScaleFactors[nPredictedLevel];
 
                     const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(uv(0), uv(1), radius, nPredictedLevel-1, nPredictedLevel+1);
 

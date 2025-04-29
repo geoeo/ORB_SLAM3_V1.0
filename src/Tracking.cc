@@ -17,20 +17,19 @@
 */
 
 
-#include "Tracking.h"
+#include <Tracking.h>
 
-#include "ORBmatcher.h"
-#include "FrameDrawer.h"
-#include "Converter.h"
-#include "G2oTypes.h"
-#include "Optimizer.h"
-#include "CameraModels/Pinhole.h"
-#include "CameraModels/KannalaBrandt8.h"
-#include "MLPnPsolver.h"
-#include "GeometricTools.h"
+#include <ORBmatcher.h>
+#include <FrameDrawer.h>
+#include <Converter.h>
+#include <G2oTypes.h>
+#include <Optimizer.h>
+#include <CameraModels/Pinhole.h>
+#include <CameraModels/KannalaBrandt8.h>
+#include <MLPnPsolver.h>
+#include <GeometricTools.h>
 
 #include <iostream>
-#include <mutex>
 #include <chrono>
 #include <tracy.hpp>
 
@@ -55,22 +54,10 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mnNumDataset = 0;
 
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
-    std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
+    Verbose::PrintMess("There are " + to_string(vpCams.size()) +" cameras in the atlas", Verbose::VERBOSITY_NORMAL);
     for(GeometricCamera* pCam : vpCams)
     {
-        std::cout << "Camera " << pCam->GetId();
-        if(pCam->GetType() == GeometricCamera::CAM_PINHOLE)
-        {
-            std::cout << " is pinhole" << std::endl;
-        }
-        else if(pCam->GetType() == GeometricCamera::CAM_FISHEYE)
-        {
-            std::cout << " is fisheye" << std::endl;
-        }
-        else
-        {
-            std::cout << " is unknown" << std::endl;
-        }
+        Verbose::PrintMess("Camera " + to_string(pCam->GetId()), Verbose::VERBOSITY_NORMAL);
     }
 
 }
@@ -256,7 +243,7 @@ void Tracking::PreintegrateIMU()
 
     const int n = mvImuFromLastFrame.size()-1;
     if(n==0){
-        cout << "Empty IMU measurements vector!!!\n";
+        Verbose::PrintMess("Empty IMU measurements vector", Verbose::VERBOSITY_NORMAL);
         return;
     }
 
@@ -300,7 +287,7 @@ void Tracking::PreintegrateIMU()
         }
 
         if (!mpImuPreintegratedFromLastKF)
-            cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
+            Verbose::PrintMess("mpImuPreintegratedFromLastKF does not exist", Verbose::VERBOSITY_NORMAL);
         mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
         pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
     }
@@ -310,8 +297,6 @@ void Tracking::PreintegrateIMU()
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
-
-    //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
 }
 
 
@@ -392,7 +377,7 @@ void Tracking::Track()
     ZoneNamedN(Track, "Track", true);
     if (bStepByStep)
     {
-        std::cout << "Tracking: Waiting to the next step" << std::endl;
+        Verbose::PrintMess("Tracking: Waiting to the next step", Verbose::VERBOSITY_NORMAL);
         while(!mbStep && bStepByStep)
            usleep(500);
         mbStep = false;
@@ -400,7 +385,7 @@ void Tracking::Track()
 
     if(mpLocalMapper->mbBadImu)
     {
-        cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
+        Verbose::PrintMess("TRACK: Reset map because local mapper set the bad imu flag", Verbose::VERBOSITY_NORMAL);
         mpSystem->ResetActiveMap();
         return;
     }
@@ -408,14 +393,14 @@ void Tracking::Track()
     Map* pCurrentMap = mpAtlas->GetCurrentMap();
     if(!pCurrentMap)
     {
-        cout << "ERROR: There is not an active map in the atlas" << endl;
+        Verbose::PrintMess("ERROR: There is not an active map in the atlas", Verbose::VERBOSITY_NORMAL);
     }
 
     if(getTrackingState()!=NO_IMAGES_YET)
     {
         if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
         {
-            cerr << "ERROR: Frame with a timestamp older than previous frame detected!" << endl;
+            Verbose::PrintMess("ERROR: Frame with a timestamp older than previous frame detected!", Verbose::VERBOSITY_NORMAL);
             unique_lock<mutex> lock(mMutexImuQueue);
             mlQueueImuData.clear();
             CreateMapInAtlas();
@@ -1042,7 +1027,6 @@ bool Tracking::TrackReferenceKeyFrame()
     //mCurrentFrame.PrintPointDistribution();
 
 
-    // cout << " TrackReferenceKeyFrame mLastFrame.mTcw:  " << mLastFrame.mTcw << endl;
     Optimizer::PoseOptimization(&mCurrentFrame);
 
     // Discard outliers
@@ -1265,7 +1249,6 @@ bool Tracking::TrackLocalMap()
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
-    //cout << "mnMatchesInliers: " << mnMatchesInliers << endl;
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<30)
         return false;
 
@@ -1299,10 +1282,6 @@ bool Tracking::NeedNewKeyFrame()
 
     // If Local Mapping is freezed by a Loop Closure do not insert keyframes
     if(mpLocalMapper->isStopped() || mpLocalMapper->stopRequested()) {
-        /*if(mSensor == System::MONOCULAR)
-        {
-            std::cout << "NeedNewKeyFrame: localmap stopped" << std::endl;
-        }*/
         return false;
     }
 
@@ -1382,7 +1361,6 @@ bool Tracking::NeedNewKeyFrame()
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
     const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio || bNeedToInsertClose)) && mnMatchesInliers>15);
 
-    //std::cout << "NeedNewKF: c1a=" << c1a << "; c1b=" << c1b << "; c1c=" << c1c << "; c2=" << c2 << std::endl;
     // Temporal condition for Inertial cases
     bool c3 = false;
     if(mpLastKeyFrame)
@@ -1425,7 +1403,6 @@ bool Tracking::NeedNewKeyFrame()
             }
             else
             {
-                //std::cout << "NeedNewKeyFrame: localmap is busy" << std::endl;
                 return false;
             }
         }
@@ -2028,7 +2005,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     list<bool> lbLost;
     // lbLost.reserve(mlbLost.size());
     unsigned int index = mnFirstFrameId;
-    cout << "mnFirstFrameId = " << mnFirstFrameId << endl;
+    Verbose::PrintMess("mnFirstFrameId = " + to_string(mnFirstFrameId), Verbose::VERBOSITY_NORMAL);
     for(Map* pMap : mpAtlas->GetAllMaps())
     {
         if(pMap->GetAllKeyFrames().size() > 0)
@@ -2038,9 +2015,8 @@ void Tracking::ResetActiveMap(bool bLocMap)
         }
     }
 
-    //cout << "First Frame id: " << index << endl;
     int num_lost = 0;
-    cout << "mnInitialFrameId = " << mnInitialFrameId << endl;
+    Verbose::PrintMess("mnInitialFrameId = " + to_string(mnInitialFrameId), Verbose::VERBOSITY_NORMAL);
 
     for(list<bool>::iterator ilbL = mlbLost.begin(); ilbL != mlbLost.end(); ilbL++)
     {
@@ -2054,7 +2030,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
         index++;
     }
-    cout << num_lost << " Frames set to lost" << endl;
+    Verbose::PrintMess(to_string(num_lost) + " Frames set to lost", Verbose::VERBOSITY_NORMAL);
 
     mlbLost = lbLost;
 
@@ -2073,7 +2049,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     if(mpViewer)
         mpViewer->Release();
 
-    Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
 vector<MapPoint*> Tracking::GetLocalMapMPS()

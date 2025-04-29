@@ -20,15 +20,15 @@
 
 #include <vector>
 #include <list>
+#include <tuple>
+#include <memory>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
 #include <cuda/Angle.hpp>
+#include <KeyPoint.h>
 
 #include <opencv2/cudafilters.hpp>
-#include <opencv2/cudafeatures2d.hpp>
-
-#include <opencv2/features2d/features2d.hpp>
 #include <opencv2/cudafeatures2d.hpp>
 #include <opencv2/core/cuda.hpp>
 
@@ -42,7 +42,7 @@ namespace ORB_SLAM3
 
         void DivideNode(ExtractorNode &n1, ExtractorNode &n2, ExtractorNode &n3, ExtractorNode &n4);
 
-        std::vector<cv::KeyPoint> vKeys;
+        std::vector<ORB_SLAM3::KeyPoint> vKeys;
         cv::Point2i UL, UR, BL, BR;
         std::list<ExtractorNode>::iterator lit;
         bool bNoMore;
@@ -51,12 +51,6 @@ namespace ORB_SLAM3
     class ORBextractor
     {
     public:
-        enum
-        {
-            HARRIS_SCORE = 0,
-            FAST_SCORE = 1
-        };
-
         ORBextractor(int nFeatures,int nFastFeatures, float scaleFactor, int nlevels,
                      int iniThFAST, int minThFAST, int imageWidth, int imageHeight);
 
@@ -64,10 +58,7 @@ namespace ORB_SLAM3
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
-        // Mask is ignored in the current implementation.
-        int extractFeatures(const cv::cuda::HostMem &im_managed,
-                       std::shared_ptr<std::vector<cv::KeyPoint>> &_keypoints,
-                       cv::cuda::HostMem& _descriptors);
+        std::tuple<std::shared_ptr<std::vector<KeyPoint>>, cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()
         {
@@ -105,12 +96,10 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        int ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>> &allKeypoints);
-        void computeDescriptors(cv::cuda::HostMem image_managed, std::vector<cv::KeyPoint>& keypointsLevel, std::vector<cv::KeyPoint>& keypointsTotal, cv::Mat& descriptors,
-                                   const std::vector<cv::Point>& pattern, int monoIndexOffset, float scaleFactor, int level);
+        std::tuple<std::vector<size_t>,std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ComputeKeyPointsOctTree();
         
-        std::vector<cv::KeyPoint> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int &minX,
-                                                    const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
+        std::list<ExtractorNode> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
+                                                    const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);
 
         
         constexpr static float factorPI = (float)(CV_PI/180.f);
@@ -130,8 +119,8 @@ namespace ORB_SLAM3
         std::vector<float> mvLevelSigma2;
         std::vector<float> mvInvLevelSigma2;
 
-        cuda::fast::GpuFast gpuFast;
         cuda::orb::GpuOrb gpuOrb;
+        cuda::fast::GpuFast gpuFast;
         cuda::angle::Angle gpuAngle;
     };
 

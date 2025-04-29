@@ -17,23 +17,17 @@
 */
 
 
-#ifndef KEYFRAMEDATABASE_H
-#define KEYFRAMEDATABASE_H
+#pragma once
 
 #include <vector>
 #include <list>
 #include <set>
+#include <mutex>
 
-#include "KeyFrame.h"
-#include "Frame.h"
-#include "ORBVocabulary.h"
-#include "Map.h"
-
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/list.hpp>
-
-#include<mutex>
+#include <KeyFrame.h>
+#include <Frame.h>
+#include <ORBVocabulary.h>
+#include <Map.h>
 
 
 namespace ORB_SLAM3
@@ -46,14 +40,6 @@ class Map;
 
 class KeyFrameDatabase
 {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        ar & mvBackupInvertedFileId;
-    }
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -99,5 +85,3 @@ protected:
 };
 
 } //namespace ORB_SLAM
-
-#endif

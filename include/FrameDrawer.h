@@ -17,19 +17,19 @@
 */
 
 
-#ifndef FRAMEDRAWER_H
-#define FRAMEDRAWER_H
+#pragma once
 
-#include "Tracking.h"
-#include "MapPoint.h"
-#include "Atlas.h"
+#include <Tracking.h>
+#include <MapPoint.h>
+#include <Atlas.h>
 
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
-#include<mutex>
+#include <mutex>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
 
 namespace ORB_SLAM3
@@ -60,11 +60,11 @@ protected:
     // Info of the frame to be drawn
     cv::Mat mIm,mImRight;
     int N;
-    std::vector<cv::KeyPoint> mvCurrentKeys,mvCurrentKeysRight;
+    std::shared_ptr<std::vector<KeyPoint>> mvCurrentKeys,mvCurrentKeysRight;
     std::vector<bool> mvbMap, mvbVO;
     bool mbOnlyTracking;
     int mnTracked, mnTrackedVO;
-    std::vector<cv::KeyPoint> mvIniKeys;
+    std::shared_ptr<std::vector<KeyPoint>> mvIniKeys;
     std::vector<int> mvIniMatches;
     int mState;
     std::vector<float> mvCurrentDepth;
@@ -77,9 +77,9 @@ protected:
 
     Frame mCurrentFrame;
     std::vector<MapPoint*> mvpLocalMap;
-    std::vector<cv::KeyPoint> mvMatchedKeys;
+    std::vector<KeyPoint> mvMatchedKeys;
     std::vector<MapPoint*> mvpMatchedMPs;
-    std::vector<cv::KeyPoint> mvOutlierKeys;
+    std::vector<KeyPoint> mvOutlierKeys;
     std::vector<MapPoint*> mvpOutlierMPs;
 
     std::map<long unsigned int, cv::Point2f> mmProjectPoints;
@@ -88,5 +88,3 @@ protected:
 };
 
 } //namespace ORB_SLAM
-
-#endif // FRAMEDRAWER_H

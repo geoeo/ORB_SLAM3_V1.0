@@ -19,12 +19,12 @@
 
 #pragma once
 
-#include "KeyFrame.h"
-#include "Atlas.h"
-#include "LoopClosing.h"
-#include "Tracking.h"
-#include "KeyFrameDatabase.h"
-#include "Settings.h"
+#include <KeyFrame.h>
+#include <Atlas.h>
+#include <LoopClosing.h>
+#include <Tracking.h>
+#include <KeyFrameDatabase.h>
+#include <Settings.h>
 
 #include <mutex>
 #include <atomic>
@@ -36,7 +36,6 @@ namespace ORB_SLAM3
 class System;
 class Tracking;
 class LoopClosing;
-class Atlas;
 
 class LocalMapping
 {

@@ -39,8 +39,7 @@
 // the use of this software, even if advised of the possibility of such damage.
 //
 //*/
-
-#include "cuda/helper_cuda.h"
+#include "cuda/HelperCuda.h"
 #include <cuda/Fast.hpp>
 #include <algorithm>
 #include <iostream>
@@ -319,10 +318,9 @@ namespace ORB_SLAM3::cuda::fast {
       }
   }
 
-  GpuFast::GpuFast(int imHeight, int imWidth, int maxKeypoints)
+  GpuFast::GpuFast(int imHeight, int imWidth, int maxKeypoints, cudaStream_t stream)
     : imHeight(imHeight),imWidth(imWidth),  maxKeypoints(maxKeypoints)
   {
-    checkCudaErrors( cudaStreamCreate(&stream) );
     checkCudaErrors( cudaMalloc(&scoreMat, sizeof(int) * imHeight*imWidth) );
     checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) ); //Kernel crashes when is is not managed memory. Not sure why
 
@@ -339,26 +337,21 @@ namespace ORB_SLAM3::cuda::fast {
     checkCudaErrors( cudaFree(kpLocFinal) );
     checkCudaErrors( cudaFree(kpLoc) );
     checkCudaErrors( cudaFree(scoreMat) );
-    checkCudaErrors( cudaStreamDestroy(stream) );
   }
 
-  cudaStream_t GpuFast::getStream(){
-    return stream;
-  }
-
-  short2 * GpuFast::getLoc(){
+  short2 * GpuFast::getLoc(cudaStream_t stream){
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal, 0, cudaMemAttachHost) );
     checkCudaErrors( cudaStreamSynchronize(stream) );
     return kpLocFinal;
   }
 
-  int* GpuFast::getResp(){
+  int* GpuFast::getResp(cudaStream_t stream){
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpResponseFinal, 0, cudaMemAttachHost) );
     checkCudaErrors( cudaStreamSynchronize(stream) );
     return kpResponseFinal;
   }
 
-  unsigned int GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY) {
+  unsigned int GpuFast::detect(const cv::cuda::GpuMat image, int threshold, int borderX, int borderY, cudaStream_t stream) {
     checkCudaErrors(cudaMemset(scoreMat, 0, sizeof(int) * imHeight*imWidth));
     checkCudaErrors(cudaMemset(counter_ptr, 0, sizeof(unsigned int)) );
     checkCudaErrors( cudaStreamAttachMemAsync(stream, kpLocFinal) );

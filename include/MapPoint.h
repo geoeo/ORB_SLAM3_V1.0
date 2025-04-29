@@ -16,95 +16,24 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
 
-#ifndef MAPPOINT_H
-#define MAPPOINT_H
+#include <KeyFrame.h>
+#include <Frame.h>
+#include <Map.h>
+#include <Converter.h>
 
-#include "KeyFrame.h"
-#include "Frame.h"
-#include "Map.h"
-#include "Converter.h"
-
-#include "SerializationUtils.h"
 
 #include <opencv2/core/core.hpp>
 #include <mutex>
 #include <set>
 #include <map>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/array.hpp>
-#include <boost/serialization/map.hpp>
-
 namespace ORB_SLAM3
 {
 
-class KeyFrame;
-class Map;
-class Frame;
-
 class MapPoint
 {
-
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & mnId;
-        ar & mnFirstKFid;
-        ar & mnFirstFrame;
-        ar & nObs;
-        // Variables used by the tracking
-        //ar & mTrackProjX;
-        //ar & mTrackProjY;
-        //ar & mTrackDepth;
-        //ar & mTrackDepthR;
-        //ar & mTrackProjXR;
-        //ar & mTrackProjYR;
-        //ar & mbTrackInView;
-        //ar & mbTrackInViewR;
-        //ar & mnTrackScaleLevel;
-        //ar & mnTrackScaleLevelR;
-        //ar & mTrackViewCos;
-        //ar & mTrackViewCosR;
-        //ar & mnTrackReferenceForFrame;
-        //ar & mnLastFrameSeen;
-
-        // Variables used by local mapping
-        //ar & mnBALocalForKF;
-        //ar & mnFuseCandidateForKF;
-
-        // Variables used by loop closing and merging
-        //ar & mnLoopPointForKF;
-        //ar & mnCorrectedByKF;
-        //ar & mnCorrectedReference;
-        //serializeMatrix(ar,mPosGBA,version);
-        //ar & mnBAGlobalForKF;
-        //ar & mnBALocalForMerge;
-        //serializeMatrix(ar,mPosMerge,version);
-        //serializeMatrix(ar,mNormalVectorMerge,version);
-
-        // Protected variables
-        ar & boost::serialization::make_array(mWorldPos.data(), mWorldPos.size());
-        ar & boost::serialization::make_array(mNormalVector.data(), mNormalVector.size());
-        //ar & BOOST_SERIALIZATION_NVP(mBackupObservationsId);
-        //ar & mObservations;
-        ar & mBackupObservationsId1;
-        ar & mBackupObservationsId2;
-        serializeMatrix(ar,mDescriptor,version);
-        ar & mBackupRefKFId;
-        //ar & mnVisible;
-        //ar & mnFound;
-
-        ar & mbBad;
-        ar & mBackupReplacedId;
-
-        ar & mfMinDistance;
-        ar & mfMaxDistance;
-
-    }
-
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     MapPoint();
@@ -255,4 +184,3 @@ protected:
 
 } //namespace ORB_SLAM
 
-#endif // MAPPOINT_H

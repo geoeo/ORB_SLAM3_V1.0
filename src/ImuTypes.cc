@@ -16,13 +16,14 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ImuTypes.h"
-#include "Converter.h"
-#include "System.h" //for debug verbosity
+#include <ImuTypes.h>
+#include <Converter.h>
+#include <Verbose.h>
+#include <GeometricTools.h>
 
-#include "GeometricTools.h"
+#include <iostream>
 
-#include<iostream>
+using namespace std;
 
 namespace ORB_SLAM3
 {

@@ -1,22 +1,21 @@
 #pragma once
 
-#include <vector>
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/core/cuda_stream_accessor.hpp>
+#include <cuda/ManagedVector.hpp>
 #include <cuda_runtime.h>
+#include <KeyPoint.h>
 
 namespace ORB_SLAM3::cuda::orb {
 
   class GpuOrb {
-    unsigned int maxKeypoints;
-    cv::KeyPoint * keypoints;
     cudaStream_t stream;
     cv::cuda::Stream cvStream;
   public:
-    GpuOrb(int maxKeypoints);
+    GpuOrb();
     ~GpuOrb();
 
-    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, const cv::KeyPoint * _keypoints, const int npoints);
+    void launch_async(cv::cuda::GpuMat image, cv::cuda::GpuMat descriptors,int offset, int offset_end, ORB_SLAM3::KeyPoint * keypoints, const int npoints);
     cudaStream_t getStream();
     cv::cuda::Stream getCvStream();
 

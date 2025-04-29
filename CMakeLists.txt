@@ -80,7 +80,6 @@ MESSAGE(${OpenCV_VERSION})
 find_package(Eigen3 3.4.0 REQUIRED EXACT)
 find_package(Pangolin REQUIRED)
 find_package(g2o REQUIRED)
-find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDAToolkit REQUIRED)
 find_package(DBoW2 REQUIRED)
 find_package(Sophus REQUIRED)
@@ -120,7 +119,7 @@ src/cuda/Angle_gpu.cu
 )
 
 
-message("---------------: ${BUILD_INTERFACE}")
+cmake_print_variables(BUILD_INTERFACE)
 
 include_directories(${TRACY_INCLUDE_DIR})
 
@@ -134,10 +133,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC
      ${CUDAToolkit_INCLUDE_DIRS}
 )
 
+# target_compile_options(${PROJECT_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+#                        --generate-line-info
+#                        --use_fast_math
+#                        --relocatable-device-code=true
+#                        --DUSE_STREAM_ATTACH
+#                        >)
+
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${Pangolin_LIBRARIES}
-${Boost_LIBRARIES}
 g2o::core
 g2o::stuff
 g2o::types_sba
@@ -159,7 +164,6 @@ ${TRACY_LIB}
 ${CUDAToolkit_LIBRARIES}
 ${DBoW2_LIBRARIES}
 Sophus::Sophus
--lcrypto
 )
 
 

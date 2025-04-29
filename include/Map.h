@@ -16,23 +16,20 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
 
-#ifndef MAP_H
-#define MAP_H
-
-#include "MapPoint.h"
-#include "KeyFrame.h"
+#include <MapPoint.h>
+#include <KeyFrame.h>
 
 #include <set>
 #include <pangolin/pangolin.h>
 #include <mutex>
 
-#include <boost/serialization/base_object.hpp>
-
-
 namespace ORB_SLAM3
 {
 
+
+//TODO: forward
 class MapPoint;
 class KeyFrame;
 class Atlas;
@@ -40,33 +37,6 @@ class KeyFrameDatabase;
 
 class Map
 {
-    friend class boost::serialization::access;
-
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-        ar & mnId;
-        ar & mnInitKFid;
-        ar & mnMaxKFid;
-        ar & mnBigChangeIdx;
-
-        // Save/load a set structure, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
-        //ar & mspKeyFrames;
-        //ar & mspMapPoints;
-        ar & mvpBackupKeyFrames;
-        ar & mvpBackupMapPoints;
-
-        ar & mvBackupKeyFrameOriginsId;
-
-        ar & mnBackupKFinitialID;
-        ar & mnBackupKFlowerID;
-
-        ar & mbImuInitialized;
-        ar & mbIsInertial;
-        ar & mbIMU_BA1;
-        ar & mbIMU_BA2;
-    }
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Map();
@@ -208,4 +178,3 @@ protected:
 
 } //namespace ORB_SLAM3
 
-#endif // MAP_H

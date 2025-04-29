@@ -1,6 +1,4 @@
-
-
-#include "cuda/helper_cuda.h"
+#include "cuda/HelperCuda.h"
 #include <cuda/Angle.hpp>
 #include <algorithm>
 #include <iostream>
@@ -25,7 +23,7 @@ namespace ORB_SLAM3::cuda::angle {
         checkCudaErrors( cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int)));
     }
 
-    __global__ void IC_Angle_kernel(const PtrStepb image, KeyPoint * keypoints, const int npoints, const int half_k)
+    __global__ void IC_Angle_kernel(const PtrStepb image, ORB_SLAM3::KeyPoint * keypoints, const int npoints, const int half_k)
     {
         __shared__ int smem0[8 * 32];
         __shared__ int smem1[8 * 32];
@@ -36,11 +34,11 @@ namespace ORB_SLAM3::cuda::angle {
         cv::cuda::device::plus<int> op;
 
         const int ptidx = blockIdx.x * blockDim.y + threadIdx.y;
-
+        
         if (ptidx < npoints) {
             int m_01 = 0, m_10 = 0;
-
-            const short2 loc = make_short2(keypoints[ptidx].pt.x, keypoints[ptidx].pt.y);
+            ORB_SLAM3::KeyPoint kp = keypoints[ptidx];
+            const short2 loc = make_short2(kp.pt.x, kp.pt.y);
 
             // Treat the center line differently, v=0
             for (int u = threadIdx.x - half_k; u <= half_k; u += blockDim.x)
@@ -81,23 +79,11 @@ namespace ORB_SLAM3::cuda::angle {
         }
     }
 
-    Angle::Angle(unsigned int maxKeypoints) : maxKeypoints(maxKeypoints) {
-        checkCudaErrors( cudaStreamCreate(&stream) );
-        checkCudaErrors( cudaMalloc(&keypoints, sizeof(KeyPoint) * maxKeypoints) );
-    }
-
-    Angle::~Angle() {
-        checkCudaErrors( cudaFree(keypoints) );
-        checkCudaErrors( cudaStreamDestroy(stream) );
-    }
-
-    void Angle::launch_async(cv::cuda::GpuMat image, KeyPoint * _keypoints, int npoints, int half_k) {
-        checkCudaErrors( cudaMemcpyAsync(keypoints, _keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyHostToDevice, stream) );
+    void Angle::launch_async(cv::cuda::GpuMat image, ORB_SLAM3::KeyPoint * keypoints, int npoints, int half_k, cudaStream_t stream) {
         dim3 block(32, 8);
         dim3 grid(divUp(npoints, block.y));
-        IC_Angle_kernel<<<grid, block, 0, stream>>>(image, keypoints, npoints, half_k);
+        IC_Angle_kernel<<<grid, block,0, stream>>>(image, keypoints, npoints, half_k);
         checkCudaErrors( cudaGetLastError() );
-        checkCudaErrors( cudaMemcpyAsync(_keypoints, keypoints, sizeof(KeyPoint) * npoints, cudaMemcpyDeviceToHost, stream) );
         checkCudaErrors( cudaStreamSynchronize(stream) );
         
     }
