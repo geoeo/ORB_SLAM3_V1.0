@@ -4560,7 +4560,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     float chi2Mono[4]={15.6,15.6,15.6,15.6};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={10,10,10,10};
+    int its[4]={20,20,20,40};
 
     int nBad = 0;
     int nBadMono = 0;
