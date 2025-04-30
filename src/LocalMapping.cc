@@ -136,8 +136,8 @@ void LocalMapping::Run()
                 }
 
 
-                // Check redundant local Keyframes
-                KeyFrameCulling();
+                // Check redundant local Keyframes -  Disabled for now since it may causes Segfaults: TODO: Fix
+                //KeyFrameCulling();
 
                 if (mbInertial)
                 {
