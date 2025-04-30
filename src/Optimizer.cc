@@ -1580,7 +1580,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
                 if(!pKFn->isBad() && pKFn->mnId<pKF->mnId)
                 {
                     if(sInsertedEdges.count(make_pair(min(pKF->mnId,pKFn->mnId),max(pKF->mnId,pKFn->mnId))))
-                        continue;,
+                        continue;
 
                     g2o::Sim3 Snw;
 
@@ -1871,7 +1871,30 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFi
         for(set<KeyFrame*>::const_iterator sit=sLoopEdges.begin(), send=sLoopEdges.end(); sit!=send; sit++)
         {
             KeyFrame* pLKF = *sit;
-            if(spKFs.find(pLKF) != spKFs.end() && pLKF->mnId<pKFi->mnId),
+            if(spKFs.find(pLKF) != spKFs.end() && pLKF->mnId<pKFi->mnId)
+            {
+                g2o::Sim3 Slw;
+                bool bHasRelation = false;
+
+                if(vpGoodPose[nIDi] && vpGoodPose[pLKF->mnId])
+                {
+                    Slw = vCorrectedSwc[pLKF->mnId].inverse();
+                    bHasRelation = true;
+                }
+                else if(vpBadPose[nIDi] && vpBadPose[pLKF->mnId])
+                {
+                    Slw = vScw[pLKF->mnId];
+                    bHasRelation = true;
+                }
+
+
+                if(bHasRelation)
+                {
+                    g2o::Sim3 Sli = Slw * Swi;
+                    g2o::EdgeSim3* el = new g2o::EdgeSim3();
+                    el->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pLKF->mnId)));
+                    el->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
+                    el->setMeasurement(Sli);
                     el->information() = matLambda;
                     optimizer.addEdge(el);
                     num_connections++;
@@ -1898,7 +1921,39 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFi
                         bHasRelation = true;
                     }
                     else if(vpBadPose[nIDi] && vpBadPose[pKFn->mnId])
-                    {,
+                    {
+                        Snw = vScw[pKFn->mnId];
+                        bHasRelation = true;
+                    }
+
+                    if(bHasRelation)
+                    {
+                        g2o::Sim3 Sni = Snw * Swi;
+
+                        g2o::EdgeSim3* en = new g2o::EdgeSim3();
+                        en->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFn->mnId)));
+                        en->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
+                        en->setMeasurement(Sni);
+                        en->information() = matLambda;
+                        optimizer.addEdge(en);
+                        num_connections++;
+                    }
+                }
+            }
+        }
+
+        if(num_connections == 0 )
+        {
+            Verbose::PrintMess("Opt_Essential: KF " + to_string(pKFi->mnId) + " has 0 connections", Verbose::VERBOSITY_DEBUG);
+        }
+    }
+
+    // Optimize!
+    optimizer.initializeOptimization();
+    optimizer.optimize(20);
+
+    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for(KeyFrame* pKFi : vpNonFixedKFs)
     {
