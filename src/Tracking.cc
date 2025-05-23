@@ -43,7 +43,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
-    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(50),
+    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
 
@@ -390,8 +390,8 @@ void Tracking::Track()
         return;
     }
 
-    Map* pCurrentMap = mpAtlas->GetCurrentMap();
-    if(!pCurrentMap)
+    //Map* pCurrentMap = mpAtlas->GetCurrentMap();
+    if(!mpAtlas->GetCurrentMap())
     {
         Verbose::PrintMess("ERROR: There is not an active map in the atlas", Verbose::VERBOSITY_NORMAL);
     }
@@ -411,7 +411,7 @@ void Tracking::Track()
             Verbose::PrintMess("Timestamp image jump detected", Verbose::VERBOSITY_DEBUG);
             if(mpAtlas->isInertial())
             {
-                if(!(mpAtlas->isImuInitialized() && pCurrentMap->GetIniertialBA2()))
+                if(!(mpAtlas->isImuInitialized() && mpAtlas->GetCurrentMap()->GetIniertialBA2()))
                 {
                     Verbose::PrintMess("Reseting Active Map", Verbose::VERBOSITY_DEBUG);
                     mpSystem->ResetActiveMap();
@@ -440,15 +440,15 @@ void Tracking::Track()
     mbCreatedMap = false;
 
     // Get Map Mutex -> Map cannot be changed
-    unique_lock<mutex> lock(pCurrentMap->mMutexMapUpdate);
+    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
     mbMapUpdated = false;
 
-    int nCurMapChangeIndex = pCurrentMap->GetMapChangeIndex();
-    int nMapChangeIndex = pCurrentMap->GetLastMapChange();
+    int nCurMapChangeIndex = mpAtlas->GetCurrentMap()->GetMapChangeIndex();
+    int nMapChangeIndex = mpAtlas->GetCurrentMap()->GetLastMapChange();
     if(nCurMapChangeIndex>nMapChangeIndex)
     {
-        pCurrentMap->SetLastMapChange(nCurMapChangeIndex);
+        mpAtlas->GetCurrentMap()->SetLastMapChange(nCurMapChangeIndex);
         mbMapUpdated = true;
     }
 
@@ -490,7 +490,7 @@ void Tracking::Track()
                 // Local Mapping might have changed some MapPoints tracked in last frame
                 CheckReplacedInLastFrame();
 
-                if((!mbVelocity && !pCurrentMap->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
+                if((!mbVelocity && !mpAtlas->GetCurrentMap()->isImuInitialized()) || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
                     Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackReferenceKeyFrame();
@@ -519,7 +519,7 @@ void Tracking::Track()
                 bOK = false;
                 if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
                 {
-                    if(pCurrentMap->isImuInitialized() && (mRelocCount < mRelocThresh)){
+                    if(mpAtlas->GetCurrentMap()->isImuInitialized() && (mRelocCount < mRelocThresh)){
                         UpdateLastFrame();
                         const auto imu_preint = PredictStateIMU();
                         if(imu_preint){
@@ -530,7 +530,7 @@ void Tracking::Track()
                                 mRelocCount = 0;
                             }
                         }
-                    } else if(!(pCurrentMap->isImuInitialized() && isGeoreferenced())) {
+                    } else if(!(mpAtlas->GetCurrentMap()->isImuInitialized() && isGeoreferenced())) {
                         setTrackingState(LOST);
                     }
                 }
@@ -567,7 +567,7 @@ void Tracking::Track()
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
             {
                 Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
-                if(!pCurrentMap->isImuInitialized())
+                if(!mpAtlas->GetCurrentMap()->isImuInitialized())
                 {
                     Verbose::PrintMess("IMU is not or recently initialized. Reseting active map..", Verbose::VERBOSITY_NORMAL);
                     mpSystem->ResetActiveMap();
@@ -587,7 +587,7 @@ void Tracking::Track()
 
         // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it should be once mCurrFrame is completely modified)
         if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
-           (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && pCurrentMap->isImuInitialized())
+           (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpAtlas->GetCurrentMap()->isImuInitialized())
         {
 /*             // TODO check this situation
             Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
@@ -598,7 +598,7 @@ void Tracking::Track()
             pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame); */
         }
 
-        // if(pCurrentMap->isImuInitialized())
+        // if(mpAtlas->GetCurrentMap()->isImuInitialized())
         // {
         //     if(bOK)
         //     {
@@ -682,7 +682,7 @@ void Tracking::Track()
                 Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
                 mpSystem->ResetActiveMap();
                 return;
-            } else if(pCurrentMap->KeyFramesInMap()<=10){
+            } else if(mpAtlas->GetCurrentMap()->KeyFramesInMap()<=10){
                 mpSystem->ResetActiveMap();
                 return;
             }
@@ -1199,7 +1199,7 @@ bool Tracking::TrackLocalMap()
         {
             const auto prevFrameExists = nullptr != mCurrentFrame.mpPrevFrame;
             const auto mpcpiExists = prevFrameExists ? mCurrentFrame.mpPrevFrame->mpcpi != nullptr : false;
-            if(!mbMapUpdated && (mnMatchesInliers>30) && mpcpiExists)
+            if(!mbMapUpdated /*&&(mnMatchesInliers>30)*/ &&  mpcpiExists)
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
@@ -1479,7 +1479,7 @@ void Tracking::SearchLocalPoints()
         if(pMP->isBad())
             continue;
         // Project (this fills MapPoint variables for matching)
-        if(mCurrentFrame.isInFrustum(pMP,0.75))
+        if(mCurrentFrame.isInFrustum(pMP,0.25))
         {
             pMP->IncreaseVisible();
             nToMatch++;
@@ -1492,16 +1492,16 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.8);
+        ORBmatcher matcher(0.95);
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
         if(mpAtlas->isImuInitialized())
         {
             if(mpAtlas->GetCurrentMap()->GetIniertialBA2())
-                th=2;
+                th=30;
             else
-                th=6;
+                th=30;
         }
         else if(!mpAtlas->isImuInitialized() && (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
         {
@@ -1516,7 +1516,7 @@ void Tracking::SearchLocalPoints()
         if(state==LOST || state==RECENTLY_LOST) // Lost for less than 1 second
             th=15; // 15
 
-        auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, mpLocalMapper->mbFarPoints, mpLocalMapper->mThFarPoints);
+        auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints);
         Verbose::PrintMess("SearchLocalPoints matches: " +std::to_string(matches), Verbose::VERBOSITY_NORMAL);
     }
 }

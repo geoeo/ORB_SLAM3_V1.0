@@ -4397,7 +4397,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     vnIndexEdgeMono.reserve(N);
     vnIndexEdgeStereo.reserve(N);
 
-    const float thHuberMono = sqrt(7.815);
+    const float thHuberMono = sqrt(18.815);
     const float thHuberStereo = sqrt(7.815);
 
     {
@@ -4445,67 +4445,67 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                     vnIndexEdgeMono.push_back(i);
                 }
                 // Stereo observation
-                else if(!bRight)
-                {
-                    nInitialStereoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                // else if(!bRight)
+                // {
+                //     nInitialStereoCorrespondences++;
+                //     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysUn->operator[](i);
-                    const float kp_ur = pFrame->mvuRight[i];
-                    Eigen::Matrix<double,3,1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+                //     kpUn = pFrame->mvKeysUn->operator[](i);
+                //     const float kp_ur = pFrame->mvuRight[i];
+                //     Eigen::Matrix<double,3,1> obs;
+                //     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
-                    EdgeStereoOnlyPose* e = new EdgeStereoOnlyPose(pMP->GetWorldPos());
+                //     EdgeStereoOnlyPose* e = new EdgeStereoOnlyPose(pMP->GetWorldPos());
 
-                    e->setVertex(0, VP);
-                    e->setMeasurement(obs);
+                //     e->setVertex(0, VP);
+                //     e->setMeasurement(obs);
 
-                    // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs.head(2));
+                //     // Add here uncerteinty
+                //     const float unc2 = pFrame->mpCamera->uncertainty2(obs.head(2));
 
-                    const float &invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                    e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
+                //     const float &invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
+                //     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
 
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberStereo);
+                //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //     e->setRobustKernel(rk);
+                //     rk->setDelta(thHuberStereo);
 
-                    optimizer.addEdge(e);
+                //     optimizer.addEdge(e);
 
-                    vpEdgesStereo.push_back(e);
-                    vnIndexEdgeStereo.push_back(i);
-                }
+                //     vpEdgesStereo.push_back(e);
+                //     vnIndexEdgeStereo.push_back(i);
+                // }
 
                 // Right monocular observation
-                if(bRight && i >= Nleft)
-                {
-                    nInitialMonoCorrespondences++;
-                    pFrame->mvbOutlier[i] = false;
+                // if(bRight && i >= Nleft)
+                // {
+                //     nInitialMonoCorrespondences++;
+                //     pFrame->mvbOutlier[i] = false;
 
-                    kpUn = pFrame->mvKeysRight->operator[](i - Nleft);
-                    Eigen::Matrix<double,2,1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y;
+                //     kpUn = pFrame->mvKeysRight->operator[](i - Nleft);
+                //     Eigen::Matrix<double,2,1> obs;
+                //     obs << kpUn.pt.x, kpUn.pt.y;
 
-                    EdgeMonoOnlyPose* e = new EdgeMonoOnlyPose(pMP->GetWorldPos(),1);
+                //     EdgeMonoOnlyPose* e = new EdgeMonoOnlyPose(pMP->GetWorldPos(),1);
 
-                    e->setVertex(0,VP);
-                    e->setMeasurement(obs);
+                //     e->setVertex(0,VP);
+                //     e->setMeasurement(obs);
 
-                    // Add here uncerteinty
-                    const float unc2 = pFrame->mpCamera->uncertainty2(obs);
+                //     // Add here uncerteinty
+                //     const float unc2 = pFrame->mpCamera->uncertainty2(obs);
 
-                    const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                    e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
+                //     const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
+                //     e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberMono);
+                //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //     e->setRobustKernel(rk);
+                //     rk->setDelta(thHuberMono);
 
-                    optimizer.addEdge(e);
+                //     optimizer.addEdge(e);
 
-                    vpEdgesMono.push_back(e);
-                    vnIndexEdgeMono.push_back(i);
-                }
+                //     vpEdgesMono.push_back(e);
+                //     vnIndexEdgeMono.push_back(i);
+                // }
             }
         }
     }
@@ -4557,10 +4557,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={15.6,15.6,15.6,15.6};
+    float chi2Mono[4]={24.6,24.6,24.6,24.6};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={20,20,20,40};
+    int its[4]={200,200,200,200};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4620,38 +4620,38 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
                 e->setRobustKernel(0);
         }
 
-        Verbose::PrintMess("KEY after first: " + std::to_string(nInliersMono), Verbose::VERBOSITY_DEBUG);
+        // Verbose::PrintMess("KEY after first: " + std::to_string(nInliersMono), Verbose::VERBOSITY_NORMAL);
 
         // For stereo observations
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-        {
-            EdgeStereoOnlyPose* e = vpEdgesStereo[i];
+        // for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
+        // {
+        //     EdgeStereoOnlyPose* e = vpEdgesStereo[i];
 
-            const size_t idx = vnIndexEdgeStereo[i];
+        //     const size_t idx = vnIndexEdgeStereo[i];
 
-            if(pFrame->mvbOutlier[idx])
-            {
-                e->computeError();
-            }
+        //     if(pFrame->mvbOutlier[idx])
+        //     {
+        //         e->computeError();
+        //     }
 
-            const float chi2 = e->chi2();
+        //     const float chi2 = e->chi2();
 
-            if(chi2>chi2Stereo[it])
-            {
-                pFrame->mvbOutlier[idx]=true;
-                e->setLevel(1); // not included in next optimization
-                nBadStereo++;
-            }
-            else
-            {
-                pFrame->mvbOutlier[idx]=false;
-                e->setLevel(0);
-                nInliersStereo++;
-            }
+        //     if(chi2>chi2Stereo[it])
+        //     {
+        //         pFrame->mvbOutlier[idx]=true;
+        //         e->setLevel(1); // not included in next optimization
+        //         nBadStereo++;
+        //     }
+        //     else
+        //     {
+        //         pFrame->mvbOutlier[idx]=false;
+        //         e->setLevel(0);
+        //         nInliersStereo++;
+        //     }
 
-            if(it==2)
-                e->setRobustKernel(0);
-        }
+        //     if(it==2)
+        //         e->setRobustKernel(0);
+        // }
 
         nInliers = nInliersMono + nInliersStereo;
         nBad = nBadMono + nBadStereo;
@@ -4667,7 +4667,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     if ((nInliers<30) && !bRecInit)
     {
         nBad=0;
-        const float chi2MonoOut = 18.f;
+        const float chi2MonoOut = 24.f;
         const float chi2StereoOut = 24.f;
         EdgeMonoOnlyPose* e1;
         EdgeStereoOnlyPose* e2;
@@ -4740,7 +4740,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H);
 
-    Verbose::PrintMess("KEY initial: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("KEY final: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_NORMAL);
 
     return nInitialCorrespondences-nBad;
 }
@@ -4795,7 +4795,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     vnIndexEdgeStereo.reserve(N);
 
     //const float thHuberMono = sqrt(5.991);
-    const float thHuberMono = sqrt(7.815);
+    const float thHuberMono = sqrt(18.815);
     const float thHuberStereo = sqrt(7.815);
 
     {
@@ -4973,9 +4973,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={15.6f,15.6f,9.8f,9.8f};
+    const float chi2Mono[4]={24.f,24.f,24.f,24.f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={15,15,15,15};
+    const int its[4]={200,200,200,200};
 
     int nBad=0;
     int nBadMono = 0;
@@ -5076,7 +5076,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     if ((nInliers<30) && !bRecInit)
     {
         nBad=0;
-        const float chi2MonoOut = 18.f;
+        const float chi2MonoOut = 24.f;
         const float chi2StereoOut = 24.f;
         EdgeMonoOnlyPose* e1;
         EdgeStereoOnlyPose* e2;
