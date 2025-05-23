@@ -4560,7 +4560,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     float chi2Mono[4]={24.6,24.6,24.6,24.6};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={200,200,200,200};
+    int its[4]={20,20,20,20};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4975,7 +4975,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={24.f,24.f,24.f,24.f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={200,200,200,200};
+    const int its[4]={20,20,20,20};
 
     int nBad=0;
     int nBadMono = 0;
