@@ -1306,22 +1306,22 @@ bool Tracking::NeedNewKeyFrame()
     int nNonTrackedClose = 0;
     int nTrackedClose= 0;
 
-    if(mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR)
-    {
-        int N = (mCurrentFrame.Nleft == -1) ? mCurrentFrame.mNumKeypoints : mCurrentFrame.Nleft;
-        for(int i =0; i<N; i++)
-        {
-            if(mCurrentFrame.mvDepth[i]>0 && mCurrentFrame.mvDepth[i]<mThDepth)
-            {
-                if(mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
-                    nTrackedClose++;
-                else
-                    nNonTrackedClose++;
+    // if(mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR)
+    // {
+    //     int N = (mCurrentFrame.Nleft == -1) ? mCurrentFrame.mNumKeypoints : mCurrentFrame.Nleft;
+    //     for(int i =0; i<N; i++)
+    //     {
+    //         if(mCurrentFrame.mvDepth[i]>0 && mCurrentFrame.mvDepth[i]<mThDepth)
+    //         {
+    //             if(mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
+    //                 nTrackedClose++;
+    //             else
+    //                 nNonTrackedClose++;
 
-            }
-        }
-        //Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " + to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
-    }
+    //         }
+    //     }
+    //     //Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " + to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
+    // }
 
     bool bNeedToInsertClose;
     bNeedToInsertClose = (nTrackedClose<100) && (nNonTrackedClose>70);
