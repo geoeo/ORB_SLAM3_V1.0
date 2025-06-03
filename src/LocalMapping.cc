@@ -129,10 +129,18 @@ void LocalMapping::Run()
                 // Initialize IMU here
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
-                    if (mbMonocular)
-                        auto _ = InitializeIMU(1e1, 1e10, true);
-                    else
-                        auto _ = InitializeIMU(1e2, 1e5, true);
+                    //if (mbMonocular){
+                        auto success = InitializeIMU(1e1, 1e10, true);
+
+                        // Skip all further IMU initializations - Seems to cause problems in high-noise environments
+                        // if(success){
+                        //     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+                        //     mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+                        // }
+                    //}
+
+                    // else
+                    //     auto _ = InitializeIMU(1e2, 1e5, true);
                 }
 
 
