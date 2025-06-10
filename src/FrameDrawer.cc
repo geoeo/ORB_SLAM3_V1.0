@@ -59,6 +59,8 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 
     cv::Scalar standardColor(0,255,0);
     cv::Scalar odometryColor(255,0,0);
+    cv::Scalar outlierColor(0,0,255);
+    cv::Scalar noLandmarkColor(0,0,0);
 
     //Copy variables within scoped mutex
     {
@@ -193,14 +195,49 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                     cv::circle(im,point,2,standardColor,-1);
                     mnTracked++;
                 }
-                else // This is match to a "visual odometry" MapPoint created in the last frame
+                else if(vbVO[i]) // This is match to a "visual odometry" MapPoint created in the last frame - 0 Obs
                 {
                     cv::rectangle(im,pt1,pt2,odometryColor);
                     cv::circle(im,point,2,odometryColor,-1);
                     mnTrackedVO++;
                 }
+                else{ // Feature without a landmark - MapPoint
+                    cv::rectangle(im,pt1,pt2,noLandmarkColor);
+                    cv::circle(im,point,2,noLandmarkColor,-1);
+                }
             }
+            
         }
+
+        int n_out = vOutlierKeys.size();
+        // for(int i=0;i<n;i++)
+        // {
+        //     cv::Point2f pt1,pt2;
+        //     cv::Point2f point;
+        //     if(imageScale != 1.f)
+        //     {
+        //         const auto p = vOutlierKeys.operator[](i).pt;
+        //         point = p / imageScale;
+        //         float px = p.x / imageScale;
+        //         float py = p.y / imageScale;
+        //         pt1.x=px-r;
+        //         pt1.y=py-r;
+        //         pt2.x=px+r;
+        //         pt2.y=py+r;
+        //     }
+        //     else
+        //     {
+        //         const auto p = vOutlierKeys.operator[](i).pt;
+        //         point = p;
+        //         pt1.x=p.x-r;
+        //         pt1.y=p.y-r;
+        //         pt2.x=p.x+r;
+        //         pt2.y=p.y+r;
+        //     }
+        //     cv::rectangle(im,pt1,pt2,outlierColor);
+        //     cv::circle(im,point,2,outlierColor,-1);
+     
+        // }
     }
 
     cv::Mat imWithInfo;
@@ -422,10 +459,10 @@ void FrameDrawer::Update(Tracking *pTracker)
     {
         for(int i=0;i<N;i++)
         {
-            MapPoint* pMP = pTracker->mCurrentFrame.mvpMapPoints[i];
+            MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
             if(pMP)
             {
-                if(!pTracker->mCurrentFrame.mvbOutlier[i])
+                if(!mCurrentFrame.mvbOutlier[i])
                 {
                     if(pMP->Observations()>0)
                         mvbMap[i]=true;

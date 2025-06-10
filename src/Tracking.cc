@@ -408,12 +408,12 @@ void Tracking::Track()
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+mImageTimeout)
         {
-            Verbose::PrintMess("Timestamp image jump detected", Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("Timestamp image jump detected", Verbose::VERBOSITY_NORMAL);
             if(mpAtlas->isInertial())
             {
                 if(!(mpAtlas->isImuInitialized() && mpAtlas->GetCurrentMap()->GetIniertialBA2()))
                 {
-                    Verbose::PrintMess("Reseting Active Map", Verbose::VERBOSITY_DEBUG);
+                    Verbose::PrintMess("Reseting Active Map", Verbose::VERBOSITY_NORMAL);
                     mpSystem->ResetActiveMap();
                 }
                 return;
@@ -499,8 +499,8 @@ void Tracking::Track()
                 {
                     Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackWithMotionModel();
-                    if(!bOK)
-                        bOK = TrackReferenceKeyFrame();
+                    //if(bOK)
+                    bOK = TrackReferenceKeyFrame();
                 }
 
 
@@ -1091,9 +1091,9 @@ bool Tracking::TrackWithMotionModel()
         pred_success = PredictStateIMU();
     }
 
-    if(pred_success)
-        return true;
-    else 
+    // if(pred_success)
+    //     return true;
+    if(!pred_success) 
         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
     
 
@@ -1106,7 +1106,7 @@ bool Tracking::TrackWithMotionModel()
     if(mSensor==System::STEREO)
         th=7;
     else
-        th=60;
+        th=30;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
@@ -1492,7 +1492,7 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.95);
+        ORBmatcher matcher(0.65);
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
@@ -1639,8 +1639,8 @@ void Tracking::UpdateLocalKeyFrames()
     for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
     {
         // Limit the number of keyframes
-        if(mvpLocalKeyFrames.size()>80) // 80
-            break;
+        //if(mvpLocalKeyFrames.size()>80) // 80
+        //    break;
 
         KeyFrame* pKF = *itKF;
 
