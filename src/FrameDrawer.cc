@@ -208,8 +208,8 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             }
             
         }
+        // Outlier coloring
 
-        int n_out = vOutlierKeys.size();
         // for(int i=0;i<n;i++)
         // {
         //     cv::Point2f pt1,pt2;

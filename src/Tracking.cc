@@ -1010,7 +1010,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.65,true);
+    ORBmatcher matcher(0.7,true);
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -1078,7 +1078,7 @@ void Tracking::UpdateLastFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.65,true);
+    ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1093,7 +1093,6 @@ bool Tracking::TrackWithMotionModel()
 
     if(pred_success)
          return true;
-    //if(!pred_success)
     else 
         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
     
@@ -1493,7 +1492,7 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.65);
+        ORBmatcher matcher(0.95);
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
@@ -1690,7 +1689,7 @@ void Tracking::UpdateLocalKeyFrames()
     }
 
     // Add 10 last temporal KFs (mainly for IMU)
-    if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) &&mvpLocalKeyFrames.size()<80)
+    if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
     {
         KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
@@ -1741,7 +1740,7 @@ bool Tracking::Relocalization()
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.25,true);
+    ORBmatcher matcher(0.65,true);
 
     vector<MLPnPsolver*> vpMLPnPsolvers;
     vpMLPnPsolvers.resize(nKFs);
