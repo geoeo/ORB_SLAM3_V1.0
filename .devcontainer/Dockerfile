@@ -27,12 +27,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # For ROS with GUI support
-RUN apt update && apt install curl -y
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
-RUN apt update && apt upgrade -y
-RUN apt update && apt install ros-humble-ros-base -y
-RUN apt update && apt install ros-dev-tools ros-humble-rosbag2-storage-mcap -y
+COPY .devcontainer/build_scripts/install_ros.sh /root
+WORKDIR /root
+RUN bash install_ros.sh
 
 # Eigen3 is getting installed by some ROS package. Remove here so that we dont have runtime issues
 RUN rm -rf /usr/include/eigen3 && rm -rf /usr/share/eigen3
@@ -105,6 +102,7 @@ RUN apt-get update && apt-get install -y libsuitesparse-dev
 
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
+
 
 WORKDIR /
 RUN mkdir bags
