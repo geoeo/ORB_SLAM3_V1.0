@@ -92,6 +92,7 @@ void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_m
 
 cv::cuda::HostMem ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
 {
+  std::cout << "Img received" << std::endl;
   auto width = img_msg->width;
   auto height = img_msg->height;
   auto size_in_bytes = img_msg->height*img_msg->step;
@@ -215,7 +216,7 @@ class SlamNode : public rclcpp::Node
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
-      float resize_factor = 0.8;
+      float resize_factor = 0.6;
 
       // F6
       ORB_SLAM3::CameraParameters cam{};
@@ -280,10 +281,10 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.0007579860836224204; //x200
-      m_imu.gyroWalk   = 0.0000352677789580351; //x200
-      m_imu.noiseAccel =  0.03138444640779682; //x200
-      m_imu.noiseGyro  = 0.003278894143880944; // x200
+      m_imu.accelWalk  = 0.00007579860836224204; //x20
+      m_imu.gyroWalk   = 0.00000352677789580351; //x20
+      m_imu.noiseAccel =  0.003138444640779682; //x20
+      m_imu.noiseGyro  = 0.0003278894143880944; // x20
 
 
       m_imu.InsertKFsWhenLost = true;
@@ -315,8 +316,8 @@ class SlamNode : public rclcpp::Node
 
       double timeshift_cam_imu = 0.008390335701785497; 
 
-      const int frame_grid_cols = 64;
-      const int frame_grid_rows = 48;
+      const int frame_grid_cols = 128;
+      const int frame_grid_rows = 96;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
