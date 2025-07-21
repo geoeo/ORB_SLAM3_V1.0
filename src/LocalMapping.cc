@@ -134,8 +134,8 @@ void LocalMapping::Run()
 
                         // Skip all further IMU initializations - Seems to cause problems in high-noise environments
                         if(success){
-                            mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-                            mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
+                            //mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
+                            //mpCurrentKeyFrame->GetMap()->SetIniertialBA2();
                         }
                     //}
 
@@ -164,7 +164,7 @@ void LocalMapping::Run()
 
                                 if(success){
                                     mpCurrentKeyFrame->GetMap()->SetIniertialBA1();
-                                    //mpCurrentKeyFrame->GetMap()->SetIniertialBA2(); // skip second BA
+                                    mpCurrentKeyFrame->GetMap()->SetIniertialBA2(); // skip second BA
                                 }
                                     
 

@@ -499,8 +499,8 @@ void Tracking::Track()
                 {
                     Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackWithMotionModel();
-                    //if(bOK)
-                    bOK = TrackReferenceKeyFrame();
+                    if(bOK)
+                    	bOK = TrackReferenceKeyFrame();
                 }
 
 
@@ -1091,9 +1091,10 @@ bool Tracking::TrackWithMotionModel()
         pred_success = PredictStateIMU();
     }
 
-    // if(pred_success)
-    //     return true;
-    if(!pred_success) 
+    if(pred_success)
+         return true;
+    //if(!pred_success)
+    else 
         mCurrentFrame.SetPose(mVelocity * mLastFrame.GetPose());
     
 
