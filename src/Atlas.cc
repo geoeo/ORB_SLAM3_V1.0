@@ -271,8 +271,11 @@ Map* Atlas::GetCurrentMap()
     unique_lock<mutex> lock(mMutexAtlas);
     if(!mpCurrentMap)
         CreateNewMap();
-    while(mpCurrentMap->IsBad())
+    while(mpCurrentMap->IsBad()){
         usleep(3000);
+        Verbose::PrintMess("Waiting for a valid current map", Verbose::VERBOSITY_NORMAL);
+    }
+
 
     return mpCurrentMap;
 }

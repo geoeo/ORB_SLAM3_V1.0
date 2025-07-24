@@ -215,7 +215,6 @@ void Tracking::PreintegrateIMU()
             if(!mlQueueImuData.empty())
             {
                 IMU::Point* m = &mlQueueImuData.front();
-                cout.precision(17);
                 if(m->t<mCurrentFrame.mpPrevFrame->mTimeStamp)
                 {
                     mlQueueImuData.pop_front();
@@ -317,8 +316,8 @@ bool Tracking::PredictStateIMU()
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
         const float t12 = mpImuPreintegratedFromLastKF->dT;
         auto b = mpLastKeyFrame->GetImuBias();
-        Verbose::PrintMess("Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Bias wx: " + std::to_string(b.bwx) + "  ẃy: " + std::to_string(b.bwy) + " wz: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("KF Bias ax: " + std::to_string(b.bax) + "  ay: " + std::to_string(b.bay) + " az: " + std::to_string(b.baz), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("KF Bias wx: " + std::to_string(b.bwx) + "  wy: " + std::to_string(b.bwy) + " wz: " + std::to_string(b.bwz), Verbose::VERBOSITY_NORMAL);
         try{
             Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
             Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
@@ -353,9 +352,6 @@ bool Tracking::PredictStateIMU()
             Verbose::PrintMess("No Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
             return false;
         }
-
-
-
 
         mCurrentFrame.mImuBias = mLastFrame.mImuBias;
         mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
@@ -449,6 +445,7 @@ void Tracking::Track()
     if(nCurMapChangeIndex>nMapChangeIndex)
     {
         mpAtlas->GetCurrentMap()->SetLastMapChange(nCurMapChangeIndex);
+        Verbose::PrintMess("TRACK: Map has been updated. MapChangeIndex: " + to_string(nCurMapChangeIndex), Verbose::VERBOSITY_NORMAL);
         mbMapUpdated = true;
     }
 
@@ -1078,7 +1075,7 @@ void Tracking::UpdateLastFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.7,true);
+    ORBmatcher matcher(0.9,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1106,7 +1103,7 @@ bool Tracking::TrackWithMotionModel()
     if(mSensor==System::STEREO)
         th=7;
     else
-        th=30;
+        th=10;
 
     int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
@@ -1199,7 +1196,8 @@ bool Tracking::TrackLocalMap()
         {
             const auto prevFrameExists = nullptr != mCurrentFrame.mpPrevFrame;
             const auto mpcpiExists = prevFrameExists ? mCurrentFrame.mpPrevFrame->mpcpi != nullptr : false;
-            if(!mbMapUpdated /*&&(mnMatchesInliers>30)*/ &&  mpcpiExists)
+            
+            if(!mbMapUpdated && /* (mnMatchesInliers>30) && */  mpcpiExists)
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
@@ -1490,18 +1488,17 @@ void Tracking::SearchLocalPoints()
         }
     }
 
+    Verbose::PrintMess("points to match: " + std::to_string(nToMatch), Verbose::VERBOSITY_NORMAL);
+
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.6);
+        ORBmatcher matcher(0.95);
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
         if(mpAtlas->isImuInitialized())
         {
-            if(mpAtlas->GetCurrentMap()->GetIniertialBA2())
-                th=30;
-            else
-                th=30;
+            th=5;
         }
         else if(!mpAtlas->isImuInitialized() && (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
         {
@@ -1510,7 +1507,7 @@ void Tracking::SearchLocalPoints()
 
         // If the camera has been relocalised recently, perform a coarser search
         if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
-            th=5;
+            th=10;
 
         const auto state = getTrackingState();
         if(state==LOST || state==RECENTLY_LOST) // Lost for less than 1 second
@@ -1828,7 +1825,7 @@ bool Tracking::Relocalization()
                 }
 
                 int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
-                Verbose::PrintMess("Reloc PoseOptimization - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Reloc PoseOptimization - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_DEBUG);
 
                 if(nGood<10)
                     continue;
@@ -1841,12 +1838,12 @@ bool Tracking::Relocalization()
                 if(nGood<50)
                 {
                     int nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,10,100);
-                    Verbose::PrintMess("Reloc SearchByProjection - Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("Reloc SearchByProjection - Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_DEBUG);
 
                     if(nadditional+nGood>=50)
                     {
                         nGood = Optimizer::PoseOptimization(&mCurrentFrame);
-                        Verbose::PrintMess("Reloc PoseOptimization (2) - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Reloc PoseOptimization (2) - Good:  " + std::to_string(nGood), Verbose::VERBOSITY_DEBUG);
 
 
                         // If many inliers but still not enough, search by projection again in a narrower window
@@ -1858,13 +1855,13 @@ bool Tracking::Relocalization()
                                 if(mCurrentFrame.mvpMapPoints[ip])
                                     sFound.insert(mCurrentFrame.mvpMapPoints[ip]);
                             nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,3,64);
-                            Verbose::PrintMess("Reloc SearchByProjection (2)- Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("Reloc SearchByProjection (2)- Additional:  " + std::to_string(nadditional), Verbose::VERBOSITY_DEBUG);
 
                             // Final optimization
                             if(nGood+nadditional>=50)
                             {
                                 nGood = Optimizer::PoseOptimization(&mCurrentFrame);
-                                Verbose::PrintMess("Reloc PoseOptimization (F)- Good:  " + std::to_string(nGood), Verbose::VERBOSITY_NORMAL);
+                                Verbose::PrintMess("Reloc PoseOptimization (F)- Good:  " + std::to_string(nGood), Verbose::VERBOSITY_DEBUG);
 
                                 for(int io =0; io<mCurrentFrame.mNumKeypoints; io++)
                                     if(mCurrentFrame.mvbOutlier[io])

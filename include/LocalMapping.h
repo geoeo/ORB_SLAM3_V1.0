@@ -164,7 +164,7 @@ protected:
 
     std::shared_ptr<std::mutex> mMutexPtrChangeKeyframe;
 
-    bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false);
+    bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false, float minTime = 5, size_t nMinKF = 10);
     void ScaleRefinement();
 
     atomic_bool bInitializing;

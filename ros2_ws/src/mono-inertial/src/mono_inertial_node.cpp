@@ -281,9 +281,9 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.00007579860836224204; //x20
+      m_imu.accelWalk  = 0.0007579860836224204; //x20
       m_imu.gyroWalk   = 0.00000352677789580351; //x20
-      m_imu.noiseAccel =  0.003138444640779682; //x20
+      m_imu.noiseAccel =  0.03138444640779682; //x20
       m_imu.noiseGyro  = 0.0003278894143880944; // x20
 
 
@@ -330,8 +330,8 @@ class SlamNode : public rclcpp::Node
       sub_imu_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 

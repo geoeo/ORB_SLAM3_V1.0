@@ -442,7 +442,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
         if(!pKFi->mPrevKF)
         {
-            Verbose::PrintMess("FulIntertialBA: NO INERTIAL LINK TO PREVIOUS FRAME!", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("FulIntertialBA: No inertial link to previous frame - Probably first measurement", Verbose::VERBOSITY_DEBUG);
             continue;
         }
 
@@ -742,7 +742,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     }
 
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 
@@ -1055,7 +1055,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
-    Map* pCurrentMap = pKF->GetMap();
+    Map* pCurrentMap = pMap; //TODO: There shouldnt be two map pointer
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     for(int i=0, iend=vNeighKFs.size(); i<iend; i++)
@@ -1359,7 +1359,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
 
     // Get Map Mutex
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
     if(!vToErase.empty())
     {
@@ -1392,7 +1392,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMP->UpdateNormalAndDepth();
     }
 
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 
@@ -1677,7 +1677,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
     }
 
     // TODO Check this changeindex
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFixedKFs, vector<KeyFrame*> &vpFixedCorrectedKFs,
@@ -2279,7 +2279,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
-    Map* pCurrentMap = pKF->GetMap();
+    Map* pCurrentMap = pMap; //TODO: There should be two map pointer
 
     int maxOpt=10;
     int opt_it=10;
@@ -2746,7 +2746,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Get Map Mutex and erase outliers
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
 
     // TODO: Some convergence problems have been detected here
@@ -2816,7 +2816,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         pMP->UpdateNormalAndDepth();
     }
 
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)
@@ -4345,7 +4345,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
         pMP->UpdateNormalAndDepth();
     }
 
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit)
@@ -4557,10 +4557,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={24.6,24.6,24.6,24.6};
+    float chi2Mono[4]={15.6f,9.8f,9.8f,7.815f};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={20,20,20,20};
+    int its[4]={200,200,200,200};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4973,9 +4973,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={24.f,24.f,24.f,24.f};
+    const float chi2Mono[4]={15.6f,9.8f,9.8f,7.815f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={20,20,20,20};
+    const int its[4]={200,200,200,200};
 
     int nBad=0;
     int nBadMono = 0;
@@ -5467,7 +5467,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFram
 
         pMP->UpdateNormalAndDepth();
     }
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 } //namespace ORB_SLAM
