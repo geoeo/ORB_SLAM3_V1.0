@@ -1182,6 +1182,7 @@ bool Tracking::TrackLocalMap()
                 aux2++;
         }
 
+    const auto inlierImuThreshold = 8;
     int inliers;
     if (!mpAtlas->isImuInitialized())
         Optimizer::PoseOptimization(&mCurrentFrame);
@@ -1189,19 +1190,22 @@ bool Tracking::TrackLocalMap()
     {
         if(mCurrentFrame.mnId<=mnLastRelocFrameId+mnFramesToResetIMU)
         {
-            Verbose::PrintMess("TLM: PoseOptimization ", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("TLM: PoseOptimization - LOST", Verbose::VERBOSITY_NORMAL);
             Optimizer::PoseOptimization(&mCurrentFrame);
         }
         else
         {
             const auto prevFrameExists = nullptr != mCurrentFrame.mpPrevFrame;
             const auto mpcpiExists = prevFrameExists ? mCurrentFrame.mpPrevFrame->mpcpi != nullptr : false;
-            
-            if(!mbMapUpdated && /* (mnMatchesInliers>30) && */  mpcpiExists)
+
+            auto pose_opt_success = false;
+            if(!mbMapUpdated && mpcpiExists)
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
-                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame);
+                inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                if(inliers < inlierImuThreshold)
+                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);              
             }
             else
             {
@@ -1246,7 +1250,7 @@ bool Tracking::TrackLocalMap()
 
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
-    mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
+    //mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<30)
         return false;
 
@@ -1254,15 +1258,15 @@ bool Tracking::TrackLocalMap()
         return true;
 
 
-    if (mSensor == System::IMU_MONOCULAR)
-    {
-        const auto pred = (mnMatchesInliers<8 && mpAtlas->isImuInitialized())||(mnMatchesInliers<30 && !mpAtlas->isImuInitialized());
-        return !pred;
-    }
-    else
-    {
-        return mnMatchesInliers>=30;
-    }
+    //if (mSensor == System::IMU_MONOCULAR)
+    //{
+    const auto pred = (mnMatchesInliers<inlierImuThreshold && mpAtlas->isImuInitialized())||(mnMatchesInliers<30 && !mpAtlas->isImuInitialized());
+    return !pred;
+    // }
+    // else
+    // {
+    //     return mnMatchesInliers>=30;
+    // }
 }
 
 bool Tracking::NeedNewKeyFrame()

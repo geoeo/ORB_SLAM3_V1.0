@@ -270,9 +270,9 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 10000;
+      orb.nFeatures   = 2000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 8;
+      orb.nLevels     = 1;
       orb.scaleFactor = 2.0;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
@@ -281,9 +281,9 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.0007579860836224204; //x20
+      m_imu.accelWalk  = 0.0007579860836224204; //x200
       m_imu.gyroWalk   = 0.00000352677789580351; //x20
-      m_imu.noiseAccel =  0.03138444640779682; //x20
+      m_imu.noiseAccel =  0.03138444640779682; //x200
       m_imu.noiseGyro  = 0.0003278894143880944; // x20
 
 

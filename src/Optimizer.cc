@@ -2282,11 +2282,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     Map* pCurrentMap = pMap; //TODO: There should be two map pointer
 
     int maxOpt=10;
-    int opt_it=10;
+    int opt_it=40;
     if(bLarge)
     {
         maxOpt=25;
-        opt_it=4;
+        opt_it=16;
     }
     const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
@@ -4560,7 +4560,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     float chi2Mono[4]={15.6f,9.8f,9.8f,7.815f};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={200,200,200,200};
+    int its[4]={20,20,20,20};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4745,7 +4745,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     return nInitialCorrespondences-nBad;
 }
 
-int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
+int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThreshold ,bool bRecInit)
 {
     ZoneNamedN(PoseInertialOptimizationLastFrame, "PoseInertialOptimizationLastFrame", true); 
     g2o::SparseOptimizer optimizer;
@@ -4975,7 +4975,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={15.6f,9.8f,9.8f,7.815f};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={200,200,200,200};
+    const int its[4]={20,20,20,20};
 
     int nBad=0;
     int nBadMono = 0;
@@ -5104,72 +5104,75 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit)
     }
 
     nInliers = nInliersMono + nInliersStereo;
+    const auto validPoints = nInitialCorrespondences-nBad;
 
+    if(validPoints >= inlierThreshold){
+        // Recover optimized pose, velocity and biases
+        pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
+        Vector6d b;
+        b << VG->estimate(), VA->estimate();
+        pFrame->mImuBias = IMU::Bias(b[3],b[4],b[5],b[0],b[1],b[2]);
 
-    // Recover optimized pose, velocity and biases
-    pFrame->SetImuPoseVelocity(VP->estimate().Rwb.cast<float>(), VP->estimate().twb.cast<float>(), VV->estimate().cast<float>());
-    Vector6d b;
-    b << VG->estimate(), VA->estimate();
-    pFrame->mImuBias = IMU::Bias(b[3],b[4],b[5],b[0],b[1],b[2]);
+        // Recover Hessian, marginalize previous frame states and generate new prior for frame
+        Eigen::Matrix<double,30,30> H;
+        H.setZero();
 
-    // Recover Hessian, marginalize previous frame states and generate new prior for frame
-    Eigen::Matrix<double,30,30> H;
-    H.setZero();
+        H.block<24,24>(0,0)+= ei->GetHessian();
 
-    H.block<24,24>(0,0)+= ei->GetHessian();
+        Eigen::Matrix<double,6,6> Hgr = egr->GetHessian();
+        H.block<3,3>(9,9) += Hgr.block<3,3>(0,0);
+        H.block<3,3>(9,24) += Hgr.block<3,3>(0,3);
+        H.block<3,3>(24,9) += Hgr.block<3,3>(3,0);
+        H.block<3,3>(24,24) += Hgr.block<3,3>(3,3);
 
-    Eigen::Matrix<double,6,6> Hgr = egr->GetHessian();
-    H.block<3,3>(9,9) += Hgr.block<3,3>(0,0);
-    H.block<3,3>(9,24) += Hgr.block<3,3>(0,3);
-    H.block<3,3>(24,9) += Hgr.block<3,3>(3,0);
-    H.block<3,3>(24,24) += Hgr.block<3,3>(3,3);
+        Eigen::Matrix<double,6,6> Har = ear->GetHessian();
+        H.block<3,3>(12,12) += Har.block<3,3>(0,0);
+        H.block<3,3>(12,27) += Har.block<3,3>(0,3);
+        H.block<3,3>(27,12) += Har.block<3,3>(3,0);
+        H.block<3,3>(27,27) += Har.block<3,3>(3,3);
 
-    Eigen::Matrix<double,6,6> Har = ear->GetHessian();
-    H.block<3,3>(12,12) += Har.block<3,3>(0,0);
-    H.block<3,3>(12,27) += Har.block<3,3>(0,3);
-    H.block<3,3>(27,12) += Har.block<3,3>(3,0);
-    H.block<3,3>(27,27) += Har.block<3,3>(3,3);
+        H.block<15,15>(0,0) += ep->GetHessian();
 
-    H.block<15,15>(0,0) += ep->GetHessian();
-
-    int tot_in = 0, tot_out = 0;
-    for(size_t i=0, iend=vpEdgesMono.size(); i<iend; i++)
-    {
-        EdgeMonoOnlyPose* e = vpEdgesMono[i];
-
-        const size_t idx = vnIndexEdgeMono[i];
-
-        if(!pFrame->mvbOutlier[idx])
+        int tot_in = 0, tot_out = 0;
+        for(size_t i=0, iend=vpEdgesMono.size(); i<iend; i++)
         {
-            H.block<6,6>(15,15) += e->GetHessian();
-            tot_in++;
+            EdgeMonoOnlyPose* e = vpEdgesMono[i];
+
+            const size_t idx = vnIndexEdgeMono[i];
+
+            if(!pFrame->mvbOutlier[idx])
+            {
+                H.block<6,6>(15,15) += e->GetHessian();
+                tot_in++;
+            }
+            else
+                tot_out++;
         }
-        else
-            tot_out++;
+
+        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
+        {
+            EdgeStereoOnlyPose* e = vpEdgesStereo[i];
+
+            const size_t idx = vnIndexEdgeStereo[i];
+
+            if(!pFrame->mvbOutlier[idx])
+            {
+                H.block<6,6>(15,15) += e->GetHessian();
+                tot_in++;
+            }
+            else
+                tot_out++;
+        }
+
+        H = Marginalize(H,0,14);
+
+        pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H.block<15,15>(15,15));
+        delete pFp->mpcpi;
+        pFp->mpcpi = NULL;
     }
 
-    for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-    {
-        EdgeStereoOnlyPose* e = vpEdgesStereo[i];
 
-        const size_t idx = vnIndexEdgeStereo[i];
-
-        if(!pFrame->mvbOutlier[idx])
-        {
-            H.block<6,6>(15,15) += e->GetHessian();
-            tot_in++;
-        }
-        else
-            tot_out++;
-    }
-
-    H = Marginalize(H,0,14);
-
-    pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H.block<15,15>(15,15));
-    delete pFp->mpcpi;
-    pFp->mpcpi = NULL;
-
-    return nInitialCorrespondences-nBad;
+    return validPoints;
 }
 
 void Optimizer::OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,

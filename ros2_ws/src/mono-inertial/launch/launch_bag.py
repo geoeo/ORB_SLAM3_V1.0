@@ -10,7 +10,7 @@ bag_start_offset = 120.0
 bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-09_14_04_grid_80m'
 
 air_id = 6
-rate = 0.1
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 
 def generate_launch_description():
