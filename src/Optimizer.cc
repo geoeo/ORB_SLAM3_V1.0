@@ -1055,14 +1055,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
-    Map* pCurrentMap = pMap; //TODO: There shouldnt be two map pointer
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     for(int i=0, iend=vNeighKFs.size(); i<iend; i++)
     {
         KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
-        if(!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
+        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);
     }
 
@@ -1082,7 +1081,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         {
             MapPoint* pMP = *vit;
             if(pMP)
-                if(!pMP->isBad() && pMP->GetMap() == pCurrentMap)
+                if(!pMP->isBad() && pMP->GetMap() == pMap)
                 {
 
                     if(pMP->mnBALocalForKF!=pKF->mnId)
@@ -1106,7 +1105,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId )
             {                
                 pKFi->mnBAFixedForKF=pKF->mnId;
-                if(!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
+                if(!pKFi->isBad() && pKFi->GetMap() == pMap)
                     lFixedCameras.push_back(pKFi);
             }
         }
@@ -1140,8 +1139,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     unsigned long maxKFid = 0;
 
     // DEBUG LBA
-    pCurrentMap->msOptKFs.clear();
-    pCurrentMap->msFixedKFs.clear();
+    pMap->msOptKFs.clear();
+    pMap->msFixedKFs.clear();
 
     // Set Local KeyFrame vertices
     for(list<KeyFrame*>::iterator lit=lLocalKeyFrames.begin(), lend=lLocalKeyFrames.end(); lit!=lend; lit++)
@@ -1156,7 +1155,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
         // DEBUG LBA
-        pCurrentMap->msOptKFs.insert(pKFi->mnId);
+        pMap->msOptKFs.insert(pKFi->mnId);
     }
     num_OptKF = lLocalKeyFrames.size();
 
@@ -1173,7 +1172,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
         // DEBUG LBA
-        pCurrentMap->msFixedKFs.insert(pKFi->mnId);
+        pMap->msFixedKFs.insert(pKFi->mnId);
     }
 
     // Set MapPoint vertices
@@ -1231,7 +1230,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         {
             KeyFrame* pKFi = mit->first;
 
-            if(!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
+            if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             {
                 const int leftIndex = get<0>(mit->second);
 
@@ -2279,8 +2278,6 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
-    Map* pCurrentMap = pMap; //TODO: There should be two map pointer
-
     int maxOpt=10;
     int opt_it=40;
     if(bLarge)
@@ -2288,7 +2285,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         maxOpt=25;
         opt_it=16;
     }
-    const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
+    const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
     vector<KeyFrame*> vpOptimizableKFs;
@@ -2355,7 +2352,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         if(pKFi->mnBALocalForKF == pKF->mnId || pKFi->mnBAFixedForKF == pKF->mnId)
             continue;
         pKFi->mnBALocalForKF = pKF->mnId;
-        if(!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
+        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
         {
             lpOptVisKFs.push_back(pKFi);
 
@@ -2622,7 +2619,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId)
                 continue;
 
-            if(!pKFi->isBad() && pKFi->GetMap() == pCurrentMap)
+            if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             {
                 const int leftIndex = get<0>(mit->second);
 
