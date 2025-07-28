@@ -25,10 +25,10 @@
 #include "ORBmatcher.h"
 #include "G2oTypes.h"
 
-#include<mutex>
-#include<thread>
+#include <mutex>
+#include <thread>
 
-
+using namespace std;
 namespace ORB_SLAM3
 {
 
@@ -300,8 +300,7 @@ void LoopClosing::Run()
         if(CheckFinish()){
             break;
         }
-
-        usleep(5000);
+        this_thread::sleep_for(chrono::microseconds(5000));
     }
 
     SetFinish();
@@ -990,7 +989,7 @@ void LoopClosing::CorrectLoop()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(1000);
+        this_thread::sleep_for(chrono::microseconds(1000));
     }
 
     // Ensure current keyframe is updated
@@ -1244,7 +1243,7 @@ void LoopClosing::MergeLocal()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(1000);
+        this_thread::sleep_for(chrono::microseconds(1000));
     }
     //cout << "Local Map stopped" << endl;
 
@@ -1703,7 +1702,7 @@ void LoopClosing::MergeLocal()
         // Wait until Local Mapping has effectively stopped
         while(!mpLocalMapper->isStopped())
         {
-            usleep(1000);
+            this_thread::sleep_for(chrono::microseconds(1000));
         }
 
         // Optimize graph (and update the loop position for each element form the begining to the end)
@@ -1815,7 +1814,7 @@ void LoopClosing::MergeLocal2()
     // Wait until Local Mapping has effectively stopped
     while(!mpLocalMapper->isStopped())
     {
-        usleep(1000);
+        this_thread::sleep_for(chrono::microseconds(1000));
     }
     //cout << "Local Map stopped" << endl;
 
@@ -2205,7 +2204,7 @@ void LoopClosing::RequestReset()
         if(!mbResetRequested)
             break;
         }
-        usleep(5000);
+        this_thread::sleep_for(chrono::microseconds(5000));
     }
 }
 
@@ -2224,7 +2223,7 @@ void LoopClosing::RequestResetActiveMap(Map *pMap)
             if(!mbResetActiveMapRequested)
                 break;
         }
-        usleep(3000);
+        this_thread::sleep_for(chrono::microseconds(3000));
     }
 }
 
@@ -2318,7 +2317,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
             while(!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished())
             {
-                usleep(1000);
+                this_thread::sleep_for(chrono::microseconds(1000));
             }
 
             // Get Map Mutex

@@ -31,6 +31,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <thread>
 #include <tracy.hpp>
 
 using namespace std;
@@ -237,7 +238,7 @@ void Tracking::PreintegrateIMU()
             }
         }
         if(bSleep)
-           usleep(500);
+           this_thread::sleep_for(chrono::microseconds(500));
     }
 
     const int n = mvImuFromLastFrame.size()-1;
@@ -375,7 +376,7 @@ void Tracking::Track()
     {
         Verbose::PrintMess("Tracking: Waiting to the next step", Verbose::VERBOSITY_NORMAL);
         while(!mbStep && bStepByStep)
-           usleep(500);
+           this_thread::sleep_for(chrono::microseconds(500));
         mbStep = false;
     }
 
@@ -1902,7 +1903,7 @@ void Tracking::Reset(bool bLocMap)
     {
         mpViewer->RequestStop();
         while(!mpViewer->isStopped())
-           usleep(3000);
+           this_thread::sleep_for(chrono::microseconds(3000));
     }
 
     // Reset Local Mapping
@@ -1963,7 +1964,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     {
         mpViewer->RequestStop();
         while(!mpViewer->isStopped())
-            usleep(3000);
+            this_thread::sleep_for(chrono::microseconds(3000));
     }
 
     Map* pMap = mpAtlas->GetCurrentMap();
@@ -2135,11 +2136,8 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
     mCurrentFrame.SetNewBias(mLastBias);
 
     while(!mCurrentFrame.imuIsPreintegrated())
-    {
-       usleep(500);
-    }
-
-
+       this_thread::sleep_for(chrono::microseconds(500));
+    
     if(mLastFrame.mnId == mLastFrame.mpLastKeyFrame->mnFrameId)
     {
         mLastFrame.SetImuPoseVelocity(mLastFrame.mpLastKeyFrame->GetImuRotation(),

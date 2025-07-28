@@ -25,6 +25,7 @@
 #include <iomanip>
 #include <openssl/md5.h>
 #include <tracy.hpp>
+#include <thread>
 
 using namespace std;
 
@@ -211,7 +212,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
             // Wait until Local Mapping has effectively stopped
             while(!mpLocalMapper->isStopped())
             {
-                usleep(1000);
+                this_thread::sleep_for(chrono::microseconds(1000));
             }
 
             mpTracker->InformOnlyTracking(true);

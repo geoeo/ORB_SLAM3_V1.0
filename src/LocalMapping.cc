@@ -27,6 +27,9 @@
 #include <tracy.hpp>
 
 #include <chrono>
+#include <thread>
+
+using namespace std;
 
 namespace ORB_SLAM3
 {
@@ -213,7 +216,7 @@ void LocalMapping::Run()
             // Safe area to stop
             while(isStopped() && !CheckFinish())
             {
-                usleep(3000);
+                this_thread::sleep_for(chrono::microseconds(3000));
             }
             if(CheckFinish())
                 break;
@@ -227,7 +230,7 @@ void LocalMapping::Run()
         if(CheckFinish())
             break;
 
-        //usleep(3000);
+        //this_thread::sleep_for(chrono::microseconds(3000));
     }
 
     SetFinish();
@@ -1024,7 +1027,7 @@ void LocalMapping::RequestReset()
             if(!mbResetRequested)
                 break;
         }
-        usleep(3000);
+        this_thread::sleep_for(chrono::microseconds(3000));
     }
     Verbose::PrintMess("LM: Map reset, Done!!!", Verbose::VERBOSITY_NORMAL);
 }
@@ -1039,14 +1042,14 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)
     }
     Verbose::PrintMess("LM: Active map reset, waiting...", Verbose::VERBOSITY_NORMAL);
 
-    while(1)
+    while(true)
     {
         {
             unique_lock<mutex> lock2(mMutexReset);
             if(!mbResetRequestedActiveMap)
                 break;
         }
-        usleep(3000);
+        this_thread::sleep_for(chrono::microseconds(3000));
     }
     Verbose::PrintMess("LM: Active map reset, Done!!!", Verbose::VERBOSITY_NORMAL);
 }

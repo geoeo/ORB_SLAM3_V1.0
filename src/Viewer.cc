@@ -19,6 +19,9 @@
 
 #include <Viewer.h>
 #include <pangolin/pangolin.h>
+#include <thread>
+
+using namespace std;
 
 namespace ORB_SLAM3
 {
@@ -366,9 +369,8 @@ void Viewer::Run()
         if(Stop())
         {
             while(isStopped())
-            {
-                usleep(3000);
-            }
+                this_thread::sleep_for(chrono::microseconds(3000));
+            
         }
 
         if(CheckFinish())

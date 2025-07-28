@@ -19,9 +19,12 @@
 #include "Atlas.h"
 #include "Viewer.h"
 
+#include <thread>
 #include "CameraModels/GeometricCamera.h"
 #include "CameraModels/Pinhole.h"
 #include "CameraModels/KannalaBrandt8.h"
+
+using namespace std;
 
 namespace ORB_SLAM3
 {
@@ -272,7 +275,7 @@ Map* Atlas::GetCurrentMap()
     if(!mpCurrentMap)
         CreateNewMap();
     while(mpCurrentMap->IsBad()){
-        usleep(3000);
+        this_thread::sleep_for(chrono::microseconds(3000));
         Verbose::PrintMess("Waiting for a valid current map", Verbose::VERBOSITY_NORMAL);
     }
 
