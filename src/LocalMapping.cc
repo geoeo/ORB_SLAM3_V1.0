@@ -96,21 +96,14 @@ void LocalMapping::Run()
 
                     if(mbInertial && mpAtlas->GetCurrentMap()->isImuInitialized())
                     {
-                        float dist = (mpCurrentKeyFrame->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->GetCameraCenter()).norm() +
-                                (mpCurrentKeyFrame->mPrevKF->mPrevKF->GetCameraCenter() - mpCurrentKeyFrame->mPrevKF->GetCameraCenter()).norm();
-
-                        if(dist>0.05)
-                            mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-                        if(!mpAtlas->GetCurrentMap()->GetIniertialBA2())
+                        mTinit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
+                        if(!mpAtlas->GetCurrentMap()->GetIniertialBA2() && (mTinit>15.f))
                         {
-                            if((mTinit<10.f) && (dist<0.02))
-                            {
-                                Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_NORMAL);
-                                std::unique_lock<mutex> lock(mMutexReset);
-                                mbResetRequestedActiveMap = true;
-                                mpMapToReset = mpAtlas->GetCurrentMap();
-                                mbBadImu = true;
-                            }
+                            Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_NORMAL);
+                            std::unique_lock<mutex> lock(mMutexReset);
+                            mbResetRequestedActiveMap = true;
+                            mpMapToReset = mpAtlas->GetCurrentMap();
+                            mbBadImu = true;
                         }
 
                         const bool bLarge = ((mpTracker->GetMatchesInliers()>50)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
@@ -1024,7 +1017,7 @@ void LocalMapping::RequestReset()
     }
     Verbose::PrintMess("LM: Map reset, waiting...", Verbose::VERBOSITY_NORMAL);
 
-    while(1)
+    while(true)
     {
         {
             unique_lock<mutex> lock2(mMutexReset);
