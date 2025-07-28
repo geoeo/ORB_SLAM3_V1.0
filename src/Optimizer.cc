@@ -1050,6 +1050,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
 void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges)
 {
+
+    ZoneNamedN(LocalBundleAdjustment, "LocalBundleAdjustment", true); 
+
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
@@ -2278,11 +2281,14 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
+
+    ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
+
     int maxOpt=10;
     int opt_it=40;
     if(bLarge)
     {
-        maxOpt=25;
+        maxOpt=15;
         opt_it=16;
     }
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
