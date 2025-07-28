@@ -2288,7 +2288,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     int opt_it=40;
     if(bLarge)
     {
-        maxOpt=15;
+        maxOpt=20;
         opt_it=16;
     }
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
