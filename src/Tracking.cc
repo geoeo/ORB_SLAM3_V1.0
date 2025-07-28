@@ -1716,20 +1716,14 @@ void Tracking::UpdateLocalKeyFrames()
 
 bool Tracking::Relocalization()
 {
-    auto keyframeMutPtr = mpLocalMapper->getKeyFrameChangeMutex();
-    std::unique_lock<std::mutex> lock(*keyframeMutPtr, std::defer_lock);
     vector<KeyFrame*> vpCandidateKFs;
-    if(lock.try_lock()){
-        Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
-        // Compute Bag of Words Vector
-        mCurrentFrame.ComputeBoW();
-    
-        // Relocalization is performed when tracking is lost
-        // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
-        vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
-    } else {
-        Verbose::PrintMess("Could not aquire KF lock", Verbose::VERBOSITY_NORMAL);
-    }
+    Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
+    // Compute Bag of Words Vector
+    mCurrentFrame.ComputeBoW();
+
+    // Relocalization is performed when tracking is lost
+    // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
+    vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame, mpAtlas->GetCurrentMap());
 
 
     if(vpCandidateKFs.empty()) {
@@ -1741,7 +1735,7 @@ bool Tracking::Relocalization()
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.65,true);
+    ORBmatcher matcher(0.85,true);
 
     vector<MLPnPsolver*> vpMLPnPsolvers;
     vpMLPnPsolvers.resize(nKFs);
