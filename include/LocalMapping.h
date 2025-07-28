@@ -70,10 +70,7 @@ public:
     void RequestFinish();
     bool isFinished();
 
-    int KeyframesInQueue(){
-        std::unique_lock<std::mutex> lock(mMutexNewKFs);
-        return mlNewKeyFrames.size();
-    }
+    int KeyframesInQueue();
 
     bool IsInitializing();
     double GetCurrKFTime();
@@ -115,6 +112,7 @@ public:
 protected:
 
     bool CheckNewKeyFrames();
+    void ResetNewKeyFrames();
     void ProcessNewKeyFrame();
     void CreateNewMapPoints();
 
