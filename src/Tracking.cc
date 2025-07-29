@@ -723,7 +723,6 @@ void Tracking::Track()
 
 void Tracking::MonocularInitialization()
 {
-    const int FEAT_INIT_COUNT = 100;
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
@@ -2217,6 +2216,14 @@ void Tracking::setTrackingState(eTrackingState newState){
 Tracking::eTrackingState Tracking::getTrackingState() {
     unique_lock<mutex> lock(mTrackingState);
     return mState;
+}
+
+KeyFrame* Tracking::GetLastKeyFrame() {
+    return mpLastKeyFrame;
+}
+
+unsigned int Tracking::GetLastKeyFrameId() const {
+    return mnLastKeyFrameId;
 }
 
 } //namespace ORB_SLAM

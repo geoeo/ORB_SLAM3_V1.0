@@ -79,10 +79,7 @@ public:
     void InformOnlyTracking(const bool &flag);
 
     void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
-    KeyFrame* GetLastKeyFrame()
-    {
-        return mpLastKeyFrame;
-    }
+    KeyFrame* GetLastKeyFrame();
 
     void CreateMapInAtlas();
     std::mutex mTrackingState;
@@ -103,9 +100,7 @@ public:
     bool isGeoreferenced();
     void setGeoreference(bool is_georeferenced);
 
-    unsigned int GetLastKeyFrameId() const {
-        return mnLastKeyFrameId;
-    }
+    unsigned int GetLastKeyFrameId() const;
 
 public:
 
@@ -204,6 +199,8 @@ protected:
 
     // Reset IMU biases and compute frame velocity
     void ResetFrameIMU();
+
+    static constexpr int FEAT_INIT_COUNT = 100;
 
     bool mbMapUpdated;
 
