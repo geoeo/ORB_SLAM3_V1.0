@@ -2312,16 +2312,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             break;
     }
 
-    int N = vpOptimizableKFs.size();
-
     // Optimizable points seen by temporal optimizable keyframes
     list<MapPoint*> lLocalMapPoints;
-    for(int i=0; i<N; i++)
+    for(int i=0; i<vpOptimizableKFs.size(); i++)
     {
         vector<MapPoint*> vpMPs = vpOptimizableKFs[i]->GetMapPointMatches();
-        for(vector<MapPoint*>::iterator vit=vpMPs.begin(), vend=vpMPs.end(); vit!=vend; vit++)
+        for(auto pMP: vpMPs)
         {
-            MapPoint* pMP = *vit;
             if(pMP)
                 if(!pMP->isBad())
                     if(pMP->mnBALocalForKF!=pKF->mnId)
@@ -2380,9 +2377,9 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     // Fixed KFs which are not covisible optimizable
     const int maxFixKF = 200;
 
-    for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
+    for(auto mapPoint: lLocalMapPoints)
     {
-        map<KeyFrame*,tuple<int,int>> observations = (*lit)->GetObservations();
+        map<KeyFrame*,tuple<int,int>> observations = mapPoint->GetObservations();
         for(map<KeyFrame*,tuple<int,int>>::iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
         {
             KeyFrame* pKFi = mit->first;
@@ -2425,8 +2422,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 
     // Set Local temporal KeyFrame vertices
-    N=vpOptimizableKFs.size();
-    for(int i=0; i<N; i++)
+    for(int i=0; i<vpOptimizableKFs.size(); i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
 
@@ -2453,9 +2449,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Set Local visual KeyFrame vertices
-    for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
+    for(auto pKFi: lpOptVisKFs)
     {
-        KeyFrame* pKFi = *it;
         VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(false);
@@ -2463,9 +2458,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Set Fixed KeyFrame vertices
-    for(list<KeyFrame*>::iterator lit=lFixedKeyFrames.begin(), lend=lFixedKeyFrames.end(); lit!=lend; lit++)
+    for(auto pKFi: lFixedKeyFrames)
     {
-        KeyFrame* pKFi = *lit;
         VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(true);
@@ -2489,11 +2483,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Create intertial constraints
-    vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
-    vector<EdgeGyroRW*> vegr(N,(EdgeGyroRW*)NULL);
-    vector<EdgeAccRW*> vear(N,(EdgeAccRW*)NULL);
+    vector<EdgeInertial*> vei(vpOptimizableKFs.size(),(EdgeInertial*)NULL);
+    vector<EdgeGyroRW*> vegr(vpOptimizableKFs.size(),(EdgeGyroRW*)NULL);
+    vector<EdgeAccRW*> vear(vpOptimizableKFs.size(),(EdgeAccRW*)NULL);
 
-    for(int i=0;i<N;i++)
+    for(int i=0;i<vpOptimizableKFs.size();i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
 
@@ -2529,7 +2523,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vei[i]->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP2));
             vei[i]->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV2));
 
-            if(i==N-1 || bRecInit)
+            if(i==vpOptimizableKFs.size()-1 || bRecInit)
             {
                 // All inertial residuals are included without robust cost function, but not that one linking the
                 // last optimizable keyframe inside of the local window and the first fixed keyframe out. The
@@ -2537,7 +2531,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 // error due to fixing variables.
                 g2o::RobustKernelHuber* rki = new g2o::RobustKernelHuber;
                 vei[i]->setRobustKernel(rki);
-                if(i==N-1)
+                if(i==vpOptimizableKFs.size()-1)
                     vei[i]->setInformation(vei[i]->information()*1e-2);
                 rki->setDelta(sqrt(16.92));
             }
@@ -2563,7 +2557,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Set MapPoint vertices
-    const int nExpectedSize = (N+lFixedKeyFrames.size())*lLocalMapPoints.size();
+    const int nExpectedSize = (vpOptimizableKFs.size()+lFixedKeyFrames.size())*lLocalMapPoints.size();
 
     // Mono
     vector<EdgeMono*> vpEdgesMono;
@@ -2595,19 +2589,17 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     const unsigned long iniMPid = maxKFid*5;
 
     map<int,int> mVisEdges;
-    for(int i=0;i<N;i++)
-    {
-        KeyFrame* pKFi = vpOptimizableKFs[i];
+    for(auto pKFi: vpOptimizableKFs)
         mVisEdges[pKFi->mnId] = 0;
-    }
-    for(list<KeyFrame*>::iterator lit=lFixedKeyFrames.begin(), lend=lFixedKeyFrames.end(); lit!=lend; lit++)
+    
+    
+    for(auto fixedKF: lFixedKeyFrames)
     {
-        mVisEdges[(*lit)->mnId] = 0;
+        mVisEdges[fixedKF->mnId] = 0;
     }
 
-    for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
+    for(auto pMP: lLocalMapPoints)
     {
-        MapPoint* pMP = *lit;
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
         vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
 
@@ -2777,16 +2769,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         }
     }
 
-    for(list<KeyFrame*>::iterator lit=lFixedKeyFrames.begin(), lend=lFixedKeyFrames.end(); lit!=lend; lit++)
-        (*lit)->mnBAFixedForKF = 0;
+    for(auto pKFi: lFixedKeyFrames)
+        pKFi->mnBAFixedForKF = 0;
 
     // Recover optimized data
     // Local temporal Keyframes
-    N=vpOptimizableKFs.size();
-    for(int i=0; i<N; i++)
+    for(auto pKFi: vpOptimizableKFs)
     {
-        KeyFrame* pKFi = vpOptimizableKFs[i];
-
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
@@ -2806,9 +2795,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     // Local visual KeyFrame
-    for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
+    for(auto pKFi: lpOptVisKFs)
     {
-        KeyFrame* pKFi = *it;
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
@@ -2816,9 +2804,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     //Points
-    for(list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
+    for(auto pMP: lLocalMapPoints)
     {
-        MapPoint* pMP = *lit;
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+iniMPid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
         pMP->UpdateNormalAndDepth();
