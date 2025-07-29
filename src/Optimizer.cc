@@ -1361,7 +1361,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
 
     // Get Map Mutex
-    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
     if(!vToErase.empty())
     {
@@ -2288,8 +2288,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     int opt_it=40;
     if(bLarge)
     {
-        maxOpt=20;
-        opt_it=16;
+        maxOpt=16;
+        opt_it=10;
     }
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
@@ -2509,7 +2509,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+1);
             g2o::HyperGraph::Vertex* VG1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+2);
             g2o::HyperGraph::Vertex* VA1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+3);
-            g2o::HyperGraph::Vertex* VP2 =  optimizer.vertex(pKFi->mnId);
+            g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
             g2o::HyperGraph::Vertex* VV2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
             g2o::HyperGraph::Vertex* VG2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
             g2o::HyperGraph::Vertex* VA2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
@@ -2662,36 +2662,36 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                     vpMapPointEdgeMono.push_back(pMP);
                 }
                 // Stereo-observation
-                else if(leftIndex != -1)// Stereo observation
-                {
-                    kpUn = pKFi->mvKeysUn->operator[](leftIndex);
-                    mVisEdges[pKFi->mnId]++;
+                // else if(leftIndex != -1)// Stereo observation
+                // {
+                //     kpUn = pKFi->mvKeysUn->operator[](leftIndex);
+                //     mVisEdges[pKFi->mnId]++;
 
-                    const float kp_ur = pKFi->mvuRight[leftIndex];
-                    Eigen::Matrix<double,3,1> obs;
-                    obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
+                //     const float kp_ur = pKFi->mvuRight[leftIndex];
+                //     Eigen::Matrix<double,3,1> obs;
+                //     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
-                    EdgeStereo* e = new EdgeStereo(0);
+                //     EdgeStereo* e = new EdgeStereo(0);
 
-                    e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
-                    e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
-                    e->setMeasurement(obs);
+                //     e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
+                //     e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
+                //     e->setMeasurement(obs);
 
-                    // Add here uncerteinty
-                    const float unc2 = pKFi->mpCamera->uncertainty2(obs.head(2));
+                //     // Add here uncerteinty
+                //     const float unc2 = pKFi->mpCamera->uncertainty2(obs.head(2));
 
-                    const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
-                    e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
+                //     const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
+                //     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
 
-                    g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                    e->setRobustKernel(rk);
-                    rk->setDelta(thHuberStereo);
+                //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
+                //     e->setRobustKernel(rk);
+                //     rk->setDelta(thHuberStereo);
 
-                    optimizer.addEdge(e);
-                    vpEdgesStereo.push_back(e);
-                    vpEdgeKFStereo.push_back(pKFi);
-                    vpMapPointEdgeStereo.push_back(pMP);
-                }
+                //     optimizer.addEdge(e);
+                //     vpEdgesStereo.push_back(e);
+                //     vpEdgeKFStereo.push_back(pKFi);
+                //     vpMapPointEdgeStereo.push_back(pMP);
+                // }
             }
         }
     }
@@ -2705,10 +2705,15 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float err = optimizer.activeRobustChi2();
-    optimizer.optimize(opt_it); // Originally to 2
+    {
+        ZoneNamedN(LocalInertialBA_Opt, "LocalInertialBA_Opt", true); 
+        optimizer.optimize(opt_it); // Originally to 2
+    }
     float err_end = optimizer.activeRobustChi2();
     if(pbStopFlag)
         optimizer.setForceStopFlag(pbStopFlag);
+    
+
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
@@ -2733,23 +2738,23 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 
     // Stereo
-    for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
-    {
-        EdgeStereo* e = vpEdgesStereo[i];
-        MapPoint* pMP = vpMapPointEdgeStereo[i];
+    // for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
+    // {
+    //     EdgeStereo* e = vpEdgesStereo[i];
+    //     MapPoint* pMP = vpMapPointEdgeStereo[i];
 
-        if(pMP->isBad())
-            continue;
+    //     if(pMP->isBad())
+    //         continue;
 
-        if(e->chi2()>chi2Stereo2)
-        {
-            KeyFrame* pKFi = vpEdgeKFStereo[i];
-            vToErase.push_back(make_pair(pKFi,pMP));
-        }
-    }
+    //     if(e->chi2()>chi2Stereo2)
+    //     {
+    //         KeyFrame* pKFi = vpEdgeKFStereo[i];
+    //         vToErase.push_back(make_pair(pKFi,pMP));
+    //     }
+    // }
 
     // Get Map Mutex and erase outliers
-    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
 
     // TODO: Some convergence problems have been detected here
