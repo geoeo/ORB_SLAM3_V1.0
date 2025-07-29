@@ -96,6 +96,8 @@ public:
     void static InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
     void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
 
+    inline static std::mutex VIBAMutex;
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };
 
