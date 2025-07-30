@@ -3340,15 +3340,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
     vector<MapPoint*> vpMapPointEdgeMono;
     vpMapPointEdgeMono.reserve(nExpectedSize);
 
-    vector<g2o::EdgeStereoSE3ProjectXYZ*> vpEdgesStereo;
-    vpEdgesStereo.reserve(nExpectedSize);
-
-    vector<KeyFrame*> vpEdgeKFStereo;
-    vpEdgeKFStereo.reserve(nExpectedSize);
-
-    vector<MapPoint*> vpMapPointEdgeStereo;
-    vpMapPointEdgeStereo.reserve(nExpectedSize);
-
     const float thHuber2D = sqrt(5.99);
     const float thHuber3D = sqrt(7.815);
 
@@ -3356,9 +3347,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
     map<KeyFrame*, int> mpObsKFs;
     map<KeyFrame*, int> mpObsFinalKFs;
     map<MapPoint*, int> mpObsMPs;
-    for(unsigned int i=0; i < vpMPs.size(); ++i)
+    for(auto pMPi : vpMPs)
     {
-        MapPoint* pMPi = vpMPs[i];
         if(pMPi->isBad())
             continue;
 
@@ -3373,17 +3363,17 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
         const map<KeyFrame*,tuple<int,int>> observations = pMPi->GetObservations();
         int nEdges = 0;
         //SET EDGES
-        for(map<KeyFrame*,tuple<int,int>>::const_iterator mit=observations.begin(); mit!=observations.end(); mit++)
+        for_each(execution::par_unseq, observations.begin(), observations.end(), [&optimizer, pMainKF, pMPi, &maxKFid, &mpObsMPs, &mpObsKFs, &vpEdgesMono, &vpEdgeKFMono, &vpMapPointEdgeMono, &nEdges, thHuber2D, id](auto mit)
         {
-            KeyFrame* pKF = mit->first;
-            if(pKF->isBad() || pKF->mnId>maxKFid || pKF->mnBALocalForMerge != pMainKF->mnId || !pKF->GetMapPoint(get<0>(mit->second)))
-                continue;
+            KeyFrame* pKF = mit.first;
+            if(pKF->isBad() || pKF->mnId>maxKFid || pKF->mnBALocalForMerge != pMainKF->mnId || !pKF->GetMapPoint(get<0>(mit.second)))
+                return;
 
             nEdges++;
+            const auto leftIndex = get<0>(mit.second);
+            const auto &kpUn = pKF->mvKeysUn->operator[](leftIndex);
 
-            const auto &kpUn = pKF->mvKeysUn->operator[](get<0>(mit->second));
-
-            if(pKF->mvuRight[get<0>(mit->second)]<0) //Monocular
+            if(pKF->mvuRight[leftIndex]<0) //Monocular
             {
                 mpObsMPs[pMPi]++;
                 Eigen::Matrix<double,2,1> obs;
@@ -3411,7 +3401,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
 
                 mpObsKFs[pKF]++;
             }
-        }
+        });
     }
 
     if(pbStopFlag)
@@ -3447,23 +3437,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
             }
             e->setRobustKernel(0);
         }
-
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
-        {
-            g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-            MapPoint* pMP = vpMapPointEdgeStereo[i];
-
-            if(pMP->isBad())
-                continue;
-
-            if(e->chi2()>7.815 || !e->isDepthPositive())
-            {
-                e->setLevel(1);
-                badStereoMP++;
-            }
-
-            e->setRobustKernel(0);
-        }
         Verbose::PrintMess("[BA]: First optimization(Huber), there are " + to_string(badMonoMP) + " monocular and " + to_string(badStereoMP) + " stereo bad edges", Verbose::VERBOSITY_DEBUG);
 
     optimizer.initializeOptimization(0);
@@ -3471,19 +3444,21 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
     }
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
-    vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
+    vToErase.reserve(vpEdgesMono.size());
     set<MapPoint*> spErasedMPs;
     set<KeyFrame*> spErasedKFs;
 
+    list<size_t> vpEdgesMonoIndices(vpEdgesMono.size());
+    iota(vpEdgesMonoIndices.begin(), vpEdgesMonoIndices.end(), 0);
+
     // Check inlier observations
-    int badMonoMP = 0, badStereoMP = 0;
-    for(size_t i=0, iend=vpEdgesMono.size(); i<iend;i++)
-    {
+    int badMonoMP = 0;
+    for_each(execution::par_unseq, vpEdgesMonoIndices.begin(), vpEdgesMonoIndices.end(), [&vpEdgeKFMono, &vpEdgesMono, &vpMapPointEdgeMono, &vToErase, &mWrongObsKF, &spErasedMPs, &spErasedKFs, &badMonoMP](auto i){
         ORB_SLAM3::EdgeSE3ProjectXYZ* e = vpEdgesMono[i];
         MapPoint* pMP = vpMapPointEdgeMono[i];
 
         if(pMP->isBad())
-            continue;
+            return;
 
         if(e->chi2()>5.991 || !e->isDepthPositive())
         {
@@ -3495,75 +3470,48 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
             spErasedMPs.insert(pMP);
             spErasedKFs.insert(pKFi);
         }
-    }
+    });
 
 
 
-    for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
-    {
-        g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-        MapPoint* pMP = vpMapPointEdgeStereo[i];
-
-        if(pMP->isBad())
-            continue;
-
-        if(e->chi2()>7.815 || !e->isDepthPositive())
-        {
-            KeyFrame* pKFi = vpEdgeKFStereo[i];
-            vToErase.push_back(make_pair(pKFi,pMP));
-            mWrongObsKF[pKFi->mnId]++;
-            badStereoMP++;
-
-            spErasedMPs.insert(pMP);
-            spErasedKFs.insert(pKFi);
-        }
-    }
-
-    Verbose::PrintMess("[BA]: Second optimization, there are " + to_string(badMonoMP) + " monocular and " + to_string(badStereoMP) + " sterero bad edges", Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("[BA]: Second optimization, there are " + to_string(badMonoMP) + " monocular edges", Verbose::VERBOSITY_DEBUG);
 
     // Get Map Mutex
     unique_lock<mutex> lock(pMainKF->GetMap()->mMutexMapUpdate);
 
-    if(!vToErase.empty())
-    {
-        for(size_t i=0;i<vToErase.size();i++)
-        {
-            KeyFrame* pKFi = vToErase[i].first;
-            MapPoint* pMPi = vToErase[i].second;
-            pKFi->EraseMapPointMatch(pMPi);
-            pMPi->EraseObservation(pKFi);
-        }
-    }
-    for(unsigned int i=0; i < vpMPs.size(); ++i)
-    {
-        MapPoint* pMPi = vpMPs[i];
+    list<size_t> vToEraseIndices(vToErase.size());
+    iota(vToEraseIndices.begin(), vToEraseIndices.end(), 0);
+
+    for_each(execution::par_unseq, vToEraseIndices.begin(), vToEraseIndices.end(), [&vToErase](auto i){
+        KeyFrame* pKFi = vToErase[i].first;
+        MapPoint* pMPi = vToErase[i].second;
+        pKFi->EraseMapPointMatch(pMPi);
+        pMPi->EraseObservation(pKFi);
+    });
+    
+    for_each(execution::par_unseq, vpMPs.begin(), vpMPs.end(), [&mpObsFinalKFs, pMainKF, maxKFid](auto pMPi) {
         if(pMPi->isBad())
-            continue;
+            return;
 
         const map<KeyFrame*,tuple<int,int>> observations = pMPi->GetObservations();
-        for(map<KeyFrame*,tuple<int,int>>::const_iterator mit=observations.begin(); mit!=observations.end(); mit++)
+        for(auto mit: observations)
         {
-            KeyFrame* pKF = mit->first;
-            if(pKF->isBad() || pKF->mnId>maxKFid || pKF->mnBALocalForKF != pMainKF->mnId || !pKF->GetMapPoint(get<0>(mit->second)))
+            KeyFrame* pKF = mit.first;
+            if(pKF->isBad() || pKF->mnId>maxKFid || pKF->mnBALocalForKF != pMainKF->mnId || !pKF->GetMapPoint(get<0>(mit.second)))
                 continue;
 
-            if(pKF->mvuRight[get<0>(mit->second)]<0) //Monocular
-            {
-                mpObsFinalKFs[pKF]++;
-            }
-            else // RGBD or Stereo
+            if(pKF->mvuRight[get<0>(mit.second)]<0) //Monocular
             {
                 mpObsFinalKFs[pKF]++;
             }
         }
-    }
+    });
 
     // Recover optimized data
     // Keyframes
-    for(KeyFrame* pKFi : vpAdjustKF)
-    {
+    for_each(execution::par, vpAdjustKF.begin(), vpAdjustKF.end(), [&optimizer, &vpEdgesMono, &vpMapPointEdgeMono, &vpEdgeKFMono, maxKFid](auto pKFi) {
         if(pKFi->isBad())
-            continue;
+            return;
 
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate();
@@ -3601,47 +3549,18 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
             }
 
         }
-
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend;i++)
-        {
-            g2o::EdgeStereoSE3ProjectXYZ* e = vpEdgesStereo[i];
-            MapPoint* pMP = vpMapPointEdgeStereo[i];
-            KeyFrame* pKFedge = vpEdgeKFMono[i];
-
-            if(pKFi != pKFedge)
-            {
-                continue;
-            }
-
-            if(pMP->isBad())
-                continue;
-
-            if(e->chi2()>7.815 || !e->isDepthPositive())
-            {
-                numStereoBadPoints++;
-                vpStereoMPsBad.push_back(pMP);
-            }
-            else
-            {
-                numStereoOptPoints++;
-                vpStereoMPsOpt.push_back(pMP);
-            }
-        }
-
         pKFi->SetPose(Tiw);
-    }
+    });
 
     //Points
-    for(MapPoint* pMPi : vpMPs)
-    {
+    for_each(execution::par_unseq, vpMPs.begin(), vpMPs.end(), [&optimizer, maxKFid](auto pMPi) {
         if(pMPi->isBad())
-            continue;
+            return;
 
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMPi->mnId+maxKFid+1));
         pMPi->SetWorldPos(vPoint->estimate().cast<float>());
         pMPi->UpdateNormalAndDepth();
-
-    }
+    });
 }
 
 
