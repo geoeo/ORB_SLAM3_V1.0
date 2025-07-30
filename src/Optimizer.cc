@@ -2306,7 +2306,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                         if(pMP->mnBALocalForKF!=pKF->mnId)
                         {
                             pMP->mnBALocalForKF=pKF->mnId;
-                            unique_lock<mutex> lock(VIBAMutex);
                             lLocalMapPoints.push_back(pMP);
 
                         }
@@ -2544,7 +2543,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
 
         // Create visual constraints
-        for_each(execution::par_unseq, observations.begin(), observations.end(), [&pKF, &pMP, &pMap, &optimizer, &mVisEdges, &vpEdgesMono, &vpEdgeKFMono, &vpMapPointEdgeMono, thHuberMono, chi2Mono2, id](auto mit)
+        for_each(execution::par, observations.begin(), observations.end(), [&pKF, &pMP, &pMap, &optimizer, &mVisEdges, &vpEdgesMono, &vpEdgeKFMono, &vpMapPointEdgeMono, thHuberMono, chi2Mono2, id](auto mit)
         {
             KeyFrame* pKFi = mit.first;
             if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId)
@@ -2578,7 +2577,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                     e->setRobustKernel(rk);
                     rk->setDelta(thHuberMono);
                     
-                    unique_lock<mutex> lock(VIBAMutex);
                     optimizer.addEdge(e);
                     vpEdgesMono.push_back(e);
                     vpEdgeKFMono.push_back(pKFi);
@@ -2628,7 +2626,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 
     // Get Map Mutex and erase outliers
-    unique_lock<mutex> lock(VIBAMutex);
+    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
 
     // TODO: Some convergence problems have been detected here
