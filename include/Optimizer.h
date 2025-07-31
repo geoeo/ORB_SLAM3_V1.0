@@ -56,7 +56,7 @@ public:
 
     int static PoseOptimization(Frame* pFrame);
     int static PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit = false);
-    int static PoseInertialOptimizationLastFrame(Frame *pFrame, bool bRecInit = false);
+    int static PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThreshold, bool bRecInit = false);
 
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
     void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,

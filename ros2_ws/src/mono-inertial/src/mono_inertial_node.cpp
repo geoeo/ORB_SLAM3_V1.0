@@ -270,9 +270,9 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 10000;
+      orb.nFeatures   = 2000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 8;
+      orb.nLevels     = 1;
       orb.scaleFactor = 2.0;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
@@ -281,17 +281,17 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.00007579860836224204; //x20
-      m_imu.gyroWalk   = 0.00000352677789580351; //x20
-      m_imu.noiseAccel =  0.003138444640779682; //x20
-      m_imu.noiseGyro  = 0.0003278894143880944; // x20
+      m_imu.accelWalk  = 0.0007579860836224204; //x200
+      m_imu.gyroWalk   = 0.00000352677789580351; //x2
+      m_imu.noiseAccel =  0.03138444640779682; //x200
+      m_imu.noiseGyro  = 0.0003278894143880944; // x2
 
 
       m_imu.InsertKFsWhenLost = true;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
-      cv_Tbc.at<float>(0,0) =    0.0147249;
+      cv_Tbc.at<float>(0,0) =   0.0147249;
       cv_Tbc.at<float>(0,1) =   0.00100526;
       cv_Tbc.at<float>(0,2) =   0.99989108;
       cv_Tbc.at<float>(0,3) =   0.0504444;
@@ -316,8 +316,8 @@ class SlamNode : public rclcpp::Node
 
       double timeshift_cam_imu = 0.008390335701785497; 
 
-      const int frame_grid_cols = 128;
-      const int frame_grid_rows = 96;
+      const int frame_grid_cols = 64;
+      const int frame_grid_rows = 48;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
       SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
@@ -330,8 +330,8 @@ class SlamNode : public rclcpp::Node
       sub_imu_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(200), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
