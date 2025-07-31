@@ -528,7 +528,7 @@ void Tracking::Track()
                                 mRelocCount = 0;
                             }
                         }
-                    } else if(!(mpAtlas->GetCurrentMap()->isImuInitialized() && isGeoreferenced())) {
+                    } else {
                         setTrackingState(LOST);
                     }
                 }
@@ -562,8 +562,8 @@ void Tracking::Track()
             setTrackingState(OK);
         else if (getTrackingState() == OK)
         {
-            if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-            {
+            // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+            // {
                 Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
                 if(!mpAtlas->GetCurrentMap()->isImuInitialized())
                 {
@@ -573,9 +573,9 @@ void Tracking::Track()
                 }
                 else
                     setTrackingState(RECENTLY_LOST);
-            }
-            else
-                setTrackingState(RECENTLY_LOST); // visual to lost
+            // }
+            // else
+            //     setTrackingState(RECENTLY_LOST); // visual to lost
 
             /*if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
             {*/
@@ -584,9 +584,9 @@ void Tracking::Track()
         }
 
         // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it should be once mCurrFrame is completely modified)
-        if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
-           (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpAtlas->GetCurrentMap()->isImuInitialized())
-        {
+        // if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
+        //    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpAtlas->GetCurrentMap()->isImuInitialized())
+        // {
 /*             // TODO check this situation
             Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
             Frame* pF = new Frame(mCurrentFrame);
@@ -594,7 +594,7 @@ void Tracking::Track()
 
             // Load preintegration
             pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame); */
-        }
+        // }
 
         // if(mpAtlas->GetCurrentMap()->isImuInitialized())
         // {
@@ -646,11 +646,9 @@ void Tracking::Track()
             }
 
             // Delete temporal MapPoints
-            for(list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(), lend =  mlpTemporalPoints.end(); lit!=lend; lit++)
-            {
-                MapPoint* pMP = *lit;
+            for(auto pMP: mlpTemporalPoints)
                 delete pMP;
-            }
+                
             mlpTemporalPoints.clear();
 
             bool bNeedKF = NeedNewKeyFrame();
@@ -1256,7 +1254,6 @@ bool Tracking::TrackLocalMap()
 
     if((mnMatchesInliers>10)&&(getTrackingState()==RECENTLY_LOST))
         return true;
-
 
     //if (mSensor == System::IMU_MONOCULAR)
     //{
