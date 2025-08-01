@@ -59,9 +59,7 @@ Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer
 void Viewer::newParameterLoader(Settings *settings) {
     mImageViewerScale = 1.f;
 
-    float fps = settings->fps();
-    if(fps<1)
-        fps=30;
+    float fps = 30;
     mT = 1e3/fps;
 
     cv::Size imSize = settings->newImSize();
@@ -80,9 +78,7 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
     bool b_miss_params = false;
     mImageViewerScale = 1.f;
 
-    float fps = fSettings["Camera.fps"];
-    if(fps<1)
-        fps=30;
+    float fps = 30;
     mT = 1e3/fps;
 
     cv::FileNode node = fSettings["Camera.width"];
