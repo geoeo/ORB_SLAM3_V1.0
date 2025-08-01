@@ -1186,7 +1186,8 @@ bool Tracking::TrackLocalMap()
         Optimizer::PoseOptimization(&mCurrentFrame);
     else
     {
-        if(mCurrentFrame.mnId<=mnLastRelocFrameId+mnFramesToResetIMU)
+        const auto state = getTrackingState();
+        if(state==RECENTLY_LOST || state==LOST)
         {
             Verbose::PrintMess("TLM: PoseOptimization - LOST", Verbose::VERBOSITY_NORMAL);
             Optimizer::PoseOptimization(&mCurrentFrame);
@@ -1249,8 +1250,8 @@ bool Tracking::TrackLocalMap()
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     //mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
-    if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<30)
-        return false;
+    // if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<30)
+    //     return false;
 
     if((mnMatchesInliers>10)&&(getTrackingState()==RECENTLY_LOST))
         return true;
@@ -1506,9 +1507,9 @@ void Tracking::SearchLocalPoints()
             th=10;
         }
 
-        // If the camera has been relocalised recently, perform a coarser search
-        if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
-            th=10;
+        // // If the camera has been relocalised recently, perform a coarser search
+        // if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
+        //     th=10;
 
         const auto state = getTrackingState();
         if(state==LOST || state==RECENTLY_LOST) // Lost for less than 1 second
