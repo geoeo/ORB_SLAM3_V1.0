@@ -672,7 +672,7 @@ void Tracking::Track()
         }
 
         // Reset if the camera get lost soon after initialization
-        if(getTrackingState()==LOST && !isGeoreferenced())
+        if(getTrackingState()==LOST)
         {
             if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)){
                 Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
