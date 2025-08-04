@@ -45,12 +45,14 @@ void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
 class ImageGrabber
 {
 public:
-    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu)
+    ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, float resize_factor, 
+      const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, rclcpp::Logger logger)
       : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu),count(0), img_resize_factor(resize_factor),
-        m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()){
-
-            auto new_rows = static_cast<int>(undistorted_image_gpu.rows*img_resize_factor);
-            auto new_cols = static_cast<int>(undistorted_image_gpu.cols*img_resize_factor);
+        m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()),
+        logger_(logger)
+    {
+        auto new_rows = static_cast<int>(undistorted_image_gpu.rows*img_resize_factor);
+        auto new_cols = static_cast<int>(undistorted_image_gpu.cols*img_resize_factor);
 
             m_resized_img_gpu = cv::cuda::HostMem(new_rows, new_cols, CV_8UC3, cv::cuda::HostMem::AllocType::SHARED);
 
@@ -71,6 +73,7 @@ public:
     double timeshift_cam_imu;
     uint64_t count;
     float img_resize_factor;
+    rclcpp::Logger logger_;
 
     cv::cuda::GpuMat m_undistortion_map_1;
     cv::cuda::GpuMat m_undistortion_map_2;
@@ -117,7 +120,7 @@ cv::cuda::HostMem ImageGrabber::GetImage(const sensor_msgs::msg::Image::ConstSha
 void ImageGrabber::SyncWithImu()
 {
   double init_ts = 0;
-  while(1)
+  while(true)
   {
     cv::cuda::HostMem im_managed;
     cv::Mat im;
@@ -131,13 +134,13 @@ void ImageGrabber::SyncWithImu()
       if(init_ts == 0)
         init_ts = ros_imu_ts.seconds();
 
-
       this->mBufMutex.lock();
       auto im_front = img0Buf.front();
       this->mBufMutex.unlock();
       im_managed = GetImage(im_front);
       auto ros_image_ts_front =  rclcpp::Time(im_front->header.stamp);
       tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
+      RCLCPP_INFO_STREAM(logger_,"Img buffer size: " << img0Buf.size());
       img0Buf.pop();
 
       
@@ -174,7 +177,7 @@ void ImageGrabber::SyncWithImu()
       }
 
       if(!vImuMeas.empty() && init_ts != 0){
-        std::cout << "IMU meas size: " << vImuMeas.size() << std::endl;
+        RCLCPP_INFO_STREAM(logger_, "IMU meas size: " << vImuMeas.size());
         auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas);
         Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
         bool ba_complete_for_frame = std::get<1>(tracking_results);
@@ -182,25 +185,16 @@ void ImageGrabber::SyncWithImu()
         unsigned long int id = std::get<3>(tracking_results);
         auto scale_factors = std::get<4>(tracking_results);
         vImuMeas.clear();
-        cout << "BA completed: " << ba_complete_for_frame << endl;
+        RCLCPP_INFO_STREAM(logger_, "BA completed: " << ba_complete_for_frame);
         if(!scale_factors.empty())
-          cout << "Latest Scale Factor: " << scale_factors.back() << endl;
-        cout << "Current ts: " << tIm << endl;
+          RCLCPP_INFO_STREAM(logger_, "Latest Scale Factor: " << scale_factors.back());
+        RCLCPP_INFO_STREAM(logger_, "Current ts: " << tIm);
         for(auto s : scale_factors)
-          cout << " scale: " << s;
-        cout << endl << "is keyframe: " << is_keyframe;
-        cout << endl;
-        //cout << pose(0,0) << ", " << pose(0,1) << ", " << pose(0,2) << ", " << pose(0,3) << endl;
-        //cout << pose(1,0) << ", " << pose(1,1) << ", " << pose(1,2) << ", " << pose(1,3) << endl;
-        //cout << pose(2,0) << ", " << pose(2,1) << ", " << pose(2,2) << ", " << pose(2,3) << endl;
-        //cout << pose(3,0) << ", " << pose(3,1) << ", " << pose(3,2) << ", " << pose(3,3) << endl;
-        cout << "pose: " << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3) << endl;
+          RCLCPP_INFO_STREAM(logger_, "Scale Factor: " << s);
+        RCLCPP_INFO_STREAM(logger_,"is kayframe: " << is_keyframe);
+        RCLCPP_INFO_STREAM(logger_, "pose: " << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3));
       }
-
     }
-
-    //std::chrono::milliseconds tSleep(1);
-    //std::this_thread::sleep_for(tSleep);
   }
 }
 
@@ -329,7 +323,7 @@ class SlamNode : public rclcpp::Node
       auto sub_imu_options = rclcpp::SubscriptionOptions();
       sub_imu_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
