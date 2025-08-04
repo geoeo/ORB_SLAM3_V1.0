@@ -449,7 +449,7 @@ namespace ORB_SLAM3
                 fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
                 
                 //Try again with lower threshold.
-                if(fastKpCount == 0)
+                if(fastKpCount < 100)
                     fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
             }
             
