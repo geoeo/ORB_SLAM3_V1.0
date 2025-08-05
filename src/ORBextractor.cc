@@ -66,6 +66,7 @@
 #include <ORBextractor.h>
 #include <cuda/ManagedVector.hpp>
 #include <tracy.hpp>
+#include <Verbose.h>
 
 using namespace cv;
 using namespace std;
@@ -447,9 +448,9 @@ namespace ORB_SLAM3
                 ZoneNamedN(featCallGPU, "featCallGPU", true); 
                 auto im_managed = mvImagePyramid[level].createGpuMatHeader();
                 fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
-                
+                Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCount), Verbose::VERBOSITY_NORMAL);
                 //Try again with lower threshold.
-                if(fastKpCount < 100)
+                if(fastKpCount < 150)
                     fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
             }
             
