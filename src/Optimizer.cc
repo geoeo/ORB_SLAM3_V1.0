@@ -1335,7 +1335,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     });
 
 
-    //pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 
@@ -2679,7 +2679,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         pMP->UpdateNormalAndDepth();
     });
 
-    //pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)
