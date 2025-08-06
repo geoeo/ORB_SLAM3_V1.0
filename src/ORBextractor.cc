@@ -450,8 +450,11 @@ namespace ORB_SLAM3
                 fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
                 Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCount), Verbose::VERBOSITY_NORMAL);
                 //Try again with lower threshold.
-                if(fastKpCount < 150)
+                if(fastKpCount < 150){
                     fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
+                    Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCount), Verbose::VERBOSITY_NORMAL);
+                }
+
             }
             
             if(fastKpCount >0) {
