@@ -1333,9 +1333,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
         pMP->UpdateNormalAndDepth();
     });
+ 
 
-
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 
