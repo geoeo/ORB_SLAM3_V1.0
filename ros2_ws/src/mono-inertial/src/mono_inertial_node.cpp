@@ -276,9 +276,9 @@ class SlamNode : public rclcpp::Node
       //F6
 
       m_imu.accelWalk  = 0.07579860836224204; //x20000
-      m_imu.gyroWalk   = 0.00000352677789580351; //x2
+      m_imu.gyroWalk   = 0.000352677789580351; //x200
       m_imu.noiseAccel =  0.03138444640779682; //x200
-      m_imu.noiseGyro  = 0.0003278894143880944; // x2
+      m_imu.noiseGyro  = 0.003278894143880944; // x20
 
 
       m_imu.InsertKFsWhenLost = true;
