@@ -115,6 +115,7 @@ void LocalMapping::Run()
                         {
                             //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, bLarge, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                            Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
                         }
 
                         b_doneLBA = true;
@@ -125,6 +126,7 @@ void LocalMapping::Run()
                         {
                             //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
+                            Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
                         }
 
                         b_doneLBA = true;
