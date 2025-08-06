@@ -254,7 +254,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 1;
+      cam.fps        = 5;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -275,7 +275,7 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.07579860836224204; //x20000
+      m_imu.accelWalk  = 0.007579860836224204; //x2000
       m_imu.gyroWalk   = 0.00000352677789580351; //x2
       m_imu.noiseAccel =  0.03138444640779682; //x200
       m_imu.noiseGyro  = 0.0003278894143880944; // x2
