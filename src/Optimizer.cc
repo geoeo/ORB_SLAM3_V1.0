@@ -1335,7 +1335,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     });
  
 
-    //pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 
