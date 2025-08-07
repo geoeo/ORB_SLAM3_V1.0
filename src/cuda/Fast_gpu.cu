@@ -322,7 +322,7 @@ namespace ORB_SLAM3::cuda::fast {
     : imHeight(imHeight),imWidth(imWidth),  maxKeypoints(maxKeypoints)
   {
     checkCudaErrors( cudaMalloc(&scoreMat, sizeof(int) * imHeight*imWidth) );
-    checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) ); //Kernel crashes when is is not managed memory. Not sure why
+    checkCudaErrors( cudaMallocManaged(&kpLoc, sizeof(short2) * maxKeypoints) );
 
     checkCudaErrors( cudaMallocManaged(&kpLocFinal, sizeof(short2) * maxKeypoints) );
     checkCudaErrors( cudaMallocManaged(&kpResponseFinal, sizeof(int) * maxKeypoints) );
