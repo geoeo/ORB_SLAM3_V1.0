@@ -81,11 +81,13 @@ namespace ORB_SLAM3
 
     ORBextractor::ORBextractor(int _nFeatures, int _nFastFeatures, float _scaleFactor, int _nlevels,
                                int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):
-            nfeatures(_nFeatures), scaleFactor(_scaleFactor), nlevels(_nlevels),
+            nfeatures(_nFeatures), nFastFeatures(_nFastFeatures) , scaleFactor(_scaleFactor), nlevels(_nlevels),
             iniThFAST(_iniThFAST), minThFAST(_minThFAST),
             gpuOrb(),
-            gpuFast(imageHeight, imageWidth ,_nFastFeatures, gpuOrb.getStream()), 
-            gpuAngle()
+            gpuFast(imageHeight, imageWidth ,nFastFeatures, gpuOrb.getStream()), 
+            gpuAngle(),
+            kpLoc(make_unique<vector<short2>>(nFastFeatures)),
+            response(make_unique<vector<int>>(nFastFeatures))
     {
         mvScaleFactor.resize(nlevels);
         mvLevelSigma2.resize(nlevels);
@@ -441,24 +443,45 @@ namespace ORB_SLAM3
         {
             const int width = mvImagePyramid[level].cols;
             const int height = mvImagePyramid[level].rows;
-            unsigned int fastKpCount;
+            unsigned int fastKpCountTotal;
 
             ////////// Gpu Version //////////
             {
                 ZoneNamedN(featCallGPU, "featCallGPU", true); 
                 auto im_managed = mvImagePyramid[level].createGpuMatHeader();
-                fastKpCount = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
-                Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCount), Verbose::VERBOSITY_NORMAL);
+                const auto fastKpCountHigh = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
+                fastKpCountTotal = fastKpCountHigh;
+                Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCountHigh), Verbose::VERBOSITY_NORMAL);
+                
+                if(fastKpCountHigh > 0){
+                    // Copy these into vectors
+                    memcpy(kpLoc->data(), gpuFast.getLoc(gpuOrb.getStream()), fastKpCountHigh*sizeof(short2));
+                    memcpy(response->data(), gpuFast.getResp(gpuOrb.getStream()), fastKpCountHigh*sizeof(int));
+                }
+
+                
+                
                 //Try again with lower threshold.
-                if(fastKpCount < 1000){
-                    fastKpCount = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
-                    Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCount), Verbose::VERBOSITY_NORMAL);
+                if(fastKpCountHigh < 1000){
+                    auto fastKpCountLow = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
+                    Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCountLow), Verbose::VERBOSITY_NORMAL);
+                    if(fastKpCountLow > 0){
+                        const auto fastCountTotal_tmp = fastKpCountHigh + fastKpCountLow;
+                        if(fastCountTotal_tmp > nFastFeatures){
+                            const auto diff = fastCountTotal_tmp - nFastFeatures;
+                            fastKpCountLow -= diff;
+                        }
+                        fastKpCountTotal += fastKpCountLow;   
+                        // Copy these into vectors
+                        memcpy(&kpLoc->operator[](fastKpCountHigh), gpuFast.getLoc(gpuOrb.getStream()), fastKpCountLow*sizeof(short2));
+                        memcpy(&response->operator[](fastKpCountHigh), gpuFast.getResp(gpuOrb.getStream()), fastKpCountLow*sizeof(int));
+                    }
                 }
 
             }
             
-            if(fastKpCount >0) {
-                const auto lNodes = DistributeOctTree(fastKpCount,gpuFast.getLoc(gpuOrb.getStream()), gpuFast.getResp(gpuOrb.getStream()), 0, width,
+            if(fastKpCountTotal >0) {
+                const auto lNodes = DistributeOctTree(fastKpCountTotal,kpLoc->data(), response->data(), 0, width,
                                               0, height,mnFeaturesPerLevel[level], level);
                 lNodesPerLevel[level] = lNodes;                              
                 keypointsCountPerLevel[level] = lNodes.size();

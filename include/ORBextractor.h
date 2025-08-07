@@ -104,12 +104,16 @@ namespace ORB_SLAM3
         
         constexpr static float factorPI = (float)(CV_PI/180.f);
         int nfeatures;
+        int nFastFeatures;
         double scaleFactor;
         int nlevels;
         int iniThFAST;
         int minThFAST;
 
         cv::Ptr<cv::cuda::Filter> gpuGaussian;
+
+        std::unique_ptr<std::vector<short2>> kpLoc;
+        std::unique_ptr<std::vector<int>> response;
 
         std::vector<int> mnFeaturesPerLevel;
         std::vector<int> umax;
