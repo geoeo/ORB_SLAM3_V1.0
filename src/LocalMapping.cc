@@ -1271,9 +1271,9 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     if (bFIBA)
     {
         if (priorA!=0.f)
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 200, false, mpCurrentKeyFrame->mnId, NULL, false, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, false, priorG, priorA);
     }
 
     chrono::steady_clock::time_point t5 = chrono::steady_clock::now();
