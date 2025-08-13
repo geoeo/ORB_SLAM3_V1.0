@@ -437,6 +437,7 @@ namespace ORB_SLAM3
         vector<size_t> keypointsCountPerLevel(nlevels);
         const int BorderX = EDGE_THRESHOLD;
         const int BorderY = BorderX;
+        const auto featureThreshold = 0.25*nFastFeatures;
 
         int allKeypointsCount = 0;
         for (int level = 0; level < nlevels; ++level)
@@ -459,10 +460,9 @@ namespace ORB_SLAM3
                     memcpy(response->data(), gpuFast.getResp(gpuOrb.getStream()), fastKpCountHigh*sizeof(int));
                 }
 
-                
-                
+                const auto diff = nFastFeatures - fastKpCountHigh;
                 //Try again with lower threshold.
-                if(fastKpCountHigh < 1000){
+                if(diff > featureThreshold){
                     auto fastKpCountLow = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
                     Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCountLow), Verbose::VERBOSITY_NORMAL);
                     if(fastKpCountLow > 0){
