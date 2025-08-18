@@ -121,7 +121,8 @@ namespace ORB_SLAM3
             sumFeatures += mnFeaturesPerLevel[level];
             nDesiredFeaturesPerScale *= factor;
         }
-        mnFeaturesPerLevel[nlevels-1] = std::max(nfeatures - sumFeatures, 0);
+        if(nlevels)
+            mnFeaturesPerLevel[nlevels-1] = std::max(nfeatures - sumFeatures, 0);
 
         //This is for orientation
         // pre-compute the end of a row in a circular patch
