@@ -112,16 +112,16 @@ namespace ORB_SLAM3
 
         float minParallax = 1.0;
 
-        Verbose::PrintMess("Triangulate RH: " + std::to_string(RH), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Triangulate RH: " + std::to_string(RH), Verbose::VERBOSITY_NORMAL);
         // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
-        if(RH>0.50) // if(RH>0.40)
+        if(RH>0.40) // if(RH>0.40)
         {
-            Verbose::PrintMess("Initialization from Homography", Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("Initialization from Homography", Verbose::VERBOSITY_NORMAL);
             return ReconstructH(vbMatchesInliersH,H, mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
         else //if(pF_HF>0.6)
         {
-            Verbose::PrintMess("Initialization from Fundamental", Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("Initialization from Fundamental", Verbose::VERBOSITY_NORMAL);
             return ReconstructF(vbMatchesInliersF,F,mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
     }
@@ -516,9 +516,13 @@ namespace ORB_SLAM3
 
 
         
-        Verbose::PrintMess("Fundamental: Min Good " + std::to_string(nMinGood), Verbose::VERBOSITY_DEBUG);
-        Verbose::PrintMess("Fundamental: Max Good " + std::to_string(maxGood), Verbose::VERBOSITY_DEBUG);
-        Verbose::PrintMess("Fundamental: nsimilar " + std::to_string(nsimilar), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: Min Good " + std::to_string(nMinGood), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: Max Good " + std::to_string(maxGood), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: nsimilar " + std::to_string(nsimilar), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: nGood1 " + std::to_string(nGood1), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: nGood2 " + std::to_string(nGood2), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: nGood3 " + std::to_string(nGood3), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: nGood4 " + std::to_string(nGood4), Verbose::VERBOSITY_NORMAL);
 
         // If there is not a clear winner or not enough triangulated points reject initialization
         if(maxGood<nMinGood || nsimilar>1)
@@ -535,6 +539,7 @@ namespace ORB_SLAM3
                 vbTriangulated = vbTriangulated1;
 
                 T21 = Sophus::SE3f(R1, t1);
+                Verbose::PrintMess("Initialization F from nGood1 Success", Verbose::VERBOSITY_NORMAL);
                 return true;
             }
         }else if(maxGood==nGood2)
@@ -545,6 +550,7 @@ namespace ORB_SLAM3
                 vbTriangulated = vbTriangulated2;
 
                 T21 = Sophus::SE3f(R2, t1);
+                Verbose::PrintMess("Initialization F from nGood1 Success", Verbose::VERBOSITY_NORMAL);
                 return true;
             }
         }else if(maxGood==nGood3)
@@ -555,6 +561,7 @@ namespace ORB_SLAM3
                 vbTriangulated = vbTriangulated3;
 
                 T21 = Sophus::SE3f(R1, t2);
+                Verbose::PrintMess("Initialization F from nGood1 Success", Verbose::VERBOSITY_NORMAL);
                 return true;
             }
         }else if(maxGood==nGood4)
@@ -565,6 +572,7 @@ namespace ORB_SLAM3
                 vbTriangulated = vbTriangulated4;
 
                 T21 = Sophus::SE3f(R2, t2);
+                Verbose::PrintMess("Initialization F from nGood1 Success", Verbose::VERBOSITY_NORMAL);
                 return true;
             }
         }
@@ -730,7 +738,8 @@ namespace ORB_SLAM3
         {
             T21 = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
             vbTriangulated = bestTriangulated;
-
+            vP3D = bestP3D;
+            Verbose::PrintMess("Initialization from Homography Success", Verbose::VERBOSITY_NORMAL);
             return true;
         }
 
