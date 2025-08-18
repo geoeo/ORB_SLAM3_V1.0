@@ -18,6 +18,7 @@
 
 
 #include <Map.h>
+#include <Verbose.h>
 
 namespace ORB_SLAM3
 {
@@ -61,7 +62,7 @@ void Map::AddKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
     if(mspKeyFrames.empty()){
-        cout << "First KF:" << pKF->mnId << "; Map init KF:" << mnInitKFid << endl;
+        Verbose::PrintMess("First KF:" + std::to_string(pKF->mnId) + " Map init KF:" + std::to_string(mnInitKFid), Verbose::VERBOSITY_NORMAL);
         mnInitKFid = pKF->mnId;
         mpKFinitial = pKF;
         mpKFlowerID = pKF;
