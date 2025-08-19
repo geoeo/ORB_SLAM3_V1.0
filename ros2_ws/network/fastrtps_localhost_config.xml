@@ -14,6 +14,19 @@
                 <interfaceWhiteList>
                     <address>127.0.0.1</address>
                 </interfaceWhiteList>
+                <!-- 
+                    Use 1 million bytes on socket buffer sizes.
+                    A good value here would be 1.5 times the highest burst of data sent by the application.
+                -->
+                <sendBufferSize>1000000</sendBufferSize>
+                <receiveBufferSize>1000000</receiveBufferSize>
+                <!--
+                    The following makes the send calls non-blocking.
+                    This avoids the publisher blocking until there is room
+                    in the socket buffer for the datagram being sent, but then
+                    increases the datagrams lost when there is not enough buffer.
+                -->
+                <non_blocking_send>true</non_blocking_send>
                 <maxInitialPeersRange>300</maxInitialPeersRange>
             </transport_descriptor>
         </transport_descriptors>
@@ -29,3 +42,4 @@
         </participant>
     </profiles>
 </dds>
+
