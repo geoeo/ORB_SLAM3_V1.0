@@ -19,7 +19,7 @@ read_ahead_queue_size = 5000
 def generate_launch_description():
     return LaunchDescription([
         launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
+            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_gnss_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
             output='screen'
         ),
         launch_ros.actions.Node(

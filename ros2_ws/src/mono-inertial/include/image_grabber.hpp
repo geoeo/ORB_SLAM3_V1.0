@@ -1,6 +1,5 @@
 #pragma once
 
-#include<iostream>
 #include<vector>
 #include<queue>
 #include<mutex>
@@ -14,6 +13,7 @@
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
 
 #include <imu_grabber.hpp>
 #include <cuda_runtime.h>
@@ -22,6 +22,7 @@
 
 
 namespace ros2_orbslam3 {
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::NavSatFix> approximate_policy;
     class ImageGrabber
     {
     public:
@@ -38,6 +39,7 @@ namespace ros2_orbslam3 {
         }
 
         void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+        void GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
         cv::cuda::HostMem ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
         void SyncWithImu();
 
@@ -67,6 +69,16 @@ namespace ros2_orbslam3 {
 
     void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
     {
+        RCLCPP_INFO_STREAM(logger_,"Img received");
+        mBufMutex.lock();
+        const auto size = img0Buf.size();
+        img0Buf.push(img_msg);
+        mBufMutex.unlock();
+    }
+
+    void ImageGrabber::GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg, const sensor_msgs::msg::NavSatFix::ConstSharedPtr msg_gnss)
+    {
+        RCLCPP_INFO_STREAM(logger_,"Img and GNSS received");
         mBufMutex.lock();
         const auto size = img0Buf.size();
         img0Buf.push(img_msg);
@@ -75,7 +87,7 @@ namespace ros2_orbslam3 {
 
     cv::cuda::HostMem ImageGrabber::ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
     {
-        std::cout << "Img received" << std::endl;
+
         cv::Mat cv_im = cv_bridge::toCvShare(img_msg)->image;
         cv::cuda::HostMem cuda_managed_memory_image 
             = cv::cuda::HostMem(cv_im, cv::cuda::HostMem::AllocType::SHARED);
