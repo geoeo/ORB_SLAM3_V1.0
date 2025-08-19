@@ -44,7 +44,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
-    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(20),
+    mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
 {
 
@@ -406,16 +406,7 @@ void Tracking::Track()
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+mImageTimeout)
         {
             Verbose::PrintMess("Timestamp image jump detected", Verbose::VERBOSITY_NORMAL);
-            if(mpAtlas->isInertial())
-            {
-                if(!(mpAtlas->isImuInitialized() && mpAtlas->GetCurrentMap()->GetIniertialBA2()))
-                {
-                    Verbose::PrintMess("Reseting Active Map", Verbose::VERBOSITY_NORMAL);
-                    mpSystem->ResetActiveMap();
-                }
-                return;
-            }
-
+            setTrackingState(LOST);
         }
     }
 
@@ -453,13 +444,14 @@ void Tracking::Track()
 
     if(getTrackingState()==NOT_INITIALIZED)
     {
-
+        Verbose::PrintMess("TRACK: Init ", Verbose::VERBOSITY_NORMAL);
         MonocularInitialization();
         
         //mpFrameDrawer->Update(this);
 
         if(getTrackingState()!=OK) // If rightly initialized, mState=OK
         {
+            Verbose::PrintMess("TRACK: Init was not OK", Verbose::VERBOSITY_NORMAL);
             mLastFrame = Frame(mCurrentFrame);
             return;
         }
@@ -746,6 +738,7 @@ void Tracking::MonocularInitialization()
 
             }
 
+            Verbose::PrintMess("Ready to initialize", Verbose::VERBOSITY_NORMAL);
             mbReadyToInitializate = true;
             return;
         }
@@ -762,7 +755,7 @@ void Tracking::MonocularInitialization()
         ORBmatcher matcher(0.9,true);
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
 
-        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
         // Check if there are enough correspondences
         if(nmatches<100)
@@ -776,7 +769,7 @@ void Tracking::MonocularInitialization()
 
         if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
         {
-            Verbose::PrintMess("init matches before 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("init matches before 2 view " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
             
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
@@ -787,7 +780,7 @@ void Tracking::MonocularInitialization()
                 }
             }
 
-            Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
             // Set Frame Poses
             mInitialFrame.SetPose(Sophus::SE3f());
