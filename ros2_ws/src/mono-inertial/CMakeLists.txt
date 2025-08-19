@@ -23,8 +23,6 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 3.4.0 REQUIRED NO_MODULE)
@@ -44,7 +42,19 @@ target_link_libraries(mono_inertial_node
   ORB_SLAM3
   -lfmt
   )
+
+add_executable(mono_inertial_gnss_node src/mono_inertial_gnss_node.cpp)
+target_link_libraries(mono_inertial_gnss_node 
+  ${OpenCV_LIBRARIES}
+  ${Pangolin_LIBRARIES}
+  ${CUDA_LIBRARIES}
+  ORB_SLAM3
+  -lfmt
+  )
+
+
 ament_target_dependencies(mono_inertial_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs ${TRACY_PACKAGE})
+ament_target_dependencies(mono_inertial_gnss_node rclcpp tf2_ros nav_msgs cv_bridge sensor_msgs ${TRACY_PACKAGE})
 
 target_include_directories(mono_inertial_node PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -56,6 +66,17 @@ ${CUDAToolkit_INCLUDE_DIRS}
 ${ORB_SLAM3_INCLUDE_DIR}
 )
 
+target_include_directories(mono_inertial_gnss_node PUBLIC
+"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+"$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+${OpenCV_INCLUDE_DIRS}
+${EIGEN3_INCLUDE_DIR}
+${Pangolin_INCLUDE_DIRS}
+${CUDAToolkit_INCLUDE_DIRS}
+${ORB_SLAM3_INCLUDE_DIR}
+)
+
+
 # Install directories files.
 install(DIRECTORY
   launch
@@ -63,5 +84,6 @@ install(DIRECTORY
 )
 
 install(TARGETS mono_inertial_node DESTINATION lib/${PROJECT_NAME})
+install(TARGETS mono_inertial_gnss_node DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
