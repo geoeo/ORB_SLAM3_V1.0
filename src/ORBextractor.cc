@@ -490,10 +490,10 @@ namespace ORB_SLAM3
             }
         }
 
-
         vector<size_t> keypointsAcc(nlevels);
         partial_sum(keypointsCountPerLevel.begin(), keypointsCountPerLevel.end(), keypointsAcc.begin());
 
+        //TODO: this will crash if 0 keypoints are detected.
         auto allKeypoints = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(allKeypointsCount);
 
         {
