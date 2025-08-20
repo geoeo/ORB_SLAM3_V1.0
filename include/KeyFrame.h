@@ -44,10 +44,6 @@ class KeyFrameDatabase;
 
 class KeyFrame
 {
-
-
-    
-
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     KeyFrame();
@@ -276,9 +272,6 @@ public:
 
     std::vector <KeyFrame*> mvpLoopCandKFs;
     std::vector <KeyFrame*> mvpMergeCandKFs;
-
-    //bool mbHasHessian;
-    //cv::Mat mHessianPose;
 
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
