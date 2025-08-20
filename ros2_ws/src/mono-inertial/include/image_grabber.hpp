@@ -14,6 +14,8 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
 #include <imu_grabber.hpp>
 #include <cuda_runtime.h>
@@ -39,7 +41,7 @@ namespace ros2_orbslam3 {
         }
 
         void GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr msg);
-        void GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
+        void GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg, const sensor_msgs::msg::NavSatFix::ConstSharedPtr msg_gnss);
         cv::cuda::HostMem ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
         void SyncWithImu();
 
@@ -79,10 +81,7 @@ namespace ros2_orbslam3 {
     void ImageGrabber::GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg, const sensor_msgs::msg::NavSatFix::ConstSharedPtr msg_gnss)
     {
         RCLCPP_INFO_STREAM(logger_,"Img and GNSS received");
-        mBufMutex.lock();
-        const auto size = img0Buf.size();
-        img0Buf.push(img_msg);
-        mBufMutex.unlock();
+        //TODO
     }
 
     cv::cuda::HostMem ImageGrabber::ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
