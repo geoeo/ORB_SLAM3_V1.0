@@ -56,17 +56,15 @@ void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopF
 {
     vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
     vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
-    BundleAdjustment(vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
+    BundleAdjustment(pMap,vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
 }
 
 
-void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
+void Optimizer::BundleAdjustment(Map* pMap, const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
                                  int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
     vector<bool> vbNotIncludedMP;
     vbNotIncludedMP.resize(vpMP.size());
-
-    Map* pMap = vpKFs[0]->GetMap();
 
     g2o::SparseOptimizer optimizer;
     std::unique_ptr<g2o::BlockSolver_6_3::LinearSolverType> linearSolver
@@ -248,6 +246,9 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
     optimizer.optimize(nIterations);
     Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_NORMAL);
 
+    // Get Map Mutex and erase outliers
+    // unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+
     // Recover optimized data
     //Keyframes
     for(size_t i=0; i<vpKFs.size(); i++)
@@ -355,6 +356,8 @@ void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<M
             pMP->mnBAGlobalForKF = nLoopKF;
         }
     }
+
+    pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool *pbStopFlag, bool bInit, float priorG, float priorA, Eigen::VectorXd *vSingVal, bool *bHess)
@@ -1129,7 +1132,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     if (pMap->IsInertial())
-        solver->setUserLambdaInit(100.0);
+        solver->setUserLambdaInit(1.0);
 
     optimizer.setAlgorithm(solver);
     optimizer.setVerbose(false);
@@ -2220,17 +2223,17 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     return nIn;
 }
 
-void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
+void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bFull, bool bRecInit)
 {
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
-    int maxOpt=10;
-    int opt_it=40;
-    if(bLarge)
+    int maxOpt=8;
+    int opt_it=10;
+    if(bFull)
     {
-        maxOpt=8;
-        opt_it=10;
+        maxOpt=(int)pMap->KeyFramesInMap()-2;
+        opt_it=40;
     }
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
@@ -2344,7 +2347,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     std::unique_ptr<g2o::BlockSolverX> solver_ptr = std::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
 
-    if(bLarge)
+    if(bFull)
     {
         g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
         solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
@@ -2619,7 +2622,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 
     // TODO: Some convergence problems have been detected here
-    if((2*err < err_end || isnan(err) || isnan(err_end)) && !bLarge) //bGN)
+    if((2*err < err_end || isnan(err) || isnan(err_end))) //bGN)
     {
         Verbose::PrintMess("LocalInertialBA: FAIL LOCAL-INERTIAL BA!", Verbose::VERBOSITY_NORMAL);
         return;

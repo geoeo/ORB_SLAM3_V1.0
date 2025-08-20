@@ -171,9 +171,13 @@ protected:
     int mNumLM;
     int mNumKFCulling;
 
-    float mTinit;
+    float mTSinceIMUInit;
 
     int countRefinement;
+
+    static constexpr float resetTimeThresh = 10.0;
+    static constexpr float minTimeForVIBA1 = 5.0;
+    static constexpr float minTimeForVIBA2 = 7.0;
 
     //DEBUG
     std::ofstream f_lm;
