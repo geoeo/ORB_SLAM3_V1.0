@@ -38,7 +38,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     mScale(1.0), mInitSect(0), mIdxInit(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false) , mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mbAcceptKeyFrames(true),mMutexPtrChangeKeyframe(make_shared<mutex>()), bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)),
-    mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0)
+    mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0), mFullBA(false)
 {
 }
 
@@ -186,6 +186,14 @@ void LocalMapping::Run()
                                 Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_NORMAL);
                             }
                         }
+
+                        if(mpAtlas->GetCurrentMap()->GetIniertialBA2() && mTSinceIMUInit>30.0 && !mFullBA){
+                            Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
+                            //Lock early
+                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, true, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                            mFullBA = true;
+                        }
+
 
                         // scale refinement
                         // if (((mpAtlas->KeyFramesInMap())<=200) &&
@@ -1279,7 +1287,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
 
     Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);
     // Process keyframes in the queue
-    while(CheckNewKeyFrames())
+    while(CheckNewKeyFrames()) 
     {
         ProcessNewKeyFrame();
         vpKF.push_back(mpCurrentKeyFrame);
