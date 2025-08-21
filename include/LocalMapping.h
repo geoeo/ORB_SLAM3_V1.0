@@ -179,7 +179,7 @@ protected:
     static constexpr float resetTimeThresh = 10.0;
     static constexpr float minTimeForVIBA1 = 5.0;
     static constexpr float minTimeForVIBA2 = 7.0;
-    static constexpr float minTimeForFullBA = 15.0;
+    static constexpr float minTimeForFullBA = 60.0;
 
     };
 
