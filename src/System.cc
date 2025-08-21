@@ -257,8 +257,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     return {Tcw,isBAComplete,isKeyframe,id, computedScales};
 }
 
-
-
 void System::ActivateLocalizationMode()
 {
     auto lock = scoped_mutex_lock( mMutexMode );
