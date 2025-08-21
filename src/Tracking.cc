@@ -1550,7 +1550,7 @@ void Tracking::UpdateLocalKeyFrames()
 {
     // Each map point vote for the keyframes in which it has been observed
     map<KeyFrame*,int> keyframeCounter;
-    if(!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId<mnLastRelocFrameId+2))
+    if(!mpAtlas->isImuInitialized())
     {
         for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
         {
