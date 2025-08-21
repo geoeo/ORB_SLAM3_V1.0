@@ -28,7 +28,7 @@ namespace ros2_orbslam3 {
     class ImageGrabber
     {
     public:
-        ImageGrabber(ORB_SLAM3::System* pSLAM, ImuGrabber *pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
+        ImageGrabber(ORB_SLAM3::System* pSLAM, std::shared_ptr<ImuGrabber> pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
         const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, rclcpp::Logger logger)
         : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor),
             m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()),
@@ -49,7 +49,7 @@ namespace ros2_orbslam3 {
         std::mutex mBufMutex;
     
         ORB_SLAM3::System* mpSLAM;
-        ImuGrabber *mpImuGb;
+        std::shared_ptr<ImuGrabber> mpImuGb;
 
         const bool mbClahe;
         double timeshift_cam_imu;
@@ -71,9 +71,8 @@ namespace ros2_orbslam3 {
 
     void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
     {
-        RCLCPP_INFO_STREAM(logger_,"Img received");
         mBufMutex.lock();
-        const auto size = img0Buf.size();
+        RCLCPP_INFO_STREAM(logger_,"Img received - Buffer size: " << img0Buf.size());
         img0Buf.push(img_msg);
         mBufMutex.unlock();
     }

@@ -135,8 +135,9 @@ class SlamNode : public rclcpp::Node
       auto sub_gnss_options = rclcpp::SubscriptionOptions();
       sub_gnss_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
+      imugb_ = std::make_shared<ImuGrabber>(this->get_logger());
+      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, imugb_.get(), placeholders::_1),sub_imu_options);
       sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
@@ -154,7 +155,8 @@ class SlamNode : public rclcpp::Node
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_img0_;
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr sub_gnss_;
     std::unique_ptr<message_filters::Synchronizer<approximate_policy>>  _sync_topics;
-    ImuGrabber imugb_;
+    
+    std::shared_ptr<ImuGrabber> imugb_;
     std::unique_ptr<ImageGrabber> igb_;
     std::unique_ptr<std::thread> sync_thread_;
     std::unique_ptr<ORB_SLAM3::System> SLAM_;
