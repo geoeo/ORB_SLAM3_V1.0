@@ -26,7 +26,8 @@ namespace ORB_SLAM3
 long unsigned int Map::nNextId=0;
 
 Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
-mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mfScale(1.0)
+mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), 
+mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mbIMU_FullBA(false), mfScale(1.0)
 {
     mnId=nNextId++;
     mThumbnail = static_cast<GLubyte*>(NULL);
@@ -35,7 +36,7 @@ mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNo
 
 Map::Map(int initKFid):mnInitKFid(initKFid), mnMaxKFid(initKFid),/*mnLastLoopKFid(initKFid),*/ mnBigChangeIdx(0), mIsInUse(false),
                        mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
-                       mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false),mfScale(1.0)
+                       mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false),mbIMU_FullBA(false) ,mfScale(1.0)
 {
     mnId=nNextId++;
     mThumbnail = static_cast<GLubyte*>(NULL);
@@ -233,6 +234,7 @@ void Map::clear()
 
     mbIMU_BA1 = false;
     mbIMU_BA2 = false;
+    mbIMU_FullBA = false;
     mfScale = 1.0;
     mfScales.clear();
 }
@@ -302,28 +304,40 @@ bool Map::IsInertial()
     return mbIsInertial;
 }
 
-void Map::SetIniertialBA1()
+void Map::SetInertialBA1()
 {
     unique_lock<mutex> lock(mMutexMap);
     mbIMU_BA1 = true;
 }
 
-void Map::SetIniertialBA2()
+void Map::SetInertialBA2()
 {
     unique_lock<mutex> lock(mMutexMap);
     mbIMU_BA2 = true;
 }
 
-bool Map::GetIniertialBA1()
+void Map::SetInertialFullBA()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mbIMU_FullBA = true;
+}
+
+bool Map::GetInertialBA1()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mbIMU_BA1;
 }
 
-bool Map::GetIniertialBA2()
+bool Map::GetInertialBA2()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mbIMU_BA2;
+}
+
+bool Map::GetInertialFullBA()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mbIMU_FullBA;
 }
 
 vector<float> Map::getVIBAScales() {

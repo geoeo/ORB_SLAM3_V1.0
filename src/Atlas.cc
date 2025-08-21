@@ -214,7 +214,7 @@ bool Atlas::isBACompleteForMap() {
     auto complete = false;
 
     if(mpCurrentMap)
-        complete = mpCurrentMap->GetIniertialBA2();
+        complete = mpCurrentMap->GetInertialBA2();
 
     return complete;   
 }

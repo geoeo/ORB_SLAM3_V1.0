@@ -29,15 +29,15 @@
 
 using namespace std;
 
-auto scoped_mutex_lock(std::mutex &m){
-    ZoneScopedC(tracy::Color::Coral);
-    return std::unique_lock(m);
-}
-
 namespace ORB_SLAM3
 {
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+
+std::unique_lock<std::mutex> System::scoped_mutex_lock(std::mutex &m){
+    ZoneScopedC(tracy::Color::Coral);
+    return std::unique_lock(m);
+}
 
 bool System::has_suffix(const std::string &str, const std::string &suffix) {
   std::size_t index = str.find(suffix, str.size() - suffix.size());

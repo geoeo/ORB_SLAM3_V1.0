@@ -156,13 +156,11 @@ protected:
     bool mbStopped;
     bool mbStopRequested;
     bool mbNotStop;
-    bool mBFullBA;
     std::mutex mMutexStop;
 
     bool mbAcceptKeyFrames;
     std::mutex mMutexAccept;
 
-    std::shared_ptr<std::mutex> mMutexPtrChangeKeyFrame;
     std::shared_ptr<std::mutex> mMutexPtrGlobalData;
 
     bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false, float minTime = 5, size_t nMinKF = 10);
@@ -181,7 +179,7 @@ protected:
     static constexpr float resetTimeThresh = 10.0;
     static constexpr float minTimeForVIBA1 = 5.0;
     static constexpr float minTimeForVIBA2 = 7.0;
-    static constexpr float minTimeForFullBA = 45.0;
+    static constexpr float minTimeForFullBA = 15.0;
 
     };
 

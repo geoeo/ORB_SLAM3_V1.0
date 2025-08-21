@@ -142,6 +142,7 @@ public:
 
 private:
     bool has_suffix(const std::string &str, const std::string &suffix);
+    std::unique_lock<std::mutex> scoped_mutex_lock(std::mutex &m);
 
     // Input sensor
     eSensor mSensor;

@@ -89,10 +89,12 @@ public:
 
     void SetInertialSensor();
     bool IsInertial();
-    void SetIniertialBA1();
-    void SetIniertialBA2();
-    bool GetIniertialBA1();
-    bool GetIniertialBA2();
+    void SetInertialBA1();
+    void SetInertialBA2();
+    void SetInertialFullBA();
+    bool GetInertialBA1();
+    bool GetInertialBA2();
+    bool GetInertialFullBA();
     std::vector<float> getVIBAScales();
 
     void PrintEssentialGraph();
@@ -168,6 +170,7 @@ protected:
     bool mbIsInertial;
     bool mbIMU_BA1;
     bool mbIMU_BA2;
+    bool mbIMU_FullBA;
     float mfScale;
     std::vector<float> mfScales;
 
