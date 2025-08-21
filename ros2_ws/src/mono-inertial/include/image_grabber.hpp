@@ -162,7 +162,12 @@ namespace ros2_orbslam3 {
 
                 if(!vImuMeas.empty() && init_ts != 0){
                     RCLCPP_INFO_STREAM(logger_, "IMU meas size: " << vImuMeas.size());
+
+                    while(!mpSLAM->getGlobalDataMutex()->try_lock())
+                        this_thread::sleep_for(chrono::microseconds(500));
+
                     auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas);
+                    mpSLAM->getGlobalDataMutex()->unlock();
                     Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
                     bool ba_complete_for_frame = std::get<1>(tracking_results);
                     bool is_keyframe = std::get<2>(tracking_results);

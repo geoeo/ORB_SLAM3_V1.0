@@ -37,8 +37,8 @@ namespace ORB_SLAM3
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const string &_strSeqName):
     mScale(1.0), mInitSect(0), mIdxInit(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false) , mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
-    mbNotStop(false), mbAcceptKeyFrames(true),mMutexPtrChangeKeyframe(make_shared<mutex>()), bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)),
-    mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0), mFullBA(false)
+    mbNotStop(false), mBFullBA(false), mbAcceptKeyFrames(true),mMutexPtrChangeKeyFrame(make_shared<mutex>()), mMutexPtrGlobalData(make_shared<mutex>()), 
+    bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0)
 {
 }
 
@@ -179,7 +179,6 @@ void LocalMapping::Run()
 
                                 if(success){
                                     mpAtlas->GetCurrentMap()->SetIniertialBA2();
-                                    //Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),10,&mbAbortBA,mpAtlas->GetCurrentMap()->GetOriginKF()->mnId,true);
                                 }
 
 
@@ -187,11 +186,15 @@ void LocalMapping::Run()
                             }
                         }
 
-                        if(mpAtlas->GetCurrentMap()->GetIniertialBA2() && mTSinceIMUInit>30.0 && !mFullBA){
-                            Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
-                            //Lock early
-                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, true, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
-                            mFullBA = true;
+                        if(mpAtlas->GetCurrentMap()->GetIniertialBA2() && mTSinceIMUInit>minTimeForFullBA && !mBFullBA){
+                            Verbose::PrintMess("Trying to Aquire Lock", Verbose::VERBOSITY_NORMAL);
+                            if(mMutexPtrGlobalData->try_lock()){
+                                Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
+                                Optimizer::LocalInertialBA(mpCurrentKeyFrame, nullptr, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, true, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
+                                mMutexPtrGlobalData->unlock();
+                                mBFullBA = true;
+                            }
+
                         }
 
 
@@ -910,7 +913,7 @@ void LocalMapping::KeyFrameCulling()
         last_ID = aux_KF->mnId;
     }
 
-    unique_lock<mutex> lock(*mMutexPtrChangeKeyframe);
+    unique_lock<mutex> lock(*mMutexPtrChangeKeyFrame);
     for(vector<KeyFrame*>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
     {
         count++;
@@ -1464,11 +1467,10 @@ void LocalMapping::ScaleRefinement()
 
 
 
-bool LocalMapping::IsInitializing()
+bool LocalMapping::IsInitializing() const
 {
     return bInitializing;
 }
-
 
 double LocalMapping::GetCurrKFTime()
 {
@@ -1487,7 +1489,11 @@ KeyFrame* LocalMapping::GetCurrKF()
 }
 
 shared_ptr<mutex> LocalMapping::getKeyFrameChangeMutex(){
-    return mMutexPtrChangeKeyframe;
+    return mMutexPtrChangeKeyFrame;
+}
+
+shared_ptr<mutex> LocalMapping::getGlobalDataMutex(){
+    return mMutexPtrGlobalData;
 }
 
 } //namespace ORB_SLAM

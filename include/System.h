@@ -126,6 +126,7 @@ public:
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
     std::vector<KeyFrame*> GetAllKeyframes();
+    std::shared_ptr<std::mutex> getGlobalDataMutex();
 
     // For debugging
     double GetTimeFromIMUInit();
@@ -135,8 +136,7 @@ public:
     void ChangeDataset();
 
     float GetImageScale();
-
-    bool isGeoreferenced();
+    bool isGeoreferenced() const;
     void setGeoreference(bool is_georeferenced);
 
 

@@ -187,7 +187,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
 
     {
-        //unique_lock<mutex> lock(mMutexReset);
         auto lock = scoped_mutex_lock( mMutexReset );
 
         if(mbShutDown)
@@ -203,7 +202,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     // Check mode change
     {
-        //unique_lock<mutex> lock(mMutexMode);
         auto lock = scoped_mutex_lock( mMutexMode );
         if(mbActivateLocalizationMode)
         {
@@ -228,7 +226,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     // Check reset
     {
-        //unique_lock<mutex> lock(mMutexReset);
         auto lock = scoped_mutex_lock( mMutexReset );
         if(mbReset)
         {
@@ -264,14 +261,12 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
 void System::ActivateLocalizationMode()
 {
-    //unique_lock<mutex> lock(mMutexMode);
     auto lock = scoped_mutex_lock( mMutexMode );
     mbActivateLocalizationMode = true;
 }
 
 void System::DeactivateLocalizationMode()
 {
-    //unique_lock<mutex> lock(mMutexMode);
     auto lock = scoped_mutex_lock( mMutexMode );
     mbDeactivateLocalizationMode = true;
 }
@@ -291,14 +286,12 @@ bool System::MapChanged()
 
 void System::Reset()
 {
-    //unique_lock<mutex> lock(mMutexReset);
     auto lock = scoped_mutex_lock( mMutexReset );
     mbReset = true;
 }
 
 void System::ResetActiveMap()
 {
-    //unique_lock<mutex> lock(mMutexReset);
     auto lock = scoped_mutex_lock( mMutexReset );
     mbResetActiveMap = true;
 }
@@ -306,7 +299,6 @@ void System::ResetActiveMap()
 void System::Shutdown()
 {
     {
-        //unique_lock<mutex> lock(mMutexReset);
         auto lock = scoped_mutex_lock( mMutexReset );
         mbShutDown = true;
     }
@@ -319,7 +311,6 @@ void System::Shutdown()
 }
 
 bool System::isShutDown() {
-    //unique_lock<mutex> lock(mMutexReset);
     auto lock = scoped_mutex_lock( mMutexReset );
     return mbShutDown;
 }
@@ -327,14 +318,12 @@ bool System::isShutDown() {
 //This is not really correct -> remove in future use bool value from tracking
 unsigned int System::GetLastKeyFrameId()
 {
-  //unique_lock<mutex> lock(mMutexState);
   auto lock = scoped_mutex_lock( mMutexState );
   return mpTracker->GetLastKeyFrameId();
 }
 
 cv::Mat System::DrawTrackedImage()
 {
-  //unique_lock<mutex> lock(mMutexState);
   auto lock = scoped_mutex_lock( mMutexState );
   return mpFrameDrawer->DrawFrame();
 }
@@ -342,7 +331,6 @@ cv::Mat System::DrawTrackedImage()
 
 int System::GetTrackingState()
 {
-    //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
     return mTrackingState;
 }
@@ -355,7 +343,6 @@ vector<MapPoint*> System::GetActiveReferenceMapPoints()
 
 std::shared_ptr<std::vector<KeyPoint>> System::GetTrackedKeyPointsUn()
 {
-    //unique_lock<mutex> lock(mMutexState);
     auto lock = scoped_mutex_lock( mMutexState );
     return mTrackedKeyPointsUn;
 }
@@ -412,8 +399,12 @@ float System::GetImageScale()
     return mpTracker->GetImageScale();
 }
 
-bool System::isGeoreferenced() {
+bool System::isGeoreferenced() const {
     return mpTracker->isGeoreferenced();
+}
+
+shared_ptr<mutex> System::getGlobalDataMutex(){
+    return mpLocalMapper->getGlobalDataMutex();
 }
 
 void System::setGeoreference(bool is_georeferenced){

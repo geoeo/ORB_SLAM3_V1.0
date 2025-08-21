@@ -234,7 +234,7 @@ void Tracking::PreintegrateIMU()
             else
             {
                 break;
-                bSleep = true;
+                bSleep = true; //TODO: Is this ever relevant because of break?
             }
         }
         if(bSleep)
