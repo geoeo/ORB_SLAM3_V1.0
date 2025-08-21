@@ -109,11 +109,10 @@ void LocalMapping::Run()
                             mbBadImu = true;
                         }
 
-                        const bool bFull = false;
-                        Verbose::PrintMess("LocalMapper - LocalInertialBA: bFull: " + to_string(bFull), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_NORMAL);
                         {
                             //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, bFull, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
+                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                             Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
                         }
 
@@ -189,7 +188,7 @@ void LocalMapping::Run()
                         if(mpAtlas->GetCurrentMap()->GetInertialBA2() && mTSinceIMUInit>minTimeForFullBA && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
                             unique_lock<mutex> lock(*mMutexPtrGlobalData);
                             Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
-                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, nullptr, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, true, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
+                            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, mpCurrentKeyFrame->mnId, NULL, true, 0.0, 1e1);
                             mpAtlas->GetCurrentMap()->SetInertialFullBA();
                         }
 
