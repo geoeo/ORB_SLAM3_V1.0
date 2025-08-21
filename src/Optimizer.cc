@@ -2223,18 +2223,13 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     return nIn;
 }
 
-void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bFull, bool bRecInit)
+void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
 {
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
     int maxOpt=8;
     int opt_it=10;
-    if(bFull)
-    {
-        maxOpt=(int)pMap->KeyFramesInMap()-2;
-        opt_it=40;
-    }
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2347,20 +2342,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     std::unique_ptr<g2o::BlockSolverX> solver_ptr = std::make_unique<g2o::BlockSolverX>(std::move(linearSolver));
 
-    if(bFull)
-    {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
-        solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
-        optimizer.setAlgorithm(solver);
-    }
-    else
-    {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
-        solver->setUserLambdaInit(1e0);
-        optimizer.setAlgorithm(solver);
-    }
-
-
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
+    solver->setUserLambdaInit(1e0);
+    optimizer.setAlgorithm(solver);
+    
     // Set Local temporal KeyFrame vertices
     for_each(execution::seq, vpOptimizableKFs.begin(), vpOptimizableKFs.end(), [&optimizer, maxKFid](auto pKFi) {
         VertexPose * VP = new VertexPose(pKFi);
