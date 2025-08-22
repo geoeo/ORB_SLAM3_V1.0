@@ -48,18 +48,10 @@
 namespace ORB_SLAM3
 {
 
-
-class Viewer;
 class FrameDrawer;
-class MapDrawer;
-class Atlas;
 class Tracking;
 class LocalMapping;
 class LoopClosing;
-class Settings;
-class CameraParameters;
-class ImuParameters;
-class OrbParameters;
 
 class System
 {

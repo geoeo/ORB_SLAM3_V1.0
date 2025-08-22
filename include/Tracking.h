@@ -35,6 +35,7 @@
 #include <Verbose.h>
 #include <ImuTypes.h>
 #include <Settings.h>
+#include <System.h>
 
 #include <CameraModels/GeometricCamera.h>
 
@@ -49,7 +50,6 @@ namespace ORB_SLAM3
 
 class Viewer;
 class FrameDrawer;
-class System;
 
 class Tracking
 {  

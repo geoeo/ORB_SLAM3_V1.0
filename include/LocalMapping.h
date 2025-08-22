@@ -25,6 +25,7 @@
 #include <Tracking.h>
 #include <KeyFrameDatabase.h>
 #include <Settings.h>
+#include <System.h>
 
 #include <mutex>
 #include <atomic>
@@ -183,5 +184,5 @@ protected:
 
     };
 
-} //namespace ORB_SLAM
+} //namespace ORB_SLAM3
 

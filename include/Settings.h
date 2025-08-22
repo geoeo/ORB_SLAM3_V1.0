@@ -61,8 +61,6 @@ namespace ORB_SLAM3 {
     int minThFast;
     };
 
-    class System;
-
     //TODO: change to double instead of float
 
     class Settings {
