@@ -91,8 +91,6 @@ public:
     double mCostTime;
 
     unsigned int mInitSect;
-    unsigned int mIdxInit;
-    unsigned int mnKFs;
     double mFirstTs;
     int mnMatchesInliers;
 

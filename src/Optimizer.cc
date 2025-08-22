@@ -748,7 +748,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     }
 
-    //pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 
@@ -2893,8 +2893,6 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.optimize(its);
-
-    scale = VS->estimate();
 
     // Recover optimized data
     // Biases
