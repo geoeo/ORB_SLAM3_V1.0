@@ -80,10 +80,10 @@ class SlamNode : public rclcpp::Node
 
       //F6
       ORB_SLAM3::ImuParameters imu;
-      imu.accelWalk  = 0.07579860836224204; //x20000
-      imu.gyroWalk   = 0.0352677789580351; //x20000
-      imu.noiseAccel =  0.03138444640779682; //x200
-      imu.noiseGyro  = 0.03278894143880944; // x200
+      imu.accelWalk  = 0.007579860836224204; //x2000
+      imu.gyroWalk   = 0.00352677789580351; //x2000
+      imu.noiseAccel =  0.003138444640779682; //x20
+      imu.noiseGyro  = 0.003278894143880944; // x20
       imu.InsertKFsWhenLost = false;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
@@ -115,7 +115,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.resetTimeThresh = 10.0;
       local_mapper.minTimeForVIBA1 = 5.0;
       local_mapper.minTimeForVIBA2 = 7.0;
-      local_mapper.minTimeForFullBA = 75.0;
+      local_mapper.minTimeForFullBA = 60.0;
 
       double timeshift_cam_imu = 0.008390335701785497; 
 
