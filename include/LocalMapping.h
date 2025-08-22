@@ -42,7 +42,7 @@ class LocalMapping
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const std::string &_strSeqName=std::string());
+    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
 
     void SetLoopCloser(LoopClosing* pLoopCloser);
 
@@ -177,10 +177,10 @@ protected:
 
     int countRefinement;
 
-    static constexpr float resetTimeThresh = 10.0;
-    static constexpr float minTimeForVIBA1 = 5.0;
-    static constexpr float minTimeForVIBA2 = 7.0;
-    static constexpr float minTimeForFullBA = 75.0;
+    const float resetTimeThresh;
+    const float minTimeForVIBA1;
+    const float minTimeForVIBA2;
+    const float minTimeForFullBA;
 
     };
 

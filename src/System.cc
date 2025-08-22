@@ -44,7 +44,7 @@ bool System::has_suffix(const std::string &str, const std::string &suffix) {
   return (index != std::string::npos);
 }
 
-System::System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+System::System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
     const eSensor sensor, int frameGridCols, int frameGridRows ,bool activeLC, bool bUseViewer):
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
@@ -98,7 +98,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
   if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
     mpAtlas->SetInertialSensor();
 
-  settings_ = new Settings(cam, imu, orb,mSensor, frameGridCols, frameGridRows);
+  settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor, frameGridCols, frameGridRows);
 
   cout << (*settings_) << endl;
 
@@ -116,7 +116,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam, const
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
-                                     mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, std::string());
+                                     mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, local_mapper_settings);
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = 0; // seems to be ununsed
     if(settings_)

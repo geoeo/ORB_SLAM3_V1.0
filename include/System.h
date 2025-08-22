@@ -76,7 +76,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Headless setup
-    System(const std::string &strVocFile, const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
+    System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
         const eSensor sensor, int frame_grid_cols, int frame_grid_rows, bool activeLC, bool bUseViewer);
 
     

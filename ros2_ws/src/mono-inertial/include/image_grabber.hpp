@@ -30,9 +30,9 @@ namespace ros2_orbslam3 {
     public:
         ImageGrabber(ORB_SLAM3::System* pSLAM, std::shared_ptr<ImuGrabber> pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
         const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, rclcpp::Logger logger)
-        : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor),
-            m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream()),
-            m_width(width), m_height(height), logger_(logger)
+        : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor), m_width(width), m_height(height), logger_(logger),
+            m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream())
+
         {
             m_resized_img_gpu = cv::cuda::HostMem(m_height, m_width, CV_8UC3, cv::cuda::HostMem::AllocType::SHARED);
             m_cuda_managed_memory_image_grey = cv::cuda::HostMem(m_height, m_width, CV_8UC1,cv::cuda::HostMem::AllocType::SHARED);

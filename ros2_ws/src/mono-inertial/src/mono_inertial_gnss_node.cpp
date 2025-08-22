@@ -78,17 +78,14 @@ class SlamNode : public rclcpp::Node
       orb.minThFast   = 80;
       orb.iniThFast   = 100;
 
-      ORB_SLAM3::ImuParameters m_imu;
 
       //F6
-
-      m_imu.accelWalk  = 0.07579860836224204; //x20000
-      m_imu.gyroWalk   = 0.0352677789580351; //x20000
-      m_imu.noiseAccel =  0.03138444640779682; //x200
-      m_imu.noiseGyro  = 0.03278894143880944; // x200
-
-
-      m_imu.InsertKFsWhenLost = true;
+      ORB_SLAM3::ImuParameters imu;
+      imu.accelWalk  = 0.07579860836224204; //x20000
+      imu.gyroWalk   = 0.0352677789580351; //x20000
+      imu.noiseAccel =  0.03138444640779682; //x200
+      imu.noiseGyro  = 0.03278894143880944; // x200
+      imu.InsertKFsWhenLost = true;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
@@ -112,8 +109,14 @@ class SlamNode : public rclcpp::Node
       cv_Tbc.at<float>(3,2) =   0.0;
       cv_Tbc.at<float>(3,3) =   1.0;
 
-      m_imu.Tbc = cv_Tbc;
-      m_imu.freq = 400.0;
+      imu.Tbc = cv_Tbc;
+      imu.freq = 400.0;
+
+      ORB_SLAM3::LocalMapperParameters local_mapper;
+      local_mapper.resetTimeThresh = 10.0;
+      local_mapper.minTimeForVIBA1 = 5.0;
+      local_mapper.minTimeForVIBA2 = 7.0;
+      local_mapper.minTimeForFullBA = 75.0;
 
       double timeshift_cam_imu = 0.008390335701785497; 
 
@@ -123,7 +126,7 @@ class SlamNode : public rclcpp::Node
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, m_imu, orb, ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();

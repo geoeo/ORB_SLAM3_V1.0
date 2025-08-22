@@ -61,6 +61,14 @@ namespace ORB_SLAM3 {
     int minThFast;
     };
 
+    struct LocalMapperParameters
+    {
+        float resetTimeThresh;
+        float minTimeForVIBA1;
+        float minTimeForVIBA2;
+        float minTimeForFullBA;
+    };
+
     //TODO: change to double instead of float
 
     class Settings {
