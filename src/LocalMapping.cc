@@ -179,6 +179,8 @@ void LocalMapping::Run()
 
                                 if(success){
                                     mpAtlas->GetCurrentMap()->SetInertialBA2();
+                                    if(minTimeForFullBA < 0)
+                                        mpAtlas->GetCurrentMap()->SetInertialFullBA();
                                 }
 
 
@@ -191,15 +193,6 @@ void LocalMapping::Run()
                             Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
                             //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
                             auto success = InitializeIMU(0.f, 1e2, true, 3, 15);
-                            //Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);
-                            // Process keyframes in the queue
-                            // while(CheckNewKeyFrames()) 
-                            //     ProcessNewKeyFrame();
-                            
-
-                            // Verbose::PrintMess("Check done ...", Verbose::VERBOSITY_NORMAL);
-                            // Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
-                            // ResetNewKeyFrames();
                             if(success)
                                 mpAtlas->GetCurrentMap()->SetInertialFullBA();
                         }
