@@ -1717,7 +1717,6 @@ namespace ORB_SLAM3
                         }
 
                         const cv::Mat &d = CurrentFrame.mDescriptors.createMatHeader().row(i2);
-
                         const int dist = DescriptorDistance(dMP,d);
 
                         if(dist<bestDist)
@@ -1735,7 +1734,6 @@ namespace ORB_SLAM3
                         if(mbCheckOrientation)
                         {
                             auto kpLF = LastFrame.mvKeysUn->operator[](i);
-
                             auto kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
                             float rot = kpLF.angle-kpCF.angle;
                             if(rot<0.0)
