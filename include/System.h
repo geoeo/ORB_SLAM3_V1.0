@@ -129,6 +129,7 @@ public:
 
     float GetImageScale();
     bool isGeoreferenced() const;
+    bool isImuInitialized() const;
     void setGeoreference(bool is_georeferenced);
 
 

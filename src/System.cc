@@ -397,6 +397,10 @@ bool System::isGeoreferenced() const {
     return mpTracker->isGeoreferenced();
 }
 
+bool System::isImuInitialized() const {
+    return mpAtlas->isImuInitialized();
+}
+
 shared_ptr<mutex> System::getGlobalDataMutex(){
     return mpLocalMapper->getGlobalDataMutex();
 }
