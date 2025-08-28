@@ -1480,7 +1480,7 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.95);
+        ORBmatcher matcher(0.95, true);
         int th = 1;
         if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
             th=3;
