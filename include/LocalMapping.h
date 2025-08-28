@@ -29,6 +29,8 @@
 
 #include <mutex>
 #include <atomic>
+#include <vector>
+#include <utility>
 
 
 namespace ORB_SLAM3
@@ -79,8 +81,8 @@ public:
 
     std::shared_ptr<std::mutex> getKeyFrameChangeMutex();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
-
-    std::mutex mMutexImuInit;
+    void setLatestOptimizedKFPoses (const std::vector<std::pair<int,Sophus::SE3f>>& optimizedKFPoses);
+    std::vector<std::pair<int,Sophus::SE3f>> getLatestOptimizedKFPoses();
 
     Eigen::MatrixXd mcovInertial;
     Eigen::Matrix3d mRwg;
@@ -149,6 +151,8 @@ protected:
     std::list<MapPoint*> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
+    std::mutex mMutexImuInit;
+    std::mutex mMutexLatestOptimizedKFPoses;
 
 
     bool mbAbortBA;
@@ -179,6 +183,8 @@ protected:
     const float minTimeForVIBA1;
     const float minTimeForVIBA2;
     const float minTimeForFullBA;
+
+    std::vector<std::pair<int,Sophus::SE3f>> mLatestOptimizedKFPoses;
 
     };
 

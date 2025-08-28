@@ -2223,7 +2223,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     return nIn;
 }
 
-void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
+vector<pair<int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
 {
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
@@ -2610,7 +2610,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     if((2*err < err_end || isnan(err) || isnan(err_end))) //bGN)
     {
         Verbose::PrintMess("LocalInertialBA: FAIL LOCAL-INERTIAL BA!", Verbose::VERBOSITY_NORMAL);
-        return;
+        return {};
     }
 
 
@@ -2668,6 +2668,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     });
 
     pMap->IncreaseChangeIndex();
+
+    vector<pair<int,Sophus::SE3f>> newV;
+    newV.reserve( vpOptimizableKFs.size() ); 
+    transform(vpOptimizableKFs.begin(), vpOptimizableKFs.end(), newV.begin(), [](auto& pKF){
+        return pair{pKF->mnId ,pKF->GetPose()};
+    });
+    return newV;
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)

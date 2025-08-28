@@ -113,7 +113,8 @@ void LocalMapping::Run()
                         Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_NORMAL);
                         {
                             //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                            Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
+                            auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
+                            setLatestOptimizedKFPoses(optimizedKFPoses);
                             Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
                         }
 
@@ -1466,6 +1467,16 @@ KeyFrame* LocalMapping::GetCurrKF()
 
 shared_ptr<mutex> LocalMapping::getGlobalDataMutex(){
     return mMutexPtrGlobalData;
+}
+
+void LocalMapping::setLatestOptimizedKFPoses (const vector<pair<int,Sophus::SE3f>>& optimizedKFPoses){
+    unique_lock<std::mutex> lock(mMutexLatestOptimizedKFPoses);
+    mLatestOptimizedKFPoses = optimizedKFPoses;
+}
+
+vector<pair<int,Sophus::SE3f>> LocalMapping::getLatestOptimizedKFPoses() {
+    unique_lock<std::mutex> lock(mMutexLatestOptimizedKFPoses);
+    return mLatestOptimizedKFPoses;
 }
 
 } //namespace ORB_SLAM
