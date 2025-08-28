@@ -72,7 +72,7 @@ namespace ros2_orbslam3 {
     void ImageGrabber::GrabImage(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
     {
         mBufMutex.lock();
-        RCLCPP_INFO_STREAM(logger_,"Img received - Buffer size: " << img0Buf.size());
+        //RCLCPP_INFO_STREAM(logger_,"Img received - Buffer size: " << img0Buf.size());
         img0Buf.push(img_msg);
         mBufMutex.unlock();
     }

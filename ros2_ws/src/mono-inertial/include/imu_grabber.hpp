@@ -24,7 +24,7 @@ namespace ros2_orbslam3 {
     void ImuGrabber::GrabImu(const sensor_msgs::msg::Imu::ConstSharedPtr imu_msg)
     {
     mBufMutex.lock();
-    RCLCPP_INFO_STREAM(logger_,"IMU received - Buffer size: " << imuBuf.size());
+    //RCLCPP_INFO_STREAM(logger_,"IMU received - Buffer size: " << imuBuf.size());
     imuBuf.push(*imu_msg);
     mBufMutex.unlock();
     }
