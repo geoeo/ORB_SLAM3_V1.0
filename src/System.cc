@@ -247,10 +247,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
     
-
-    auto lock = scoped_mutex_lock( mMutexState );
-    mTrackingState = mpTracker->mState;
-    mTrackedKeyPointsUn = mpTracker->mCurrentFrame.mvKeysUn;
     auto isBAComplete = mpTracker->isBACompleteForMap();
     auto computedScales = mpTracker->getMapScales();
 
@@ -330,7 +326,7 @@ cv::Mat System::DrawTrackedImage()
 int System::GetTrackingState()
 {
     auto lock = scoped_mutex_lock( mMutexState );
-    return mTrackingState;
+    return mpTracker->getTrackingState();
 }
 
 vector<MapPoint*> System::GetActiveReferenceMapPoints()

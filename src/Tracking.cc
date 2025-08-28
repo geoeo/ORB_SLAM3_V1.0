@@ -45,7 +45,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
-    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), mIsGeoreferenced(false)
+    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), 
+    mIsGeoreferenced(false)
 {
 
     newParameterLoader(settings);
@@ -758,7 +759,7 @@ void Tracking::MonocularInitialization()
         Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
         // Check if there are enough correspondences
-        if(nmatches<100)
+        if(nmatches<FEAT_INIT_COUNT)
         {
             mbReadyToInitializate = false;
             return;
