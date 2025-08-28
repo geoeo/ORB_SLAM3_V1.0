@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <vector>
+#include <utility>
 #include <Map.h>
 #include <MapPoint.h>
 #include <KeyFrame.h>
@@ -81,7 +83,7 @@ public:
 
     // For inertial systems
 
-    void static LocalInertialBA(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit = false);
+    std::vector<std::pair<int,Sophus::SE3f>> static LocalInertialBA(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit = false);
     void static MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbStopFlag, Map *pMap, LoopClosing::KeyFrameAndPose &corrPoses);
 
     // Local BA in welding area when two maps are merged
