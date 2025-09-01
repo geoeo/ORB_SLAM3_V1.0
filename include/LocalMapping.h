@@ -81,8 +81,8 @@ public:
 
     std::shared_ptr<std::mutex> getKeyFrameChangeMutex();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
-    void setLatestOptimizedKFPoses (const std::vector<std::pair<int,Sophus::SE3f>>& optimizedKFPoses);
-    std::vector<std::pair<int,Sophus::SE3f>> getLatestOptimizedKFPoses();
+    void setLatestOptimizedKFPoses (const std::vector<std::pair<long unsigned int,Sophus::SE3f>>& optimizedKFPoses);
+    std::vector<std::pair<long unsigned int,Sophus::SE3f>> getLatestOptimizedKFPoses();
 
     Eigen::MatrixXd mcovInertial;
     Eigen::Matrix3d mRwg;
@@ -184,7 +184,7 @@ protected:
     const float minTimeForVIBA2;
     const float minTimeForFullBA;
 
-    std::vector<std::pair<int,Sophus::SE3f>> mLatestOptimizedKFPoses;
+    std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
 
     };
 

@@ -409,7 +409,7 @@ void System::setGeoreference(bool is_georeferenced){
     mpTracker->setGeoreference(is_georeferenced);
 }
 
-vector<pair<int,Sophus::SE3f>> System::getLatestOptimizedKFPoses() {
+vector<pair<long unsigned int,Sophus::SE3f>> System::getLatestOptimizedKFPoses() {
     return mpLocalMapper->getLatestOptimizedKFPoses();
 }
 

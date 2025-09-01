@@ -131,7 +131,7 @@ public:
     bool isGeoreferenced() const;
     bool isImuInitialized() const;
     void setGeoreference(bool is_georeferenced);
-    std::vector<std::pair<int,Sophus::SE3f>> getLatestOptimizedKFPoses();
+    std::vector<std::pair<long unsigned int,Sophus::SE3f>> getLatestOptimizedKFPoses();
 
 
 private:

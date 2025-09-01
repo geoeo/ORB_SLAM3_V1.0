@@ -1469,12 +1469,12 @@ shared_ptr<mutex> LocalMapping::getGlobalDataMutex(){
     return mMutexPtrGlobalData;
 }
 
-void LocalMapping::setLatestOptimizedKFPoses (const vector<pair<int,Sophus::SE3f>>& optimizedKFPoses){
+void LocalMapping::setLatestOptimizedKFPoses (const vector<pair<long unsigned int,Sophus::SE3f>>& optimizedKFPoses){
     unique_lock<std::mutex> lock(mMutexLatestOptimizedKFPoses);
     mLatestOptimizedKFPoses = optimizedKFPoses;
 }
 
-vector<pair<int,Sophus::SE3f>> LocalMapping::getLatestOptimizedKFPoses() {
+vector<pair<long unsigned int,Sophus::SE3f>> LocalMapping::getLatestOptimizedKFPoses() {
     unique_lock<std::mutex> lock(mMutexLatestOptimizedKFPoses);
     return mLatestOptimizedKFPoses;
 }

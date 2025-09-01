@@ -2223,7 +2223,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     return nIn;
 }
 
-vector<pair<int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
+vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
 {
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
@@ -2669,7 +2669,7 @@ vector<pair<int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame *pKF, bool *p
 
     pMap->IncreaseChangeIndex();
 
-    vector<pair<int,Sophus::SE3f>> newV;
+    vector<pair<long unsigned int,Sophus::SE3f>> newV;
     newV.reserve( vpOptimizableKFs.size() ); 
     transform(vpOptimizableKFs.begin(), vpOptimizableKFs.end(), newV.begin(), [](auto& pKF){
         return pair{pKF->mnId ,pKF->GetPose()};
