@@ -2628,14 +2628,17 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         pKFi->mnBAFixedForKF = 0;
     });
 
+    vector<pair<long unsigned int,Sophus::SE3f>> latestOptimizedKFPoses;
+    latestOptimizedKFPoses.reserve( vpOptimizableKFs.size() ); 
     // Recover optimized data
     // Local temporal Keyframes
-    for_each(execution::seq, vpOptimizableKFs.begin(), vpOptimizableKFs.end(), [&optimizer, maxKFid](auto pKFi)
+    for_each(execution::seq, vpOptimizableKFs.begin(), vpOptimizableKFs.end(), [&optimizer, &latestOptimizedKFPoses, maxKFid](auto pKFi)
     {
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
         pKFi->mnBALocalForKF=0;
+        latestOptimizedKFPoses.push_back(make_pair(pKFi->mnId, Tcw));
 
         if(pKFi->bImu)
         {
@@ -2669,12 +2672,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     pMap->IncreaseChangeIndex();
 
-    vector<pair<long unsigned int,Sophus::SE3f>> newV;
-    newV.reserve( vpOptimizableKFs.size() ); 
-    transform(vpOptimizableKFs.begin(), vpOptimizableKFs.end(), newV.begin(), [](auto& pKF){
-        return pair{pKF->mnId ,pKF->GetPose()};
-    });
-    return newV;
+    return latestOptimizedKFPoses;
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)

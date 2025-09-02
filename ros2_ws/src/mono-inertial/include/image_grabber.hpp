@@ -172,6 +172,7 @@ namespace ros2_orbslam3 {
                     bool is_keyframe = std::get<2>(tracking_results);
                     unsigned long int id = std::get<3>(tracking_results);
                     auto scale_factors = std::get<4>(tracking_results);
+                    auto last_optimized_kfs = mpSLAM->getLatestOptimizedKFPoses();
                     vImuMeas.clear();
                     RCLCPP_INFO_STREAM(logger_, "BA completed: " << ba_complete_for_frame);
                     if(!scale_factors.empty())
@@ -179,6 +180,8 @@ namespace ros2_orbslam3 {
                     RCLCPP_INFO_STREAM(logger_, "Current ts: " << tIm);
                     for(auto s : scale_factors)
                         RCLCPP_INFO_STREAM(logger_, "Scale Factor: " << s);
+                    for(auto& opt_pair: last_optimized_kfs)
+                        RCLCPP_INFO_STREAM(logger_, "Frame id: " << opt_pair.first);
                     RCLCPP_INFO_STREAM(logger_,"is keyframe: " << is_keyframe);
                     RCLCPP_INFO_STREAM(logger_, "pose: " << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3));
                 }
