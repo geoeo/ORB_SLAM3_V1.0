@@ -2638,7 +2638,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
         pKFi->mnBALocalForKF=0;
-        latestOptimizedKFPoses.push_back(make_pair(pKFi->mnId, Tcw));
+        latestOptimizedKFPoses.push_back(make_pair(pKFi->mnFrameId, Tcw));
 
         if(pKFi->bImu)
         {
