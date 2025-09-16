@@ -2654,12 +2654,13 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     });
 
     // Local visual KeyFrames
-    for_each(execution::seq, lpOptVisKFs.begin(), lpOptVisKFs.end(), [&optimizer](auto pKFi)
+    for_each(execution::seq, lpOptVisKFs.begin(), lpOptVisKFs.end(), [&optimizer, &latestOptimizedKFPoses](auto pKFi)
     {
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
         pKFi->mnBALocalForKF=0;
+        latestOptimizedKFPoses.push_back(make_pair(pKFi->mnFrameId, Tcw));
     });
 
     //Points
