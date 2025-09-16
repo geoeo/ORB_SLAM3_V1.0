@@ -155,16 +155,12 @@ bool Tracking::GetStepByStep()
     return bStepByStep;
 }
 
-tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, string filename)
+tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, string filename, bool hasGNSS, Eigen::Vector3f GNSSPosition)
 {
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
     assert(mSensor == System::IMU_MONOCULAR);
 
-        
-    // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-    //     mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
-    // else
-    mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
+    mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib, hasGNSS, GNSSPosition);
     if(mpViewer){
         im_managed.createMatHeader().copyTo(mImGrayViewer);
     }

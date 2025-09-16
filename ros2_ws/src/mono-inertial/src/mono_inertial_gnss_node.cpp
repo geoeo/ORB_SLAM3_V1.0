@@ -1,9 +1,13 @@
-#include<iostream>
-#include<thread>
+#include <iostream>
+#include <thread>
+#include <functional>
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/nav_sat_fix.hpp>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
 
 
 #include <imu_grabber.hpp>
@@ -14,6 +18,9 @@ using namespace ros2_orbslam3;
 
 class SlamNode : public rclcpp::Node
 {
+
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::NavSatFix> approximate_policy;
+
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
@@ -141,7 +148,17 @@ class SlamNode : public rclcpp::Node
       imugb_ = std::make_shared<ImuGrabber>(this->get_logger());
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, imugb_.get(), placeholders::_1),sub_imu_options);
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      
+      //sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      
+      sub_image_filter.subscribe(this, "/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000).get_rmw_qos_profile(), sub_image_options);
+      sub_gnss_filter.subscribe(this, "/AIT_Fighter6/mavros/global_position/global", rclcpp::SensorDataQoS().keep_last(1000).get_rmw_qos_profile(), sub_gnss_options);
+      
+      const auto approximate_policy_size = 18;
+      sync_topics.reset(new message_filters::Synchronizer<approximate_policy>(approximate_policy(approximate_policy_size), sub_image_filter, sub_gnss_filter));
+      sync_topics->getPolicy()->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.05));
+      sync_topics->registerCallback(std::bind(&ImageGrabber::GrabImageAndGNSS, igb_.get(), placeholders::_1, placeholders::_2));
+
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
@@ -155,9 +172,11 @@ class SlamNode : public rclcpp::Node
     std::string path_to_vocab_;
     bool bEqual_;
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr sub_imu_;
-    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_img0_;
-    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr sub_gnss_;
-    std::unique_ptr<message_filters::Synchronizer<approximate_policy>>  _sync_topics;
+
+    message_filters::Subscriber<sensor_msgs::msg::Image> sub_image_filter;
+    message_filters::Subscriber<sensor_msgs::msg::NavSatFix> sub_gnss_filter;
+
+    std::unique_ptr<message_filters::Synchronizer<approximate_policy>>  sync_topics;
     
     std::shared_ptr<ImuGrabber> imugb_;
     std::unique_ptr<ImageGrabber> igb_;

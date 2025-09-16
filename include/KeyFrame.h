@@ -64,7 +64,9 @@ public:
     Eigen::Matrix3f GetRotation();
     Eigen::Vector3f GetTranslation();
     Eigen::Vector3f GetVelocity();
+    Eigen::Vector3f GetGNSS() const;
     bool isVelocitySet();
+    bool isGNSSSet() const;
 
     // Bag of Words Representation
     void ComputeBoW();
@@ -286,6 +288,9 @@ protected:
     // Velocity (Only used for inertial SLAM)
     Eigen::Vector3f mVw;
     bool mbHasVelocity;
+
+    Eigen::Vector3f mGNSSPosition;
+    bool mbHasGNSS;
 
     //Transformation matrix between cameras in stereo fisheye
     Sophus::SE3<float> mTlr;

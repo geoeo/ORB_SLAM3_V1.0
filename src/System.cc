@@ -181,7 +181,7 @@ System::~System(){
     }
 }
 
-tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename, bool hasGNSS, Eigen::Vector3f GNSSPosition)
 {
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
@@ -245,7 +245,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
 
-    auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename);
+    auto [Tcw,id, isKeyframe] = mpTracker->GrabImageMonocular(im_managed,timestamp,filename, hasGNSS, GNSSPosition);
     
     auto isBAComplete = mpTracker->isBACompleteForMap();
     auto computedScales = mpTracker->getMapScales();

@@ -58,7 +58,7 @@ public:
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
-        Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+        Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib(), bool hasGNSS=false, Eigen::Vector3f GNSSPosition=Eigen::Vector3f::Zero());
 
     // Destructor
     // ~Frame();
@@ -129,6 +129,10 @@ public:
         return mTcw;
     }
 
+    inline Eigen::Vector3f GetGNSS() const {
+        return mGNSSPosition;
+    }
+
     inline Eigen::Matrix3f GetRwc() const {
         return mRwc;
     }
@@ -145,7 +149,9 @@ public:
         return mbHasVelocity;
     }
 
-
+    inline bool HasGNSS() const {
+        return mbHasGNSS;
+    }
 
 private:
     //Sophus/Eigen migration
@@ -155,6 +161,9 @@ private:
     Eigen::Matrix<float,3,3> mRcw;
     Eigen::Matrix<float,3,1> mtcw;
     bool mbHasPose;
+
+    Eigen::Vector3f mGNSSPosition;
+    bool mbHasGNSS;
 
     //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
     //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()

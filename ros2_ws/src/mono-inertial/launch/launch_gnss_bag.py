@@ -14,6 +14,7 @@ bag_path = '/bags/2025_08_13-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_13-09_
 air_id = 6
 rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
+gnss_topic = f'/AIT_Fighter{air_id}/mavros/global_position/global'
 read_ahead_queue_size = 5000
 
 def generate_launch_description():
@@ -36,7 +37,7 @@ def generate_launch_description():
         launch.actions.ExecuteProcess(
             cmd=['ros2', 'bag', 'play', f'{bag_path}', 
             '--start-offset',f'{bag_start_offset}', 
-            '--topics', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu',
+            '--topics', f'{image_topic}/compressed', f'/bmi088_F{air_id}/imu', gnss_topic,
             '--read-ahead-queue-size',
             f'{read_ahead_queue_size}',
             '--rate', f'{rate}'],

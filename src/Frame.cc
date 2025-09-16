@@ -45,7 +45,8 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), 
-    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false), mbHasVelocity(false),
+    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
+    mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false), mbHasVelocity(false),
     mFrameGridRows(0), mFrameGridCols(0),mpMutexImu(std::make_shared<std::mutex>())
 {
 }
@@ -71,7 +72,7 @@ Frame::Frame(const Frame &frame)
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
-     mTcw(frame.mTcw), mbHasPose(false), mbHasVelocity(false)
+     mTcw(frame.mTcw), mbHasPose(false), mGNSSPosition(frame.mGNSSPosition), mbHasGNSS(frame.mbHasGNSS), mbHasVelocity(false)
 {
     mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
 
@@ -91,12 +92,12 @@ Frame::Frame(const Frame &frame)
 
 Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
-    Frame* pPrevF, const IMU::Calib &ImuCalib)
+    Frame* pPrevF, const IMU::Calib &ImuCalib, bool hasGNSS, Eigen::Vector3f GNSSPosition)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
-     mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mpMutexImu(std::make_shared<std::mutex>())
+     mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false), mpMutexImu(std::make_shared<std::mutex>())
 {
     ZoneNamedN(Frame, "Frame", true); 
     const auto size = frameGridCols*frameGridRows;

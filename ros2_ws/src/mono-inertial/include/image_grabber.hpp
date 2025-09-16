@@ -7,6 +7,7 @@
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/core/core.hpp>
+#include <Eigen/Core>
 
 #include <cv_bridge/cv_bridge.h>
 #include <rclcpp/rclcpp.hpp>
@@ -45,7 +46,7 @@ namespace ros2_orbslam3 {
         cv::cuda::HostMem ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
         void SyncWithImu();
 
-        std::queue<sensor_msgs::msg::Image::ConstSharedPtr> img0Buf;
+        std::queue<std::pair<sensor_msgs::msg::Image::ConstSharedPtr,std::optional<sensor_msgs::msg::NavSatFix::ConstSharedPtr>>> img_gnss_buf;
         std::mutex mBufMutex;
     
         ORB_SLAM3::System* mpSLAM;
@@ -73,14 +74,16 @@ namespace ros2_orbslam3 {
     {
         mBufMutex.lock();
         //RCLCPP_INFO_STREAM(logger_,"Img received - Buffer size: " << img0Buf.size());
-        img0Buf.push(img_msg);
+        img_gnss_buf.push({img_msg, std::nullopt});
         mBufMutex.unlock();
     }
 
     void ImageGrabber::GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg, const sensor_msgs::msg::NavSatFix::ConstSharedPtr msg_gnss)
     {
         RCLCPP_INFO_STREAM(logger_,"Img and GNSS received");
-        //TODO
+        mBufMutex.lock();
+        img_gnss_buf.push({img_msg, msg_gnss});
+        mBufMutex.unlock();
     }
 
     cv::cuda::HostMem ImageGrabber::ConvertImageToGPU(const sensor_msgs::msg::Image::ConstSharedPtr img_msg)
@@ -106,9 +109,10 @@ namespace ros2_orbslam3 {
         while(true)
         {
             cv::cuda::HostMem im_managed;
+            std::optional<Eigen::Vector3f> gnss_pos = std::nullopt;
             cv::Mat im;
             double tIm = 0;
-            if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
+            if (!img_gnss_buf.empty()&&!mpImuGb->imuBuf.empty())
             {
                 mpImuGb->mBufMutex.lock();
                 auto imu_front = mpImuGb->imuBuf.front();
@@ -118,13 +122,16 @@ namespace ros2_orbslam3 {
                     init_ts = ros_imu_ts.seconds();
 
                 this->mBufMutex.lock();
-                auto im_front = img0Buf.front();
+                auto [im_front, gnss_opt_front] = img_gnss_buf.front();
+                //TODO Convert GNSS to EPSG if not empty
                 this->mBufMutex.unlock();
                 im_managed = ConvertImageToGPU(im_front);
                 auto ros_image_ts_front =  rclcpp::Time(im_front->header.stamp);
                 tIm = ros_image_ts_front.seconds() + timeshift_cam_imu - init_ts;
-                RCLCPP_INFO_STREAM(logger_,"Img buffer size: " << img0Buf.size());
-                img0Buf.pop();
+                RCLCPP_INFO_STREAM(logger_,"Img buffer size: " << img_gnss_buf.size());
+                this->mBufMutex.lock();
+                img_gnss_buf.pop();
+                this->mBufMutex.unlock();
 
                 
                 vector<ORB_SLAM3::IMU::Point> vImuMeas;
