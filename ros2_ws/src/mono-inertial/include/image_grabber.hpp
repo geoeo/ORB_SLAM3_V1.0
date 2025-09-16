@@ -19,6 +19,9 @@
 #include <message_filters/sync_policies/approximate_time.h>
 
 #include <imu_grabber.hpp>
+#include <conversions.hpp>
+#include <wgs84.hpp>
+#include <epsg3857.hpp>
 #include <cuda_runtime.h>
 #include <ORB_SLAM3/System.h>
 #include <ORB_SLAM3/ImuTypes.h>
@@ -109,7 +112,7 @@ namespace ros2_orbslam3 {
         while(true)
         {
             cv::cuda::HostMem im_managed;
-            std::optional<Eigen::Vector3f> gnss_pos = std::nullopt;
+            std::optional<Eigen::Vector3f> gnss_pos_opt = std::nullopt;
             cv::Mat im;
             double tIm = 0;
             if (!img_gnss_buf.empty()&&!mpImuGb->imuBuf.empty())
@@ -123,7 +126,14 @@ namespace ros2_orbslam3 {
 
                 this->mBufMutex.lock();
                 auto [im_front, gnss_opt_front] = img_gnss_buf.front();
-                //TODO Convert GNSS to EPSG if not empty
+                if(gnss_opt_front.has_value()){
+                    WGSPose wgs;
+                    wgs.latitude = gnss_opt_front.value()->latitude;
+                    wgs.longitude = gnss_opt_front.value()->longitude;
+                    wgs.altitude = gnss_opt_front.value()->altitude;
+                    EPSGPose epsg = convertToEPSGFromWGS84(wgs);
+                    gnss_pos_opt = Eigen::Vector3f(epsg.easting, epsg.northing, epsg.altitude);
+                }
                 this->mBufMutex.unlock();
                 im_managed = ConvertImageToGPU(im_front);
                 auto ros_image_ts_front =  rclcpp::Time(im_front->header.stamp);
@@ -171,8 +181,10 @@ namespace ros2_orbslam3 {
 
                     while(!mpSLAM->getGlobalDataMutex()->try_lock())
                         this_thread::sleep_for(chrono::microseconds(500));
-
-                    auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas);
+                    
+                    auto has_gnss = gnss_pos_opt.has_value();
+                    auto gnss_position = has_gnss ? gnss_pos_opt.value() : Eigen::Vector3f::Zero();
+                    auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas, has_gnss, gnss_position);
                     mpSLAM->getGlobalDataMutex()->unlock();
                     Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
                     bool ba_complete_for_frame = std::get<1>(tracking_results);

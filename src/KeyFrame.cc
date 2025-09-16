@@ -170,6 +170,14 @@ Eigen::Vector3f KeyFrame::GetGNSS() const
     return mGNSSPosition;
 }
 
+Sophus::SE3f KeyFrame::GetGNSSPose()
+{
+    const auto translation = GetGNSS();
+    auto pose = GetPoseInverse();
+    pose.translation() = Sophus::Vector3f(translation(0), translation(1), translation(2));
+    return pose;
+}
+
 bool KeyFrame::isVelocitySet()
 {
     unique_lock<mutex> lock(mMutexPose);

@@ -65,6 +65,7 @@ public:
     Eigen::Vector3f GetTranslation();
     Eigen::Vector3f GetVelocity();
     Eigen::Vector3f GetGNSS() const;
+    Sophus::SE3f GetGNSSPose();
     bool isVelocitySet();
     bool isGNSSSet() const;
 

@@ -85,7 +85,7 @@ public:
     // Proccess the given monocular frame and optionally imu data
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
-    std::tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), std::string filename="", bool hasGNSS=false, Eigen::Vector3f GNSSPosition=Eigen::Vector3f::Zero());
+    std::tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const std::vector<IMU::Point>& vImuMeas = std::vector<IMU::Point>(), bool hasGNSS=false, Eigen::Vector3f GNSSPosition=Eigen::Vector3f::Zero(), std::string filename="");
 
 
     // This stops local mapping thread (map building) and performs only camera tracking.

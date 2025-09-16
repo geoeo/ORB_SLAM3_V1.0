@@ -33,6 +33,7 @@ find_package(ORB_SLAM3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS serialization)
 find_package(CUDAToolkit REQUIRED)
 find_package(Sophus REQUIRED)
+find_package(GDAL REQUIRED)
 
 
 add_executable(mono_inertial_node src/mono_inertial_node.cpp)
@@ -40,6 +41,7 @@ target_link_libraries(mono_inertial_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ${CUDA_LIBRARIES}
+  ${GDAL_LIBRARY}
   ORB_SLAM3
   -lfmt
   )
@@ -49,6 +51,7 @@ target_link_libraries(mono_inertial_gnss_node
   ${OpenCV_LIBRARIES}
   ${Pangolin_LIBRARIES}
   ${CUDA_LIBRARIES}
+  ${GDAL_LIBRARY}
   ORB_SLAM3
   -lfmt
   )
@@ -65,6 +68,7 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CUDAToolkit_INCLUDE_DIRS}
 ${ORB_SLAM3_INCLUDE_DIR}
+${GDAL_INCLUDE_DIR}
 )
 
 target_include_directories(mono_inertial_gnss_node PUBLIC
@@ -75,6 +79,7 @@ ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
 ${CUDAToolkit_INCLUDE_DIRS}
 ${ORB_SLAM3_INCLUDE_DIR}
+${GDAL_INCLUDE_DIR}
 )
 
 

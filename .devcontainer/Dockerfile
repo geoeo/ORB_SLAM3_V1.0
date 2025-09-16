@@ -103,6 +103,9 @@ RUN apt-get update && apt-get install -y libsuitesparse-dev
 # Tracy
 RUN apt update && apt-get install -y libglfw3-dev libfreetype6 libcapstone-dev libtiff-dev libdbus-1-dev
 
+# GIS conversions
+RUN apt update && apt-get install -y libgdal-dev
+
 
 WORKDIR /
 RUN mkdir bags
