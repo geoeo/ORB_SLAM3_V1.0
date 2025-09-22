@@ -113,6 +113,7 @@ src/GeometricTools.cc
 src/TwoViewReconstruction.cc
 src/Config.cc
 src/Settings.cc
+src/GeometricReferencer.cpp
 src/cuda/Fast_gpu.cu
 src/cuda/Orb_gpu.cu
 src/cuda/Angle_gpu.cu

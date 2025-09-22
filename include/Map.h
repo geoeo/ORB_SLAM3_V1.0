@@ -86,6 +86,7 @@ public:
     bool isImuInitialized();
 
     void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
+    void ApplyGNSSTransformation(const Sophus::SE3f &T);
 
     void SetInertialSensor();
     bool IsInertial();

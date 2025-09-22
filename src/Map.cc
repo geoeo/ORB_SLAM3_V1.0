@@ -278,6 +278,7 @@ void Map::ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool b
         else
             pKF->SetVelocity(Ryw*Vw*s);
     }
+    
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
     {
         MapPoint* pMP = *sit;

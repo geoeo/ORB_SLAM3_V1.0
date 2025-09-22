@@ -64,8 +64,10 @@ public:
     Eigen::Matrix3f GetRotation();
     Eigen::Vector3f GetTranslation();
     Eigen::Vector3f GetVelocity();
-    Eigen::Vector3f GetGNSS() const;
-    Sophus::SE3f GetGNSSPose();
+    Eigen::Vector3f GetGNSSPosition();
+    Sophus::SE3f GetGNSSAlignment();
+    Sophus::SE3f GetGNSSCameraPose();
+    void SetGNSSAlignment(const Sophus::SE3f &transform);
     bool isVelocitySet();
     bool isGNSSSet() const;
 
@@ -283,15 +285,15 @@ protected:
     Eigen::Matrix3f mRcw;
     Sophus::SE3<float> mTwc;
     Eigen::Matrix3f mRwc;
+    Sophus::SE3<float> mTgw;
 
     // IMU position
     Eigen::Vector3f mOwb;
     // Velocity (Only used for inertial SLAM)
     Eigen::Vector3f mVw;
     bool mbHasVelocity;
-
-    Eigen::Vector3f mGNSSPosition;
     bool mbHasGNSS;
+    Eigen::Vector3f mGNSSPosition;
 
     //Transformation matrix between cameras in stereo fisheye
     Sophus::SE3<float> mTlr;
