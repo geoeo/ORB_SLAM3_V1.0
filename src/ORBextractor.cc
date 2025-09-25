@@ -430,7 +430,7 @@ namespace ORB_SLAM3
         return lNodes;
     }
 
-    tuple<vector<size_t>, vector<size_t>, cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ORBextractor::ComputeKeyPointsOctTree()
+    optional<tuple<vector<size_t>, vector<size_t>, cuda::managed::ManagedVector<KeyPoint>::SharedPtr>> ORBextractor::ComputeKeyPointsOctTree()
     {
         ZoneNamedN(ComputeKeyPointsOctTree, "ComputeKeyPointsOctTree", true);
         vector<list<ExtractorNode>> lNodesPerLevel(nlevels);
@@ -472,6 +472,7 @@ namespace ORB_SLAM3
                             fastKpCountLow -= diff;
                         }
                         fastKpCountTotal += fastKpCountLow;   
+
                         // Copy these into vectors
                         memcpy(&kpLoc->operator[](fastKpCountHigh), gpuFast.getLoc(gpuOrb.getStream()), fastKpCountLow*sizeof(short2));
                         memcpy(&response->operator[](fastKpCountHigh), gpuFast.getResp(gpuOrb.getStream()), fastKpCountLow*sizeof(int));
@@ -490,12 +491,15 @@ namespace ORB_SLAM3
             }
         }
 
+        if(allKeypointsCount == 0){
+            return nullopt;
+        }
+
+        Verbose::PrintMess("Total keypoints: " + to_string(allKeypointsCount), Verbose::VERBOSITY_NORMAL);
         vector<size_t> keypointsAcc(nlevels);
         partial_sum(keypointsCountPerLevel.begin(), keypointsCountPerLevel.end(), keypointsAcc.begin());
-
         //TODO: this will crash if 0 keypoints are detected.
         auto allKeypoints = cuda::managed::ManagedVector<KeyPoint>::CreateManagedVector(allKeypointsCount);
-
         {
             ZoneNamedN(AllocAndOrientationLoop, "AllocAndOrientationLoop", true);
             for (int level = 0; level < nlevels; ++level)
@@ -533,17 +537,22 @@ namespace ORB_SLAM3
             }
         }
 
-        return {keypointsCountPerLevel, keypointsAcc ,allKeypoints};
+        return {{keypointsCountPerLevel, keypointsAcc ,allKeypoints}};
     }
 
-    tuple<shared_ptr<vector<KeyPoint>>,cv::cuda::HostMem> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
+    optional<tuple<shared_ptr<vector<KeyPoint>>,cv::cuda::HostMem>> ORBextractor::extractFeatures(const cv::cuda::HostMem &im_managed)
     {
         ZoneNamedN(ApplyExtractor, "ApplyExtractor", true);  // NOLINT: Profiler
 
         // Pre-compute the scale pyramid
         ComputePyramid(im_managed);
 
-        auto [keypointsCountPerLevel, keypointsAcc, allKeypoints] = ComputeKeyPointsOctTree();
+        auto keypoint_opt = ComputeKeyPointsOctTree();
+        if(!keypoint_opt.has_value())
+            return nullopt;
+
+        auto [keypointsCountPerLevel, keypointsAcc, allKeypoints] = keypoint_opt.value();
+
         cv::cuda::HostMem _descriptors;
         {
             ZoneNamedN(DescriptorAlloc, "DescriptorAlloc", true);
@@ -571,7 +580,8 @@ namespace ORB_SLAM3
                 }
             });
         }
-        return {allKeypoints->toSharedVector(), _descriptors};
+        Verbose::PrintMess("ORB Extractor done", Verbose::VERBOSITY_NORMAL);
+        return {{allKeypoints->toSharedVector(), _descriptors}};
     }
 
     void ORBextractor::AllocatePyramid(int width, int height)

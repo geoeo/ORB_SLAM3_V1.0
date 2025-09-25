@@ -160,11 +160,11 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
     assert(mSensor == System::IMU_MONOCULAR);
 
-        
-    // if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-    //     mCurrentFrame = Frame(im_managed,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
-    // else
     mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols,&mLastFrame,*mpImuCalib);
+
+    if(mCurrentFrame.mNumKeypoints == 0)
+        return {Sophus::SE3f(),0,false};
+
     if(mpViewer){
         im_managed.createMatHeader().copyTo(mImGrayViewer);
     }

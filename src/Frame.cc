@@ -93,8 +93,8 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
-     mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
+     mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
+     mThDepth(thDepth),mNumKeypoints(0),mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mbHasVelocity(false), mpMutexImu(std::make_shared<std::mutex>())
 {
@@ -116,8 +116,6 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
 
     // ORB extraction
     ExtractORB(0,im_managed_gray);
-
-    mNumKeypoints = mvKeys->size();
     if(mNumKeypoints == 0)
         return;
 
@@ -217,11 +215,18 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
-    auto [keys,descriptors] = mpORBextractorLeft->extractFeatures(im_managed);
+    //auto [keys,descriptors] = mpORBextractorLeft->extractFeatures(im_managed);
+    auto key_desc_optional = mpORBextractorLeft->extractFeatures(im_managed);
 
-    monoLeft = keys->size();
-    mvKeys = keys;
-    mDescriptors = descriptors;
+    if(key_desc_optional.has_value()){
+        auto [keys,descriptors] = key_desc_optional.value();
+        monoLeft = keys->size();
+        mNumKeypoints = keys->size();
+        mvKeys = keys;
+        mDescriptors = descriptors;
+    }
+
+
 }
 
 bool Frame::isSet() const {
