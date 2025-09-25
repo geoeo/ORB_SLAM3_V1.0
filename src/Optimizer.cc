@@ -667,7 +667,6 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     //std::cout << "chi2: " << optimizer.activeChi2()  << std::endl;
 
-
     // Recover optimized data
     //Keyframes
     for(size_t i=0; i<vpKFs.size(); i++)
@@ -748,7 +747,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     }
 
-    pMap->IncreaseChangeIndex();
+    //pMap->IncreaseChangeIndex();
 }
 
 
@@ -2914,6 +2913,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
     Rwg = VGDir->estimate().Rwg;
 
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
     //Keyframes velocities and biases
     const int N = vpKFs.size();
     for(size_t i=0; i<N; i++)
@@ -4669,7 +4669,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={20,20,20,20};
+    const int its[4]={80,80,80,80};
 
     int nBad=0;
     int nBadMono = 0;

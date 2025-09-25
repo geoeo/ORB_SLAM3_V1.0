@@ -64,6 +64,7 @@ namespace ORB_SLAM3 {
     struct LocalMapperParameters
     {
         float resetTimeThresh;
+        float minTimeForImuInit;
         float minTimeForVIBA1;
         float minTimeForVIBA2;
         float minTimeForFullBA;

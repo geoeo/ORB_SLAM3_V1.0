@@ -22,17 +22,17 @@ class SlamNode : public rclcpp::Node
       // F6
       ORB_SLAM3::CameraParameters cam{};
       cam.K = cv::Mat::zeros(3,3,CV_32F);
-      cam.K.at<float>(0,0) = 1340.8951163881811;
-      cam.K.at<float>(1,1) = 1339.4354628196174;
-      cam.K.at<float>(0,2) = 1007.6078987259765;
-      cam.K.at<float>(1,2) = 767.9508975018316;
+      cam.K.at<float>(0,0) = 1331.1713955614885;
+      cam.K.at<float>(1,1) = 1329.7824642924002;
+      cam.K.at<float>(0,2) = 1032.7638177042552;
+      cam.K.at<float>(1,2) = 753.7287922955178;
       cam.K.at<float>(2,2) = 1;
 
       cv::Mat distCoeffs  = cv::Mat:: zeros(4,1,CV_32F);
-      distCoeffs.at<float>(0,0) = -0.0032741297195706454;
-      distCoeffs.at<float>(1,0) = 0.044026087700189453;
-      distCoeffs.at<float>(2,0) = -0.048481762487143865;
-      distCoeffs.at<float>(3,0) = 0.0241218843283991;
+      distCoeffs.at<float>(0,0) = 0.014127946548806695;
+      distCoeffs.at<float>(1,0) = -0.007081005355739692;
+      distCoeffs.at<float>(2,0) = 0.02477688100909874;
+      distCoeffs.at<float>(3,0) = -0.012940251836647083;
 
       cam.distCoeffs = cv::Mat:: zeros(1,1,CV_32F); // We dont want to undistort im ORBSLAM so we pass dummy matrix
 
@@ -89,20 +89,20 @@ class SlamNode : public rclcpp::Node
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
-      cv_Tbc.at<float>(0,0) =   0.0147249;
-      cv_Tbc.at<float>(0,1) =   0.00100526;
-      cv_Tbc.at<float>(0,2) =   0.99989108;
-      cv_Tbc.at<float>(0,3) =   0.0504444;
+      cv_Tbc.at<float>(0,0) =   0.00475163;
+      cv_Tbc.at<float>(0,1) =   0.01068302;
+      cv_Tbc.at<float>(0,2) =   0.99993165;
+      cv_Tbc.at<float>(0,3) =   0.0685495;
 
-      cv_Tbc.at<float>(1,0) =   -0.00472214;
-      cv_Tbc.at<float>(1,1) =   -0.99998827;
-      cv_Tbc.at<float>(1,2) =   0.0010749;
-      cv_Tbc.at<float>(1,3) =   -0.01192971;
+      cv_Tbc.at<float>(1,0) =   -0.00380494;
+      cv_Tbc.at<float>(1,1) =   -0.9999355;
+      cv_Tbc.at<float>(1,2) =   0.01070114;
+      cv_Tbc.at<float>(1,3) =   -0.00696092;
 
-      cv_Tbc.at<float>(2,0) =   0.99988043;
-      cv_Tbc.at<float>(2,1) =   -0.00473745;
-      cv_Tbc.at<float>(2,2) =   -0.01471998;
-      cv_Tbc.at<float>(2,3) =   -0.01500127;
+      cv_Tbc.at<float>(2,0) =   0.99998147;
+      cv_Tbc.at<float>(2,1) =   -0.00385553;
+      cv_Tbc.at<float>(2,2) =   -0.00471067;
+      cv_Tbc.at<float>(2,3) =   -0.00955084;
 
       cv_Tbc.at<float>(3,0) =   0.0;
       cv_Tbc.at<float>(3,1) =   0.0;
@@ -113,12 +113,13 @@ class SlamNode : public rclcpp::Node
       imu.freq = 400.0;
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
-      local_mapper.resetTimeThresh = 10.0;
-      local_mapper.minTimeForVIBA1 = 5.0;
-      local_mapper.minTimeForVIBA2 = 7.0;
-      local_mapper.minTimeForFullBA = 30.0;
+      local_mapper.resetTimeThresh = 120.0;
+      local_mapper.minTimeForImuInit = 45.0;
+      local_mapper.minTimeForVIBA1 = 55.0;
+      local_mapper.minTimeForVIBA2 = 60.0;
+      local_mapper.minTimeForFullBA = -1.0;
 
-      double timeshift_cam_imu = 0.008390335701785497; 
+      double timeshift_cam_imu = 0.006882460203406222; 
 
       const int frame_grid_cols = 64;
       const int frame_grid_rows = 48;

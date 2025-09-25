@@ -35,11 +35,12 @@ namespace ORB_SLAM3
 {
 
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
-    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false) , mpSystem(pSys), mbMonocular(bMonocular), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
+    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false) , mpSystem(pSys), mbMonocular(bMonocular), 
+    mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mbAcceptKeyFrames(true), mMutexPtrGlobalData(make_shared<mutex>()), 
-    bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0),
-    resetTimeThresh(local_mapper.resetTimeThresh), minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA)
+    bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),
+    resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA)
 {
 }
 
@@ -89,19 +90,14 @@ void LocalMapping::Run()
             int num_MPs_BA = 0;
             int num_edges_BA = 0;
 
-
-
-            if(mbInertial && mpAtlas->GetCurrentMap()->isImuInitialized())
-                mTSinceIMUInit += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
-
-            if(!CheckNewKeyFrames() && !stopRequested())
+            if( !stopRequested())
             {
                 if(mpAtlas->KeyFramesInMap()>2)
                 {
 
                     if(mbInertial && mpAtlas->GetCurrentMap()->isImuInitialized())
                     {
-                        if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTSinceIMUInit>resetTimeThresh))
+                        if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTElapsedTime>resetTimeThresh))
                         {
                             Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_NORMAL);
                             unique_lock<mutex> lock(mMutexReset);
@@ -138,7 +134,14 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
-                    auto success = InitializeIMU(1e2, 1e10, true, 5, 10);
+                    auto success = InitializeIMU(1e1, 1e2, true, minTimeForImuInit, 10);
+                    Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                    // if(success){
+                    //     mpAtlas->GetCurrentMap()->SetInertialBA1();
+                    //     mpAtlas->GetCurrentMap()->SetInertialBA2();
+                    //     if(minTimeForFullBA < 0)
+                    //         mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                    // }
                 }
 
 
@@ -151,45 +154,39 @@ void LocalMapping::Run()
                     {
                         Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_NORMAL);
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            if (mTSinceIMUInit>minTimeForVIBA1)
-                            {
-                                Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
-                                auto success = false;
-                                if (mbMonocular)
-                                    success = InitializeIMU(1.f, 1e5, true, 3, 15);
-                                else
-                                    success = InitializeIMU(1.f, 1e5, true, 5, 10);
+                            Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
+                            auto success = false;
+                            if (mbMonocular)
+                                success = InitializeIMU(0.f, 1e1, true, minTimeForVIBA1, 10);
+                            else
+                                success = InitializeIMU(1.f, 1e5, true, minTimeForVIBA1, 10);
 
-                                if(success){
-                                    mpAtlas->GetCurrentMap()->SetInertialBA1();
-                                    //mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
-                                }
-                                    
-
-                                Verbose::PrintMess("end VIBA " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            if(success){
+                                mpAtlas->GetCurrentMap()->SetInertialBA1();
+                                mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
+                                if(minTimeForFullBA < 0)
+                                    mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
+                            
+                            Verbose::PrintMess("end VIBA 1" + to_string(success), Verbose::VERBOSITY_NORMAL);
                         }
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            if (mTSinceIMUInit>minTimeForVIBA2){
-                                Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
-                                auto success = false;
-                                if (mbMonocular)
-                                    success = InitializeIMU(0.f, 1e5, true, 3, 15); // TODO: priorA is small causes reloc issues. Investigate
-                                else
-                                    success = InitializeIMU(0.f, 0.f, true, 5, 10);
+                            Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
+                            auto success = false;
+                            if (mbMonocular)
+                                success = InitializeIMU(0.f, 1e0, false, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
+                            else
+                                success = InitializeIMU(0.f, 0.f, true, minTimeForVIBA2, 10);
 
-                                if(success){
-                                    mpAtlas->GetCurrentMap()->SetInertialBA2();
-                                    if(minTimeForFullBA < 0)
-                                        mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                                }
-
-
-                                Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            if(success){
+                                mpAtlas->GetCurrentMap()->SetInertialBA2();
+                                if(minTimeForFullBA < 0)
+                                    mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
+                            Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_NORMAL);
                         }
 
-                        if(mpAtlas->GetCurrentMap()->GetInertialBA2() && mTSinceIMUInit>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
+                        if(mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
                             unique_lock<mutex> lock(*mMutexPtrGlobalData);
                             Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
                             //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
@@ -197,25 +194,12 @@ void LocalMapping::Run()
                             if(success)
                                 mpAtlas->GetCurrentMap()->SetInertialFullBA();
                         }
-
-
-                        // scale refinement
-                        // if (((mpAtlas->KeyFramesInMap())<=200) &&
-                        //         ((mTSinceIMUInit>25.0f && mTSinceIMUInit<25.5f)||
-                        //         (mTSinceIMUInit>35.0f && mTSinceIMUInit<35.5f)||
-                        //         (mTSinceIMUInit>45.0f && mTSinceIMUInit<45.5f)||
-                        //         (mTSinceIMUInit>55.0f && mTSinceIMUInit<55.5f)||
-                        //         (mTSinceIMUInit>65.0f && mTSinceIMUInit<65.5f)||
-                        //         (mTSinceIMUInit>75.0f && mTSinceIMUInit<75.5f))){
-                        //     if (mbMonocular)
-                        //         ScaleRefinement();
-                        // }
                     }
                 }
             }
 
             //mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-            Verbose::PrintMess("LocalMapper - Time since IMU init: " + to_string(mTSinceIMUInit), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("LocalMapper - Elapsed Time: " + to_string(mTElapsedTime) + " KF size:" + to_string(mpAtlas->GetCurrentMap()->GetAllKeyFrames().size()), Verbose::VERBOSITY_NORMAL);
 
         }
         else if(Stop() && !mbBadImu)
@@ -273,10 +257,13 @@ int LocalMapping::KeyframesInQueue()
 
 void LocalMapping::ProcessNewKeyFrame()
 {
+    Verbose::PrintMess("LocalMapper - Process New KF", Verbose::VERBOSITY_NORMAL);
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
+        if(mpCurrentKeyFrame->mPrevKF)
+            mTElapsedTime += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
         mlNewKeyFrames.pop_front();
     }
 
@@ -1076,7 +1063,7 @@ void LocalMapping::ResetIfRequested()
             mbResetRequestedActiveMap = false;
 
             // Inertial parameters
-            mTSinceIMUInit = 0.f;
+            mTElapsedTime = 0.f;
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
@@ -1091,7 +1078,7 @@ void LocalMapping::ResetIfRequested()
             mlpRecentAddedMapPoints.clear();
 
             // Inertial parameters
-            mTSinceIMUInit = 0.f;
+            mTElapsedTime = 0.f;
             mbNotBA2 = true;
             mbNotBA1 = true;
             mbBadImu=false;
@@ -1142,8 +1129,8 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     if (mbResetRequested)
         return false;
 
-    if(mpAtlas->KeyFramesInMap()<nMinKF)
-        return false;
+    // if(mpAtlas->KeyFramesInMap()<nMinKF)
+    //     return false;
 
     // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
@@ -1152,14 +1139,12 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     if(kf_size<nMinKF)
         return false;
 
-    mFirstTs=vpKF.front()->mTimeStamp;
-    if(!mpAtlas->GetCurrentMap()->isImuInitialized())
-        mTSinceIMUInit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
-    if(mTSinceIMUInit<minTime)
+    Verbose::PrintMess("Init IMU - KF Size: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
+    if(mTElapsedTime<minTime)
         return false;
 
 
-    Verbose::PrintMess("Init IMU: Time diff: " + to_string(mTSinceIMUInit) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Init IMU: Elapsed Time: " + to_string(mTElapsedTime) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
     bInitializing = true;
 
     while(CheckNewKeyFrames())
@@ -1217,7 +1202,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     mScale=1.0;
 
     {
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
         Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
     }
 
@@ -1232,6 +1217,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     {
         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
+            Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_NORMAL);
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
@@ -1256,18 +1242,22 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, float m
     chrono::steady_clock::time_point t4 = chrono::steady_clock::now();
     if (bFIBA)
     {
+        unique_lock<mutex> lock(*mMutexPtrGlobalData);
+        unique_lock<mutex> lock2(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
+        Verbose::PrintMess("Start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
         if (priorA!=0.f)
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, true, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 1200, false, 0, NULL, true, priorG, priorA);
         else
-            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, priorG, priorA);
+            Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 1200, false, 0, NULL, false, priorG, priorA);
     }
 
     chrono::steady_clock::time_point t5 = chrono::steady_clock::now();
 
     Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...", Verbose::VERBOSITY_NORMAL);
+
     
     // Get Map Mutex
-    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+    //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
 
     Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);

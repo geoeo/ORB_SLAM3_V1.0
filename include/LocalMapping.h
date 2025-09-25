@@ -175,11 +175,12 @@ protected:
     int mNumLM;
     int mNumKFCulling;
 
-    float mTSinceIMUInit;
+    float mTElapsedTime;
 
     int countRefinement;
 
     const float resetTimeThresh;
+    const float minTimeForImuInit;
     const float minTimeForVIBA1;
     const float minTimeForVIBA2;
     const float minTimeForFullBA;
