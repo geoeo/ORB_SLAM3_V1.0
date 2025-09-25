@@ -2905,7 +2905,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     // Compute error for different scales
     std::set<g2o::HyperGraph::Edge*> setEdges = optimizer.edges();
 
-    optimizer.setVerbose(true);
+    optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.optimize(its);
 
