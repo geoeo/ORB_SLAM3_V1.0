@@ -110,7 +110,6 @@ namespace ros2_orbslam3 {
             double tIm = 0;
             if (!img0Buf.empty()&&!mpImuGb->imuBuf.empty())
             {
-                RCLCPP_INFO_STREAM(logger_,"test" );
                 mpImuGb->mBufMutex.lock();
                 auto imu_front = mpImuGb->imuBuf.front();
                 mpImuGb->mBufMutex.unlock();
