@@ -92,7 +92,7 @@ void LocalMapping::Run()
             int num_MPs_BA = 0;
             int num_edges_BA = 0;
 
-            if( !stopRequested())
+            if(!stopRequested())
             {
                 if(mpAtlas->KeyFramesInMap()>2)
                 {
