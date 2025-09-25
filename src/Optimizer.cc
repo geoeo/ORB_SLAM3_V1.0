@@ -2773,7 +2773,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
 
-    if (priorG!=0.f)
+    if(priorG!=0.f)
         solver->setUserLambdaInit(1e3);
 
     optimizer.setAlgorithm(solver);
@@ -2823,11 +2823,21 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     epa->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA));
     double infoPriorA = priorA;
     epa->setInformation(infoPriorA*Eigen::Matrix3d::Identity());
+
+    g2o::RobustKernelHuber* rka = new g2o::RobustKernelHuber;
+    epa->setRobustKernel(rka);
+    rka->setDelta(sqrt(5.99));
+
     optimizer.addEdge(epa);
     EdgePriorGyro* epg = new EdgePriorGyro(bprior);
     epg->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
     double infoPriorG = priorG;
     epg->setInformation(infoPriorG*Eigen::Matrix3d::Identity());
+
+    g2o::RobustKernelHuber* rkg = new g2o::RobustKernelHuber;
+    epg->setRobustKernel(rkg);
+    rkg->setDelta(sqrt(5.99));
+
     optimizer.addEdge(epg);
 
     // Gravity and scale
@@ -2895,7 +2905,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     // Compute error for different scales
     std::set<g2o::HyperGraph::Edge*> setEdges = optimizer.edges();
 
-    optimizer.setVerbose(false);
+    optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     optimizer.optimize(its);
 
