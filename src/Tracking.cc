@@ -1190,14 +1190,22 @@ bool Tracking::TrackLocalMap()
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-                if(inliers < inlierImuThreshold)
-                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);              
+                if(inliers < inlierImuThreshold){
+                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
+                    Verbose::PrintMess("2# inliers last key frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                }
+          
             }
             else
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
                 Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                if(inliers < inlierImuThreshold && mpcpiExists){
+                    inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);  
+                    Verbose::PrintMess("2# inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                }
+
             }
         }
     }
