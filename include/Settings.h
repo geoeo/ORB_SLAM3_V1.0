@@ -68,6 +68,8 @@ namespace ORB_SLAM3 {
         float minTimeForVIBA1;
         float minTimeForVIBA2;
         float minTimeForFullBA;
+        float itsFIBAInit;
+        float itsFIBA1;
     };
 
     //TODO: change to double instead of float
