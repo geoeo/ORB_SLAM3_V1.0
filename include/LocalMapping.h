@@ -26,6 +26,7 @@
 #include <KeyFrameDatabase.h>
 #include <Settings.h>
 #include <System.h>
+#include <GeometricReferencer.hpp>
 
 #include <mutex>
 #include <atomic>
@@ -117,6 +118,7 @@ protected:
     void ResetNewKeyFrames();
     void ProcessNewKeyFrame();
     void CreateNewMapPoints();
+    void GeoreferenceKeyframes();
 
     void MapPointCulling();
     void SearchInNeighbors();
@@ -185,6 +187,8 @@ protected:
     const float minTimeForFullBA;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
+
+    GeometricReferencer mGeometricReferencer;
 
     };
 

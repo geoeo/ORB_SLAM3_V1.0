@@ -3,13 +3,8 @@
 using namespace std;
 using namespace ORB_SLAM3;
 
-GeometricReferencer::GeometricReferencer(double th_error, int min_nrof_frames)
+GeometricReferencer::GeometricReferencer(int min_nrof_frames)
 : m_is_initialized(false),
-  m_prev_nrof_unique(0),
-  m_T_w2g(Sophus::SE3d()),
-  m_scale(0.0),
-  m_th_error(th_error),
-  m_error(0.0),
   m_min_nrof_frames(min_nrof_frames)
 {
 }
@@ -18,9 +13,6 @@ void GeometricReferencer::clear()
 {
   m_is_initialized = false;
   m_spatials.clear();
-  m_T_w2g = Sophus::SE3d();
-  m_scale = 0.0;
-  m_prev_nrof_unique = 0;
 }
 
 bool GeometricReferencer::isInitialized()
@@ -28,66 +20,35 @@ bool GeometricReferencer::isInitialized()
   return m_is_initialized;
 }
 
-double GeometricReferencer::getScale() {
-  unique_lock<mutex> lock(m_mutex_transform);
-  return m_scale;
-}
-
-Sophus::SE3d GeometricReferencer::getTransform() {
-  unique_lock<mutex> lock(m_mutex_transform);
-  return m_T_w2g;
-}
-
-bool GeometricReferencer::init(const deque<ORB_SLAM3::KeyFrame*> &frames)
+optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const vector<ORB_SLAM3::KeyFrame*> &frames)
 {
 
   if (m_is_initialized)
-    return false;
+    return nullopt;
   
-
   if (frames.size() < m_min_nrof_frames)
-    return false;
+    return nullopt;
   
-  update(frames); 
+  auto [pose, scale] = update(frames); 
+
   m_is_initialized = true;
-  return m_is_initialized;
+  return {{pose, scale}};
 }
 
-void GeometricReferencer::update(const std::deque<ORB_SLAM3::KeyFrame*> &frames)
+pair<Sophus::SE3d, double> GeometricReferencer::update(const vector<ORB_SLAM3::KeyFrame*> &frames)
 { 
 
   for (const auto &f : frames){
     const auto gnss_position = f->GetGNSSPosition();
     const auto gnss_pose = Sophus::SE3d(Eigen::Matrix3d::Identity(), gnss_position.cast<double>());
+    m_spatials.pop_front();
     m_spatials.push_back({gnss_pose, f->GetPoseInverse().cast<double>()});
   }
 
-
-  auto T_w2g = estimateGeorefTransform(m_spatials, Sophus::SE3d(), true);
-  auto rotation_matrix = T_w2g.rotationMatrix();
-
-  auto sx = rotation_matrix.col(0).norm();
-  auto sy = rotation_matrix.col(1).norm();
-  auto sz = rotation_matrix.col(2).norm();
-
-  m_mutex_transform.lock();
-  m_scale = (sx + sy + sz)/3;
-
-  rotation_matrix.col(0) /= m_scale;
-  rotation_matrix.col(1) /= m_scale;
-  rotation_matrix.col(2) /= m_scale;
-
-//   cv::Mat R = T_w2g.rowRange(0,3).colRange(0,3);
-// //   cv::Mat R_corr = Frame::OptimalCorrectionOfRotation(R);
-// //   T_w2g.rowRange(0,3).colRange(0,3) = R_corr;
-
-
-
-  m_T_w2g = Sophus::SE3d(rotation_matrix,T_w2g.translation());
-  m_mutex_transform.unlock();
+  return estimateGeorefTransform(m_spatials, Sophus::SE3d(), true);
 }
 
-Sophus::SE3d GeometricReferencer::estimateGeorefTransform(const std::deque<pair<Sophus::SE3d, Sophus::SE3d>> &spatials, const Sophus::SE3d &T_w2g_init, bool estimate_scale)
+pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const std::deque<pair<Sophus::SE3d, Sophus::SE3d>> &spatials, const Sophus::SE3d &T_w2g_init, bool estimate_scale)
 {
   // First define basic eigen variables
   const auto measurements = 4;
@@ -127,5 +88,14 @@ Sophus::SE3d GeometricReferencer::estimateGeorefTransform(const std::deque<pair<
   
   //Estimates the aligning transformation from camera to gnss coordinate system
   Eigen::Matrix4d T_g2receiver_refine = Eigen::umeyama(src_points, dst_points, estimate_scale);
-  return Sophus::SE3d(T_g2receiver_refine);
+
+  auto rotation_matrix = T_g2receiver_refine.block<3,3>(0,0);
+
+  auto sx = rotation_matrix.col(0).norm();
+  auto sy = rotation_matrix.col(1).norm();
+  auto sz = rotation_matrix.col(2).norm();
+
+  auto scale = (sx + sy + sz)/3;
+
+  return {Sophus::SE3d(T_g2receiver_refine), scale};
 }

@@ -39,7 +39,8 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mbAcceptKeyFrames(true), mMutexPtrGlobalData(make_shared<mutex>()), 
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTSinceIMUInit(0.0),
-    resetTimeThresh(local_mapper.resetTimeThresh), minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA)
+    resetTimeThresh(local_mapper.resetTimeThresh), minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
+    mGeometricReferencer(60)
 {
 }
 
@@ -74,6 +75,9 @@ void LocalMapping::Run()
 
             // Triangulate new MapPoints
             CreateNewMapPoints();
+
+            //TODO: Do this after VIBA has been completed?
+            GeoreferenceKeyframes();
 
             mbAbortBA = false;
 
@@ -685,6 +689,17 @@ void LocalMapping::CreateNewMapPoints()
             mlpRecentAddedMapPoints.push_back(pMP);
         }
     }    
+}
+
+void LocalMapping::GeoreferenceKeyframes(){
+    const auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+    Verbose::PrintMess("Georef function called with KFs :" + to_string(vpKF.size()), Verbose::VERBOSITY_NORMAL);
+    auto pose_scale_opt = mGeometricReferencer.init(vpKF);
+    if(pose_scale_opt.has_value()){
+        Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
+    }
+
+    //TODO: Set transform in either map or keyframes - to be decided 
 }
 
 void LocalMapping::SearchInNeighbors()
