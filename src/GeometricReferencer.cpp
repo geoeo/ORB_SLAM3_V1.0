@@ -1,5 +1,4 @@
 #include <GeometricReferencer.hpp>
-#include <opencv2/core/eigen.hpp>
 
 using namespace std;
 using namespace ORB_SLAM3;
@@ -102,10 +101,10 @@ Sophus::SE3d GeometricReferencer::estimateGeorefTransform(const std::deque<pair<
     // The measurements of the gnss receiver
     auto T_rec2g_gis = spatials[i].first;
 
-    Eigen::Vector4d e_gis_0 = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
-    Eigen::Vector4d e_gis_x = T_rec2g_gis* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
-    Eigen::Vector4d e_gis_y = T_rec2g_gis* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
-    Eigen::Vector4d e_gis_z = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
+    auto e_gis_0 = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
+    auto e_gis_x = T_rec2g_gis* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
+    auto e_gis_y = T_rec2g_gis* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
+    auto e_gis_z = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
 
     dst_points.col(j) << e_gis_x(0), e_gis_x(1), e_gis_x(2);
     dst_points.col(j+1) << e_gis_y(0), e_gis_y(1), e_gis_y(2);
@@ -115,10 +114,10 @@ Sophus::SE3d GeometricReferencer::estimateGeorefTransform(const std::deque<pair<
     auto T_c2w = spatials[i].second;
     auto T_c2g = T_w2g_init*T_c2w;
 
-    Eigen::Vector4d e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
-    Eigen::Vector4d e_vis_x = T_c2g* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
-    Eigen::Vector4d e_vis_y = T_c2g* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
-    Eigen::Vector4d e_vis_z = T_c2g* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
+    auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
+    auto e_vis_x = T_c2g* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
+    auto e_vis_y = T_c2g* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
+    auto e_vis_z = T_c2g* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
 
     src_points.col(j) << e_vis_x(0), e_vis_x(1), e_vis_x(2);
     src_points.col(j+1) << e_vis_y(0), e_vis_y(1), e_vis_y(2);
