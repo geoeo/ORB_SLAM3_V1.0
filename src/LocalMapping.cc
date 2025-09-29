@@ -382,8 +382,8 @@ void LocalMapping::CreateNewMapPoints()
         }
     }
 
+    // threshold does not seem to affect triangulation
     float th = 0.6f;
-
     ORBmatcher matcher(th,false);
 
     Sophus::SE3<float> sophTcw1 = mpCurrentKeyFrame->GetPose();
