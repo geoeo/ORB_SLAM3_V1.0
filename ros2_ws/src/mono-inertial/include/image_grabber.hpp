@@ -166,8 +166,10 @@ namespace ros2_orbslam3 {
 
                         mpImuGb->mBufMutex.lock();
                         mpImuGb->imuBuf.pop();
-                        if(mpImuGb->imuBuf.empty())
+                        if(mpImuGb->imuBuf.empty()){
+                            mpImuGb->mBufMutex.unlock();  
                             break;
+                        }
                         imu_meas = mpImuGb->imuBuf.front();
                         mpImuGb->mBufMutex.unlock();
                         ros_imu_ts_front = rclcpp::Time(imu_meas.header.stamp);
@@ -199,8 +201,8 @@ namespace ros2_orbslam3 {
                     RCLCPP_INFO_STREAM(logger_, "Current ts: " << tIm);
                     for(auto s : scale_factors)
                         RCLCPP_INFO_STREAM(logger_, "Scale Factor: " << s);
-                    for(auto& opt_pair: last_optimized_kfs)
-                        RCLCPP_INFO_STREAM(logger_, "Frame id: " << opt_pair.first);
+                    //for(auto& opt_pair: last_optimized_kfs)
+                    //    RCLCPP_INFO_STREAM(logger_, "Frame id: " << opt_pair.first);
                     RCLCPP_INFO_STREAM(logger_,"is keyframe: " << is_keyframe);
                     RCLCPP_INFO_STREAM(logger_, "pose: " << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3));
                 }

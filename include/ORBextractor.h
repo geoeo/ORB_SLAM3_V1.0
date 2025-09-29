@@ -22,6 +22,7 @@
 #include <list>
 #include <tuple>
 #include <memory>
+#include <optional>
 #include <opencv2/opencv.hpp>
 #include <cuda/Fast.hpp>
 #include <cuda/Orb.hpp>
@@ -58,7 +59,7 @@ namespace ORB_SLAM3
 
         // Compute the ORB features and descriptors on an image.
         // ORB are dispersed on the image using an octree.
-        std::tuple<std::shared_ptr<std::vector<KeyPoint>>, cv::cuda::HostMem> extractFeatures(const cv::cuda::HostMem &im_managed);
+        std::optional<std::tuple<std::shared_ptr<std::vector<KeyPoint>>, cv::cuda::HostMem>> extractFeatures(const cv::cuda::HostMem &im_managed);
 
         int inline GetLevels()
         {
@@ -96,7 +97,7 @@ namespace ORB_SLAM3
     protected:
         void AllocatePyramid(int width, int height);
         void ComputePyramid(cv::cuda::HostMem image_managed);
-        std::tuple<std::vector<size_t>,std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr> ComputeKeyPointsOctTree();
+        std::optional<std::tuple<std::vector<size_t>,std::vector<size_t>,cuda::managed::ManagedVector<KeyPoint>::SharedPtr>> ComputeKeyPointsOctTree();
         
         std::list<ExtractorNode> DistributeOctTree(const unsigned int fastKpCount, const short2 * location, const int* response, const int minX,
                                                     const int maxX, const int minY, const int maxY, const int maxFeatures, const int level);

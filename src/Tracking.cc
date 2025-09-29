@@ -161,6 +161,9 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     assert(mSensor == System::IMU_MONOCULAR);
 
     mCurrentFrame = Frame(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols, hasGNSS, GNSSPosition, &mLastFrame,*mpImuCalib);
+
+    if(mCurrentFrame.mNumKeypoints == 0)
+        return {Sophus::SE3f(),0,false};
     if(mpViewer){
         im_managed.createMatHeader().copyTo(mImGrayViewer);
     }
@@ -988,7 +991,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.85,true);
+    ORBmatcher matcher(0.95,true);
     vector<MapPoint*> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -1056,7 +1059,7 @@ void Tracking::UpdateLastFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.9,true);
+    ORBmatcher matcher(0.95,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1186,14 +1189,22 @@ bool Tracking::TrackLocalMap()
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame ", Verbose::VERBOSITY_NORMAL);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-                if(inliers < inlierImuThreshold)
-                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);              
+                if(inliers < inlierImuThreshold){
+                    inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
+                    Verbose::PrintMess("2# inliers last key frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                }
+          
             }
             else
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame ", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
                 Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                if(inliers < inlierImuThreshold && mpcpiExists){
+                    inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);  
+                    Verbose::PrintMess("2# inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                }
+
             }
         }
     }
@@ -2175,7 +2186,7 @@ float Tracking::GetImageScale()
 }
 
 bool Tracking::isBACompleteForMap() {
-    return mpAtlas->isBACompleteForMap();   
+    return mpAtlas->isBACompleteForMap() || mSensor == System::MONOCULAR;   
 }
 
 vector<float> Tracking::getMapScales() {

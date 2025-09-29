@@ -168,7 +168,7 @@ protected:
 
     std::shared_ptr<std::mutex> mMutexPtrGlobalData;
 
-    bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFirst = false, float minTime = 5, size_t nMinKF = 10);
+    bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFIBA = false, int itsFIBA = 200, float minTime = 5, size_t nMinKF = 10);
     void ScaleRefinement();
 
     std::atomic_bool bInitializing;
@@ -177,14 +177,17 @@ protected:
     int mNumLM;
     int mNumKFCulling;
 
-    float mTSinceIMUInit;
+    float mTElapsedTime;
 
     int countRefinement;
 
     const float resetTimeThresh;
+    const float minTimeForImuInit;
     const float minTimeForVIBA1;
     const float minTimeForVIBA2;
     const float minTimeForFullBA;
+    const float itsFIBAInit;
+    const float itsFIBA1;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
 

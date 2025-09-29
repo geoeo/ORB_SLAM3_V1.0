@@ -64,9 +64,12 @@ namespace ORB_SLAM3 {
     struct LocalMapperParameters
     {
         float resetTimeThresh;
+        float minTimeForImuInit;
         float minTimeForVIBA1;
         float minTimeForVIBA2;
         float minTimeForFullBA;
+        float itsFIBAInit;
+        float itsFIBA1;
     };
 
     //TODO: change to double instead of float

@@ -667,7 +667,6 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     //std::cout << "chi2: " << optimizer.activeChi2()  << std::endl;
 
-
     // Recover optimized data
     //Keyframes
     for(size_t i=0; i<vpKFs.size(); i++)
@@ -2572,6 +2571,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     float err = optimizer.activeRobustChi2();
     {
         ZoneNamedN(LocalInertialBA_Opt, "LocalInertialBA_Opt", true); 
+        optimizer.setVerbose(false);
         optimizer.optimize(opt_it); // Originally to 2
     }
     float err_end = optimizer.activeRobustChi2();
@@ -2774,7 +2774,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
 
-    if (priorG!=0.f)
+    if(priorG!=0.f)
         solver->setUserLambdaInit(1e3);
 
     optimizer.setAlgorithm(solver);
@@ -2824,11 +2824,21 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     epa->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA));
     double infoPriorA = priorA;
     epa->setInformation(infoPriorA*Eigen::Matrix3d::Identity());
+
+    g2o::RobustKernelHuber* rka = new g2o::RobustKernelHuber;
+    epa->setRobustKernel(rka);
+    rka->setDelta(sqrt(5.99));
+
     optimizer.addEdge(epa);
     EdgePriorGyro* epg = new EdgePriorGyro(bprior);
     epg->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
     double infoPriorG = priorG;
     epg->setInformation(infoPriorG*Eigen::Matrix3d::Identity());
+
+    g2o::RobustKernelHuber* rkg = new g2o::RobustKernelHuber;
+    epg->setRobustKernel(rkg);
+    rkg->setDelta(sqrt(5.99));
+
     optimizer.addEdge(epg);
 
     // Gravity and scale
@@ -2914,6 +2924,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     IMU::Bias b (vb[3],vb[4],vb[5],vb[0],vb[1],vb[2]);
     Rwg = VGDir->estimate().Rwg;
 
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
     //Keyframes velocities and biases
     const int N = vpKFs.size();
     for(size_t i=0; i<N; i++)
@@ -4669,7 +4680,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={20,20,20,20};
+    const int its[4]={80,80,80,80};
 
     int nBad=0;
     int nBadMono = 0;
