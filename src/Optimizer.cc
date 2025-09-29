@@ -2571,6 +2571,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     float err = optimizer.activeRobustChi2();
     {
         ZoneNamedN(LocalInertialBA_Opt, "LocalInertialBA_Opt", true); 
+        optimizer.setVerbose(false);
         optimizer.optimize(opt_it); // Originally to 2
     }
     float err_end = optimizer.activeRobustChi2();
