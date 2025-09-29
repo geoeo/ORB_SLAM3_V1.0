@@ -159,7 +159,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(0.f, 1e3, true, itsFIBA1, minTimeForVIBA1, 10);
+                                success = InitializeIMU(1e1, 1e3, true, itsFIBA1, minTimeForVIBA1, 10);
                             else
                                 success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -734,8 +734,8 @@ void LocalMapping::SearchInNeighbors()
     {
         KeyFrame* pKFi = *vit;
 
-        matcher.Fuse(pKFi,vpMapPointMatches);
-        if(pKFi->NLeft != -1) matcher.Fuse(pKFi,vpMapPointMatches,true);
+        matcher.Fuse(pKFi,vpMapPointMatches, 10.0);
+        //if(pKFi->NLeft != -1) matcher.Fuse(pKFi,vpMapPointMatches,true);
     }
 
 
@@ -764,7 +764,7 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
-    matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates);
+    matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates, 10.0);
     if(mpCurrentKeyFrame->NLeft != -1) matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates,true);
 
 
