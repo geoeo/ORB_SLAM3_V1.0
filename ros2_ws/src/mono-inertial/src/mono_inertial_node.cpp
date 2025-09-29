@@ -114,7 +114,7 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::LocalMapperParameters local_mapper;
       local_mapper.resetTimeThresh = 500.0;
       local_mapper.minTimeForImuInit = 40.0;
-      local_mapper.minTimeForVIBA1 = 60.0;
+      local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
       local_mapper.itsFIBAInit = 5;
