@@ -17,6 +17,7 @@
 */
 
 #include <CameraModels/KannalaBrandt8.h>
+#include <tracy.hpp>
 
 
 namespace ORB_SLAM3 {
@@ -172,6 +173,7 @@ namespace ORB_SLAM3 {
 
     bool KannalaBrandt8::ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>> vKeys1, const std::shared_ptr<std::vector<KeyPoint>> vKeys2, const std::vector<int> &vMatches12,
                                           Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
+        ZoneNamedN(ReconstructWithTwoViews, "ReconstructWithTwoViews", true); 
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
             tvr = new TwoViewReconstruction(K);

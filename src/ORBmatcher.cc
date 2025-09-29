@@ -626,6 +626,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
     {
+        ZoneNamedN(SearchForInitialization, "SearchForInitialization", true);
         int nmatches=0;
         vnMatches12 = vector<int>(F1.mvKeysUn->size(),-1);
 
@@ -1900,6 +1901,7 @@ namespace ORB_SLAM3
 
     void ORBmatcher::ComputeThreeMaxima(vector<int>* histo, const int L, int &ind1, int &ind2, int &ind3)
     {
+        ZoneNamedN(ComputeThreeMaxima, "ComputeThreeMaxima", true); 
         int max1=0;
         int max2=0;
         int max3=0;

@@ -714,6 +714,7 @@ void Tracking::Track()
 
 void Tracking::MonocularInitialization()
 {
+    ZoneNamedN(MonocularInitialization, "MonocularInitialization", true); 
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
