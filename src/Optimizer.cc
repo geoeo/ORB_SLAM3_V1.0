@@ -747,7 +747,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     }
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 }
 
 
