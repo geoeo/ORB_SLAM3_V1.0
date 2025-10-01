@@ -140,12 +140,12 @@ void LocalMapping::Run()
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
                     auto success = InitializeIMU(1e3, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
-                    // if(success){
-                    //     mpAtlas->GetCurrentMap()->SetInertialBA1();
-                    //     mpAtlas->GetCurrentMap()->SetInertialBA2();
-                    //     if(minTimeForFullBA < 0)
-                    //         mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                    // }
+                    if(success){
+                        mpAtlas->GetCurrentMap()->SetInertialBA1();
+                        mpAtlas->GetCurrentMap()->SetInertialBA2();
+                        if(minTimeForFullBA < 0)
+                            mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                    }
                 }
 
 
