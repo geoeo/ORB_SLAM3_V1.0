@@ -1170,15 +1170,18 @@ bool Tracking::TrackLocalMap()
 
     const auto inlierImuThreshold = 8;
     int inliers;
-    if (!mpAtlas->isImuInitialized())
-        Optimizer::PoseOptimization(&mCurrentFrame);
+    if (!mpAtlas->isImuInitialized()){
+        inliers = Optimizer::PoseOptimization(&mCurrentFrame);
+        Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+    }
     else
     {
         const auto state = getTrackingState();
         if(state==RECENTLY_LOST || state==LOST)
         {
             Verbose::PrintMess("TLM: PoseOptimization - LOST", Verbose::VERBOSITY_NORMAL);
-            Optimizer::PoseOptimization(&mCurrentFrame);
+            inliers = Optimizer::PoseOptimization(&mCurrentFrame);
+            Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
         }
         else
         {
@@ -1265,13 +1268,13 @@ bool Tracking::TrackLocalMap()
 
 bool Tracking::NeedNewKeyFrame()
 {
-    if((mSensor == System::IMU_MONOCULAR) && !mpAtlas->GetCurrentMap()->isImuInitialized())
-    {
-        if ((mSensor == System::IMU_MONOCULAR) && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
-            return true;
-        else
-            return false;
-    }
+    // if((mSensor == System::IMU_MONOCULAR) && !mpAtlas->GetCurrentMap()->isImuInitialized())
+    // {
+    //     if ((mSensor == System::IMU_MONOCULAR) && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
+    //         return true;
+    //     else
+    //         return false;
+    // }
 
     if(mbOnlyTracking)
         return false;

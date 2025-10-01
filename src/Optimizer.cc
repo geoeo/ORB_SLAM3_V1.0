@@ -1060,16 +1060,20 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
+    size_t maxOpt=12;
 
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
-    for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+    const auto Nd = std::min(vNeighKFs.size(),maxOpt);
+    //for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+    for(int i=0; i<Nd; i++) {
+        KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);
-    });
+    }
 
     // Local MapPoints seen in Local KeyFrames
     num_fixedKF = 0;

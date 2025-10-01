@@ -172,7 +172,7 @@ void LocalMapping::Run()
                                     mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
                             
-                            Verbose::PrintMess("end VIBA 1" + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_NORMAL);
                         }
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
                             Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
@@ -1366,7 +1366,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     mpTracker->setTrackingState(Tracking::OK);
     bInitializing = false;
 
-    mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
+    //mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     return true;
 }
