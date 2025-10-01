@@ -411,9 +411,6 @@ void Tracking::Track()
         }
     }
 
-    // Get Map Mutex -> Map cannot be changed
-    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-
 
     if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpLastKeyFrame)
         mCurrentFrame.SetNewBias(mpLastKeyFrame->GetImuBias());
@@ -430,6 +427,9 @@ void Tracking::Track()
         PreintegrateIMU();
     }
     mbCreatedMap = false;
+
+    // Get Map Mutex -> Map cannot be changed
+    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
     mbMapUpdated = false;
 
