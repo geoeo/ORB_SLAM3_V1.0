@@ -755,7 +755,7 @@ void Tracking::MonocularInitialization()
 
         // Find correspondences
         ORBmatcher matcher(0.9,true);
-        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,100);
+        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,10);
 
         Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
@@ -1323,7 +1323,7 @@ bool Tracking::NeedNewKeyFrame()
     bNeedToInsertClose = (nTrackedClose<100) && (nNonTrackedClose>70);
 
     // Thresholds
-    float thRefRatio = 0.75f;
+    float thRefRatio = 0.9;
     if(nKFs<2)
         thRefRatio = 0.4f;
 
@@ -1335,18 +1335,18 @@ bool Tracking::NeedNewKeyFrame()
         thRefRatio = 0.9f;
     }*/
 
-    if(mSensor==System::MONOCULAR)
-        thRefRatio = 0.9f;
+    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
+    //     thRefRatio = 0.9f;
 
-    if(mpCamera2) thRefRatio = 0.75f;
+    // if(mpCamera2) thRefRatio = 0.75f;
 
-    if(mSensor==System::IMU_MONOCULAR)
-    {
-        if(mnMatchesInliers>350) // Points tracked from the local map
-            thRefRatio = 0.75f;
-        else
-            thRefRatio = 0.90f;
-    }
+    // if(mSensor==System::IMU_MONOCULAR)
+    // {
+    //     if(mnMatchesInliers>350) // Points tracked from the local map
+    //         thRefRatio = 0.75f;
+    //     else
+    //         thRefRatio = 0.90f;
+    // }
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
@@ -1389,7 +1389,7 @@ bool Tracking::NeedNewKeyFrame()
         }
         else
         {
-            mpLocalMapper->InterruptBA();
+            //mpLocalMapper->InterruptBA();
             if(mSensor!=System::MONOCULAR  && mSensor!=System::IMU_MONOCULAR)
             {
                 if(mpLocalMapper->KeyframesInQueue()<3)

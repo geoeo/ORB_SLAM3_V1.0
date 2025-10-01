@@ -1161,6 +1161,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
+    Verbose::PrintMess("LM-LBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
 
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
@@ -1269,7 +1270,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             return;
 
     optimizer.initializeOptimization();
-    optimizer.optimize(10);
+    optimizer.optimize(5);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesBody.size());
@@ -1311,7 +1312,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
 
     // Get Map Mutex
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
     for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
         KeyFrame* pKFi = eraseTuple.first;
@@ -1337,7 +1338,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     });
  
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 }
 
 
@@ -2228,7 +2229,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
     int maxOpt=8;
-    int opt_it=10;
+    int opt_it=5;
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2603,7 +2604,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
 
     // Get Map Mutex and erase outliers
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
 
     // TODO: Some convergence problems have been detected here
@@ -2671,7 +2672,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         pMP->UpdateNormalAndDepth();
     });
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 
     return latestOptimizedKFPoses;
 }
