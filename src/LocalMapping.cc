@@ -43,7 +43,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
     itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),
-    mGeometricReferencer(60)
+    mGeometricReferencer(5)
 {
 }
 
@@ -684,6 +684,7 @@ void LocalMapping::CreateNewMapPoints()
 }
 
 void LocalMapping::GeoreferenceKeyframes(){
+    //TODO: incremental update
     const auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
     Verbose::PrintMess("Georef function called with KFs :" + to_string(vpKF.size()), Verbose::VERBOSITY_NORMAL);
     auto pose_scale_opt = mGeometricReferencer.init(vpKF);

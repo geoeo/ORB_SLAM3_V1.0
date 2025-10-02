@@ -83,7 +83,7 @@ namespace ros2_orbslam3 {
 
     void ImageGrabber::GrabImageAndGNSS(const sensor_msgs::msg::Image::ConstSharedPtr img_msg, const sensor_msgs::msg::NavSatFix::ConstSharedPtr msg_gnss)
     {
-        RCLCPP_INFO_STREAM(logger_,"Img and GNSS received");
+        //RCLCPP_INFO_STREAM(logger_,"Img and GNSS received");
         mBufMutex.lock();
         img_gnss_buf.push({img_msg, msg_gnss});
         mBufMutex.unlock();

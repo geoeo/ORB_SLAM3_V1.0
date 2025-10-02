@@ -13,17 +13,17 @@ bag_start_offset = 0.0
 bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-09_19_35_10hz'
 
 air_id = 6
-rate = 1.0
+rate = 0.8
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 gnss_topic = f'/AIT_Fighter{air_id}/mavros/global_position/global'
 read_ahead_queue_size = 5000
 
 def generate_launch_description():
     return LaunchDescription([
-        launch.actions.ExecuteProcess(
-            cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_gnss_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
-            output='screen'
-        ),
+        # launch.actions.ExecuteProcess(
+        #     cmd=['ros2', 'run', 'mono-inertial', 'mono_inertial_gnss_node', '/workspaces/ORB_SLAM3_V1.0/Vocabulary/ORBvoc.txt', 'false'],
+        #     output='screen'
+        # ),
         launch_ros.actions.Node(
             package='image_transport',
             executable='republish',
