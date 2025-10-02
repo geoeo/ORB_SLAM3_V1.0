@@ -4271,7 +4271,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     float chi2Mono[4]={12,7.5,5.991,5.991};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={20,20,20,20};
+    int its[4]={15,15,15,15};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4285,7 +4285,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
 
         {
-            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastKeyFrame - Optimize", true); 
+            ZoneNamedN(PoseInertialOptimizationLastKeyFrame_Opt, "PoseInertialOptimizationLastKeyFrame_Opt", true); 
             optimizer.optimize(its[it]);
         }
 
@@ -4685,7 +4685,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={80,80,80,80};
+    const int its[4]={15,15,15,15};
 
     int nBad=0;
     int nBadMono = 0;
@@ -4698,7 +4698,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
         optimizer.initializeOptimization(0);
 
         {
-            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastFrame - Optimize", true); 
+            ZoneNamedN(PoseInertialOptimizationLastFrame_Opt, "PoseInertialOptimizationLastFrame_Opt", true); 
             optimizer.optimize(its[it]);
         }
 
