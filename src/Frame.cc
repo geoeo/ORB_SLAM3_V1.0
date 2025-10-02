@@ -452,6 +452,7 @@ Eigen::Vector3f Frame::inRefCoordinates(Eigen::Vector3f pCw)
 
 vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
 {
+    ZoneNamedN(GetFeaturesInArea, "GetFeaturesInArea", true); 
     vector<size_t> vIndices;
     vIndices.reserve(mNumKeypoints);
 

@@ -61,7 +61,7 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 8;
+      cam.fps        = 2;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -117,14 +117,14 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
-      local_mapper.itsFIBAInit = 5;
+      local_mapper.itsFIBAInit = 3;
       local_mapper.itsFIBA1 = 2;
 
       double timeshift_cam_imu = 0.006882460203406222; 
 
       const int frame_grid_cols = 64;
       const int frame_grid_rows = 48;
-      const double clahe_clip_limit = 10.0;
+      const double clahe_clip_limit = 80.0;
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.

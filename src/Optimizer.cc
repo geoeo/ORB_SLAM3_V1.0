@@ -747,7 +747,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
     }
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 }
 
 
@@ -1060,16 +1060,20 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
+    size_t maxOpt=12;
 
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
-    for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+    const auto Nd = std::min(vNeighKFs.size(),maxOpt);
+    //for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+    for(int i=0; i<Nd; i++) {
+        KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);
-    });
+    }
 
     // Local MapPoints seen in Local KeyFrames
     num_fixedKF = 0;
@@ -1161,6 +1165,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
+    Verbose::PrintMess("LM-LBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
 
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
@@ -1269,7 +1274,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
             return;
 
     optimizer.initializeOptimization();
-    optimizer.optimize(10);
+    optimizer.optimize(5);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesBody.size());
@@ -1311,7 +1316,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
 
     // Get Map Mutex
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
     for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
         KeyFrame* pKFi = eraseTuple.first;
@@ -1337,7 +1342,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     });
  
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 }
 
 
@@ -2227,8 +2232,8 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
-    int maxOpt=8;
-    int opt_it=10;
+    int maxOpt=5;
+    int opt_it=4;
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2311,7 +2316,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     }
 
     // Fixed KFs which are not covisible optimizable
-    const int maxFixKF = 200;
+    const int maxFixKF = 20;
 
     for(auto mapPoint: lLocalMapPoints)
     {
@@ -2603,7 +2608,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
 
     // Get Map Mutex and erase outliers
-    unique_lock<mutex> lock(pMap->mMutexMapUpdate);
+    //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
 
     // TODO: Some convergence problems have been detected here
@@ -2671,7 +2676,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         pMP->UpdateNormalAndDepth();
     });
 
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 
     return latestOptimizedKFPoses;
 }
@@ -4266,7 +4271,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     float chi2Mono[4]={12,7.5,5.991,5.991};
     float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={20,20,20,20};
+    int its[4]={15,15,15,15};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -4280,7 +4285,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
 
         {
-            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastKeyFrame - Optimize", true); 
+            ZoneNamedN(PoseInertialOptimizationLastKeyFrame_Opt, "PoseInertialOptimizationLastKeyFrame_Opt", true); 
             optimizer.optimize(its[it]);
         }
 
@@ -4680,7 +4685,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={80,80,80,80};
+    const int its[4]={15,15,15,15};
 
     int nBad=0;
     int nBadMono = 0;
@@ -4693,7 +4698,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
         optimizer.initializeOptimization(0);
 
         {
-            ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastFrame - Optimize", true); 
+            ZoneNamedN(PoseInertialOptimizationLastFrame_Opt, "PoseInertialOptimizationLastFrame_Opt", true); 
             optimizer.optimize(its[it]);
         }
 

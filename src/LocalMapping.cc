@@ -114,7 +114,8 @@ void LocalMapping::Run()
 
                         Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_NORMAL);
                         {
-                            //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                            //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                            unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                             setLatestOptimizedKFPoses(optimizedKFPoses);
                             Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
@@ -126,7 +127,8 @@ void LocalMapping::Run()
                     {
                         Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_NORMAL);
                         {
-                            //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                            //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                            unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                             Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
                         }
@@ -140,14 +142,14 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
-                    auto success = InitializeIMU(1e1, 1e3, true, itsFIBAInit, minTimeForImuInit, 10);
+                    auto success = InitializeIMU(1e3, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
-                    // if(success){
-                    //     mpAtlas->GetCurrentMap()->SetInertialBA1();
-                    //     mpAtlas->GetCurrentMap()->SetInertialBA2();
-                    //     if(minTimeForFullBA < 0)
-                    //         mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                    // }
+                    if(success){
+                        mpAtlas->GetCurrentMap()->SetInertialBA1();
+                        mpAtlas->GetCurrentMap()->SetInertialBA2();
+                        if(minTimeForFullBA < 0)
+                            mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                    }
                 }
 
 
@@ -163,7 +165,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(1e1, 1e3, true, itsFIBA1, minTimeForVIBA1, 10);
+                                success = InitializeIMU(1e3, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
                             else
                                 success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -174,7 +176,7 @@ void LocalMapping::Run()
                                     mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
                             
-                            Verbose::PrintMess("end VIBA 1" + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_NORMAL);
                         }
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
                             Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
@@ -237,7 +239,7 @@ void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
-    mbAbortBA=true;
+    //mbAbortBA=true;
 }
 
 
@@ -266,6 +268,7 @@ void LocalMapping::ProcessNewKeyFrame()
     Verbose::PrintMess("LocalMapper - Process New KF", Verbose::VERBOSITY_NORMAL);
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
+        Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
@@ -1173,6 +1176,9 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
 
+    //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
+
     // Compute and KF velocities mRwg estimation
     if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
     {
@@ -1218,7 +1224,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 
     mScale=1.0;
     {
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
+        //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
         Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
     }
 
@@ -1231,7 +1237,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 
     // Before this line we are not changing the map
     {
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+        //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_NORMAL);
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
@@ -1258,8 +1264,8 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     chrono::steady_clock::time_point t4 = chrono::steady_clock::now();
     if (bFIBA)
     {
-        unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
-        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
+        //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+        //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
         Verbose::PrintMess("Start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
         if (priorA!=0.f)
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), itsFIBA, false, 0, NULL, true, priorG, priorA);
@@ -1375,7 +1381,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     mpTracker->setTrackingState(Tracking::OK);
     bInitializing = false;
 
-    mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
+    //mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     return true;
 }
