@@ -78,10 +78,10 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 6000;
+      orb.nFeatures   = 10000;
       orb.nFastFeatures = 16000;
       orb.nLevels     = 1;
-      orb.scaleFactor = 1.8;
+      orb.scaleFactor = 2.0;
       orb.minThFast   = 80;
       orb.iniThFast   = 100;
 
@@ -120,13 +120,13 @@ class SlamNode : public rclcpp::Node
       imu.freq = 400.0;
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
-      local_mapper.resetTimeThresh = 120.0;
-      local_mapper.minTimeForImuInit = 45.0;
-      local_mapper.minTimeForVIBA1 = 55.0;
-      local_mapper.minTimeForVIBA2 = 60.0;
+      local_mapper.resetTimeThresh = 500.0;
+      local_mapper.minTimeForImuInit = 40.0;
+      local_mapper.minTimeForVIBA1 = 50.0;
+      local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
-      local_mapper.itsFIBAInit = 2;
-      local_mapper.itsFIBA1 = 5;
+      local_mapper.itsFIBAInit = 3;
+      local_mapper.itsFIBA1 = 2;
 
       double timeshift_cam_imu = 0.006882460203406222; 
 
