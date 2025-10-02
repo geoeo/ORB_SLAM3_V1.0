@@ -41,7 +41,8 @@ pair<Sophus::SE3d, double> GeometricReferencer::update(const vector<ORB_SLAM3::K
   for (const auto &f : frames){
     const auto gnss_position = f->GetGNSSPosition();
     const auto gnss_pose = Sophus::SE3d(Eigen::Matrix3d::Identity(), gnss_position.cast<double>());
-    m_spatials.pop_front();
+    if(m_spatials.size() >= m_min_nrof_frames)
+      m_spatials.pop_front();
     m_spatials.push_back({gnss_pose, f->GetPoseInverse().cast<double>()});
   }
 
@@ -89,13 +90,14 @@ pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const st
   //Estimates the aligning transformation from camera to gnss coordinate system
   Eigen::Matrix4d T_g2receiver_refine = Eigen::umeyama(src_points, dst_points, estimate_scale);
 
-  auto rotation_matrix = T_g2receiver_refine.block<3,3>(0,0);
+  const auto rotation_matrix = T_g2receiver_refine.block<3,3>(0,0);
 
-  auto sx = rotation_matrix.col(0).norm();
-  auto sy = rotation_matrix.col(1).norm();
-  auto sz = rotation_matrix.col(2).norm();
+  const auto sx = rotation_matrix.col(0).norm();
+  const auto sy = rotation_matrix.col(1).norm();
+  const auto sz = rotation_matrix.col(2).norm();
+  const auto scale = (sx + sy + sz)/3;
 
-  auto scale = (sx + sy + sz)/3;
+  T_g2receiver_refine.block<3,3>(0,0) /= scale;
 
   return {Sophus::SE3d(T_g2receiver_refine), scale};
 }
