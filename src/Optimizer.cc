@@ -2232,8 +2232,8 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
-    int maxOpt=8;
-    int opt_it=5;
+    int maxOpt=5;
+    int opt_it=4;
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2316,7 +2316,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     }
 
     // Fixed KFs which are not covisible optimizable
-    const int maxFixKF = 200;
+    const int maxFixKF = 20;
 
     for(auto mapPoint: lLocalMapPoints)
     {
