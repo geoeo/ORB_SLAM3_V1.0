@@ -276,7 +276,7 @@ void LocalMapping::ProcessNewKeyFrame()
         mlNewKeyFrames.pop_front();
     }
 
-    // If we dont use the IMU the intial map space is the final one
+    // If we dont use the IMU the initial map space is the final one
     if(!mbInertial){
         mpCurrentKeyFrame->GetMap()->SetInertialBA1();
         mpCurrentKeyFrame->GetMap()->SetInertialBA2();
@@ -690,6 +690,11 @@ void LocalMapping::GeoreferenceKeyframes(){
     auto pose_scale_opt = mGeometricReferencer.init(vpKF);
     if(pose_scale_opt.has_value()){
         Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
+        const auto Tgw = pose_scale_opt.value().first;
+        const auto scale = pose_scale_opt.value().second;
+        for(auto pKF: vpKF){
+            pKF->SetGNSSAlignment(Tgw, scale);
+        }
     }
 
     //TODO: Set transform in either map or keyframes - to be decided 

@@ -19,13 +19,16 @@ namespace ORB_SLAM3
 
     std::optional<std::pair<Sophus::SE3d, double>> init(const std::vector<KeyFrame*> &frames);
     std::pair<Sophus::SE3d, double> update(const std::vector<KeyFrame*> &frames);
+    std::pair<Sophus::SE3d, double> getCurrentTransform() const;
 
-    bool isInitialized();
+    bool isInitialized() const;
     void clear();
 
   private:
     bool m_is_initialized;
     int m_min_nrof_frames;
+    Sophus::SE3d mTgw_current;
+    double mSgw_current;
 
     std::deque<std::pair<Sophus::SE3d, Sophus::SE3d>> m_spatials;
 

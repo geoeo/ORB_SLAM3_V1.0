@@ -15,19 +15,24 @@ void GeometricReferencer::clear()
   m_spatials.clear();
 }
 
-bool GeometricReferencer::isInitialized()
+bool GeometricReferencer::isInitialized() const
 {
   return m_is_initialized;
+}
+
+pair<Sophus::SE3d, double> GeometricReferencer::getCurrentTransform() const 
+{
+   return {mTgw_current, mSgw_current}; 
 }
 
 optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const vector<ORB_SLAM3::KeyFrame*> &frames)
 {
 
-  if (m_is_initialized)
-    return nullopt;
-  
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
+
+  if (m_is_initialized)
+    return {{mTgw_current, mSgw_current}};
   
   auto [pose, scale] = update(frames); 
 
@@ -46,7 +51,11 @@ pair<Sophus::SE3d, double> GeometricReferencer::update(const vector<ORB_SLAM3::K
     m_spatials.push_back({gnss_pose, f->GetPoseInverse().cast<double>()});
   }
 
-  return estimateGeorefTransform(m_spatials, Sophus::SE3d(), true);
+  const auto [pose, scale] = estimateGeorefTransform(m_spatials, Sophus::SE3d(), true);
+  mTgw_current = pose;
+  mSgw_current = scale;
+  return {pose, scale};
+
 }
 
 pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const std::deque<pair<Sophus::SE3d, Sophus::SE3d>> &spatials, const Sophus::SE3d &T_w2g_init, bool estimate_scale)
