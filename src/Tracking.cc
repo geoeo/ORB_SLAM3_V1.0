@@ -383,7 +383,7 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         Verbose::PrintMess("TRACK: Reset map because local mapper set the bad imu flag", Verbose::VERBOSITY_NORMAL);
-        mpSystem->ResetActiveMap();
+        mpSystem->Reset();
         return;
     }
 
@@ -560,7 +560,6 @@ void Tracking::Track()
                 if(!mpAtlas->GetCurrentMap()->isImuInitialized())
                 {
                     Verbose::PrintMess("IMU is not or recently initialized. Reseting active map..", Verbose::VERBOSITY_NORMAL);
-                    mpSystem->ResetActiveMap();
                     setTrackingState(LOST);
                 }
                 else
@@ -668,10 +667,10 @@ void Tracking::Track()
         {
             if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)){
                 Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                mpSystem->ResetActiveMap();
+                mpSystem->Reset();
                 return;
             } else if(mpAtlas->GetCurrentMap()->KeyFramesInMap()<=10){
-                mpSystem->ResetActiveMap();
+                mpSystem->Reset();
                 return;
             }
         }
@@ -862,7 +861,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
-        mpSystem->ResetActiveMap();
+        mpSystem->Reset();
         return;
     }
 
@@ -1952,6 +1951,8 @@ void Tracking::Reset(bool bLocMap)
     Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
+
+// Unsued, since we only have on map. Only difference to Reset() is the mAtlas, mpKeyFrameDB call -> Merge with Reset() function
 void Tracking::ResetActiveMap(bool bLocMap)
 {
     Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
@@ -1962,22 +1963,22 @@ void Tracking::ResetActiveMap(bool bLocMap)
             this_thread::sleep_for(chrono::microseconds(3000));
     }
 
-    Map* pMap = mpAtlas->GetCurrentMap();
     
     if (!bLocMap)
     {
-        Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_VERY_VERBOSE);
-        mpLocalMapper->RequestResetActiveMap(pMap);
-        Verbose::PrintMess("done", Verbose::VERBOSITY_VERY_VERBOSE);
+        Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_NORMAL);
+        mpLocalMapper->RequestReset();
+        Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
     }
 
     // Reset Loop Closing
-    Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
+    //Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
     //mpLoopClosing->RequestResetActiveMap(pMap);
-    Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
+    //Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear BoW Database
     Verbose::PrintMess("Reseting Database", Verbose::VERBOSITY_NORMAL);
+    Map* pMap = mpAtlas->GetCurrentMap();
     mpKeyFrameDB->clearMap(pMap); // Only clear the active map references
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 

@@ -1050,28 +1050,6 @@ void LocalMapping::RequestReset()
     Verbose::PrintMess("LM: Map reset, Done", Verbose::VERBOSITY_NORMAL);
 }
 
-void LocalMapping::RequestResetActiveMap(Map* pMap)
-{
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        Verbose::PrintMess("LM: Active map reset recieved", Verbose::VERBOSITY_NORMAL);
-        mbResetRequestedActiveMap = true;
-        mpMapToReset = pMap;
-    }
-    Verbose::PrintMess("LM: Active map reset, waiting...", Verbose::VERBOSITY_NORMAL);
-
-    while(true)
-    {
-        {
-            unique_lock<mutex> lock(mMutexReset);
-            if(!mbResetRequestedActiveMap)
-                break;
-        }
-        this_thread::sleep_for(chrono::microseconds(3000));
-    }
-    Verbose::PrintMess("LM: Active map reset, Done", Verbose::VERBOSITY_NORMAL);
-}
-
 void LocalMapping::ResetIfRequested()
 {
     bool executed_reset = false;
@@ -1080,27 +1058,10 @@ void LocalMapping::ResetIfRequested()
         if(mbResetRequested)
         {
             executed_reset = true;
-
             Verbose::PrintMess("LM: Reseting Atlas in Local Mapping...", Verbose::VERBOSITY_NORMAL);
             ResetNewKeyFrames();
             mlpRecentAddedMapPoints.clear();
-            mbResetRequested = false;
-            mbResetRequestedActiveMap = false;
 
-            // Inertial parameters
-            mTElapsedTime = 0.f;
-            mbNotBA2 = true;
-            mbNotBA1 = true;
-            mbBadImu=false;
-
-            Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
-        }
-
-        if(mbResetRequestedActiveMap) {
-            executed_reset = true;
-            Verbose::PrintMess("LM: Reseting current map in Local Mapping...", Verbose::VERBOSITY_NORMAL);
-            ResetNewKeyFrames();
-            mlpRecentAddedMapPoints.clear();
 
             // Inertial parameters
             mTElapsedTime = 0.f;
@@ -1110,6 +1071,7 @@ void LocalMapping::ResetIfRequested()
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
+
             Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
         }
     }

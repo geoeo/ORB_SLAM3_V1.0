@@ -188,7 +188,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     {
         auto lock = scoped_mutex_lock( mMutexReset );
-
         if(mbShutDown)
             return {Sophus::SE3f(),false,false,0, {}};
     }
@@ -231,7 +230,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false;
         }
         else if(mbResetActiveMap)
         {
