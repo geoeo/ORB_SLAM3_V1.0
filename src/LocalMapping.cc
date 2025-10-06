@@ -63,6 +63,7 @@ void LocalMapping::Run()
 
     while(true)
     {
+
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
@@ -72,7 +73,6 @@ void LocalMapping::Run()
         {
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
-
             // Check recent MapPoints
             MapPointCulling();
 
@@ -228,8 +228,6 @@ void LocalMapping::Run()
 
         if(CheckFinish())
             break;
-
-        //this_thread::sleep_for(chrono::microseconds(3000));
     }
 
     SetFinish();
@@ -317,6 +315,7 @@ void LocalMapping::ProcessNewKeyFrame()
 
     // Insert Keyframe in Map
     mpAtlas->AddKeyFrame(mpCurrentKeyFrame);
+    mGeometricReferencer.addKeyFrame(mpCurrentKeyFrame);
 }
 
 void LocalMapping::EmptyQueue()
@@ -684,17 +683,17 @@ void LocalMapping::CreateNewMapPoints()
 }
 
 void LocalMapping::GeoreferenceKeyframes(){
-    //TODO: incremental update
-    const auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
-    Verbose::PrintMess("Georef function called with KFs :" + to_string(vpKF.size()), Verbose::VERBOSITY_NORMAL);
-    auto pose_scale_opt = mGeometricReferencer.init(vpKF);
+    auto vKF = mGeometricReferencer.getFramesToGeoref();
+    Verbose::PrintMess("Georef function called with KFs :" + to_string(vKF.size()), Verbose::VERBOSITY_NORMAL);
+    //TODO: update branch
+    auto pose_scale_opt = mGeometricReferencer.init(vKF);
     if(pose_scale_opt.has_value()){
         Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
         const auto Tgw = pose_scale_opt.value().first;
         const auto scale = pose_scale_opt.value().second;
-        for(auto pKF: vpKF){
+        for (const auto& pKF : vKF) 
             pKF->SetGNSSAlignment(Tgw, scale);
-        }
+        mGeometricReferencer.clearFrames();
     }
 
     //TODO: Set transform in either map or keyframes - to be decided 
@@ -1042,13 +1041,13 @@ void LocalMapping::RequestReset()
     while(true)
     {
         {
-            unique_lock<mutex> lock2(mMutexReset);
+            unique_lock<mutex> lock(mMutexReset);
             if(!mbResetRequested)
                 break;
         }
         this_thread::sleep_for(chrono::microseconds(3000));
     }
-    Verbose::PrintMess("LM: Map reset, Done!!!", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM: Map reset, Done", Verbose::VERBOSITY_NORMAL);
 }
 
 void LocalMapping::RequestResetActiveMap(Map* pMap)
@@ -1064,13 +1063,13 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)
     while(true)
     {
         {
-            unique_lock<mutex> lock2(mMutexReset);
+            unique_lock<mutex> lock(mMutexReset);
             if(!mbResetRequestedActiveMap)
                 break;
         }
         this_thread::sleep_for(chrono::microseconds(3000));
     }
-    Verbose::PrintMess("LM: Active map reset, Done!!!", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM: Active map reset, Done", Verbose::VERBOSITY_NORMAL);
 }
 
 void LocalMapping::ResetIfRequested()

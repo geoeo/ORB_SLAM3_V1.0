@@ -5,14 +5,25 @@ using namespace ORB_SLAM3;
 
 GeometricReferencer::GeometricReferencer(int min_nrof_frames)
 : m_is_initialized(false),
-  m_min_nrof_frames(min_nrof_frames)
+  m_min_nrof_frames(min_nrof_frames),
+  mTgw_current(Sophus::SE3d()),
+  mSgw_current(1.0)
 {
+  m_frames_to_georef.reserve(min_nrof_frames);
 }
 
 void GeometricReferencer::clear()
 {
   m_is_initialized = false;
-  m_spatials.clear();
+  mTgw_current = Sophus::SE3d();
+  mSgw_current = 1.0;
+  m_spatials = {}; 
+  m_frames_to_georef.clear();
+}
+
+void GeometricReferencer::clearFrames()
+{
+  m_frames_to_georef.clear();
 }
 
 bool GeometricReferencer::isInitialized() const
@@ -25,7 +36,15 @@ pair<Sophus::SE3d, double> GeometricReferencer::getCurrentTransform() const
    return {mTgw_current, mSgw_current}; 
 }
 
-optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const vector<ORB_SLAM3::KeyFrame*> &frames)
+void GeometricReferencer::addKeyFrame(KeyFrame* kf){
+  m_frames_to_georef.push_back(kf);
+}
+
+std::vector<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
+  return m_frames_to_georef;
+}
+
+optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const std::vector<KeyFrame*> &frames)
 {
 
   if (frames.size() < m_min_nrof_frames)
@@ -40,10 +59,10 @@ optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const vector<ORB_
   return {{pose, scale}};
 }
 
-pair<Sophus::SE3d, double> GeometricReferencer::update(const vector<ORB_SLAM3::KeyFrame*> &frames)
+pair<Sophus::SE3d, double> GeometricReferencer::update(const std::vector<KeyFrame*> &frames)
 { 
-
-  for (const auto &f : frames){
+  //TODO: fix inf loop
+  for (const auto& f : frames){
     const auto gnss_position = f->GetGNSSPosition();
     const auto gnss_pose = Sophus::SE3d(Eigen::Matrix3d::Identity(), gnss_position.cast<double>());
     if(m_spatials.size() >= m_min_nrof_frames)
