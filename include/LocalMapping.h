@@ -60,7 +60,6 @@ public:
     // Thread Synch
     void RequestStop();
     void RequestReset();
-    void RequestResetActiveMap(Map* pMap);
     bool Stop();
     void Release();
     bool isStopped();

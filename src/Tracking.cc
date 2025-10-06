@@ -523,6 +523,9 @@ void Tracking::Track()
                     } else {
                         setTrackingState(LOST);
                     }
+                } 
+                else {
+                    setTrackingState(LOST);
                 }
 
             }
@@ -1296,7 +1299,7 @@ bool Tracking::NeedNewKeyFrame()
         nMinObs=2;
     int nRefMatches = mpReferenceKF->TrackedMapPoints(nMinObs);
 
-    // Local Mapping accept keyframes?
+        // Local Mapping accept keyframes?
     bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
 
     // Check how many "close" points are being tracked and how many could be potentially created.
