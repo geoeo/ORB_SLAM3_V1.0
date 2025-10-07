@@ -45,6 +45,7 @@ public:
     void SetWorldPos(const Eigen::Vector3f &Pos);
     Eigen::Vector3f GetWorldPos();
 
+    Eigen::Vector3f GetGNSSPos();
     void UpdateGNSSPos();
 
     Eigen::Vector3f GetNormal();

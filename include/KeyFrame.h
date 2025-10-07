@@ -65,8 +65,8 @@ public:
     Eigen::Vector3f GetTranslation();
     Eigen::Vector3f GetVelocity();
     Eigen::Vector3f GetGNSSPosition();
-    Sophus::SE3f GetGNSSAlignment();
-    Sophus::SE3f GetGNSSCameraPose();
+    Sophus::Sim3f GetGNSSAlignment();
+    Sophus::Sim3f GetGNSSCameraPose();
     void SetGNSSAlignment(const Sophus::SE3d &transform, const double scale);
     bool isVelocitySet();
     bool isGNSSSet() const;
@@ -281,12 +281,11 @@ public:
     // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
     // sophus poses
-    Sophus::SE3<float> mTcw;
+    Sophus::SE3f mTcw;
     Eigen::Matrix3f mRcw;
-    Sophus::SE3<float> mTwc;
+    Sophus::SE3f mTwc;
     Eigen::Matrix3f mRwc;
-    Sophus::SE3<float> mTgw;
-    float mSgw;
+    Sophus::Sim3f mTgw;
 
     // IMU position
     Eigen::Vector3f mOwb;
@@ -297,8 +296,8 @@ protected:
     Eigen::Vector3f mGNSSPosition;
 
     //Transformation matrix between cameras in stereo fisheye
-    Sophus::SE3<float> mTlr;
-    Sophus::SE3<float> mTrl;
+    Sophus::SE3f mTlr;
+    Sophus::SE3f mTrl;
 
     // Imu bias
     IMU::Bias mImuBias;

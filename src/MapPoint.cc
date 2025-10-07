@@ -23,7 +23,7 @@ namespace ORB_SLAM3
 {
 
 long unsigned int MapPoint::nNextId=0;
-mutex MapPoint::mGlobalMutex;
+//mutex MapPoint::mGlobalMutex;
 
 MapPoint::MapPoint():
     mnFirstKFid(0), mnFirstFrame(0), nObs(0), mnTrackReferenceForFrame(0),
@@ -114,23 +114,28 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
 }
 
 void MapPoint::SetWorldPos(const Eigen::Vector3f &Pos) {
-    unique_lock<mutex> lock2(mGlobalMutex);
+    //unique_lock<mutex> lock2(mGlobalMutex); // check this
     unique_lock<mutex> lock(mMutexPos);
     mWorldPos = Pos;
 }
 
 void MapPoint::UpdateGNSSPos() {
-    unique_lock<mutex> lock2(mGlobalMutex);
+    //unique_lock<mutex> lock2(mGlobalMutex);  // check this
     unique_lock<mutex> lock(mMutexPos);
     if(mpRefKF){
         const auto Tgw = mpRefKF->GetGNSSAlignment();
-        mGNSSPos = Tgw.rotationMatrix()*mWorldPos + Tgw.translation();
+        mGNSSPos = Tgw*mWorldPos;
     }
 }
 
 Eigen::Vector3f MapPoint::GetWorldPos() {
     unique_lock<mutex> lock(mMutexPos);
     return mWorldPos;
+}
+
+Eigen::Vector3f MapPoint::GetGNSSPos() {
+    unique_lock<mutex> lock(mMutexPos);
+    return mGNSSPos;
 }
 
 Eigen::Vector3f MapPoint::GetNormal() {
