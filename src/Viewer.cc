@@ -28,7 +28,7 @@ namespace ORB_SLAM3
 
 Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings):
     both(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking),
-    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false)
+    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), mbWrittenInitTrajectory(false), mbSaveInitTrajectory(false)
 {
     if(settings){
         newParameterLoader(settings);
@@ -314,6 +314,19 @@ void Viewer::Run()
 
         pangolin::FinishFrame();
 
+        if(mpTracker->isBACompleteForMap() && !mbWrittenInitTrajectory && mbSaveInitTrajectory){
+            const vector<KeyFrame*> vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+            unique_lock<mutex> lock(mpMapDrawer->mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+            try {
+                writeKeyframesCsv("keyframes.csv", vpKFs);
+            } catch (const std::exception& e) {
+                std::cerr << "Error writing keyframes to CSV: " << e.what() << std::endl;
+            }
+            // Write keyframe positions to file
+            mbWrittenInitTrajectory = true;
+        }
+        // Save keyframe trajetory
+
         cv::Mat toShow;
         cv::Mat im = mpFrameDrawer->DrawFrame(trackedImageScale);
 
@@ -431,6 +444,26 @@ bool Viewer::Stop()
 
 }
 
+void Viewer::writeKeyframesCsv(const std::string& path,
+                   const std::vector<KeyFrame*>& keyframes,
+                   char sep,
+                   int precision) 
+{
+    std::ofstream out(path);                  // text mode is fine for CSV
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+
+    out << "# id" << sep << "x" << sep << "y" << sep << "z\n";
+
+    for (const auto& kf : keyframes) {
+        out << kf->GetFrameId() << sep
+            << kf->GetPoseInverse().translation().x() << sep
+            << kf->GetPoseInverse().translation().y() << sep
+            << kf->GetPoseInverse().translation().z() << '\n'; // avoid std::endl (no flush)
+    }
+}
+
 void Viewer::Release()
 {
     unique_lock<mutex> lock(mMutexStop);
@@ -441,5 +474,6 @@ void Viewer::Release()
 {
     mbStopTrack = true;
 }*/
+
 
 }
