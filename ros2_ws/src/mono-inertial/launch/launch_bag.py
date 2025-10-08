@@ -16,7 +16,7 @@ bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-0
 #bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-09_29_22_2hz'
 
 air_id = 6
-rate = 1.0
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 read_ahead_queue_size = 5000
 
