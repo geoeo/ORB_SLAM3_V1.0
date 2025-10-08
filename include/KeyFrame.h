@@ -68,6 +68,7 @@ public:
     Sophus::Sim3f GetGNSSAlignment();
     Sophus::Sim3f GetGNSSCameraPose();
     void SetGNSSAlignment(const Sophus::SE3d &transform, const double scale);
+    void SetGNSSPosition(const Eigen::Vector3f &pos);
     bool isVelocitySet();
     bool isGNSSSet() const;
 

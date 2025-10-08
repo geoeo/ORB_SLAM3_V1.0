@@ -1075,7 +1075,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
-    //for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+
     for(int i=0; i<Nd; i++) {
         KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
@@ -1358,7 +1358,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 }
 
 
-void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap)
+void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, GeometricReferencer& geoReferencer)
 {
     ZoneNamedN(LocalGNSSBundleAdjustment, "LocalGNSSBundleAdjustment", true); 
 
@@ -1371,7 +1371,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
-    //for_each(execution::seq, vNeighKFs.begin(), vNeighKFs.end(), [&lLocalKeyFrames, pMap, pKF](auto pKFi){
+
     for(int i=0; i<Nd; i++) {
         KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
@@ -1459,10 +1459,11 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         //TODO: GNSS 
-        //auto Tcg = pKFi->GetGNSSCameraPose().inverse();
-        Sophus::Sim3f Tcg = pKFi->GetGNSSCameraPose();
+        Sophus::Sim3f Tgc = pKFi->GetGNSSCameraPose();
+        Eigen::Vector3f t = Tgc.translation();
+        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.rxso3().quaternion().normalized().cast<double>(), t.cast<double>()).inverse();
         auto vSE3 = new g2o::VertexSE3Expmap();
-        vSE3->setEstimate(g2o::SE3Quat(Tcg.rxso3().quaternion().normalized().cast<double>(), Tcg.translation().cast<double>()));
+        vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
         vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
         optimizer.addVertex(vSE3);
@@ -1479,8 +1480,10 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     {
         //TODO: GNSS 
         auto vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::Sim3f Tcg = pKFi->GetGNSSCameraPose();
-        vSE3->setEstimate(g2o::SE3Quat(Tcg.rxso3().quaternion().normalized().cast<double>(),Tcg.translation().cast<double>()));
+        Sophus::Sim3f Tgc = pKFi->GetGNSSCameraPose();
+        Eigen::Vector3f t = Tgc.translation();
+        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.rxso3().quaternion().normalized().cast<double>(), t.cast<double>()).inverse();
+        vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
         vSE3->setFixed(true);
         optimizer.addVertex(vSE3);
@@ -1527,6 +1530,9 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for(auto pMP: lLocalMapPoints)
     {   
         //TODO: GNSS 
+        const auto updateSuccess = pMP->UpdateGNSSPos();
+        if(!updateSuccess)
+            continue;  
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
         vPoint->setEstimate(pMP->GetGNSSPos().cast<double>());
         int id = pMP->mnId+maxKFid+1;
@@ -1611,7 +1617,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
         e->computeError();
         auto error_norm = e->error().norm();
-        Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm), Verbose::VERBOSITY_NORMAL);
+        //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
 
     for_each(execution::seq, vpEdgesBodyIndices.begin(), vpEdgesBodyIndices.end(), [&vpEdgesBody,&vpMapPointEdgeBody,&vpEdgeKFBody,&vToErase](auto i) {
@@ -1629,8 +1635,10 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
         e->computeError();
         auto error_norm = e->error().norm();
-        Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm), Verbose::VERBOSITY_NORMAL);
+        //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
+
+    Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size() + vpEdgeKFBody.size()), Verbose::VERBOSITY_NORMAL);
 
 
     // Get Map Mutex
@@ -1645,21 +1653,30 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     // // Recover optimized data
     // //Keyframes
-    // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer](auto pKFi) {
-    //     g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
-    //     g2o::SE3Quat SE3quat = vSE3->estimate();
-    //     Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
-    //     pKFi->SetPose(Tiw);
-    // });
+    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer](auto pKFi) {
+        g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
+        g2o::SE3Quat SE3quat = vSE3->estimate().inverse(); 
+        Sophus::SE3f Tgw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
+        pKFi->SetGNSSAlignment(Tgw); 
+        pKFi->SetGNSSPosition(Tgw.translation()); 
+    });
 
     // //Points
-    // for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
-    //     g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
-    //     pMP->SetWorldPos(vPoint->estimate().cast<float>());
-    //     pMP->UpdateNormalAndDepth();
-    // });
- 
+    for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
+        g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+        pMP->SetGNSSPosition(vPoint->estimate().cast<float>());
+        //pMP->UpdateNormalAndDepth();
+    });
 
+    // auto [Tgw, scale] = geoReferencer.update(vector<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
+
+    // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw, scale](auto pKFi) {
+    //     pKFi->SetGNSSAlignment(Tgw, scale);
+    // });
+    
+
+
+ 
     // pMap->IncreaseChangeIndex();
 }
 

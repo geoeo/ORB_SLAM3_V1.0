@@ -63,7 +63,7 @@ pair<Sophus::SE3d, double> GeometricReferencer::update(const std::vector<KeyFram
 { 
   //TODO: fix inf loop
   for (const auto& f : frames){
-    const auto gnss_position = f->GetGNSSPosition();
+    const auto gnss_position = f->GetGNSSAlignment().translation();
     const auto gnss_pose = Sophus::SE3d(Eigen::Matrix3d::Identity(), gnss_position.cast<double>());
     if(m_spatials.size() >= m_min_nrof_frames)
       m_spatials.pop_front();
@@ -115,7 +115,7 @@ pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const st
     src_points.col(j+3 ) << e_vis_0(0), e_vis_0(1), e_vis_0(2);
   }
   
-  //Estimates the aligning transformation from camera to gnss coordinate system
+  // Estimates the aligning transformation from camera to gnss coordinate system
   Eigen::Matrix4d T_g2receiver_refine = Eigen::umeyama(src_points, dst_points, estimate_scale);
 
   const auto rotation_matrix = T_g2receiver_refine.block<3,3>(0,0);

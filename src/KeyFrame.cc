@@ -58,8 +58,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F.mNameFile), mnMergeCorrectedForKF(0),
     mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
-    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mTgw(Sophus::Sim3f()),mbHasVelocity(false),
-    mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
+    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), 
+    mTgw(Sophus::Sim3f()),mbHasVelocity(false), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
 {
     mnId=nNextId++;
     mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
@@ -187,6 +187,12 @@ void KeyFrame::SetGNSSAlignment(const Sophus::SE3d &transform, double scale)
 {
     unique_lock<mutex> lock(mMutexPose);
     mTgw = Sophus::Sim3f(static_cast<float>(scale),transform.unit_quaternion().cast<float>(),transform.translation().cast<float>());
+}
+
+void KeyFrame::SetGNSSPosition(const Eigen::Vector3f &pos)
+{
+    unique_lock<mutex> lock(mMutexPose);
+    mGNSSPosition = pos;
 }
 
 bool KeyFrame::isVelocitySet()

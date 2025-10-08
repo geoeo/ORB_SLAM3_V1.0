@@ -119,13 +119,23 @@ void MapPoint::SetWorldPos(const Eigen::Vector3f &Pos) {
     mWorldPos = Pos;
 }
 
-void MapPoint::UpdateGNSSPos() {
+void MapPoint::SetGNSSPosition(const Eigen::Vector3f &pos) {
+    unique_lock<mutex> lock(mMutexPos);
+    mGNSSPos = pos;
+}
+
+bool MapPoint::UpdateGNSSPos() {
     //unique_lock<mutex> lock2(mGlobalMutex);  // check this
+    auto updateSuccess = false;
     unique_lock<mutex> lock(mMutexPos);
     if(mpRefKF){
+        //TODO: CHeck if this should be camera pose
         const auto Tgw = mpRefKF->GetGNSSAlignment();
         mGNSSPos = Tgw*mWorldPos;
+        updateSuccess = true;
     }
+    
+    return updateSuccess;
 }
 
 Eigen::Vector3f MapPoint::GetWorldPos() {

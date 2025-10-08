@@ -56,7 +56,7 @@ public:
 
     void static LocalBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
     
-    void static LocalGNSSBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap);
+    void static LocalGNSSBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
 
     int static PoseOptimization(Frame* pFrame);
     int static PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit = false);
