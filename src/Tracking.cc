@@ -540,8 +540,12 @@ void Tracking::Track()
             if(bOK)
             {
                 bOK = TrackLocalMap();
-                if(!bOK)
+                if(!bOK){
                     Verbose::PrintMess("Fail to track local map!", Verbose::VERBOSITY_NORMAL);
+                    setTrackingState(RECENTLY_LOST);
+
+                }
+
             }
         }
         else
@@ -1378,7 +1382,7 @@ bool Tracking::NeedNewKeyFrame()
     }
 
     bool c4 = false;
-    if ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || getTrackingState()==RECENTLY_LOST) && (mSensor == System::IMU_MONOCULAR)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
+    if (((mnMatchesInliers<150) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
         c4=true;
     else
         c4=false;
