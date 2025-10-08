@@ -1656,9 +1656,11 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer](auto pKFi) {
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate().inverse(); 
-        Sophus::SE3f Tgw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
-        pKFi->SetGNSSAlignment(Tgw); 
-        pKFi->SetGNSSPosition(Tgw.translation()); 
+        Sophus::SE3f Tgc(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
+
+        //TODO: How to update new pose which needs to be split up for the alignment
+        // pKFi->SetGNSSAlignment(Tgc); 
+        // pKFi->SetGNSSPosition(Tgw.translation()); 
     });
 
     // //Points
