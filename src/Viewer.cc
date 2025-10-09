@@ -184,13 +184,14 @@ void Viewer::Run()
     pangolin::Var<bool> menuStop("menu.Stop",false,false);
     pangolin::Var<bool> menuStepByStep("menu.Step By Step",false,true);  // false, true
     pangolin::Var<bool> menuStep("menu.Step",false,false);
-
+    pangolin::Var<bool> menuSaveTrajectory("menu.SaveTrajectory",false,false);
     pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
+
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(
                 pangolin::ProjectionMatrix(1024,768,mViewpointF,mViewpointF,512,389,0.1,1000),
                 pangolin::ModelViewLookAt(mViewpointX,mViewpointY,mViewpointZ, 0,0,0,0.0,-1.0, 0.0)
-                );
+    );
 
     // Add named OpenGL viewport to window and provide 3D Handler
     pangolin::View& d_cam = pangolin::CreateDisplay()
@@ -314,7 +315,7 @@ void Viewer::Run()
 
         pangolin::FinishFrame();
 
-        if(mpTracker->isBACompleteForMap() && !mbWrittenInitTrajectory && mbSaveInitTrajectory){
+        if((mpTracker->isBACompleteForMap() && !mbWrittenInitTrajectory && mbSaveInitTrajectory) || menuSaveTrajectory){
             const vector<KeyFrame*> vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames();
             unique_lock<mutex> lock(mpMapDrawer->mpAtlas->GetCurrentMap()->mMutexMapUpdate);
             try {
@@ -324,6 +325,7 @@ void Viewer::Run()
             }
             // Write keyframe positions to file
             mbWrittenInitTrajectory = true;
+            menuSaveTrajectory = false;
         }
         // Save keyframe trajetory
 
