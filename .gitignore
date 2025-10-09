@@ -3,7 +3,7 @@ CameraTrajectory.txt
 kf_*.txt
 f_*.txt
 debug.txt
-keyframes.csv
+keyframes*.csv
 Thirdparty/DBoW2/build/*
 Thirdparty/DBoW2/lib/*
 Vocabulary/ORBvoc.txt
