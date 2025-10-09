@@ -70,6 +70,13 @@ void LocalMapping::Run()
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
 
+        // If we dont use the IMU the initial map space is the final one
+        if(!mbInertial){
+            mpAtlas->GetCurrentMap()->SetInertialBA1();
+            mpAtlas->GetCurrentMap()->SetInertialBA2();
+            mpAtlas->GetCurrentMap()->SetInertialFullBA();
+        }
+
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames() && !mbBadImu)
         {
@@ -282,12 +289,6 @@ void LocalMapping::ProcessNewKeyFrame()
         if(mpCurrentKeyFrame->mPrevKF)
             mTElapsedTime += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
         mlNewKeyFrames.pop_front();
-    }
-
-    // If we dont use the IMU the initial map space is the final one
-    if(!mbInertial){
-        mpCurrentKeyFrame->GetMap()->SetInertialBA1();
-        mpCurrentKeyFrame->GetMap()->SetInertialBA2();
     }
 
     // Compute Bags of Words structures
@@ -708,6 +709,7 @@ void LocalMapping::GeoreferenceKeyframes(){
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(3,0)) + " " + to_string(Tgw.rotationMatrix()(3,1)) + " " + to_string(Tgw.rotationMatrix()(3,2)) + " " + to_string(Tgw.translation()(3)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess("Scale: " + to_string(scale), Verbose::VERBOSITY_NORMAL);
+
         for (const auto& pKF : vKF){
             pKF->SetGNSSAlignment(Tgw, scale);
             vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
