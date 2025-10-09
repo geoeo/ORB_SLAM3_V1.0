@@ -18,7 +18,7 @@ bag_start_offset = 60.0
 bag_path = '/bags/2025_06_06-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_06_06-09_32_00_12fps'
 
 air_id = 4
-rate = 1.0
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 read_ahead_queue_size = 5000
 

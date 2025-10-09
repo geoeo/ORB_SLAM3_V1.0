@@ -47,12 +47,12 @@ std::vector<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
 optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const std::vector<KeyFrame*> &frames)
 {
 
+  if (m_is_initialized)
+    return {{mTgw_current, mSgw_current}};
+    
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
 
-  if (m_is_initialized)
-    return {{mTgw_current, mSgw_current}};
-  
   auto [pose, scale] = update(frames); 
 
   m_is_initialized = true;

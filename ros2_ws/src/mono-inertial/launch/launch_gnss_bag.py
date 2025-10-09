@@ -3,17 +3,20 @@ from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
 
-bag_start_offset = 0.0
+bag_start_offset = 60.0
 #bag_path = '/bags/240925_guenselsdorf/fighter4/2024_09_25-guenselsdorf/seq0/bags/all/rosbag2_2024_09_25-11_04_09'
 #bag_path = '/bags/2025_03_04-Steinalpl-rec/seq0/bags/all/rosbag2_2025_03_04-11_31_57/'
 #bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-08_25_08_circle_110m'
 #bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-09_14_04_grid_80m'
 #bag_path = '/bags/2025_08_13-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_13-09_38_53_25fps'
 #bag_path = '/bags/2025_08_14-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_14-08_30_32_15fps'
-bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-09_19_35_10hz'
+#bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-09_19_35_10hz'
 
-air_id = 6
-rate = 0.1
+# F4
+bag_path = '/bags/2025_06_06-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_06_06-09_32_00_12fps'
+
+air_id = 4
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 gnss_topic = f'/AIT_Fighter{air_id}/mavros/global_position/global'
 read_ahead_queue_size = 5000

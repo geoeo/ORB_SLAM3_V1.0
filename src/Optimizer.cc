@@ -1364,12 +1364,13 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
-    size_t maxOpt=50;
+    size_t maxOpt=5000;
 
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
-    const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
+    //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
+    const vector<KeyFrame*> vNeighKFs = pMap->GetAllKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
 
     for(int i=0; i<Nd; i++) {
@@ -1537,8 +1538,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         vPoint->setEstimate(pMP->GetGNSSPos().cast<double>());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
-        //vPoint->setMarginalized(true);
-        vPoint->setFixed(true);
+        vPoint->setMarginalized(true);
+        //vPoint->setFixed(true);
         optimizer.addVertex(vPoint);
         nPoints++;
 
@@ -1591,7 +1592,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
             return;
 
     optimizer.initializeOptimization();
-    optimizer.optimize(300);
+    optimizer.optimize(100);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesBody.size());
@@ -1645,12 +1646,12 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // Get Map Mutex
     //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
-    // for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
-    //     KeyFrame* pKFi = eraseTuple.first;
-    //     MapPoint* pMPi = eraseTuple.second;
-    //     pKFi->EraseMapPointMatch(pMPi);
-    //     pMPi->EraseObservation(pKFi);
-    // });
+    for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
+        KeyFrame* pKFi = eraseTuple.first;
+        MapPoint* pMPi = eraseTuple.second;
+        pKFi->EraseMapPointMatch(pMPi);
+        pMPi->EraseObservation(pKFi);
+    });
 
     // // Recover optimized data
     // //Keyframes

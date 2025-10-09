@@ -117,7 +117,7 @@ protected:
     void ResetNewKeyFrames();
     void ProcessNewKeyFrame();
     void CreateNewMapPoints();
-    void GeoreferenceKeyframes();
+    bool GeoreferenceKeyframes();
 
     void MapPointCulling();
     void SearchInNeighbors();
@@ -187,6 +187,8 @@ protected:
     const float minTimeForFullBA;
     const float itsFIBAInit;
     const float itsFIBA1;
+    int writeKFAfterGeorefCount;
+    int writeKFAfterGBACount;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
 

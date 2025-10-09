@@ -44,7 +44,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
-    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),
+    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
     mGeometricReferencer(20)
 {
 }
@@ -89,11 +89,20 @@ void LocalMapping::Run()
             CreateNewMapPoints();
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA()){
-                GeoreferenceKeyframes();
+                const auto georef_succcess = GeoreferenceKeyframes();
+                if(georef_succcess && writeKFAfterGeorefCount == 0){
+                    Map::writeKeyframesCsv("keyframes_after_georef", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                    writeKFAfterGeorefCount = 1;
+                }
                 if(mGeometricReferencer.isInitialized()){
                     unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                    Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
+                    if(writeKFAfterGBACount == 0){
+                        Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+                        Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
+                        Map::writeKeyframesCsv("keyframes_after_gnss_bundle", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                        writeKFAfterGBACount = 1;
+                    }
                 }
             }
 
@@ -693,7 +702,7 @@ void LocalMapping::CreateNewMapPoints()
     }    
 }
 
-void LocalMapping::GeoreferenceKeyframes(){
+bool LocalMapping::GeoreferenceKeyframes(){
     auto vKF = mGeometricReferencer.getFramesToGeoref();
     Verbose::PrintMess("Georef function called with KFs :" + to_string(vKF.size()), Verbose::VERBOSITY_NORMAL);
     //TODO: include update
@@ -724,6 +733,8 @@ void LocalMapping::GeoreferenceKeyframes(){
         }
 
         mGeometricReferencer.clearFrames();
+
+        return pose_scale_opt.has_value();
     }
 
 
