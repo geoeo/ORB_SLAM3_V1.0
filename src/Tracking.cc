@@ -542,7 +542,7 @@ void Tracking::Track()
                 bOK = TrackLocalMap();
                 if(!bOK){
                     Verbose::PrintMess("Fail to track local map!", Verbose::VERBOSITY_NORMAL);
-                    setTrackingState(RECENTLY_LOST);
+                    setTrackingState(LOST);
 
                 }
 
@@ -672,14 +672,7 @@ void Tracking::Track()
         // Reset if the camera get lost soon after initialization
         if(getTrackingState()==LOST)
         {
-            if ((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)){
-                Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                mpSystem->Reset();
-                return;
-            } else if(mpAtlas->GetCurrentMap()->KeyFramesInMap()<=10){
-                mpSystem->Reset();
-                return;
-            }
+            mpSystem->Reset();
         }
 
         if(!mCurrentFrame.mpReferenceKF)
@@ -1305,89 +1298,30 @@ bool Tracking::NeedNewKeyFrame()
 
         // Local Mapping accept keyframes?
     bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
-
-    // Check how many "close" points are being tracked and how many could be potentially created.
-    int nNonTrackedClose = 0;
-    int nTrackedClose= 0;
-
-    // if(mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR)
-    // {
-    //     int N = (mCurrentFrame.Nleft == -1) ? mCurrentFrame.mNumKeypoints : mCurrentFrame.Nleft;
-    //     for(int i =0; i<N; i++)
-    //     {
-    //         if(mCurrentFrame.mvDepth[i]>0 && mCurrentFrame.mvDepth[i]<mThDepth)
-    //         {
-    //             if(mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i])
-    //                 nTrackedClose++;
-    //             else
-    //                 nNonTrackedClose++;
-
-    //         }
-    //     }
-    //     //Verbose::PrintMess("[NEEDNEWKF]-> closed points: " + to_string(nTrackedClose) + "; non tracked closed points: " + to_string(nNonTrackedClose), Verbose::VERBOSITY_NORMAL);// Verbose::VERBOSITY_DEBUG);
-    // }
-
-    bool bNeedToInsertClose;
-    bNeedToInsertClose = (nTrackedClose<100) && (nNonTrackedClose>70);
+    bLocalMappingIdle = true;
 
     // Thresholds
-    float thRefRatio = 0.9;
+    float thRefRatio = 0.75;
     if(nKFs<2)
         thRefRatio = 0.4f;
 
-    /*int nClosedPoints = nTrackedClose + nNonTrackedClose;
-    const int thStereoClosedPoints = 15;
-    if(nClosedPoints < thStereoClosedPoints && (mSensor==System::STEREO || mSensor==System::IMU_STEREO))
-    {
-        //Pseudo-monocular, there are not enough close points to be confident about the stereo observations.
-        thRefRatio = 0.9f;
-    }*/
-
-    // if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
-    //     thRefRatio = 0.9f;
-
-    // if(mpCamera2) thRefRatio = 0.75f;
-
-    // if(mSensor==System::IMU_MONOCULAR)
-    // {
-    //     if(mnMatchesInliers>350) // Points tracked from the local map
-    //         thRefRatio = 0.75f;
-    //     else
-    //         thRefRatio = 0.90f;
-    // }
-
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
-    // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames) && bLocalMappingIdle); //mpLocalMapper->KeyframesInQueue() < 2);
+    // // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
+    const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames)) && false;
     //Condition 1c: tracking is weak
-    const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.25 || bNeedToInsertClose) ;
+    const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.55) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
-    const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio || bNeedToInsertClose)) && mnMatchesInliers>15);
+    const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio)) && mnMatchesInliers>15);
 
-    // Temporal condition for Inertial cases
     bool c3 = false;
-    if(mpLastKeyFrame)
-    {
-        if (mSensor==System::IMU_MONOCULAR)
-        {
-            if ((mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.5)
-                c3 = true;
-        }
-        else if (mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD)
-        {
-            if ((mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.5)
-                c3 = true;
-        }
-    }
-
     bool c4 = false;
-    if (((mnMatchesInliers<150) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
-        c4=true;
-    else
-        c4=false;
 
-    if(((c1a||c1b||c1c) && c2)||c3 ||c4)
+    if (((mnMatchesInliers<100) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
+        c4=true;
+
+    Verbose::PrintMess("NeedNewKeyFrame: c1a " + to_string(c1a) + " c1b " + to_string(c1b) + " c1c " + to_string(c1c) + " c2 " + to_string(c2) + " c3 " + to_string(c3) + " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
+    if(((c1a||c1c) && c2)|| c3 || c4)
     {
         // If the mapping accepts keyframes, insert keyframe.
         // Otherwise send a signal to interrupt BA
@@ -1395,24 +1329,11 @@ bool Tracking::NeedNewKeyFrame()
         {
             return true;
         }
-        else
-        {
-            //mpLocalMapper->InterruptBA();
-            if(mSensor!=System::MONOCULAR  && mSensor!=System::IMU_MONOCULAR)
-            {
-                if(mpLocalMapper->KeyframesInQueue()<3)
-                    return true;
-                else
-                    return false;
-            }
-            else
-            {
-                return false;
-            }
-        }
     }
     else
         return false;
+
+    return false;
 }
 
 void Tracking::CreateNewKeyFrame()
