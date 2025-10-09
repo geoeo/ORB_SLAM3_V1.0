@@ -63,7 +63,8 @@ pair<Sophus::SE3d, double> GeometricReferencer::update(const std::vector<KeyFram
 { 
   //TODO: fix inf loop
   for (const auto& f : frames){
-    const auto gnss_position = f->GetGNSSAlignment().translation();
+    //TODO - switch to aligned slam
+    const auto gnss_position = f->GetGNSSPosition();
     const auto gnss_pose = Sophus::SE3d(Eigen::Matrix3d::Identity(), gnss_position.cast<double>());
     if(m_spatials.size() >= m_min_nrof_frames)
       m_spatials.pop_front();
