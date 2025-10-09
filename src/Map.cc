@@ -518,5 +518,56 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long u
     mvpBackupMapPoints.clear();
 }
 
+void Map::writeKeyframesCsv(const std::string& filename,
+                   const std::vector<KeyFrame*>& keyframes,
+                   char sep,
+                   int precision) 
+{
+    const auto ext = ".csv";
+
+    std::ofstream out(filename+"_world"+ext);                  // text mode is fine for CSV
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+    out << "# id" << sep << "x" << sep << "y" << sep << "z\n";
+
+    for (const auto& kf : keyframes) {
+        out << kf->GetFrameId() << sep
+            << kf->GetPoseInverse().translation().x() << sep
+            << kf->GetPoseInverse().translation().y() << sep
+            << kf->GetPoseInverse().translation().z() << '\n'; // avoid std::endl (no flush)
+    }
+    out.close();
+
+
+    std::ofstream out_gnss_raw(filename+"_raw_gnss"+ext);                  // text mode is fine for CSV
+    out_gnss_raw.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out_gnss_raw.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out_gnss_raw << std::setprecision(precision) << std::defaultfloat;
+    out_gnss_raw << "# id" << sep << "x" << sep << "y" << sep << "z\n";
+
+    for (const auto& kf : keyframes) {
+        out_gnss_raw << kf->GetFrameId() << sep
+            << kf->GetGNSSPosition().x() << sep
+            << kf->GetGNSSPosition().y() << sep
+            << kf->GetGNSSPosition().z() << '\n'; // avoid std::endl (no flush)
+    }
+    out_gnss_raw.close();
+
+    std::ofstream out_gnss_cam(filename+"_cam_gnss"+ext);                  // text mode is fine for CSV
+    out_gnss_cam.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out_gnss_cam.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out_gnss_cam << std::setprecision(precision) << std::defaultfloat;
+    out_gnss_cam << "# id" << sep << "x" << sep << "y" << sep << "z\n";
+
+    for (const auto& kf : keyframes) {
+        out_gnss_cam << kf->GetFrameId() << sep
+            << kf->GetGNSSCameraPose().translation().x() << sep
+            << kf->GetGNSSCameraPose().translation().y() << sep
+            << kf->GetGNSSCameraPose().translation().z() << '\n'; // avoid std::endl (no flush)
+    }
+    out_gnss_cam.close();
+}
+
 
 } //namespace ORB_SLAM3

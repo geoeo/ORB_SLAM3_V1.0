@@ -66,10 +66,6 @@ public:
 private:
 
     bool ParseViewerParamFile(cv::FileStorage &fSettings);
-    void writeKeyframesCsv(const std::string& path,
-        const std::vector<KeyFrame*>& keyframes,
-        char sep = ',',
-        int precision = 17);
     bool Stop();
 
     System* mpSystem;

@@ -108,6 +108,7 @@ public:
     void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, std::map<unsigned int, GeometricCamera*> &mpCams);
 
     void printReprojectionError(std::list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, std::string &name, std::string &name_folder);
+    static void writeKeyframesCsv(const std::string& path, const std::vector<KeyFrame*>& keyframes, char sep = ',', int precision = 17);
 
     std::vector<KeyFrame*> mvpKeyFrameOrigins;
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;
