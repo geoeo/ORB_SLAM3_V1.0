@@ -28,6 +28,8 @@
 
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <execution>
 
 using namespace std;
 
@@ -78,13 +80,16 @@ void LocalMapping::Run()
 
             // Triangulate new MapPoints
             CreateNewMapPoints();
-
-            GeoreferenceKeyframes();
-            if(mGeometricReferencer.isInitialized()){
-                unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
-                unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
+            
+            if(mpAtlas->GetCurrentMap()->GetInertialFullBA()){
+                GeoreferenceKeyframes();
+                if(mGeometricReferencer.isInitialized()){
+                    unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                    Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
+                }
             }
+
 
 
             mbAbortBA = false;
@@ -703,8 +708,19 @@ void LocalMapping::GeoreferenceKeyframes(){
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(3,0)) + " " + to_string(Tgw.rotationMatrix()(3,1)) + " " + to_string(Tgw.rotationMatrix()(3,2)) + " " + to_string(Tgw.translation()(3)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess("Scale: " + to_string(scale), Verbose::VERBOSITY_NORMAL);
-        for (const auto& pKF : vKF) 
-            pKF->SetGNSSAlignment(Tgw, 1.0);
+        for (const auto& pKF : vKF){
+            pKF->SetGNSSAlignment(Tgw, scale);
+            vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
+            for_each(execution::par, vpMPs.begin(), vpMPs.end(), [](auto pMP)
+            {
+                if(pMP)
+                    if(!pMP->isBad())
+                    {
+                        pMP->UpdateGNSSPos();
+                    }
+            });
+        }
+
         mGeometricReferencer.clearFrames();
     }
 

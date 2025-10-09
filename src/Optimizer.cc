@@ -1530,14 +1530,15 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for(auto pMP: lLocalMapPoints)
     {   
         //TODO: GNSS 
-        const auto updateSuccess = pMP->UpdateGNSSPos();
-        if(!updateSuccess)
-            continue;  
+        // const auto updateSuccess = pMP->UpdateGNSSPos();
+        // if(!updateSuccess)
+        //     continue;  
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
         vPoint->setEstimate(pMP->GetGNSSPos().cast<double>());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
-        vPoint->setMarginalized(true);
+        //vPoint->setMarginalized(true);
+        vPoint->setFixed(true);
         optimizer.addVertex(vPoint);
         nPoints++;
 
@@ -1657,16 +1658,20 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate().inverse(); 
         Sophus::SE3f Tgc(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
+        Sophus::SE3f Tgw = Tgc*pKFi->GetPose();
+        Sophus::Sim3f Tgw_current = pKFi->GetGNSSAlignment();
+        //float scale = Tgw_current.scale();
 
-        //TODO: How to update new pose which needs to be split up for the alignment
-        // pKFi->SetGNSSAlignment(Tgc); 
+        pKFi->SetGNSSAlignment(Tgw.cast<double>(), Tgw_current.scale()); 
         // pKFi->SetGNSSPosition(Tgw.translation()); 
     });
 
     // //Points
     for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
-        pMP->SetGNSSPosition(vPoint->estimate().cast<float>());
+        // TODO: Use Set or use Update?
+        //pMP->SetGNSSPosition(vPoint->estimate().cast<float>());
+        // auto _ = pMP->UpdateGNSSPos();
         //pMP->UpdateNormalAndDepth();
     });
 

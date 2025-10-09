@@ -119,6 +119,7 @@ void MapPoint::SetWorldPos(const Eigen::Vector3f &Pos) {
     mWorldPos = Pos;
 }
 
+//TODO: Return bool on success
 void MapPoint::SetGNSSPosition(const Eigen::Vector3f &pos) {
     unique_lock<mutex> lock(mMutexPos);
     mGNSSPos = pos;
