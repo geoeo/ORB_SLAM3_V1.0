@@ -187,14 +187,17 @@ void MapDrawer::DrawMapPoints()
 
 void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba)
 {
-    const float &w = mKeyFrameSize;
-    const float h = w*0.75;
-    const float z = w*0.6;
+
 
     Map* pActiveMap = mpAtlas->GetCurrentMap();
     // DEBUG LBA
     std::set<long unsigned int> sOptKFs = pActiveMap->msOptKFs;
     std::set<long unsigned int> sFixedKFs = pActiveMap->msFixedKFs;
+
+    const auto scales = pActiveMap->getVIBAScales();
+    const float w = scales.empty() ? mKeyFrameSize : mKeyFrameSize*scales.back();
+    const float h = w*0.75;
+    const float z = w*0.6;
 
     if(!pActiveMap)
         return;
