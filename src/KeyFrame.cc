@@ -1184,4 +1184,8 @@ KeyFrameDatabase* KeyFrame::GetKeyFrameDatabase()
     return mpKeyFrameDB;
 }
 
+long unsigned int KeyFrame::GetFrameId() const {
+    return mnFrameId;
+}
+
 } //namespace ORB_SLAM

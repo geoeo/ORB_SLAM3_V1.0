@@ -49,6 +49,7 @@ namespace ORB_SLAM3
 {
 
 class FrameDrawer;
+class MapDrawer;
 class Tracking;
 class LocalMapping;
 class LoopClosing;

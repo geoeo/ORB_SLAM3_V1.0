@@ -93,26 +93,22 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
   mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
 
   //Create the Atlas
-  mpAtlas = new Atlas(0);
+    mpAtlas = new Atlas(0);
 
-  if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
-    mpAtlas->SetInertialSensor();
+    if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
+        mpAtlas->SetInertialSensor();
 
-  settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor, frameGridCols, frameGridRows);
+    settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor, frameGridCols, frameGridRows);
 
-  cout << (*settings_) << endl;
+    cout << (*settings_) << endl;
 
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, std::string(), settings_);
     
 
+    //Initialize the Tracking thread
+    //(it will live in the main thread of execution, the one that called this constructor)
 
-
-  //Initialize the Tracking thread
-  //(it will live in the main thread of execution, the one that called this constructor)
-
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                                mpAtlas, mpKeyFrameDatabase, std::string(), mSensor, settings_);
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
@@ -129,20 +125,11 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     else
         mpLocalMapper->mbFarPoints = false;
 
-    //Initialize the Loop Closing thread and launch
-    // mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR
-    //mpLoopCloser = new LoopClosing(mpAtlas, mpKeyFrameDatabase, mpVocabulary, mSensor!=MONOCULAR, activeLC); // mSensor!=MONOCULAR);
-    //mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
-
+    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
+                    mpAtlas, mpKeyFrameDatabase, std::string(), mSensor, settings_);
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
-    //mpTracker->SetLoopClosing(mpLoopCloser);
-
     mpLocalMapper->SetTracker(mpTracker);
-    //mpLocalMapper->SetLoopCloser(mpLoopCloser);
-
-    //mpLoopCloser->SetTracker(mpTracker);
-    //mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
     //Initialize the Viewer thread and launch
     if(bUseViewer)
@@ -150,7 +137,6 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,std::string(),settings_);
         mptViewer = new thread(&Viewer::Run, mpViewer);
         mpTracker->SetViewer(mpViewer);
-        //mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
     }
 

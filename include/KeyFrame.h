@@ -160,10 +160,11 @@ public:
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
     KeyFrameDatabase* GetKeyFrameDatabase();
+    long unsigned int GetFrameId() const;
 
     bool bImu;
 
-    // The following variables are accessed from only 1 thread or never change (no mutex needed).
+    // The following variables are accessed from only 1 thread or never change (no mutemnFrameIdx needed).
 public:
 
     static long unsigned int nNextId;
