@@ -716,7 +716,6 @@ bool LocalMapping::GeoreferenceKeyframes(){
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess(to_string(Tgw.rotationMatrix()(3,0)) + " " + to_string(Tgw.rotationMatrix()(3,1)) + " " + to_string(Tgw.rotationMatrix()(3,2)) + " " + to_string(Tgw.translation()(3)), Verbose::VERBOSITY_NORMAL);
         Verbose::PrintMess("Scale: " + to_string(scale), Verbose::VERBOSITY_NORMAL);
 
         for (const auto& pKF : vKF){
@@ -725,22 +724,21 @@ bool LocalMapping::GeoreferenceKeyframes(){
             const auto Tgc = pKF->GetGNSSAlignment()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
             pKF->SetGNSSCameraPose(Tgc);
             vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
-            for_each(execution::par, vpMPs.begin(), vpMPs.end(), [](auto pMP)
+            for_each(execution::par, vpMPs.begin(), vpMPs.end(), [&pKF](auto pMP)
             {
                 if(pMP)
                     if(!pMP->isBad())
                     {
-                        pMP->UpdateGNSSPos();
+                        pMP->UpdateGNSSPos(pKF->GetGNSSAlignment());
                     }
             });
         }
 
         mGeometricReferencer.clearFrames();
-
-        return pose_scale_opt.has_value();
     }
 
 
+    return pose_scale_opt.has_value();
 }
 
 void LocalMapping::SearchInNeighbors()

@@ -42,7 +42,6 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map* pMap):
     mnOriginMapId(pMap->GetId()), mGNSSPos(Eigen::Vector3d::Zero())
 {
     SetWorldPos(Pos);
-    UpdateGNSSPos();
 
     mNormalVector.setZero();
 
@@ -125,18 +124,11 @@ void MapPoint::SetGNSSPosition(const Eigen::Vector3d &pos) {
     mGNSSPos = pos;
 }
 
-bool MapPoint::UpdateGNSSPos() {
+void MapPoint::UpdateGNSSPos(const Sophus::Sim3d &Tgw) {
     //unique_lock<mutex> lock2(mGlobalMutex);  // check this
-    auto updateSuccess = false;
     unique_lock<mutex> lock(mMutexPos);
-    if(mpRefKF){
-        //TODO: CHeck if this should be camera pose
-        const auto Tgw = mpRefKF->GetGNSSAlignment();
-        mGNSSPos = Tgw*mWorldPos.cast<double>();
-        updateSuccess = true;
-    }
-    
-    return updateSuccess;
+    mGNSSPos = Tgw*mWorldPos.cast<double>();
+
 }
 
 Eigen::Vector3f MapPoint::GetWorldPos() {

@@ -53,31 +53,27 @@ optional<pair<Sophus::SE3d, double>> GeometricReferencer::init(const std::vector
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
 
-  auto [pose, scale] = update(frames); 
+  for (const auto& f : frames){
+    if(m_spatials.size() >= m_min_nrof_frames)
+      m_spatials.pop_front();
+    m_spatials.push_back(f);
+  }
+
+  auto [pose, scale] = update(m_spatials); 
 
   m_is_initialized = true;
   return {{pose, scale}};
 }
 
-pair<Sophus::SE3d, double> GeometricReferencer::update(const std::vector<KeyFrame*> &frames)
+pair<Sophus::SE3d, double> GeometricReferencer::update(const std::deque<KeyFrame *> &spatials)
 { 
-  //TODO: fix inf loop
-  for (const auto& f : frames){
-    //TODO - switch to aligned slam
-    const auto gnss_pose = Sophus::SE3d(f->GetGNSSCameraPose().quaternion().normalized(), f->GetGNSSCameraPose().translation());
-    if(m_spatials.size() >= m_min_nrof_frames)
-      m_spatials.pop_front();
-    m_spatials.push_back({gnss_pose, f->GetPoseInverse().cast<double>()});
-  }
-
-  const auto [pose, scale] = estimateGeorefTransform(m_spatials, Sophus::SE3d(), true);
+  const auto [pose, scale] = estimateGeorefTransform(spatials, true);
   mTgw_current = pose;
   mSgw_current = scale;
   return {pose, scale};
-
 }
 
-pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const std::deque<pair<Sophus::SE3d, Sophus::SE3d>> &spatials, const Sophus::SE3d &T_w2g_init, bool estimate_scale)
+pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale)
 {
   // First define basic eigen variables
   const auto measurements = 4;
@@ -88,8 +84,9 @@ pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const st
   int i, j;
   for (i = 0, j = 0; i < spatials.size(); ++i, j+=measurements)
   {
+    const auto f = spatials[i];
     // The measurements of the gnss receiver
-    auto T_rec2g_gis = spatials[i].first;
+    auto T_rec2g_gis = f->GetGNSSCameraPose();
 
     auto e_gis_0 = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
     auto e_gis_x = T_rec2g_gis* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
@@ -101,8 +98,13 @@ pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const st
     dst_points.col(j+2) << e_gis_z(0), e_gis_z(1), e_gis_z(2);
     dst_points.col(j+3) << e_gis_0(0), e_gis_0(1), e_gis_0(2);
 
-    auto T_c2w = spatials[i].second;
-    auto T_c2g = T_w2g_init*T_c2w;
+    const auto Twc = f->GetPoseInverse();
+    const auto Twc_sim3 = Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(), Twc.translation().cast<double>());
+    //TODO: Using alignment as prior seems to cause issues
+    auto Tgw_sim3_alignment = f->GetGNSSAlignment();
+    //Twc_sim3_alignment.setScale(1.0);
+    //const auto T_c2g = Tgw_sim3_alignment*Twc_sim3;
+    const auto T_c2g = Twc_sim3;
 
     auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
     auto e_vis_x = T_c2g* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);

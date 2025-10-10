@@ -21,7 +21,7 @@ namespace ORB_SLAM3
     void addKeyFrame(KeyFrame* kf);
     std::vector<KeyFrame*> getFramesToGeoref();
     std::optional<std::pair<Sophus::SE3d, double>> init(const std::vector<KeyFrame*> &frames);
-    std::pair<Sophus::SE3d, double> update(const std::vector<KeyFrame*> &frames);
+    std::pair<Sophus::SE3d, double> update(const std::deque<KeyFrame *> &spatials);
     std::pair<Sophus::SE3d, double> getCurrentTransform() const;
 
     bool isInitialized() const;
@@ -35,9 +35,9 @@ namespace ORB_SLAM3
     double mSgw_current;
 
     std::vector<KeyFrame*> m_frames_to_georef;
-    std::deque<std::pair<Sophus::SE3d, Sophus::SE3d>> m_spatials;
+    std::deque<KeyFrame *> m_spatials;
 
-    static std::pair<Sophus::SE3d, double> estimateGeorefTransform(const std::deque<std::pair<Sophus::SE3d, Sophus::SE3d>> &spatials, const Sophus::SE3d &T_w2g_init, bool estimate_scale);
+    static std::pair<Sophus::SE3d, double> estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
 
   };
 
