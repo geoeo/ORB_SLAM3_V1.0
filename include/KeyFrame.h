@@ -54,7 +54,6 @@ public:
     void SetVelocity(const Eigen::Vector3f &Vw_);
 
     Sophus::SE3f GetPose();
-
     Sophus::SE3f GetPoseInverse();
     Eigen::Vector3f GetCameraCenter();
 
@@ -64,11 +63,11 @@ public:
     Eigen::Matrix3f GetRotation();
     Eigen::Vector3f GetTranslation();
     Eigen::Vector3f GetVelocity();
-    Eigen::Vector3f GetGNSSPosition();
-    Sophus::Sim3f GetGNSSAlignment();
-    Sophus::Sim3f GetGNSSCameraPose();
+    Eigen::Vector3d GetRawGNSSPosition();
+    Sophus::Sim3d GetGNSSAlignment();
+    Sophus::Sim3d GetGNSSCameraPose();
     void SetGNSSAlignment(const Sophus::SE3d &transform, const double scale);
-    void SetGNSSPosition(const Eigen::Vector3f &pos);
+    void SetGNSSCameraPose(const Sophus::Sim3d &transform);
     bool isVelocitySet();
     bool isGNSSSet() const;
 
@@ -287,7 +286,9 @@ protected:
     Eigen::Matrix3f mRcw;
     Sophus::SE3f mTwc;
     Eigen::Matrix3f mRwc;
-    Sophus::Sim3f mTgw;
+    const Eigen::Vector3d mRawGNSSPosition;
+    Sophus::Sim3d mTgw;
+    Sophus::Sim3d mTgc;
 
     // IMU position
     Eigen::Vector3f mOwb;

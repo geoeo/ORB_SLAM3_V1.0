@@ -721,6 +721,9 @@ bool LocalMapping::GeoreferenceKeyframes(){
 
         for (const auto& pKF : vKF){
             pKF->SetGNSSAlignment(Tgw, scale);
+            const auto Twc = pKF->GetPoseInverse();
+            const auto Tgc = pKF->GetGNSSAlignment()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
+            pKF->SetGNSSCameraPose(Tgc);
             vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
             for_each(execution::par, vpMPs.begin(), vpMPs.end(), [](auto pMP)
             {

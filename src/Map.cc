@@ -548,9 +548,9 @@ void Map::writeKeyframesCsv(const std::string& filename,
 
     for (const auto& kf : keyframes) {
         out_gnss_raw << kf->GetFrameId() << sep
-            << kf->GetGNSSPosition().x() << sep
-            << kf->GetGNSSPosition().y() << sep
-            << kf->GetGNSSPosition().z() << '\n'; // avoid std::endl (no flush)
+            << kf->GetRawGNSSPosition().x() << sep
+            << kf->GetRawGNSSPosition().y() << sep
+            << kf->GetRawGNSSPosition().z() << '\n'; // avoid std::endl (no flush)
     }
     out_gnss_raw.close();
 

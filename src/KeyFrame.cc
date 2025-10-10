@@ -37,7 +37,7 @@ KeyFrame::KeyFrame():
         mfLogScaleFactor(0), mvScaleFactors(0),mvInvScaleFactors(0), mvLevelSigma2(0), mvInvLevelSigma2(0), mnMinX(0), mnMinY(0), mnMaxX(0),
         mnMaxY(0), mPrevKF(static_cast<KeyFrame*>(NULL)), mNextKF(static_cast<KeyFrame*>(NULL)), mbFirstConnection(true), mpParent(NULL), mbNotErase(false),
         mbToBeErased(false), mbBad(false), mHalfBaseline(0), mbCurrentPlaceRecognition(false), mnMergeCorrectedForKF(0),
-        NLeft(0),NRight(0), mnNumberOfOpt(0), mTgw(Sophus::Sim3f()), mbHasVelocity(false), mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false)
+        NLeft(0),NRight(0), mnNumberOfOpt(0), mRawGNSSPosition(Eigen::Vector3d::Zero()), mTgw(Sophus::Sim3d()), mTgc(Sophus::Sim3d()), mbHasVelocity(false), mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false)
 {
 }
 
@@ -59,7 +59,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
     mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), 
-    mTgw(Sophus::Sim3f()),mbHasVelocity(false), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
+    mRawGNSSPosition(F.GetGNSS().cast<double>()), mTgw(Sophus::Sim3d()), mTgc(Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),F.GetGNSS().cast<double>())) ,
+    mbHasVelocity(false), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
 {
     mnId=nNextId++;
     mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
@@ -165,34 +166,34 @@ Eigen::Vector3f KeyFrame::GetVelocity()
     return mVw;
 }
 
-Eigen::Vector3f KeyFrame::GetGNSSPosition()
+Eigen::Vector3d KeyFrame::GetRawGNSSPosition()
 {
     unique_lock<mutex> lock(mMutexPose);
-    return mGNSSPosition;
+    return mRawGNSSPosition;
 }
 
-Sophus::Sim3f KeyFrame::GetGNSSAlignment()
+Sophus::Sim3d KeyFrame::GetGNSSAlignment()
 {
     unique_lock<mutex> lock(mMutexPose);
     return mTgw;
 }
 
-Sophus::Sim3f KeyFrame::GetGNSSCameraPose()
+Sophus::Sim3d KeyFrame::GetGNSSCameraPose()
 {
     unique_lock<mutex> lock(mMutexPose);
-    return mTgw*Sophus::Sim3f(1.0,mTwc.unit_quaternion(),mTwc.translation());
+    return mTgc;
 }
 
 void KeyFrame::SetGNSSAlignment(const Sophus::SE3d &transform, double scale)
 {
     unique_lock<mutex> lock(mMutexPose);
-    mTgw = Sophus::Sim3f(static_cast<float>(scale),transform.unit_quaternion().cast<float>(),transform.translation().cast<float>());
+    mTgw = Sophus::Sim3d(scale,transform.unit_quaternion(),transform.translation());
 }
 
-void KeyFrame::SetGNSSPosition(const Eigen::Vector3f &pos)
+void KeyFrame::SetGNSSCameraPose(const Sophus::Sim3d &transform)
 {
     unique_lock<mutex> lock(mMutexPose);
-    mGNSSPosition = pos;
+    mTgc = transform;
 }
 
 bool KeyFrame::isVelocitySet()

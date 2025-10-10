@@ -29,7 +29,7 @@ MapPoint::MapPoint():
     mnFirstKFid(0), mnFirstFrame(0), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mnVisible(1), mnFound(1), mbBad(false),
-    mpReplaced(static_cast<MapPoint*>(NULL)), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(Eigen::Vector3f::Zero())
+    mpReplaced(static_cast<MapPoint*>(NULL)), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(Eigen::Vector3d::Zero())
 {
     mpReplaced = static_cast<MapPoint*>(NULL);
 }
@@ -39,7 +39,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, KeyFrame *pRefKF, Map* pMap):
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
     mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
-    mnOriginMapId(pMap->GetId()), mGNSSPos(Eigen::Vector3f::Zero())
+    mnOriginMapId(pMap->GetId()), mGNSSPos(Eigen::Vector3d::Zero())
 {
     SetWorldPos(Pos);
     UpdateGNSSPos();
@@ -59,7 +59,7 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF,
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
     mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
-    mnOriginMapId(pMap->GetId()), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(Eigen::Vector3f::Zero())
+    mnOriginMapId(pMap->GetId()), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(Eigen::Vector3d::Zero())
 {
     mInvDepth=invDepth;
     mInitU=(double)uv_init.x;
@@ -79,7 +79,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
     mnBALocalForKF(0), mnFuseCandidateForKF(0),mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(static_cast<KeyFrame*>(NULL)), mnVisible(1),
     mnFound(1), mbBad(false), mpReplaced(NULL), mpMap(pMap), mnOriginMapId(pMap->GetId()), 
-    mGNSSPos(Eigen::Vector3f::Zero())
+    mGNSSPos(Eigen::Vector3d::Zero())
 {
     SetWorldPos(Pos);
 
@@ -120,7 +120,7 @@ void MapPoint::SetWorldPos(const Eigen::Vector3f &Pos) {
 }
 
 //TODO: Return bool on success
-void MapPoint::SetGNSSPosition(const Eigen::Vector3f &pos) {
+void MapPoint::SetGNSSPosition(const Eigen::Vector3d &pos) {
     unique_lock<mutex> lock(mMutexPos);
     mGNSSPos = pos;
 }
@@ -132,7 +132,7 @@ bool MapPoint::UpdateGNSSPos() {
     if(mpRefKF){
         //TODO: CHeck if this should be camera pose
         const auto Tgw = mpRefKF->GetGNSSAlignment();
-        mGNSSPos = Tgw*mWorldPos;
+        mGNSSPos = Tgw*mWorldPos.cast<double>();
         updateSuccess = true;
     }
     
@@ -144,7 +144,7 @@ Eigen::Vector3f MapPoint::GetWorldPos() {
     return mWorldPos;
 }
 
-Eigen::Vector3f MapPoint::GetGNSSPos() {
+Eigen::Vector3d MapPoint::GetGNSSPos() {
     unique_lock<mutex> lock(mMutexPos);
     return mGNSSPos;
 }

@@ -1366,7 +1366,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     list<KeyFrame*> lLocalKeyFrames;
     size_t maxOpt=5000;
 
-    lLocalKeyFrames.push_back(pKF);
+    //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
     //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
@@ -1460,9 +1460,9 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         //TODO: GNSS 
-        Sophus::Sim3f Tgc = pKFi->GetGNSSCameraPose();
-        Eigen::Vector3f t = Tgc.translation();
-        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.rxso3().quaternion().normalized().cast<double>(), t.cast<double>()).inverse();
+        Sophus::Sim3d Tgc = pKFi->GetGNSSCameraPose();
+        Eigen::Vector3d t = Tgc.translation();
+        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), t).inverse();
         auto vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
@@ -1481,9 +1481,9 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     {
         //TODO: GNSS 
         auto vSE3 = new g2o::VertexSE3Expmap();
-        Sophus::Sim3f Tgc = pKFi->GetGNSSCameraPose();
-        Eigen::Vector3f t = Tgc.translation();
-        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.rxso3().quaternion().normalized().cast<double>(), t.cast<double>()).inverse();
+        Sophus::Sim3d Tgc = pKFi->GetGNSSCameraPose();
+        Eigen::Vector3d t = Tgc.translation();
+        g2o::SE3Quat Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), t).inverse();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
         vSE3->setFixed(true);
@@ -1493,6 +1493,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         // DEBUG LBA
         pMap->msFixedKFs.insert(pKFi->mnId);
     });
+
+    Verbose::PrintMess("LM-LGNSSBA: Fixed KFs:" + to_string(lFixedCameras.size()), Verbose::VERBOSITY_NORMAL);
 
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
@@ -1535,7 +1537,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         // if(!updateSuccess)
         //     continue;  
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
-        vPoint->setEstimate(pMP->GetGNSSPos().cast<double>());
+        vPoint->setEstimate(pMP->GetGNSSPos());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
@@ -1653,18 +1655,15 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         pMPi->EraseObservation(pKFi);
     });
 
+
+
     // // Recover optimized data
     // //Keyframes
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer](auto pKFi) {
         g2o::VertexSE3Expmap* vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         g2o::SE3Quat SE3quat = vSE3->estimate().inverse(); 
-        Sophus::SE3f Tgc(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
-        Sophus::SE3f Tgw = Tgc*pKFi->GetPose();
-        Sophus::Sim3f Tgw_current = pKFi->GetGNSSAlignment();
-        //float scale = Tgw_current.scale();
-
-        pKFi->SetGNSSAlignment(Tgw.cast<double>(), Tgw_current.scale()); 
-        // pKFi->SetGNSSPosition(Tgw.translation()); 
+        const auto Tgc_current = pKFi->GetGNSSCameraPose();
+        pKFi->SetGNSSCameraPose(Sophus::Sim3d(Tgc_current.scale(),SE3quat.rotation().normalized(),SE3quat.translation())); 
     });
 
     // //Points
@@ -1676,11 +1675,19 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         //pMP->UpdateNormalAndDepth();
     });
 
-    // auto [Tgw, scale] = geoReferencer.update(vector<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
+    auto [Tgw, scale] = geoReferencer.update(pMap->GetAllKeyFrames());
 
-    // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw, scale](auto pKFi) {
-    //     pKFi->SetGNSSAlignment(Tgw, scale);
-    // });
+    Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(3,0)) + " " + to_string(Tgw.rotationMatrix()(3,1)) + " " + to_string(Tgw.rotationMatrix()(3,2)) + " " + to_string(Tgw.translation()(3)), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Scale: " + to_string(scale), Verbose::VERBOSITY_NORMAL);
+
+    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw, scale](auto pKFi) {
+        pKFi->SetGNSSAlignment(Tgw, scale);
+    });
     
 
 

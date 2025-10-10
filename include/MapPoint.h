@@ -45,8 +45,8 @@ public:
     void SetWorldPos(const Eigen::Vector3f &Pos);
     Eigen::Vector3f GetWorldPos();
 
-    Eigen::Vector3f GetGNSSPos();
-    void SetGNSSPosition(const Eigen::Vector3f &pos);
+    Eigen::Vector3d GetGNSSPos();
+    void SetGNSSPosition(const Eigen::Vector3d &pos);
     bool UpdateGNSSPos();
 
     Eigen::Vector3f GetNormal();
@@ -146,7 +146,7 @@ protected:
 
      // Position in absolute coordinates
      Eigen::Vector3f mWorldPos;
-     Eigen::Vector3f mGNSSPos;
+     Eigen::Vector3d mGNSSPos;
 
      // Keyframes observing the point and associated index in keyframe
      std::map<KeyFrame*,std::tuple<int,int> > mObservations;
