@@ -37,7 +37,7 @@ namespace ORB_SLAM3
     std::vector<KeyFrame*> m_frames_to_georef;
     std::deque<KeyFrame *> m_spatials;
 
-    static std::pair<Sophus::SE3d, double> estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
+    std::pair<Sophus::SE3d, double> estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
 
   };
 

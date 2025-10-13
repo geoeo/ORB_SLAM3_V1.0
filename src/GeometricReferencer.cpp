@@ -93,28 +93,30 @@ pair<Sophus::SE3d, double> GeometricReferencer::estimateGeorefTransform(const st
     auto e_gis_y = T_rec2g_gis* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
     auto e_gis_z = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
 
-    dst_points.col(j) << e_gis_x(0), e_gis_x(1), e_gis_x(2);
-    dst_points.col(j+1) << e_gis_y(0), e_gis_y(1), e_gis_y(2);
-    dst_points.col(j+2) << e_gis_z(0), e_gis_z(1), e_gis_z(2);
-    dst_points.col(j+3) << e_gis_0(0), e_gis_0(1), e_gis_0(2);
+    dst_points.col(j) << e_gis_0(0), e_gis_0(1), e_gis_0(2);
+    dst_points.col(j+1) << e_gis_x(0), e_gis_x(1), e_gis_x(2);
+    dst_points.col(j+2) << e_gis_y(0), e_gis_y(1), e_gis_y(2);
+    dst_points.col(j+3) << e_gis_z(0), e_gis_z(1), e_gis_z(2);
 
     const auto Twc = f->GetPoseInverse();
     const auto Twc_sim3 = Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(), Twc.translation().cast<double>());
     //TODO: Using alignment as prior seems to cause issues
-    auto Tgw_sim3_alignment = f->GetGNSSAlignment();
+    //auto Tgw_sim3_alignment = f->GetGNSSAlignment();
+    auto Tgw_sim3_alignment = Sophus::Sim3d(mSgw_current,mTgw_current.unit_quaternion(), mTgw_current.translation());
     //Twc_sim3_alignment.setScale(1.0);
-    //const auto T_c2g = Tgw_sim3_alignment*Twc_sim3;
-    const auto T_c2g = Twc_sim3;
+    const auto T_c2g = Tgw_sim3_alignment*Twc_sim3;
+    //const auto T_c2g = Twc_sim3;
 
     auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
     auto e_vis_x = T_c2g* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
     auto e_vis_y = T_c2g* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
     auto e_vis_z = T_c2g* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
 
-    src_points.col(j) << e_vis_x(0), e_vis_x(1), e_vis_x(2);
-    src_points.col(j+1) << e_vis_y(0), e_vis_y(1), e_vis_y(2);
-    src_points.col(j+2) << e_vis_z(0), e_vis_z(1), e_vis_z(2);
-    src_points.col(j+3 ) << e_vis_0(0), e_vis_0(1), e_vis_0(2);
+    src_points.col(j ) << e_vis_0(0), e_vis_0(1), e_vis_0(2);
+    src_points.col(j+1) << e_vis_x(0), e_vis_x(1), e_vis_x(2);
+    src_points.col(j+2) << e_vis_y(0), e_vis_y(1), e_vis_y(2);
+    src_points.col(j+3) << e_vis_z(0), e_vis_z(1), e_vis_z(2);
+
   }
   
   // Estimates the aligning transformation from camera to gnss coordinate system
