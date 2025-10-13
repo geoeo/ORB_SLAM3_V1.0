@@ -1306,34 +1306,29 @@ bool Tracking::NeedNewKeyFrame()
         thRefRatio = 0.4f;
 
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
-    const bool c1a = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
+    const bool c1 = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
     // // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-    const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames)) && false;
+    //const bool c1b = ((mCurrentFrame.mnId>=mnLastKeyFrameId+mMinFrames)) && false;
     //Condition 1c: tracking is weak
-    const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.55) ;
+    //const bool c1c = mSensor!=System::MONOCULAR && mSensor!=System::IMU_MONOCULAR && mSensor!=System::IMU_STEREO && mSensor!=System::IMU_RGBD && (mnMatchesInliers<nRefMatches*0.55) ;
     // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
     const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio)) && mnMatchesInliers>15);
 
-    bool c3 = false;
+    //bool c3 = false;
     bool c4 = false;
 
-    if (((mnMatchesInliers<100) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
+    if (((mnMatchesInliers<150) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
         c4=true;
 
-    Verbose::PrintMess("NeedNewKeyFrame: c1a " + to_string(c1a) + " c1b " + to_string(c1b) + " c1c " + to_string(c1c) + " c2 " + to_string(c2) + " c3 " + to_string(c3) + " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
-    if(((c1a||c1c) && c2)|| c3 || c4)
+    Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
+    if((c1 && c2 ) || c4)
     {
-        // If the mapping accepts keyframes, insert keyframe.
-        // Otherwise send a signal to interrupt BA
-        if(bLocalMappingIdle || mpLocalMapper->IsInitializing())
-        {
-            return true;
-        }
+        return true; 
     }
     else
         return false;
 
-    return false;
+    return true;
 }
 
 void Tracking::CreateNewKeyFrame()
