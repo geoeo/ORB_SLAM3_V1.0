@@ -58,6 +58,8 @@ public:
     
     void static LocalGNSSBundleAdjustment(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
 
+    void static LocalGNSSBundleAdjustmentSim3(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
+
     int static PoseOptimization(Frame* pFrame);
     int static PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit = false);
     int static PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThreshold, bool bRecInit = false);
