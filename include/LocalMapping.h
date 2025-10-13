@@ -190,9 +190,14 @@ protected:
     int writeKFAfterGeorefCount;
     int writeKFAfterGBACount;
 
-    std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
+    bool mbUseGNSS;
+    bool mbUseGNSSBA;
+    bool mbWriteGNSSData;
 
+    std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
     GeometricReferencer mGeometricReferencer;
+
+
 
     };
 

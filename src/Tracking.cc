@@ -1317,11 +1317,11 @@ bool Tracking::NeedNewKeyFrame()
     //bool c3 = false;
     bool c4 = false;
 
-    if (((mnMatchesInliers<150) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
+    if (((mnMatchesInliers<200) || getTrackingState()==RECENTLY_LOST)) // MODIFICATION_2, originally ((((mnMatchesInliers<75) && (mnMatchesInliers>15)) || mState==RECENTLY_LOST) && ((mSensor == System::IMU_MONOCULAR)))
         c4=true;
 
     Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
-    if((c1 && c2 ) || c4)
+    if((c1 && c2) || c4)
     {
         return true; 
     }

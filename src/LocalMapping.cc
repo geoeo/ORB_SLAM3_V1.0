@@ -45,7 +45,8 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
     itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
-    mGeometricReferencer(20)
+    mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), 
+    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
 }
 
@@ -84,23 +85,24 @@ void LocalMapping::Run()
             ProcessNewKeyFrame();
             // Check recent MapPoints
             MapPointCulling();
-
             // Triangulate new MapPoints
             CreateNewMapPoints();
             
-            if(mpAtlas->GetCurrentMap()->GetInertialFullBA()){
+            if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
                 const auto georef_succcess = GeoreferenceKeyframes();
                 if(georef_succcess && writeKFAfterGeorefCount == 0){
-                    Map::writeKeyframesCsv("keyframes_after_georef", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                    if(mbWriteGNSSData)
+                        Map::writeKeyframesCsv("keyframes_after_georef", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
                     writeKFAfterGeorefCount = 1;
                 }
-                if(mGeometricReferencer.isInitialized()){
+                if(mGeometricReferencer.isInitialized() && mbUseGNSSBA){
                     unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                     if(writeKFAfterGBACount == 0){
                         Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
                         Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
-                        Map::writeKeyframesCsv("keyframes_after_gnss_bundle", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                        if(mbWriteGNSSData)
+                            Map::writeKeyframesCsv("keyframes_after_gnss_bundle", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
                         writeKFAfterGBACount = 1;
                     }
                 }

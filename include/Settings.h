@@ -70,6 +70,10 @@ namespace ORB_SLAM3 {
         float minTimeForFullBA;
         float itsFIBAInit;
         float itsFIBA1;
+        bool useGNSS;
+        bool useGNSSBA;
+        bool writeGNSSData; 
+        int minGeorefFrames;
     };
 
     //TODO: change to double instead of float
