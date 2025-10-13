@@ -1590,7 +1590,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         if(pMP->isBad())
             return;
 
-        if(e->chi2()>5.991 && !e->isDepthPositive())
+        if(e->chi2()>5.991 || !e->isDepthPositive())
         {
             KeyFrame* pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));
@@ -1617,10 +1617,10 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // Recover optimized data
     //Keyframes
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer, &geoReferencer](auto pKFi) {
-        auto vSE3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(pKFi->mnId));
+        auto vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         const auto SE3quat = vSE3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
-        pKFi->SetGNSSCameraPose(Sophus::Sim3d(SE3quat.scale(),SE3quat.rotation().normalized(),SE3quat.translation()));
+        pKFi->SetGNSSCameraPose(Sophus::Sim3d(Tgc_current.scale(),SE3quat.rotation().normalized(),SE3quat.translation()));
 
         // Make sure all Kfs have a set alignment
         const auto [pose, scale] = geoReferencer.getCurrentTransform();
@@ -1753,13 +1753,13 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         const auto Tgc = pKFi->GetGNSSCameraPose();
         const auto t = Tgc.translation();
         auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), t, Tgc.scale()).inverse();
-        auto vSE3 = new g2o::VertexSim3Expmap();
-        vSE3->setEstimate(Tcg);
-        vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
-        vSE3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
-        vSE3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
-        optimizer.addVertex(vSE3);
+        auto vSim3 = new g2o::VertexSim3Expmap();
+        vSim3->setEstimate(Tcg);
+        vSim3->setId(pKFi->mnId);
+        vSim3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        vSim3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
+        vSim3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
+        optimizer.addVertex(vSim3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
         // DEBUG LBA
@@ -1774,13 +1774,13 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         const auto Tgc = pKFi->GetGNSSCameraPose();
         const auto t = Tgc.translation();
         auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), t, Tgc.scale()).inverse();
-        auto vSE3 = new g2o::VertexSim3Expmap();
-        vSE3->setEstimate(Tcg);
-        vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(true);
-        vSE3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
-        vSE3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
-        optimizer.addVertex(vSE3);
+        auto vSim3 = new g2o::VertexSim3Expmap();
+        vSim3->setEstimate(Tcg);
+        vSim3->setId(pKFi->mnId);
+        vSim3->setFixed(true);
+        vSim3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
+        vSim3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
+        optimizer.addVertex(vSim3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
         // DEBUG LBA
@@ -1886,7 +1886,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         const auto v2 = static_cast<const g2o::VertexPointXYZ*>(e->vertices()[0]);
         const auto is_depth_positive = (v1->estimate().map(v2->estimate()))(2) > 0.0;
 
-        if(e->chi2()>5.991 && is_depth_positive)
+        if(e->chi2()>5.991 || is_depth_positive)
         {
             KeyFrame* pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));
@@ -1915,10 +1915,10 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     // Recover optimized data
     //Keyframes
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer, &geoReferencer](auto pKFi) {
-        auto vSE3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(pKFi->mnId));
-        auto SE3quat = vSE3->estimate().inverse(); 
+        auto vSim3 = static_cast<g2o::VertexSim3Expmap*>(optimizer.vertex(pKFi->mnId));
+        auto vSim3_inverse = vSim3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
-        pKFi->SetGNSSCameraPose(Sophus::Sim3d(SE3quat.scale(),SE3quat.rotation().normalized(),SE3quat.translation()));
+        pKFi->SetGNSSCameraPose(Sophus::Sim3d(vSim3_inverse.scale(),vSim3_inverse.rotation().normalized(),vSim3_inverse.translation()));
 
         // Make sure all Kfs have a set alignment
         const auto [pose, scale] = geoReferencer.getCurrentTransform();
