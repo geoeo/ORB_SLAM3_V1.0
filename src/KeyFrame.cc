@@ -184,10 +184,10 @@ Sophus::Sim3d KeyFrame::GetGNSSCameraPose()
     return mTgc;
 }
 
-void KeyFrame::SetGNSSAlignment(const Sophus::SE3d &transform, double scale)
+void KeyFrame::SetGNSSAlignment(const Sophus::Sim3d &transform)
 {
     unique_lock<mutex> lock(mMutexPose);
-    mTgw = Sophus::Sim3d(scale,transform.unit_quaternion(),transform.translation());
+    mTgw = transform;
 }
 
 void KeyFrame::SetGNSSCameraPose(const Sophus::Sim3d &transform)
