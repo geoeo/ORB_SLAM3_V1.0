@@ -709,14 +709,6 @@ bool LocalMapping::GeoreferenceKeyframes(){
     auto pose_scale_opt = mGeometricReferencer.init(vKF);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
-
-        Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
-
         for (const auto& pKF : vKF){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());

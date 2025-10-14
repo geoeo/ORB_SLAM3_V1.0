@@ -62,6 +62,14 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
 { 
   const auto pose = estimateGeorefTransform(spatials, true);
   mTgw_current = pose*mTgw_current; //TODO: Fix this
+
+  Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(0,0)) + " " + to_string(mTgw_current.rotationMatrix()(0,1)) + " " + to_string(mTgw_current.rotationMatrix()(0,2)) + " " + to_string(mTgw_current.translation()(0)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(1,0)) + " " + to_string(mTgw_current.rotationMatrix()(1,1)) + " " + to_string(mTgw_current.rotationMatrix()(1,2)) + " " + to_string(mTgw_current.translation()(1)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(2,0)) + " " + to_string(mTgw_current.rotationMatrix()(2,1)) + " " + to_string(mTgw_current.rotationMatrix()(2,2)) + " " + to_string(mTgw_current.translation()(2)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Scale: " + to_string(mTgw_current.scale()), Verbose::VERBOSITY_NORMAL);
+
   return mTgw_current;
 }
 
@@ -128,7 +136,15 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
 
 
   // Estimates the aligning transformation from camera to gnss coordinate system
-  Eigen::Matrix4d T_g2receiver_refine = Eigen::umeyama(src_points, dst_points, estimate_scale);
+  Eigen::Matrix4d Tgw_mat = Eigen::umeyama(src_points, dst_points, estimate_scale);
+  const auto Tgw = Sophus::Sim3d(Tgw_mat);
 
-  return Sophus::Sim3d(T_g2receiver_refine);
+  Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
+
+  return Tgw;
 }

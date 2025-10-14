@@ -1629,14 +1629,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         pMP->SetGNSSPosition(vPoint->estimate());
     });
 
-    // auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
-
-    // Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
-    // Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-    // Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
-    // Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
-    // Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
-    // Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
+    // const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
  
     // pMap->IncreaseChangeIndex();
 }
@@ -1919,14 +1912,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         pMP->SetGNSSPosition(vPoint->estimate());
     });
 
-    auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
-
-    Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
+    const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
 
     // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw](auto pKFi) {
     //     pKFi->SetGNSSAlignment(Tgw);
