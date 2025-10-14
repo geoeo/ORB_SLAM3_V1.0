@@ -9,20 +9,18 @@ GeometricReferencer::GeometricReferencer(int min_nrof_frames)
   m_min_nrof_frames(min_nrof_frames),
   mTgw_current(Sophus::Sim3d())
 {
-  m_frames_to_georef.reserve(min_nrof_frames);
 }
 
 void GeometricReferencer::clear()
 {
   m_is_initialized = false;
   mTgw_current = Sophus::Sim3d();
-  m_spatials = {}; 
-  m_frames_to_georef.clear();
+  m_latest_frames_to_georef = {};
 }
 
 void GeometricReferencer::clearFrames()
 {
-  m_frames_to_georef.clear();
+  m_latest_frames_to_georef = {};
 }
 
 bool GeometricReferencer::isInitialized() const
@@ -36,14 +34,16 @@ Sophus::Sim3d GeometricReferencer::getCurrentTransform() const
 }
 
 void GeometricReferencer::addKeyFrame(KeyFrame* kf){
-  m_frames_to_georef.push_back(kf);
+    if(m_latest_frames_to_georef.size() >= m_min_nrof_frames)
+      m_latest_frames_to_georef.pop_front();
+    m_latest_frames_to_georef.push_back(kf);
 }
 
-std::vector<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
-  return m_frames_to_georef;
+std::deque<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
+  return m_latest_frames_to_georef;
 }
 
-optional<Sophus::Sim3d> GeometricReferencer::init(const std::vector<KeyFrame*> &frames)
+optional<Sophus::Sim3d> GeometricReferencer::init(const std::deque<KeyFrame*> &frames)
 {
 
   if (m_is_initialized)
@@ -52,13 +52,7 @@ optional<Sophus::Sim3d> GeometricReferencer::init(const std::vector<KeyFrame*> &
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
 
-  for (const auto& f : frames){
-    if(m_spatials.size() >= m_min_nrof_frames)
-      m_spatials.pop_front();
-    m_spatials.push_back(f);
-  }
-
-  auto pose= update(m_spatials); 
+  auto pose = update(m_latest_frames_to_georef); 
 
   m_is_initialized = true;
   return pose;
@@ -79,7 +73,8 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   Eigen::Matrix< Eigen::Vector3d::Scalar, Eigen::Dynamic, Eigen::Dynamic> src_points(3, nrof_points);
   Eigen::Matrix< Eigen::Vector3d::Scalar, Eigen::Dynamic, Eigen::Dynamic> dst_points(3, nrof_points);
 
-  const auto src_offset = mTgw_current*spatials[0]->GetPoseInverse().translation().cast<double>();
+  //const auto src_offset = mTgw_current*spatials[0]->GetPoseInverse().translation().cast<double>();
+  const auto src_offset = Sophus::Sim3d().translation();
 
   Verbose::PrintMess("Src Offset: " + to_string(src_offset(0)) + " " + to_string(src_offset(1)) + " " + to_string(src_offset(2)), Verbose::VERBOSITY_NORMAL);
 
@@ -134,16 +129,6 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
 
   // Estimates the aligning transformation from camera to gnss coordinate system
   Eigen::Matrix4d T_g2receiver_refine = Eigen::umeyama(src_points, dst_points, estimate_scale);
-
-  // T_g2receiver_refine.block<3,1>(0,3);
-  // const auto rotation_matrix = T_g2receiver_refine.block<3,3>(0,0);
-
-  // const auto sx = rotation_matrix.col(0).norm();
-  // const auto sy = rotation_matrix.col(1).norm();
-  // const auto sz = rotation_matrix.col(2).norm();
-  // const auto scale = (sx + sy + sz)/3;
-
-  // T_g2receiver_refine.block<3,3>(0,0) /= scale;
 
   return Sophus::Sim3d(T_g2receiver_refine);
 }
