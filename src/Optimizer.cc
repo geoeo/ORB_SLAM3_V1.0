@@ -1442,7 +1442,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    solver->setUserLambdaInit(5.0);
+    solver->setUserLambdaInit(1.0);
 
 
     optimizer.setAlgorithm(solver);
@@ -1713,7 +1713,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    solver->setUserLambdaInit(5.0);
+    solver->setUserLambdaInit(1.0);
 
 
     optimizer.setAlgorithm(solver);
