@@ -1442,8 +1442,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    if (pMap->IsInertial())
-        solver->setUserLambdaInit(1.0);
+    solver->setUserLambdaInit(5.0);
 
 
     optimizer.setAlgorithm(solver);
@@ -1462,8 +1461,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
-        const auto t = Tgc.translation();
-        auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), t).inverse();
+        auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), Tgc.translation()).inverse();
         auto vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
@@ -1481,8 +1479,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
-        const auto t = Tgc.translation();
-        auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), t).inverse();
+        auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), Tgc.translation()).inverse();
         auto vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
@@ -1508,9 +1505,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     vector<MapPoint*> vpMapPointEdgeMono;
     vpMapPointEdgeMono.reserve(nExpectedSize);
 
-
     const float thHuberMono = sqrt(5.991);
-    const float thHuberStereo = sqrt(7.815);
+
 
     int nPoints = 0;
     int nEdges = 0;
@@ -1518,6 +1514,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for(auto pMP: lLocalMapPoints)
     {   
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
+        pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
         vPoint->setEstimate(pMP->GetGNSSPos());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
@@ -1629,7 +1626,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         pMP->SetGNSSPosition(vPoint->estimate());
     });
 
-    // const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
+    const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
  
     // pMap->IncreaseChangeIndex();
 }
@@ -1716,8 +1713,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    if (pMap->IsInertial())
-        solver->setUserLambdaInit(1.0);
+    solver->setUserLambdaInit(5.0);
 
 
     optimizer.setAlgorithm(solver);
@@ -1736,8 +1732,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
-        const auto t = Tgc.translation();
-        auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), t, Tgc.scale()).inverse();
+        auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), Tgc.translation(), Tgc.scale()).inverse();
         auto vSim3 = new g2o::VertexSim3Expmap();
         vSim3->setEstimate(Tcg);
         vSim3->setId(pKFi->mnId);
@@ -1757,8 +1752,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
-        const auto t = Tgc.translation();
-        auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), t, Tgc.scale()).inverse();
+        auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), Tgc.translation(), Tgc.scale()).inverse();
         auto vSim3 = new g2o::VertexSim3Expmap();
         vSim3->setEstimate(Tcg);
         vSim3->setId(pKFi->mnId);
@@ -1786,9 +1780,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     vector<MapPoint*> vpMapPointEdgeMono;
     vpMapPointEdgeMono.reserve(nExpectedSize);
 
-
     const float thHuberMono = sqrt(5.991);
-    const float thHuberStereo = sqrt(7.815);
 
     int nPoints = 0;
     int nEdges = 0;
@@ -1871,7 +1863,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         const auto v2 = static_cast<const g2o::VertexPointXYZ*>(e->vertices()[0]);
         const auto is_depth_positive = (v1->estimate().map(v2->estimate()))(2) > 0.0;
 
-        if(e->chi2()>5.991 || is_depth_positive)
+        if(e->chi2()>5.991 || !is_depth_positive)
         {
             KeyFrame* pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));

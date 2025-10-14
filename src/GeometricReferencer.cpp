@@ -61,7 +61,8 @@ optional<Sophus::Sim3d> GeometricReferencer::init(const std::deque<KeyFrame*> &f
 Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials)
 { 
   const auto pose = estimateGeorefTransform(spatials, true);
-  mTgw_current = pose*mTgw_current; //TODO: Fix this
+  //mTgw_current = pose*mTgw_current; //TODO: Fix this
+  mTgw_current = pose;
 
   Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
   Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
@@ -93,7 +94,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
     // The measurements of the gnss receiver
     auto T_rec2g_gis = f->GetGNSSCameraPose();
 
-    auto e_gis_0 = (T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0));
+    auto e_gis_0 = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
     auto e_gis_x = T_rec2g_gis* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
     auto e_gis_y = T_rec2g_gis* Eigen::Vector4d(0.0, 1.0, 0.0, 1.0);
     auto e_gis_z = T_rec2g_gis* Eigen::Vector4d(0.0, 0.0, 1.0, 1.0);
