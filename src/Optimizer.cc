@@ -1621,10 +1621,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         const auto SE3quat = vSE3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(Tgc_current.scale(),SE3quat.rotation().normalized(),SE3quat.translation()));
-
-        // // Make sure all Kfs have a set alignment
-        // const auto pose = geoReferencer.getCurrentTransform();
-        // pKFi->SetGNSSAlignment(pose); 
     });
 
     //Points
@@ -1641,10 +1637,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
     // Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
     // Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
-
-    // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw](auto pKFi) {
-    //     pKFi->SetGNSSAlignment(Tgw);
-    // });
  
     // pMap->IncreaseChangeIndex();
 }
@@ -1919,10 +1911,6 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         auto vSim3_inverse = vSim3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(vSim3_inverse.scale(),vSim3_inverse.rotation().normalized(),vSim3_inverse.translation()));
-
-        // Make sure all Kfs have a set alignment - might be unnecessary now -> georef uses stored transform
-        const auto pose = geoReferencer.getCurrentTransform();
-        pKFi->SetGNSSAlignment(pose); 
     });
 
     //Points
@@ -1940,9 +1928,9 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
     Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
 
-    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw](auto pKFi) {
-        pKFi->SetGNSSAlignment(Tgw);
-    });
+    // for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[Tgw](auto pKFi) {
+    //     pKFi->SetGNSSAlignment(Tgw);
+    // });
  
     // pMap->IncreaseChangeIndex();
 }

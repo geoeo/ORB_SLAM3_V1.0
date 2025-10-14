@@ -718,7 +718,6 @@ bool LocalMapping::GeoreferenceKeyframes(){
         Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
 
         for (const auto& pKF : vKF){
-            pKF->SetGNSSAlignment(Tgw);
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
             pKF->SetGNSSCameraPose(Tgc);
