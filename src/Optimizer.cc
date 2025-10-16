@@ -1163,7 +1163,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     // Set Local KeyFrame vertices
     for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
-        //TODO: GNSS 
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         Sophus::SE3<float> Tcw = pKFi->GetPose();
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(), Tcw.translation().cast<double>()));
@@ -1172,7 +1171,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
-        // DEBUG LBA
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
@@ -1181,7 +1179,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
     {
-        //TODO: GNSS 
         g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
         Sophus::SE3<float> Tcw = pKFi->GetPose();
         vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),Tcw.translation().cast<double>()));
@@ -1197,7 +1194,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     // Set MapPoint vertices
     const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
 
-    //TODO: GNSS 
     vector<ORB_SLAM3::EdgeSE3ProjectXYZ*> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
 
@@ -1230,7 +1226,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     for(auto pMP: lLocalMapPoints)
     {
-        //TODO: GNSS 
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
         vPoint->setEstimate(pMP->GetWorldPos().cast<double>());
         int id = pMP->mnId+maxKFid+1;
@@ -1507,15 +1502,16 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     const float thHuberMono = sqrt(5.991);
 
-
     int nPoints = 0;
     int nEdges = 0;
 
     for(auto pMP: lLocalMapPoints)
     {   
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
-        pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
-        vPoint->setEstimate(pMP->GetGNSSPos());
+
+        if(!pMP->GetGNSSPos().has_value())
+            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
+        vPoint->setEstimate(pMP->GetGNSSPos().value());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
@@ -1571,7 +1567,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
             return;
 
     optimizer.initializeOptimization();
-    optimizer.optimize(80);
+    optimizer.setVerbose(true);
+    optimizer.optimize(500);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size());
@@ -1613,11 +1610,11 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     // Recover optimized data
     //Keyframes
-    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer, &geoReferencer](auto pKFi) {
+    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(),[&optimizer](auto pKFi) {
         auto vSE3 = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(pKFi->mnId));
         const auto SE3quat = vSE3->estimate().inverse(); 
-        const auto Tgc_current = pKFi->GetGNSSCameraPose();
-        pKFi->SetGNSSCameraPose(Sophus::Sim3d(Tgc_current.scale(),SE3quat.rotation().normalized(),SE3quat.translation()));
+        const auto current_scale = pKFi->GetGNSSCameraPose().scale();
+        pKFi->SetGNSSCameraPose(Sophus::Sim3d(current_scale,SE3quat.rotation().normalized(),SE3quat.translation()));
     });
 
     //Points
@@ -1788,7 +1785,9 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     for(auto pMP: lLocalMapPoints)
     {   
         auto vPoint = new g2o::VertexPointXYZ();
-        vPoint->setEstimate(pMP->GetGNSSPos());
+        if(!pMP->GetGNSSPos().has_value())
+            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
+        vPoint->setEstimate(pMP->GetGNSSPos().value());
         int id = pMP->mnId+maxKFid+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);

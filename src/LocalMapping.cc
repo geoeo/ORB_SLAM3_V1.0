@@ -66,7 +66,6 @@ void LocalMapping::Run()
 
     while(true)
     {
-
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
         // Tracking will see that Local Mapping is busy
         SetAcceptKeyFrames(false);
@@ -168,7 +167,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
-                    auto success = InitializeIMU(1e3, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
+                    auto success = InitializeIMU(1e1, 1e2, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
                     if(success){
                         mpAtlas->GetCurrentMap()->SetInertialBA1();

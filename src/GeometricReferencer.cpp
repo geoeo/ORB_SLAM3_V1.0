@@ -111,7 +111,8 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
 
     const auto Twc = f->GetPoseInverse();
     const auto Twc_sim3 = Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(), Twc.translation().cast<double>());
-    const auto T_c2g = mTgw_current*Twc_sim3;
+    //const auto T_c2g = mTgw_current*Twc_sim3;
+    const auto T_c2g = Twc_sim3;
 
     auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
     auto e_vis_x = T_c2g* Eigen::Vector4d(1.0, 0.0, 0.0, 1.0);
