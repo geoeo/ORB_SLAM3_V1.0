@@ -28,6 +28,7 @@
 #include <mutex>
 #include <set>
 #include <map>
+#include <optional>
 
 namespace ORB_SLAM3
 {
@@ -45,7 +46,7 @@ public:
     void SetWorldPos(const Eigen::Vector3f &Pos);
     Eigen::Vector3f GetWorldPos();
 
-    Eigen::Vector3d GetGNSSPos();
+    std::optional<Eigen::Vector3d> GetGNSSPos();
     void SetGNSSPosition(const Eigen::Vector3d &pos);
     void UpdateGNSSPos(const Sophus::Sim3d &Tgw);
 
@@ -146,7 +147,7 @@ protected:
 
      // Position in absolute coordinates
      Eigen::Vector3f mWorldPos;
-     Eigen::Vector3d mGNSSPos;
+     std::optional<Eigen::Vector3d> mGNSSPos;
 
      // Keyframes observing the point and associated index in keyframe
      std::map<KeyFrame*,std::tuple<int,int> > mObservations;
