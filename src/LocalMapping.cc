@@ -169,7 +169,7 @@ void LocalMapping::Run()
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
                     auto success = InitializeIMU(1e1, 1e2, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
-                    if(success){
+                    if(false){
                         mpAtlas->GetCurrentMap()->SetInertialBA1();
                         mpAtlas->GetCurrentMap()->SetInertialBA2();
                         if(minTimeForFullBA < 0)
@@ -190,7 +190,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(1e3, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
+                                success = InitializeIMU(0e0, 0e0, true, itsFIBA1, minTimeForVIBA1, 10);
                             else
                                 success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -207,7 +207,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(0.f, 1e0, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
+                                success = InitializeIMU(0.f, 0e0, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
                             else
                                 success = InitializeIMU(0.f, 0.f, true, 200, minTimeForVIBA2, 10);
 

@@ -1311,7 +1311,7 @@ bool Tracking::NeedNewKeyFrame()
     const bool c4 = (mnMatchesInliers<200) || getTrackingState()==RECENTLY_LOST;
 
     Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
-    return c1 || c2 || c4;
+    return c1 || c4;
 }
 
 void Tracking::CreateNewKeyFrame()
