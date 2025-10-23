@@ -1361,18 +1361,16 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
-    size_t maxOpt=5000;
 
     //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
     //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const vector<KeyFrame*> vNeighKFs = pMap->GetAllKeyFrames();
-    const auto Nd = std::min(vNeighKFs.size(),maxOpt);
 
-    for(int i=0; i<Nd; i++) {
-        KeyFrame* pKFi = vNeighKFs[i];
+    for(auto pKFi: vNeighKFs) {
         pKFi->mnBALocalForKF = pKF->mnId;
+        pKFi->ClearReprojectionErrors();
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);
     }
@@ -1584,13 +1582,17 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         if(pMP->isBad())
             return;
 
+        KeyFrame* pKFi = vpEdgeKFMono[i];
+        e->computeError();
+        pKFi->AddReprojectionError(e->error());
+
         if(e->chi2()>5.991 || !e->isDepthPositive())
         {
-            KeyFrame* pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));
         }
 
-        e->computeError();
+ 
+
         auto error_norm = e->error().norm();
         //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
@@ -1615,6 +1617,14 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         const auto SE3quat = vSE3->estimate().inverse(); 
         const auto current_scale = pKFi->GetGNSSCameraPose().scale();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(current_scale,SE3quat.rotation().normalized(),SE3quat.translation()));
+        const auto reprojection_errors = pKFi->GetReprojectionErrors();
+        const auto num_errors = reprojection_errors.size();
+        auto sum_errors = 0.0;
+        for(const auto& err: reprojection_errors)
+            sum_errors += err.norm();
+        
+        Verbose::PrintMess("Avg reprojection error: " + to_string(sum_errors/num_errors) + " for KFid: " + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
+
     });
 
     //Points
@@ -1634,17 +1644,14 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
-    size_t maxOpt=5000;
 
     //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
     //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const vector<KeyFrame*> vNeighKFs = pMap->GetAllKeyFrames();
-    const auto Nd = std::min(vNeighKFs.size(),maxOpt);
 
-    for(int i=0; i<Nd; i++) {
-        KeyFrame* pKFi = vNeighKFs[i];
+    for(auto pKFi: vNeighKFs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);

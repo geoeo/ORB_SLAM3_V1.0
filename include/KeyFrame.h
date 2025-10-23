@@ -112,6 +112,10 @@ public:
     int TrackedMapPoints(const int &minObs);
     MapPoint* GetMapPoint(const size_t &idx);
 
+    void ClearReprojectionErrors();
+    void AddReprojectionError(const Eigen::Vector2d &error);
+    std::list<Eigen::Vector2d> GetReprojectionErrors();
+
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const bool bRight = false) const;
     bool UnprojectStereo(int i, Eigen::Vector3f &x3D);
@@ -304,6 +308,7 @@ protected:
 
     // MapPoints associated to keypoints
     std::vector<MapPoint*> mvpMapPoints;
+    std::list<Eigen::Vector2d> mReprojectionErrors;
     // For save relation without pointer, this is necessary for save/load function
     std::vector<long long int> mvBackupMapPointsId;
 
@@ -378,18 +383,6 @@ public:
     Eigen::Vector3f GetRightCameraCenter();
     Eigen::Matrix<float,3,3> GetRightRotation();
     Eigen::Vector3f GetRightTranslation();
-
-    void PrintPointDistribution(){
-        int left = 0, right = 0;
-        int Nlim = (NLeft != -1) ? NLeft : N;
-        for(int i = 0; i < N; i++){
-            if(mvpMapPoints[i]){
-                if(i < Nlim) left++;
-                else right++;
-            }
-        }
-        cout << "Point distribution in KeyFrame: left-> " << left << " --- right-> " << right << endl;
-    }
 
 
 };

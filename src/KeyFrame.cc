@@ -379,6 +379,23 @@ vector<MapPoint*> KeyFrame::GetMapPointMatches()
     return mvpMapPoints;
 }
 
+void KeyFrame::ClearReprojectionErrors()
+{
+    mReprojectionErrors.clear();
+}
+
+void KeyFrame::AddReprojectionError(const Eigen::Vector2d &error)
+{
+    mReprojectionErrors.push_back(error);
+}
+
+list<Eigen::Vector2d> KeyFrame::GetReprojectionErrors()
+{
+    return mReprojectionErrors;
+}
+
+
+
 MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
