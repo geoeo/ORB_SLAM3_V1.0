@@ -1189,7 +1189,7 @@ bool Tracking::TrackLocalMap()
             auto pose_opt_success = false;
             if(!mbMapUpdated && mpcpiExists)
             {
-                Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
                 if(inliers < inlierImuThreshold){
