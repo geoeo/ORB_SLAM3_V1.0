@@ -452,7 +452,7 @@ namespace ORB_SLAM3
                 auto im_managed = mvImagePyramid[level].createGpuMatHeader();
                 const auto fastKpCountHigh = gpuFast.detect(im_managed, iniThFAST, BorderX, BorderY, gpuOrb.getStream());
                 fastKpCountTotal = fastKpCountHigh;
-                Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCountHigh), Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("GPU Fast detected (" + to_string(iniThFAST) + ") keypoints: " + to_string(fastKpCountHigh), Verbose::VERBOSITY_DEBUG);
                 
                 if(fastKpCountHigh > 0){
                     // Copy these into vectors
@@ -464,7 +464,7 @@ namespace ORB_SLAM3
                 //Try again with lower threshold.
                 if(diff > featureThreshold){
                     auto fastKpCountLow = gpuFast.detect(im_managed,minThFAST, BorderX, BorderY, gpuOrb.getStream());
-                    Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCountLow), Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("GPU Fast detected (" + to_string(minThFAST) + ") keypoints: " + to_string(fastKpCountLow), Verbose::VERBOSITY_DEBUG);
                     if(fastKpCountLow > 0){
                         const auto fastCountTotal_tmp = fastKpCountHigh + fastKpCountLow;
                         if(fastCountTotal_tmp > nFastFeatures){
@@ -495,7 +495,7 @@ namespace ORB_SLAM3
             return nullopt;
         }
 
-        Verbose::PrintMess("Total keypoints: " + to_string(allKeypointsCount), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Total keypoints: " + to_string(allKeypointsCount), Verbose::VERBOSITY_DEBUG);
         vector<size_t> keypointsAcc(nlevels);
         partial_sum(keypointsCountPerLevel.begin(), keypointsCountPerLevel.end(), keypointsAcc.begin());
         //TODO: this will crash if 0 keypoints are detected.
@@ -580,7 +580,7 @@ namespace ORB_SLAM3
                 }
             });
         }
-        Verbose::PrintMess("ORB Extractor done", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("ORB Extractor done", Verbose::VERBOSITY_DEBUG);
         return {{allKeypoints->toSharedVector(), _descriptors}};
     }
 
