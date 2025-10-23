@@ -125,7 +125,8 @@ protected:
 
     System *mpSystem;
 
-    bool mbMonocular;
+    const bool mbMonocular;
+    bool mbFixScale;
     bool mbInertial;
 
     void ResetIfRequested();

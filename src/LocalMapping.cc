@@ -38,7 +38,7 @@ namespace ORB_SLAM3
 
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
     mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false) , mpSystem(pSys), mbMonocular(bMonocular), 
-    mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
+    mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mbAcceptKeyFrames(true), mMutexPtrGlobalData(make_shared<mutex>()), 
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),
@@ -1093,7 +1093,6 @@ void LocalMapping::ResetIfRequested()
             ResetNewKeyFrames();
             mlpRecentAddedMapPoints.clear();
 
-
             // Inertial parameters
             mTElapsedTime = 0.f;
             mbNotBA2 = true;
@@ -1223,7 +1222,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     mScale=1.0;
     {
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
-        Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
+        Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbFixScale, infoInertial, false, false, priorG, priorA);
     }
 
     if (mScale<1e-1)

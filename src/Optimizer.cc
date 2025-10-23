@@ -1351,7 +1351,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     });
  
 
-    // pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 
@@ -1625,7 +1625,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
  
-    // pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, GeometricReferencer& geoReferencer)
@@ -1909,7 +1909,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     //     pKFi->SetGNSSAlignment(Tgw);
     // });
  
-    // pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
@@ -2196,7 +2196,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
     }
 
     // TODO Check this changeindex
-    //pMap->IncreaseChangeIndex();
+    pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFixedKFs, vector<KeyFrame*> &vpFixedCorrectedKFs,
@@ -3249,8 +3249,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         pMP->UpdateNormalAndDepth();
     });
 
-    // pMap->IncreaseChangeIndex();
-
+    pMap->IncreaseChangeIndex();
     return latestOptimizedKFPoses;
 }
 
@@ -3336,7 +3335,7 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &star
     return res;
 }
 
-void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bMono, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
+void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
 {
     Verbose::PrintMess("inertial optimization", Verbose::VERBOSITY_NORMAL);
     int its = 200;
@@ -3427,7 +3426,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     optimizer.addVertex(VGDir);
     VertexScale* VS = new VertexScale(scale);
     VS->setId(maxKFid*2+5);
-    VS->setFixed(!bMono); // Fixed for stereo case
+    VS->setFixed(bFixScale);
     optimizer.addVertex(VS);
 
     // Graph edges
