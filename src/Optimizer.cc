@@ -1402,28 +1402,28 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     list<KeyFrame*> lFixedCameras;
-    for(auto pMP: lLocalMapPoints)
-    {
-        map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-        for_each(execution::seq, observations.begin(), observations.end(), [pKF, pMap,&lFixedCameras](auto mit)
-        {
-            KeyFrame* pKFi = mit.first;
+    // for(auto pMP: lLocalMapPoints)
+    // {
+    //     map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
+    //     for_each(execution::seq, observations.begin(), observations.end(), [pKF, pMap,&lFixedCameras](auto mit)
+    //     {
+    //         KeyFrame* pKFi = mit.first;
 
-            if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId )
-            {                
-                pKFi->mnBAFixedForKF=pKF->mnId;
-                if(!pKFi->isBad() && pKFi->GetMap() == pMap)
-                    lFixedCameras.push_back(pKFi);
-            }
-        });
-    }
+    //         if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId )
+    //         {                
+    //             pKFi->mnBAFixedForKF=pKF->mnId;
+    //             if(!pKFi->isBad() && pKFi->GetMap() == pMap)
+    //                 lFixedCameras.push_back(pKFi);
+    //         }
+    //     });
+    // }
 
-    num_fixedKF = lFixedCameras.size() + num_fixedKF;
-    if(num_fixedKF == 0)
-    {
-        Verbose::PrintMess("LM-LGNSSBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
-        return;
-    }
+    // num_fixedKF = lFixedCameras.size() + num_fixedKF;
+    // if(num_fixedKF == 0)
+    // {
+    //     Verbose::PrintMess("LM-LGNSSBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
+    //     return;
+    // }
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -1458,7 +1458,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         auto vSE3 = new g2o::VertexSE3Expmap();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        //vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
@@ -1565,8 +1565,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
             return;
 
     optimizer.initializeOptimization();
-    optimizer.setVerbose(true);
-    optimizer.optimize(500);
+    optimizer.setVerbose(false);
+    optimizer.optimize(40);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size());
@@ -1590,10 +1590,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         {
             vToErase.push_back(make_pair(pKFi,pMP));
         }
-
- 
-
-        auto error_norm = e->error().norm();
+        //auto error_norm = e->error().norm();
         //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
 
@@ -1624,7 +1621,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
             sum_errors += err.norm();
         
         Verbose::PrintMess("Avg reprojection error: " + to_string(sum_errors/num_errors) + " for KFid: " + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
-
     });
 
     //Points
@@ -1653,6 +1649,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     for(auto pKFi: vNeighKFs) {
         pKFi->mnBALocalForKF = pKF->mnId;
+        pKFi->ClearReprojectionErrors();
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
             lLocalKeyFrames.push_back(pKFi);
     }
@@ -1740,7 +1737,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         auto vSim3 = new g2o::VertexSim3Expmap();
         vSim3->setEstimate(Tcg);
         vSim3->setId(pKFi->mnId);
-        vSim3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        //vSim3->setFixed(pKFi->mnId==pMap->GetInitKFid());
         vSim3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
         vSim3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
         optimizer.addVertex(vSim3);
@@ -1869,14 +1866,16 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         const auto v2 = static_cast<const g2o::VertexPointXYZ*>(e->vertices()[0]);
         const auto is_depth_positive = (v1->estimate().map(v2->estimate()))(2) > 0.0;
 
+        KeyFrame* pKFi = vpEdgeKFMono[i];
+        e->computeError();
+        pKFi->AddReprojectionError(e->error());
+
         if(e->chi2()>5.991 || !is_depth_positive)
         {
-            KeyFrame* pKFi = vpEdgeKFMono[i];
             vToErase.push_back(make_pair(pKFi,pMP));
         }
 
-        e->computeError();
-        auto error_norm = e->error().norm();
+        //auto error_norm = e->error().norm();
         //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
 
@@ -1902,6 +1901,13 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         auto vSim3_inverse = vSim3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(vSim3_inverse.scale(),vSim3_inverse.rotation().normalized(),vSim3_inverse.translation()));
+        const auto reprojection_errors = pKFi->GetReprojectionErrors();
+        const auto num_errors = reprojection_errors.size();
+        auto sum_errors = 0.0;
+        for(const auto& err: reprojection_errors)
+            sum_errors += err.norm();
+        
+        Verbose::PrintMess("Avg reprojection error: " + to_string(sum_errors/num_errors) + " for KFid: " + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
     });
 
     //Points

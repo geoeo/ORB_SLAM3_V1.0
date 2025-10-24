@@ -288,7 +288,6 @@ int LocalMapping::KeyframesInQueue()
 
 void LocalMapping::ProcessNewKeyFrame()
 {
-    Verbose::PrintMess("LocalMapper - Process New KF", Verbose::VERBOSITY_NORMAL);
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
