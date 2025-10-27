@@ -569,5 +569,30 @@ void Map::writeKeyframesCsv(const std::string& filename,
     out_gnss_cam.close();
 }
 
+void Map::writeKeyframesReprojectionErrors(const std::string& filename,
+                   const std::vector<KeyFrame*>& keyframes,
+                   char sep,
+                   int precision) 
+{
+    const auto ext = ".txt";
+
+    std::ofstream out(filename + ext);                  // text mode is fine for CSV
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+    out << "# error" << sep << "id" << "\n";
+
+    for (const auto& kf : keyframes) {
+        const auto reprojection_errors = kf->GetReprojectionErrors();
+        const auto num_errors = reprojection_errors.size();
+        auto sum_errors = 0.0;
+        for(const auto& err: reprojection_errors)
+            sum_errors += err.norm();
+        const float avg_error = sum_errors / static_cast<float>(num_errors);
+        out << avg_error << sep << kf->GetFrameId() << "\n";
+    }
+    out.close();
+}
+
 
 } //namespace ORB_SLAM3

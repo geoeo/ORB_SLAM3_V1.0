@@ -1171,6 +1171,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
+        // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
@@ -1462,7 +1463,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         optimizer.addVertex(vSE3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
-        // DEBUG LBA
+        // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     auto num_OptKF = lLocalKeyFrames.size();
@@ -1614,13 +1615,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         const auto SE3quat = vSE3->estimate().inverse(); 
         const auto current_scale = pKFi->GetGNSSCameraPose().scale();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(current_scale,SE3quat.rotation().normalized(),SE3quat.translation()));
-        const auto reprojection_errors = pKFi->GetReprojectionErrors();
-        const auto num_errors = reprojection_errors.size();
-        auto sum_errors = 0.0;
-        for(const auto& err: reprojection_errors)
-            sum_errors += err.norm();
-        
-        Verbose::PrintMess("Avg reprojection error: " + to_string(sum_errors/num_errors) + " for KFid: " + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
     });
 
     //Points
@@ -1743,7 +1737,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         optimizer.addVertex(vSim3);
         if(pKFi->mnId>maxKFid)
             maxKFid=pKFi->mnId;
-        // DEBUG LBA
+        // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     auto num_OptKF = lLocalKeyFrames.size();
@@ -1901,13 +1895,6 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         auto vSim3_inverse = vSim3->estimate().inverse(); 
         const auto Tgc_current = pKFi->GetGNSSCameraPose();
         pKFi->SetGNSSCameraPose(Sophus::Sim3d(vSim3_inverse.scale(),vSim3_inverse.rotation().normalized(),vSim3_inverse.translation()));
-        const auto reprojection_errors = pKFi->GetReprojectionErrors();
-        const auto num_errors = reprojection_errors.size();
-        auto sum_errors = 0.0;
-        for(const auto& err: reprojection_errors)
-            sum_errors += err.norm();
-        
-        Verbose::PrintMess("Avg reprojection error: " + to_string(sum_errors/num_errors) + " for KFid: " + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
     });
 
     //Points

@@ -100,8 +100,12 @@ void LocalMapping::Run()
                     if(writeKFAfterGBACount == 0){
                         Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
                         Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
-                        if(mbWriteGNSSData)
-                            Map::writeKeyframesCsv("keyframes_after_gnss_bundle", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                        if(mbWriteGNSSData){
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+                            Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
+                            Map::writeKeyframesReprojectionErrors("reprojections", kfs);
+                        }
+
                         writeKFAfterGBACount = 1;
                     }
                 }
