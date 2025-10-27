@@ -3,6 +3,7 @@ CameraTrajectory.txt
 kf_*.txt
 f_*.txt
 debug.txt
+reprojections.txt
 keyframes*.csv
 Thirdparty/DBoW2/build/*
 Thirdparty/DBoW2/lib/*
