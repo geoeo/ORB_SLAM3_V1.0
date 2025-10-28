@@ -574,7 +574,7 @@ void Map::writeKeyframesReprojectionErrors(const std::string& filename,
                    char sep,
                    int precision) 
 {
-    const auto ext = ".txt";
+    const auto ext = ".csv";
 
     std::ofstream out(filename + ext);                  // text mode is fine for CSV
     out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
