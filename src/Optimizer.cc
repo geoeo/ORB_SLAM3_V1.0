@@ -1363,13 +1363,28 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
-    //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
-    //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
-    const vector<KeyFrame*> vNeighKFs = pMap->GetAllKeyFrames();
+    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames();
+    std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b)
+                                  {
+                                      return a->mnId < b->mnId;
+                                  });
 
-    for(auto pKFi: vNeighKFs) {
+    const auto maxKFId = vAllKfs.back()->mnId;
+    std::set<long unsigned int> sFixedKfIds;
+    const size_t startFixedKFCount = 5;
+    const size_t endFixedKFCount = 1;
+    const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
+    const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
+    sFixedKfIds.insert(maxKFId);
+    for(auto i = 0; i < minStartingFixedKds; i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
+
+    for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
+    
+    for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
@@ -1377,15 +1392,10 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     }
 
     // Local MapPoints seen in Local KeyFrames
-    auto num_fixedKF = 0;
     list<MapPoint*> lLocalMapPoints;
     set<MapPoint*> sNumObsMP;
     for(auto pKFi : lLocalKeyFrames)
     {
-        if(pKFi->mnId==pMap->GetInitKFid())
-        {
-            num_fixedKF = 1;
-        }
         vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
         for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints](auto pMP)
         {
@@ -1401,30 +1411,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         });
     }
 
-    // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
-    list<KeyFrame*> lFixedCameras;
-    // for(auto pMP: lLocalMapPoints)
-    // {
-    //     map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-    //     for_each(execution::seq, observations.begin(), observations.end(), [pKF, pMap,&lFixedCameras](auto mit)
-    //     {
-    //         KeyFrame* pKFi = mit.first;
-
-    //         if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId )
-    //         {                
-    //             pKFi->mnBAFixedForKF=pKF->mnId;
-    //             if(!pKFi->isBad() && pKFi->GetMap() == pMap)
-    //                 lFixedCameras.push_back(pKFi);
-    //         }
-    //     });
-    // }
-
-    // num_fixedKF = lFixedCameras.size() + num_fixedKF;
-    // if(num_fixedKF == 0)
-    // {
-    //     Verbose::PrintMess("LM-LGNSSBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
-    //     return;
-    // }
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -1436,7 +1422,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    solver->setUserLambdaInit(1.0);
+    //solver->setUserLambdaInit(1.0);
 
 
     optimizer.setAlgorithm(solver);
@@ -1445,50 +1431,34 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     if(pbStopFlag)
         optimizer.setForceStopFlag(pbStopFlag);
 
-    unsigned long maxKFid = 0;
 
     // DEBUG LBA
     pMap->msOptKFs.clear();
     pMap->msFixedKFs.clear();
 
     // Set Local KeyFrame vertices
-    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
+    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&sFixedKfIds](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
         auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), Tgc.translation()).inverse();
         auto vSE3 = new g2o::VertexSE3Expmap();
+        const auto fixKF = sFixedKfIds.find(pKFi->mnId) != sFixedKfIds.end();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
-        //vSE3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        vSE3->setFixed(fixKF); // Fix first and last frame
         optimizer.addVertex(vSE3);
-        if(pKFi->mnId>maxKFid)
-            maxKFid=pKFi->mnId;
         // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
+        if(fixKF)
+            Verbose::PrintMess("LM-LGNSSBA: Fixed:" + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
     });
+
     auto num_OptKF = lLocalKeyFrames.size();
     Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
 
-    // Set Fixed KeyFrame vertices
-    for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
-    {
-        const auto Tgc = pKFi->GetGNSSCameraPose();
-        auto Tcg = g2o::SE3Quat(Tgc.quaternion().normalized(), Tgc.translation()).inverse();
-        auto vSE3 = new g2o::VertexSE3Expmap();
-        vSE3->setEstimate(Tcg);
-        vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(true);
-        optimizer.addVertex(vSE3);
-        if(pKFi->mnId>maxKFid)
-            maxKFid=pKFi->mnId;
-        // DEBUG LBA
-        pMap->msFixedKFs.insert(pKFi->mnId);
-    });
-
-    Verbose::PrintMess("LM-LGNSSBA: Fixed KFs:" + to_string(lFixedCameras.size()), Verbose::VERBOSITY_NORMAL);
 
     // Set MapPoint vertices
-    const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
+    const int nExpectedSize = lLocalKeyFrames.size()*lLocalMapPoints.size();
 
     vector<ORB_SLAM3::EdgeSE3ProjectXYZ*> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
@@ -1511,10 +1481,9 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         if(!pMP->GetGNSSPos().has_value())
             pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
         vPoint->setEstimate(pMP->GetGNSSPos().value());
-        int id = pMP->mnId+maxKFid+1;
+        int id = pMP->mnId+maxKFId+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
-        //vPoint->setFixed(true);
         optimizer.addVertex(vPoint);
         nPoints++;
 
@@ -1567,7 +1536,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     optimizer.initializeOptimization();
     optimizer.setVerbose(false);
-    optimizer.optimize(40);
+    optimizer.optimize(100);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size());
@@ -1618,8 +1587,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     });
 
     //Points
-    for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
-        auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+    for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFId](auto pMP) {
+        auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFId+1));
         pMP->SetGNSSPosition(vPoint->estimate());
     });
 
@@ -1638,10 +1607,26 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
-    //const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
-    const vector<KeyFrame*> vNeighKFs = pMap->GetAllKeyFrames();
+    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames();
+    std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b)
+                                  {
+                                      return a->mnId < b->mnId;
+                                  });
 
-    for(auto pKFi: vNeighKFs) {
+    const auto maxKFId = vAllKfs.back()->mnId;
+    std::set<long unsigned int> sFixedKfIds;
+    const size_t startFixedKFCount = 5;
+    const size_t endFixedKFCount = 1;
+    const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
+    const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
+    sFixedKfIds.insert(maxKFId);
+    for(auto i = 0; i < minStartingFixedKds; i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
+
+    for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
+
+    for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
         if(!pKFi->isBad() && pKFi->GetMap() == pMap)
@@ -1649,15 +1634,10 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     }
 
     // Local MapPoints seen in Local KeyFrames
-    auto num_fixedKF = 0;
     list<MapPoint*> lLocalMapPoints;
     set<MapPoint*> sNumObsMP;
     for(auto pKFi : lLocalKeyFrames)
     {
-        if(pKFi->mnId==pMap->GetInitKFid())
-        {
-            num_fixedKF = 1;
-        }
         vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
         for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints](auto pMP)
         {
@@ -1673,30 +1653,6 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         });
     }
 
-    // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
-    list<KeyFrame*> lFixedCameras;
-    for(auto pMP: lLocalMapPoints)
-    {
-        map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-        for_each(execution::seq, observations.begin(), observations.end(), [pKF, pMap,&lFixedCameras](auto mit)
-        {
-            KeyFrame* pKFi = mit.first;
-
-            if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId )
-            {                
-                pKFi->mnBAFixedForKF=pKF->mnId;
-                if(!pKFi->isBad() && pKFi->GetMap() == pMap)
-                    lFixedCameras.push_back(pKFi);
-            }
-        });
-    }
-
-    num_fixedKF = lFixedCameras.size() + num_fixedKF;
-    if(num_fixedKF == 0)
-    {
-        Verbose::PrintMess("LM-LGNSSBA: There are 0 fixed KF in the optimizations, LBA aborted", Verbose::VERBOSITY_NORMAL);
-        return;
-    }
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -1708,7 +1664,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(std::move(solver_ptr));
     solver->setWriteDebug(false);
-    solver->setUserLambdaInit(1.0);
+    //solver->setUserLambdaInit(1.0);
 
 
     optimizer.setAlgorithm(solver);
@@ -1717,54 +1673,32 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     if(pbStopFlag)
         optimizer.setForceStopFlag(pbStopFlag);
 
-    unsigned long maxKFid = 0;
-
     // DEBUG LBA
     pMap->msOptKFs.clear();
     pMap->msFixedKFs.clear();
 
     // Set Local KeyFrame vertices
-    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
+    for_each(execution::seq, lLocalKeyFrames.begin(), lLocalKeyFrames.end(), [&pMap,&optimizer,&sFixedKfIds](auto pKFi)
     {
         const auto Tgc = pKFi->GetGNSSCameraPose();
         auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), Tgc.translation(), Tgc.scale()).inverse();
         auto vSim3 = new g2o::VertexSim3Expmap();
+        const auto fixKF = sFixedKfIds.find(pKFi->mnId) != sFixedKfIds.end();
         vSim3->setEstimate(Tcg);
         vSim3->setId(pKFi->mnId);
-        //vSim3->setFixed(pKFi->mnId==pMap->GetInitKFid());
+        vSim3->setFixed(fixKF);
         vSim3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
         vSim3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
         optimizer.addVertex(vSim3);
-        if(pKFi->mnId>maxKFid)
-            maxKFid=pKFi->mnId;
+
         // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     auto num_OptKF = lLocalKeyFrames.size();
     Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
 
-    // Set Fixed KeyFrame vertices
-    for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
-    {
-        const auto Tgc = pKFi->GetGNSSCameraPose();
-        auto Tcg = g2o::Sim3(Tgc.quaternion().normalized(), Tgc.translation(), Tgc.scale()).inverse();
-        auto vSim3 = new g2o::VertexSim3Expmap();
-        vSim3->setEstimate(Tcg);
-        vSim3->setId(pKFi->mnId);
-        vSim3->setFixed(true);
-        vSim3->_principle_point1 = g2o::Vector2(pKFi->cx, pKFi->cy);
-        vSim3->_focal_length1 = g2o::Vector2(pKFi->fx, pKFi->fy);
-        optimizer.addVertex(vSim3);
-        if(pKFi->mnId>maxKFid)
-            maxKFid=pKFi->mnId;
-        // DEBUG LBA
-        pMap->msFixedKFs.insert(pKFi->mnId);
-    });
-
-    Verbose::PrintMess("LM-LGNSSBA: Fixed KFs:" + to_string(lFixedCameras.size()), Verbose::VERBOSITY_NORMAL);
-
     // Set MapPoint vertices
-    const int nExpectedSize = (lLocalKeyFrames.size()+lFixedCameras.size())*lLocalMapPoints.size();
+    const int nExpectedSize = lLocalKeyFrames.size()*lLocalMapPoints.size();
 
     vector<g2o::EdgeSim3ProjectXYZ*> vpEdgesMono;
     vpEdgesMono.reserve(nExpectedSize);
@@ -1786,10 +1720,9 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         if(!pMP->GetGNSSPos().has_value())
             pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
         vPoint->setEstimate(pMP->GetGNSSPos().value());
-        int id = pMP->mnId+maxKFid+1;
+        int id = pMP->mnId+maxKFId+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
-        //vPoint->setFixed(true);
         optimizer.addVertex(vPoint);
         nPoints++;
 
@@ -1898,8 +1831,8 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     });
 
     //Points
-    for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
-        auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+    for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFId](auto pMP) {
+        auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFId+1));
         pMP->SetGNSSPosition(vPoint->estimate());
     });
 

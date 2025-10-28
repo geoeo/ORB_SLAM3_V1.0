@@ -1152,7 +1152,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // if(mpAtlas->KeyFramesInMap()<nMinKF)
     //     return false;
 
-    // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID
+    // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID - TOOD: Check this!
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
 
     const auto kf_size = vpKF.size();
