@@ -1012,7 +1012,7 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsi
     }
     else
     {
-        cout << "ERROR: There is not a main camera in KF " << mnId << endl;
+        Verbose::PrintMess("ERROR: There is not a main camera in KF " + to_string(mnId), Verbose::VERBOSITY_NORMAL);
     }
     if(mnBackupIdCamera2 >= 0)
     {
@@ -1055,7 +1055,7 @@ bool KeyFrame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, flo
     // Check positive depth
     if(PcZ<0.0f)
     {
-        cout << "Negative depth: " << PcZ << endl;
+        Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_NORMAL);
         return false;
     }
 
@@ -1063,8 +1063,6 @@ bool KeyFrame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, flo
     float invz = 1.0f/PcZ;
     u=fx*PcX*invz+cx;
     v=fy*PcY*invz+cy;
-
-    // cout << "c";
 
     if(u<mnMinX || u>mnMaxX)
         return false;
@@ -1118,7 +1116,7 @@ bool KeyFrame::ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, f
     // Check positive depth
     if(PcZ<0.0f)
     {
-        cout << "Negative depth: " << PcZ << endl;
+        Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_NORMAL);
         return false;
     }
 
