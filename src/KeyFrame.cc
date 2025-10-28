@@ -394,7 +394,33 @@ list<Eigen::Vector2d> KeyFrame::GetReprojectionErrors()
     return mReprojectionErrors;
 }
 
+void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
+    ClearReprojectionErrors();
+    for(auto idx = 0; idx < mvKeysUn->size(); ++idx){
+        const auto keypoint = mvKeysUn->at(idx);
+        const auto mapPoint = mvpMapPoints[idx];
+        if(useGNSSFrame && !mapPoint->GetGNSSPos().has_value())
+            continue;
 
+        const auto obs = Eigen::Vector2d(keypoint.pt.x, keypoint.pt.y);
+        const auto pWorld = useGNSSFrame ? mapPoint->GetGNSSPos().value() : mapPoint->GetWorldPos().cast<double>();
+
+        auto GetTcw = [&](){
+            if(useGNSSFrame)
+                return GetGNSSCameraPose().inverse();
+            else {
+                const auto Tcw = GetPose().cast<double>();
+                return Sophus::Sim3d(1.0,Tcw.unit_quaternion(), Tcw.translation());
+            }
+        };
+
+        const auto est_optional = ProjectPointUnDistort(pWorld, GetTcw());
+        if(!est_optional.has_value())
+            continue;
+        const auto diff = obs - est_optional.value();
+        AddReprojectionError(diff);
+    }
+}
 
 MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
 {
@@ -1040,99 +1066,33 @@ void KeyFrame::PostLoad(map<long unsigned int, KeyFrame*>& mpKFid, map<long unsi
     UpdateBestCovisibles();
 }
 
-bool KeyFrame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
+
+optional<Eigen::Vector2d> KeyFrame::ProjectPointUnDistort(const Eigen::Vector3d& P,const Sophus::Sim3d& Tcw)
 {
-
-    // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
-
     // 3D in camera coordinates
-    Eigen::Vector3f Pc = mRcw * P + mTcw.translation();
-    float &PcX = Pc(0);
-    float &PcY = Pc(1);
-    float &PcZ = Pc(2);
+    const auto Pc = Tcw*P;
+    const auto PcX = Pc(0);
+    const auto PcY = Pc(1);
+    const auto PcZ = Pc(2);
 
     // Check positive depth
-    if(PcZ<0.0f)
+    if(PcZ<0.0)
     {
         Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_NORMAL);
-        return false;
+        return nullopt;
     }
 
     // Project in image and check it is not outside
-    float invz = 1.0f/PcZ;
-    u=fx*PcX*invz+cx;
-    v=fy*PcY*invz+cy;
+    const auto invz = 1.0/PcZ;
+    const auto u = fx * PcX * invz + cx;
+    const auto v = fy * PcY * invz + cy;
 
     if(u<mnMinX || u>mnMaxX)
-        return false;
+        return nullopt;
     if(v<mnMinY || v>mnMaxY)
-        return false;
+        return nullopt;
 
-    float x = (u - cx) * invfx;
-    float y = (v - cy) * invfy;
-    float r2 = x * x + y * y;
-    float k1 = mDistCoef.at<float>(0);
-    float k2 = mDistCoef.at<float>(1);
-    float p1 = mDistCoef.at<float>(2);
-    float p2 = mDistCoef.at<float>(3);
-    float k3 = 0;
-    if(mDistCoef.total() == 5)
-    {
-        k3 = mDistCoef.at<float>(4);
-    }
-
-    // Radial distorsion
-    float x_distort = x * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-    float y_distort = y * (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2);
-
-    // Tangential distorsion
-    x_distort = x_distort + (2 * p1 * x * y + p2 * (r2 + 2 * x * x));
-    y_distort = y_distort + (p1 * (r2 + 2 * y * y) + 2 * p2 * x * y);
-
-    float u_distort = x_distort * fx + cx;
-    float v_distort = y_distort * fy + cy;
-
-    u = u_distort;
-    v = v_distort;
-
-    kp = cv::Point2f(u, v);
-
-    return true;
-}
-
-bool KeyFrame::ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
-{
-
-    // 3D in absolute coordinates
-    Eigen::Vector3f P = pMP->GetWorldPos();
-
-    // 3D in camera coordinates
-    Eigen::Vector3f Pc = mRcw * P + mTcw.translation();
-    float &PcX = Pc(0);
-    float &PcY= Pc(1);
-    float &PcZ = Pc(2);
-
-    // Check positive depth
-    if(PcZ<0.0f)
-    {
-        Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_NORMAL);
-        return false;
-    }
-
-    // Project in image and check it is not outside
-    const float invz = 1.0f/PcZ;
-    u = fx * PcX * invz + cx;
-    v = fy * PcY * invz + cy;
-
-    if(u<mnMinX || u>mnMaxX)
-        return false;
-    if(v<mnMinY || v>mnMaxY)
-        return false;
-
-    kp = cv::Point2f(u, v);
-
-    return true;
+    return Eigen::Vector2d(u, v);
 }
 
 Sophus::SE3f KeyFrame::GetRelativePoseTrl()

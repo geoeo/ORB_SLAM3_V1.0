@@ -588,7 +588,7 @@ void Map::writeKeyframesReprojectionErrors(const std::string& filename,
         auto sum_errors = 0.0;
         for(const auto& err: reprojection_errors)
             sum_errors += err.norm();
-        const float avg_error = sum_errors / static_cast<float>(num_errors);
+        const auto avg_error = sum_errors / static_cast<float>(num_errors);
         out << avg_error << sep << kf->GetFrameId() << "\n";
     }
     out.close();

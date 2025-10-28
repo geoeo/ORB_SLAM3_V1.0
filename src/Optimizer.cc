@@ -1477,9 +1477,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for(auto pMP: lLocalMapPoints)
     {   
         g2o::VertexPointXYZ* vPoint = new g2o::VertexPointXYZ();
-
-        if(!pMP->GetGNSSPos().has_value())
-            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
         vPoint->setEstimate(pMP->GetGNSSPos().value());
         int id = pMP->mnId+maxKFId+1;
         vPoint->setId(id);
@@ -1557,11 +1554,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         pKFi->AddReprojectionError(e->error());
 
         if(e->chi2()>5.991 || !e->isDepthPositive())
-        {
             vToErase.push_back(make_pair(pKFi,pMP));
-        }
-        //auto error_norm = e->error().norm();
-        //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
 
     Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_NORMAL);

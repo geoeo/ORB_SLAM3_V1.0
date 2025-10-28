@@ -1386,9 +1386,7 @@ void Tracking::SearchLocalPoints()
         {
             pMP->IncreaseVisible();
             nToMatch++;
-        }
-        if(pMP->mbTrackInView)
-        {
+            //TODO: only used in viewer
             mCurrentFrame.mmProjectPoints[pMP->mnId] = cv::Point2f(pMP->mTrackProjX, pMP->mTrackProjY);
         }
     }
@@ -1443,10 +1441,8 @@ void Tracking::UpdateLocalPoints()
     {
         KeyFrame* pKF = *itKF;
         const vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
-
         for(vector<MapPoint*>::const_iterator itMP=vpMPs.begin(), itEndMP=vpMPs.end(); itMP!=itEndMP; itMP++)
         {
-
             MapPoint* pMP = *itMP;
             if(!pMP)
                 continue;

@@ -216,7 +216,6 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
-    //auto [keys,descriptors] = mpORBextractorLeft->extractFeatures(im_managed);
     auto key_desc_optional = mpORBextractorLeft->extractFeatures(im_managed);
 
     if(key_desc_optional.has_value()){
