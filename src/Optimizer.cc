@@ -2823,16 +2823,19 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
             lpOptVisKFs.push_back(pKFi);
 
             vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-            for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [&lLocalMapPoints, pKF](auto pMP) {
-                if(pMP)
-                    if(!pMP->isBad())
-                        if(pMP->mnBALocalForKF!=pKF->mnId)
-                        {
-                            pMP->mnBALocalForKF=pKF->mnId;
-                            lLocalMapPoints.push_back(pMP);
+            const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
 
-                        }
-            });
+            //TODO: Remove cut off points later and combine size with previous points
+            const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
+
+            for(auto i = 0; i < maxPointsToAdd; ++i)
+            {
+                const auto& [id, error] = vObsReprojErrors[i];
+                if(error == std::numeric_limits<double>::max())
+                    continue;
+                auto pMP = vpMPs[id];
+                lLocalMapPoints.push_back(pMP);
+            }
         }
     }
 
