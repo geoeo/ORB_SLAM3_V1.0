@@ -116,6 +116,7 @@ public:
     void AddReprojectionError(const Eigen::Vector2d &error);
     void ComputeReprojectionErrors(bool useGNSSFrame);
     std::list<Eigen::Vector2d> GetReprojectionErrors();
+    static std::vector<std::pair<size_t, double>> GetSortedReprojectionErrorIndices(const std::vector<MapPoint*> &vpMPs, KeyFrame* pKF);
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const bool bRight = false) const;

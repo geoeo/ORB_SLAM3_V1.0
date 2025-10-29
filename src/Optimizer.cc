@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <execution>
 #include <numeric>
+#include <limits>
 
 #include <Eigen/StdVector>
 #include <Eigen/Dense>
@@ -1283,6 +1284,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         if(*pbStopFlag)
             return;
 
+    Verbose::PrintMess("LocalBA: Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
     optimizer.initializeOptimization();
     optimizer.optimize(5);
 
@@ -1395,7 +1397,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
             lLocalKeyFrames.push_back(pKFi);
             sAcceptedIds.insert(pKFi->mnId);
         }
-
     }
 
     // Local MapPoints seen in Local KeyFrames 
@@ -1620,11 +1621,15 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
                                   {
                                       return a->mnId < b->mnId;
                                   });
-
+    
+    // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
+    // vAllKfs = newKfs;
+    
     const auto maxKFId = vAllKfs.back()->mnId;
     std::set<long unsigned int> sFixedKfIds;
+    std::set<long unsigned int> sAcceptedIds;
     const size_t startFixedKFCount = 5;
-    const size_t endFixedKFCount = 1;
+    const size_t endFixedKFCount = 2;
     const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
     const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
     sFixedKfIds.insert(maxKFId);
@@ -1633,12 +1638,14 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
     for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
         sFixedKfIds.insert(vAllKfs[i]->mnId);
-
+    
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
+        if(!pKFi->isBad() && pKFi->GetMap() == pMap){
             lLocalKeyFrames.push_back(pKFi);
+            sAcceptedIds.insert(pKFi->mnId);
+        }
     }
 
     // Local MapPoints seen in Local KeyFrames
@@ -1647,13 +1654,15 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     for(auto pKFi : lLocalKeyFrames)
     {
         vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-        for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints](auto pMP)
+        for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints, &geoReferencer](auto pMP)
         {
             if(pMP)
                 if(!pMP->isBad() && pMP->GetMap() == pMap)
                 {
                     if(pMP->mnBALocalForKF!=pKF->mnId)
                     {
+                        if(!pMP->GetGNSSPos().has_value())
+                            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
                         lLocalMapPoints.push_back(pMP);
                         pMP->mnBALocalForKF=pKF->mnId;
                     }
@@ -1725,8 +1734,6 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     for(auto pMP: lLocalMapPoints)
     {   
         auto vPoint = new g2o::VertexPointXYZ();
-        if(!pMP->GetGNSSPos().has_value())
-            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
         vPoint->setEstimate(pMP->GetGNSSPos().value());
         int id = pMP->mnId+maxKFId+1;
         vPoint->setId(id);
@@ -1803,17 +1810,10 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
         KeyFrame* pKFi = vpEdgeKFMono[i];
         e->computeError();
-
+        pKFi->AddReprojectionError(e->error());
 
         if(e->chi2()>5.991 || !is_depth_positive)
-        {
             vToErase.push_back(make_pair(pKFi,pMP));
-        } else {
-            pKFi->AddReprojectionError(e->error());
-        }
-
-        //auto error_norm = e->error().norm();
-        //Verbose::PrintMess("GNSS Edge error: " + to_string(error_norm) + " chi2: " + to_string(e->chi2()), Verbose::VERBOSITY_NORMAL);
     });
 
     Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_NORMAL);
@@ -2747,8 +2747,10 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
-    int maxOpt=5;
-    int opt_it=4;
+    const int maxOpt=5;
+    const int opt_it=4;
+    const int maxMapPoints = 1000;
+    const size_t maxMapPointsPerFrame = std::floor(maxMapPoints/maxOpt);
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2775,17 +2777,21 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     for(auto vpKFs: vpOptimizableKFs)
     {
         vector<MapPoint*> vpMPs = vpKFs->GetMapPointMatches();
-        for(auto pMP: vpMPs)
+        const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
+        //TODO: Remove cut off points later
+        const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
+
+        for(auto i = 0; i < maxPointsToAdd; ++i)
         {
-            if(pMP)
-                if(!pMP->isBad())
-                    if(pMP->mnBALocalForKF!=pKF->mnId)
-                    {
-                        lLocalMapPoints.push_back(pMP);
-                        pMP->mnBALocalForKF=pKF->mnId;
-                    }
+            const auto& [id, error] = vObsReprojErrors[i];
+            if(error == std::numeric_limits<double>::max())
+                continue;
+            auto pMP = vpMPs[id];
+            lLocalMapPoints.push_back(pMP);
         }
     }
+
+    Verbose::PrintMess("LocalInertialBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
     // Fixed Keyframe: First frame previous KF to optimization window)
     list<KeyFrame*> lFixedKeyFrames;
@@ -2829,6 +2835,8 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
             });
         }
     }
+
+    Verbose::PrintMess("LocalInertialBA: Total Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
     // Fixed KFs which are not covisible optimizable
     const int maxFixKF = 20;
@@ -2935,7 +2943,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
         if(!pKFi->mPrevKF)
         {
-            Verbose::PrintMess("LocalInertialBA: NO INERTIAL LINK TO PREVIOUS FRAME!!!!", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("LocalInertialBA: No Inertial Link To Previous Frame", Verbose::VERBOSITY_NORMAL);
             return;
         }
 
@@ -3084,8 +3092,6 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
         });
     }
-
-    //cout << "Total map points: " << lLocalMapPoints.size() << endl;
 
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();

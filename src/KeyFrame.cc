@@ -426,6 +426,38 @@ void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
     }
 }
 
+vector<std::pair<size_t, double>> KeyFrame::GetSortedReprojectionErrorIndices(const vector<MapPoint*> &vpMPs, KeyFrame* pKF){
+        vector<std::pair<size_t, double>> vObsReprojErrors;
+        vObsReprojErrors.reserve(vpMPs.size());
+
+        for(auto i = 0; i < vpMPs.size(); ++i)
+        {
+            auto pMP = vpMPs[i];
+            optional<Eigen::Vector2d> error_vec = nullopt;
+            if(pMP)
+                if(!pMP->isBad()){
+                    if(pMP->mnBALocalForKF!=pKF->mnId){
+                        const auto Tcw = pKF->GetPose().cast<double>();
+                        const auto pose_sim3d = Sophus::Sim3d(1.0,Tcw.unit_quaternion(), Tcw.translation());
+                        error_vec = pKF->ProjectPointUnDistort(pMP->GetWorldPos().cast<double>(),pose_sim3d);
+                        pMP->mnBALocalForKF=pKF->mnId;
+                    }
+                }
+            
+            if(error_vec.has_value())
+                vObsReprojErrors.emplace_back(i, error_vec.value().norm());
+            else
+                vObsReprojErrors.emplace_back(i, std::numeric_limits<double>::max());
+        }
+
+        std::sort(vObsReprojErrors.begin(), vObsReprojErrors.end(), [](auto& a, auto& b)
+        {
+            return a.second < b.second;
+        });
+
+    return vObsReprojErrors;
+}
+
 MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
