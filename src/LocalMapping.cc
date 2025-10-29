@@ -88,10 +88,18 @@ void LocalMapping::Run()
             CreateNewMapPoints();
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
+                //TODO: This lock leads to deadlock(?) investigate why this happens
+                //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                 const auto georef_succcess = GeoreferenceKeyframes();
                 if(georef_succcess && writeKFAfterGeorefCount == 0){
-                    if(mbWriteGNSSData)
-                        Map::writeKeyframesCsv("keyframes_after_georef", mpAtlas->GetCurrentMap()->GetAllKeyFrames());
+                    if(mbWriteGNSSData){
+                        const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+                        for(const auto kf : kfs)
+                            kf->ComputeReprojectionErrors(true);
+                        Map::writeKeyframesCsv("keyframes_after_georef", kfs);
+                        Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
+                    }
+
                     writeKFAfterGeorefCount = 1;
                 }
                 if(mGeometricReferencer.isInitialized() && mbUseGNSSBA){
@@ -103,7 +111,7 @@ void LocalMapping::Run()
                         if(mbWriteGNSSData){
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
                             Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
-                            Map::writeKeyframesReprojectionErrors("reprojections", kfs);
+                            Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
                         }
 
                         writeKFAfterGBACount = 1;

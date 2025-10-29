@@ -15,11 +15,13 @@ void GeometricReferencer::clear()
 {
   m_is_initialized = false;
   mTgw_current = Sophus::Sim3d();
+  unique_lock<mutex> lock(mMutexFrames);
   m_latest_frames_to_georef = {};
 }
 
 void GeometricReferencer::clearFrames()
 {
+  unique_lock<mutex> lock(mMutexFrames);
   m_latest_frames_to_georef = {};
 }
 
@@ -34,12 +36,14 @@ Sophus::Sim3d GeometricReferencer::getCurrentTransform() const
 }
 
 void GeometricReferencer::addKeyFrame(KeyFrame* kf){
+  unique_lock<mutex> lock(mMutexFrames);
     if(m_latest_frames_to_georef.size() >= m_min_nrof_frames)
       m_latest_frames_to_georef.pop_front();
     m_latest_frames_to_georef.push_back(kf);
 }
 
 std::deque<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
+  unique_lock<mutex> lock(mMutexFrames);
   return m_latest_frames_to_georef;
 }
 
@@ -52,7 +56,7 @@ optional<Sophus::Sim3d> GeometricReferencer::init(const std::deque<KeyFrame*> &f
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
 
-  auto pose = update(m_latest_frames_to_georef); 
+  auto pose = update(getFramesToGeoref()); 
 
   m_is_initialized = true;
   return pose;

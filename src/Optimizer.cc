@@ -1370,11 +1370,15 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
                                   {
                                       return a->mnId < b->mnId;
                                   });
-
+    
+    // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
+    // vAllKfs = newKfs;
+    
     const auto maxKFId = vAllKfs.back()->mnId;
     std::set<long unsigned int> sFixedKfIds;
-    const size_t startFixedKFCount = 5;
-    const size_t endFixedKFCount = 1;
+    std::set<long unsigned int> sAcceptedIds;
+    const size_t startFixedKFCount = 4;
+    const size_t endFixedKFCount = 2;
     const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
     const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
     sFixedKfIds.insert(maxKFId);
@@ -1387,25 +1391,34 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
+        if(!pKFi->isBad() && pKFi->GetMap() == pMap){
             lLocalKeyFrames.push_back(pKFi);
+            sAcceptedIds.insert(pKFi->mnId);
+        }
+
     }
 
-    // Local MapPoints seen in Local KeyFrames
+    // Local MapPoints seen in Local KeyFrames 
     list<MapPoint*> lLocalMapPoints;
     set<MapPoint*> sNumObsMP;
     for(auto pKFi : lLocalKeyFrames)
     {
         vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-        for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints](auto pMP)
+        for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints, &geoReferencer](auto pMP)
         {
             if(pMP)
                 if(!pMP->isBad() && pMP->GetMap() == pMap)
                 {
                     if(pMP->mnBALocalForKF!=pKF->mnId)
                     {
-                        lLocalMapPoints.push_back(pMP);
-                        pMP->mnBALocalForKF=pKF->mnId;
+                        if(!pMP->GetGNSSPos().has_value())
+                            pMP->UpdateGNSSPos(geoReferencer.getCurrentTransform());
+                        //auto P = pKF->GetGNSSCameraPose().inverse() * pMP->GetGNSSPos().value();
+                        //if(P.z() > 0){
+                            lLocalMapPoints.push_back(pMP);
+                            pMP->mnBALocalForKF=pKF->mnId;
+                        //}
+
                     }
                 }
         });
@@ -1445,7 +1458,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         const auto fixKF = sFixedKfIds.find(pKFi->mnId) != sFixedKfIds.end();
         vSE3->setEstimate(Tcg);
         vSE3->setId(pKFi->mnId);
-        vSE3->setFixed(fixKF); // Fix first and last frame
+        vSE3->setFixed(fixKF);
         optimizer.addVertex(vSE3);
         // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
@@ -1487,11 +1500,11 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
 
         //Set edges
-        for_each(execution::seq, observations.begin(), observations.end(), [pMap,pMP,&optimizer,&vpEdgesMono,&vpEdgeKFMono,&vpMapPointEdgeMono,&nEdges,thHuberMono,id](auto mit)
+        for_each(execution::seq, observations.begin(), observations.end(), [pMap,pMP,&optimizer,&vpEdgesMono,&vpEdgeKFMono,&vpMapPointEdgeMono,&nEdges,&sAcceptedIds,thHuberMono,id](auto mit)
         {
             KeyFrame* pKFi = mit.first;
 
-            if(!pKFi->isBad() && pKFi->GetMap() == pMap)
+            if(!pKFi->isBad() && pKFi->GetMap() == pMap && sAcceptedIds.find(pKFi->mnId) != sAcceptedIds.end())
             {
                 const int leftIndex = get<0>(mit.second);
 
@@ -1555,6 +1568,8 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
         if(e->chi2()>5.991 || !e->isDepthPositive())
             vToErase.push_back(make_pair(pKFi,pMP));
+        // else
+        //     pKFi->AddReprojectionError(e->error());
     });
 
     Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_NORMAL);
@@ -1568,7 +1583,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         auto pMPi = eraseTuple.second;
         pKFi->EraseMapPointMatch(pMPi);
         pMPi->EraseObservation(pKFi);
-    });
+    }); 
 
     // Recover optimized data
     //Keyframes
@@ -1582,7 +1597,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     //Points
     for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFId](auto pMP) {
         auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFId+1));
-        pMP->SetGNSSPosition(vPoint->estimate());
+        pMP->SetGNSSPos(vPoint->estimate());
     });
 
     const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
@@ -1788,11 +1803,13 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
 
         KeyFrame* pKFi = vpEdgeKFMono[i];
         e->computeError();
-        pKFi->AddReprojectionError(e->error());
+
 
         if(e->chi2()>5.991 || !is_depth_positive)
         {
             vToErase.push_back(make_pair(pKFi,pMP));
+        } else {
+            pKFi->AddReprojectionError(e->error());
         }
 
         //auto error_norm = e->error().norm();
@@ -1826,7 +1843,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     //Points
     for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFId](auto pMP) {
         auto vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFId+1));
-        pMP->SetGNSSPosition(vPoint->estimate());
+        pMP->SetGNSSPos(vPoint->estimate());
     });
 
     const auto Tgw = geoReferencer.update(deque<KeyFrame*>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));

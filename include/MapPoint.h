@@ -47,7 +47,7 @@ public:
     Eigen::Vector3f GetWorldPos();
 
     std::optional<Eigen::Vector3d> GetGNSSPos();
-    void SetGNSSPosition(const Eigen::Vector3d &pos);
+    void SetGNSSPos(const Eigen::Vector3d &pos);
     void UpdateGNSSPos(const Sophus::Sim3d &Tgw);
 
     Eigen::Vector3f GetNormal();

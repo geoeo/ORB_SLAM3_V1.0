@@ -33,6 +33,7 @@ namespace ORB_SLAM3
     int m_min_nrof_frames;
     Sophus::Sim3d mTgw_current;
     std::deque<KeyFrame*> m_latest_frames_to_georef;
+    std::mutex mMutexFrames;
 
     Sophus::Sim3d estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
   };

@@ -114,6 +114,7 @@ public:
 
     void ClearReprojectionErrors();
     void AddReprojectionError(const Eigen::Vector2d &error);
+    void ComputeReprojectionErrors(bool useGNSSFrame);
     std::list<Eigen::Vector2d> GetReprojectionErrors();
 
     // KeyPoint functions
@@ -151,8 +152,7 @@ public:
 
     IMU::Bias GetImuBias();
 
-    bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
-    bool ProjectPointUnDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+    std::optional<Eigen::Vector2d> ProjectPointUnDistort(const Eigen::Vector3d& P,const Sophus::Sim3d& Tcw);
 
     void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP, std::set<GeometricCamera*>& spCam);
     void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid, std::map<unsigned int, GeometricCamera*>& mpCamId);

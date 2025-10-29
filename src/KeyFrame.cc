@@ -399,7 +399,11 @@ void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
     for(auto idx = 0; idx < mvKeysUn->size(); ++idx){
         const auto keypoint = mvKeysUn->at(idx);
         const auto mapPoint = mvpMapPoints[idx];
-        if(useGNSSFrame && !mapPoint->GetGNSSPos().has_value())
+
+        if(!mapPoint)
+            continue;
+
+        if((useGNSSFrame && !mapPoint->GetGNSSPos().has_value()) || mapPoint->isBad())
             continue;
 
         const auto obs = Eigen::Vector2d(keypoint.pt.x, keypoint.pt.y);
@@ -1076,21 +1080,24 @@ optional<Eigen::Vector2d> KeyFrame::ProjectPointUnDistort(const Eigen::Vector3d&
     const auto PcZ = Pc(2);
 
     // Check positive depth
-    if(PcZ<0.0)
-    {
-        Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_NORMAL);
+    // if(PcZ<0.0)
+    // {
+    //     Verbose::PrintMess("Negative depth: " + to_string(PcZ), Verbose::VERBOSITY_DEBUG);
+    //     return nullopt;
+    // }
+
+    if(PcZ == 0)
         return nullopt;
-    }
 
     // Project in image and check it is not outside
     const auto invz = 1.0/PcZ;
     const auto u = fx * PcX * invz + cx;
     const auto v = fy * PcY * invz + cy;
 
-    if(u<mnMinX || u>mnMaxX)
-        return nullopt;
-    if(v<mnMinY || v>mnMaxY)
-        return nullopt;
+    // if(u<mnMinX || u>mnMaxX)
+    //     return nullopt;
+    // if(v<mnMinY || v>mnMaxY)
+    //     return nullopt;
 
     return Eigen::Vector2d(u, v);
 }
