@@ -102,6 +102,8 @@ public:
     void static InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
     void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
 
+    void static ComputeAndFillLocalMapPoints(const std::vector<KeyFrame*> &vpKFs, Map *pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId, std::list<MapPoint*> &spLocalMapPoints_mut);
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };
 
