@@ -1423,12 +1423,12 @@ void Tracking::SearchLocalPoints()
 
 void Tracking::UpdateLocalMap()
 {
-    // This is for visualization
-    mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
-
     // Update
     UpdateLocalKeyFrames();
     UpdateLocalPoints();
+
+    // This is for visualization
+    mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
 }
 
 void Tracking::UpdateLocalPoints()
@@ -1462,7 +1462,9 @@ void Tracking::UpdateLocalPoints()
 void Tracking::UpdateLocalKeyFrames()
 {
     // Each map point vote for the keyframes in which it has been observed
-    map<KeyFrame*,int> keyframeCounter;
+    map<unsigned long int,int> keyframeCounter;
+    map<unsigned long int,KeyFrame*> keyframePointerMap;
+
     if(!mpAtlas->isImuInitialized())
     {
         for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
@@ -1473,8 +1475,10 @@ void Tracking::UpdateLocalKeyFrames()
                 if(!pMP->isBad())
                 {
                     const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
-                        keyframeCounter[it->first]++;
+                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++){
+                        keyframeCounter[it->first->mnId]++;
+                        keyframePointerMap[it->first->mnId]=it->first;
+                    }
                 }
                 else
                 {
@@ -1496,8 +1500,10 @@ void Tracking::UpdateLocalKeyFrames()
                 if(!pMP->isBad())
                 {
                     const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
-                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
-                        keyframeCounter[it->first]++;
+                    for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++){
+                        keyframeCounter[it->first->mnId]++;
+                        keyframePointerMap[it->first->mnId]=it->first;
+                    }
                 }
                 else
                 {
@@ -1508,107 +1514,121 @@ void Tracking::UpdateLocalKeyFrames()
         }
     }
 
+    vector <pair<KeyFrame*,int>> vPairs;
+    for(map<unsigned long int,int>::const_iterator it=keyframeCounter.begin(), itEnd=keyframeCounter.end(); it!=itEnd; it++)
+    {
+        auto pKFId = it->first;
+        auto pKF = keyframePointerMap[pKFId];
+        vPairs.push_back(make_pair(pKF,it->second));
+    }
 
-    int max=0;
-    KeyFrame* pKFmax= static_cast<KeyFrame*>(NULL);
+    std::sort(vPairs.begin(), vPairs.end(), [](auto& a, auto& b)
+    {
+        return a.second > b.second;
+    });
 
+    //int max=0;
+    //KeyFrame* pKFmax= static_cast<KeyFrame*>(NULL);
+    const size_t nKFs = min((size_t)10,vPairs.size());
     mvpLocalKeyFrames.clear();
-    mvpLocalKeyFrames.reserve(3*keyframeCounter.size());
+    mvpLocalKeyFrames.reserve(nKFs);
 
     // All keyframes that observe a map point are included in the local map. Also check which keyframe shares most points
-    for(map<KeyFrame*,int>::const_iterator it=keyframeCounter.begin(), itEnd=keyframeCounter.end(); it!=itEnd; it++)
+    for(size_t i=0; i<nKFs; i++)
     {
-        KeyFrame* pKF = it->first;
+        const auto pKF = vPairs[i].first;
 
         if(pKF->isBad())
             continue;
 
-        if(it->second>max)
-        {
-            max=it->second;
-            pKFmax=pKF;
-        }
+        // if(it->second>max)
+        // {
+        //     max=it->second;
+        //     pKFmax=pKF;
+        // }
 
         mvpLocalKeyFrames.push_back(pKF);
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
-    // Include also some not-already-included keyframes that are neighbors to already-included keyframes
-    for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
-    {
-        // Limit the number of keyframes
-        //if(mvpLocalKeyFrames.size()>80) // 80
-        //    break;
+    Verbose::PrintMess("UpdateLocalKeyFrames: Local KeyFrames: " + to_string(mvpLocalKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
 
-        KeyFrame* pKF = *itKF;
+    //Include also some not-already-included keyframes that are neighbors to already-included keyframes
+    // for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
+    // {
+    //     // Limit the number of keyframes
+    //     //if(mvpLocalKeyFrames.size()>80) // 80
+    //     //    break;
 
-        const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
+    //     KeyFrame* pKF = *itKF;
+
+    //     const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
 
 
-        for(vector<KeyFrame*>::const_iterator itNeighKF=vNeighs.begin(), itEndNeighKF=vNeighs.end(); itNeighKF!=itEndNeighKF; itNeighKF++)
-        {
-            KeyFrame* pNeighKF = *itNeighKF;
-            if(!pNeighKF->isBad())
-            {
-                if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-                {
-                    mvpLocalKeyFrames.push_back(pNeighKF);
-                    pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-                    break;
-                }
-            }
-        }
+    //     for(vector<KeyFrame*>::const_iterator itNeighKF=vNeighs.begin(), itEndNeighKF=vNeighs.end(); itNeighKF!=itEndNeighKF; itNeighKF++)
+    //     {
+    //         KeyFrame* pNeighKF = *itNeighKF;
+    //         if(!pNeighKF->isBad())
+    //         {
+    //             if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+    //             {
+    //                 mvpLocalKeyFrames.push_back(pNeighKF);
+    //                 pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+    //                 break;
+    //             }
+    //         }
+    //     }
 
-        const set<KeyFrame*> spChilds = pKF->GetChilds();
-        for(set<KeyFrame*>::const_iterator sit=spChilds.begin(), send=spChilds.end(); sit!=send; sit++)
-        {
-            KeyFrame* pChildKF = *sit;
-            if(!pChildKF->isBad())
-            {
-                if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-                {
-                    mvpLocalKeyFrames.push_back(pChildKF);
-                    pChildKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-                    break;
-                }
-            }
-        }
+    //     const set<KeyFrame*> spChilds = pKF->GetChilds();
+    //     for(set<KeyFrame*>::const_iterator sit=spChilds.begin(), send=spChilds.end(); sit!=send; sit++)
+    //     {
+    //         KeyFrame* pChildKF = *sit;
+    //         if(!pChildKF->isBad())
+    //         {
+    //             if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+    //             {
+    //                 mvpLocalKeyFrames.push_back(pChildKF);
+    //                 pChildKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+    //                 break;
+    //             }
+    //         }
+    //     }
 
-        KeyFrame* pParent = pKF->GetParent();
-        if(pParent)
-        {
-            if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-            {
-                mvpLocalKeyFrames.push_back(pParent);
-                pParent->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-                break;
-            }
-        }
-    }
+    //     KeyFrame* pParent = pKF->GetParent();
+    //     if(pParent)
+    //     {
+    //         if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+    //         {
+    //             mvpLocalKeyFrames.push_back(pParent);
+    //             pParent->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+    //             break;
+    //         }
+    //     }
+    // }
 
-    // Add 10 last temporal KFs (mainly for IMU)
-    if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
-    {
-        KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
+    // // Add 10 last temporal KFs (mainly for IMU)
+    // if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
+    // {
+    //     KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
 
-        const int Nd = 20;
-        for(int i=0; i<Nd; i++){
-            if (!tempKeyFrame)
-                break;
-            if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-            {
-                mvpLocalKeyFrames.push_back(tempKeyFrame);
-                tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-                tempKeyFrame=tempKeyFrame->mPrevKF;
-            }
-        }
-    }
+    //     const int Nd = 20;
+    //     for(int i=0; i<Nd; i++){
+    //         if (!tempKeyFrame)
+    //             break;
+    //         if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
+    //         {
+    //             mvpLocalKeyFrames.push_back(tempKeyFrame);
+    //             tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame.mnId;
+    //             tempKeyFrame=tempKeyFrame->mPrevKF;
+    //         }
+    //     }
+    // }
 
-    if(pKFmax)
-    {
-        mpReferenceKF = pKFmax;
-        mCurrentFrame.mpReferenceKF = mpReferenceKF;
-    }
+    // if(pKFmax)
+    // {
+    //     mpReferenceKF = pKFmax;
+    //     mCurrentFrame.mpReferenceKF = mpReferenceKF;
+    // }
 }
 
 bool Tracking::Relocalization()
