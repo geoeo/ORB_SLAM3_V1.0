@@ -1349,10 +1349,12 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
         pKFi->SetPose(Tiw);
         pKFi->mnBAFixedForKF = 0;
+        pKFi->mnBALocalForKF = 0;
     });
 
     for_each(execution::par, lFixedCameras.begin(), lFixedCameras.end(),[](auto pKFi) {
         pKFi->mnBAFixedForKF = 0;
+        pKFi->mnBALocalForKF = 0;    
     });
 
     //Points
@@ -3182,6 +3184,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
         pKFi->mnBALocalForKF=0;
+        pKFi->mnBAFixedForKF = 0;
         latestOptimizedKFPoses.push_back(make_pair(pKFi->mnFrameId, Tcw));
 
         if(pKFi->bImu)
