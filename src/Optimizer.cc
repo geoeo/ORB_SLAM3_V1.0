@@ -1070,14 +1070,18 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     ZoneNamedN(LocalBundleAdjustment, "LocalBundleAdjustment", true); 
 
     // Local KeyFrames: First Breath Search from Current Keyframe
-    list<KeyFrame*> lLocalKeyFrames;
-    size_t maxOpt=12;
-
-    lLocalKeyFrames.push_back(pKF);
-    pKF->mnBALocalForKF = pKF->mnId;
+    vector<KeyFrame*> lLocalKeyFrames;
+    const size_t maxOpt=12;
+    const int maxIterations = 5;
+    const size_t maxMapPointsPerFrame = 1500; // Half of 3000 nFeatuers -> TODO: Derive from settings
 
     const vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
+
+
+    lLocalKeyFrames.reserve(Nd+1);
+    lLocalKeyFrames.push_back(pKF);
+    pKF->mnBALocalForKF = pKF->mnId;
 
     for(int i=0; i<Nd; i++) {
         KeyFrame* pKFi = vNeighKFs[i];
@@ -1089,27 +1093,26 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     // Local MapPoints seen in Local KeyFrames
     num_fixedKF = 0;
     list<MapPoint*> lLocalMapPoints;
-    set<MapPoint*> sNumObsMP;
     for(auto pKFi : lLocalKeyFrames)
     {
         if(pKFi->mnId==pMap->GetInitKFid())
-        {
             num_fixedKF = 1;
-        }
+
         vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-        for_each(execution::seq, vpMPs.begin(), vpMPs.end(), [pKF,pMap,&lLocalMapPoints](auto pMP)
-        {
-            if(pMP)
-                if(!pMP->isBad() && pMP->GetMap() == pMap)
-                {
-                    if(pMP->mnBALocalForKF!=pKF->mnId)
-                    {
-                        lLocalMapPoints.push_back(pMP);
-                        pMP->mnBALocalForKF=pKF->mnId;
-                    }
-                }
-        });
+        const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
+        const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
+        for(auto i = 0; i < maxPointsToAdd; ++i) {
+            const auto& [id, error] = vObsReprojErrors[i];
+            if(error == std::numeric_limits<double>::max()){
+                continue; // Could be rejected due to duplication not only reprojection error
+            } else {
+                auto pMP = vpMPs[id];
+                lLocalMapPoints.push_back(pMP);
+            }
+        }
     }
+
+    Verbose::PrintMess("LocalBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     list<KeyFrame*> lFixedCameras;
@@ -1176,7 +1179,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
-    Verbose::PrintMess("LM-LBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LBA: Opt KFs: " + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LBA: Fixed KFs: " + to_string(lFixedCameras.size()), Verbose::VERBOSITY_NORMAL);
 
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
@@ -1286,7 +1290,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 
     Verbose::PrintMess("LocalBA: Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
     optimizer.initializeOptimization();
-    optimizer.optimize(5);
+    optimizer.optimize(maxIterations);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesBody.size());
@@ -1344,6 +1348,11 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         g2o::SE3Quat SE3quat = vSE3->estimate();
         Sophus::SE3f Tiw(SE3quat.rotation().cast<float>(), SE3quat.translation().cast<float>());
         pKFi->SetPose(Tiw);
+        pKFi->mnBAFixedForKF = 0;
+    });
+
+    for_each(execution::par, lFixedCameras.begin(), lFixedCameras.end(),[](auto pKFi) {
+        pKFi->mnBAFixedForKF = 0;
     });
 
     //Points
@@ -2747,10 +2756,13 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
+    // Full optimizable KFs
     const int maxOpt=5;
     const int opt_it=4;
+    // Optimizable visual KFs
+    const int maxCovisibleKF = 0;
     const int maxMapPoints = 1000;
-    const size_t maxMapPointsPerFrame = std::floor(maxMapPoints/maxOpt);
+    const size_t maxMapPointsPerFrame = std::floor(maxMapPoints/(maxOpt+maxCovisibleKF));
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2774,6 +2786,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     // Optimizable points seen by temporal optimizable keyframes
     list<MapPoint*> lLocalMapPoints;
+    set<MapPoint*> sRejectedMps;
     for(auto vpKFs: vpOptimizableKFs)
     {
         vector<MapPoint*> vpMPs = vpKFs->GetMapPointMatches();
@@ -2785,9 +2798,12 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         {
             const auto& [id, error] = vObsReprojErrors[i];
             if(error == std::numeric_limits<double>::max())
-                continue;
-            auto pMP = vpMPs[id];
-            lLocalMapPoints.push_back(pMP);
+                sRejectedMps.insert(vpMPs[id]);
+            else {
+                auto pMP = vpMPs[id];
+                lLocalMapPoints.push_back(pMP);
+            }
+
         }
     }
 
@@ -2808,11 +2824,9 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         vpOptimizableKFs.pop_back();
     }
 
-    // Optimizable visual KFs
-    const int maxCovKF = 0;
     for(auto pKFi: vpNeighsKFs)
     {
-        if(lpOptVisKFs.size() >= maxCovKF)
+        if(lpOptVisKFs.size() >= maxCovisibleKF)
             break;
 
         if(pKFi->mnBALocalForKF == pKF->mnId || pKFi->mnBAFixedForKF == pKF->mnId)
@@ -3154,7 +3168,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     });
 
 
-    for_each(execution::seq, lFixedKeyFrames.begin(), lFixedKeyFrames.end(), [](auto pKFi){
+    for_each(execution::par, lFixedKeyFrames.begin(), lFixedKeyFrames.end(), [](auto pKFi){
         pKFi->mnBAFixedForKF = 0;
     });
 
