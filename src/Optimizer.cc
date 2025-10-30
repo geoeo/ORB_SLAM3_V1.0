@@ -47,6 +47,7 @@
 #include <OptimizableTypes.h>
 #include <KeyPoint.h>
 
+using namespace std;
 
 namespace ORB_SLAM3
 {
@@ -1083,34 +1084,22 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
+
+    num_fixedKF = 0;
     for(int i=0; i<Nd; i++) {
         KeyFrame* pKFi = vNeighKFs[i];
         pKFi->mnBALocalForKF = pKF->mnId;
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
+        if(!pKFi->isBad() && pKFi->GetMap() == pMap){
+            if(pKFi->mnId==pMap->GetInitKFid())
+                num_fixedKF = 1;
             lLocalKeyFrames.push_back(pKFi);
+        }
+
     }
 
     // Local MapPoints seen in Local KeyFrames
-    num_fixedKF = 0;
     list<MapPoint*> lLocalMapPoints;
-    for(auto pKFi : lLocalKeyFrames)
-    {
-        if(pKFi->mnId==pMap->GetInitKFid())
-            num_fixedKF = 1;
-
-        vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-        const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
-        const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
-        for(auto i = 0; i < maxPointsToAdd; ++i) {
-            const auto& [id, error] = vObsReprojErrors[i];
-            if(error == std::numeric_limits<double>::max()){
-                continue; // Could be rejected due to duplication not only reprojection error
-            } else {
-                auto pMP = vpMPs[id];
-                lLocalMapPoints.push_back(pMP);
-            }
-        }
-    }
+    ComputeAndFillLocalMapPoints(lLocalKeyFrames, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
 
     Verbose::PrintMess("LocalBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
@@ -1362,6 +1351,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
         pMP->UpdateNormalAndDepth();
+        pMP->mnBALocalForKF = 0;
     });
  
 
@@ -2770,7 +2760,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     vector<KeyFrame*> vpOptimizableKFs;
     const vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
-    list<KeyFrame*> lpOptVisKFs;
+    vector<KeyFrame*> lpOptVisKFs;
 
     vpOptimizableKFs.reserve(Nd);
     vpOptimizableKFs.push_back(pKF);
@@ -2788,26 +2778,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
     // Optimizable points seen by temporal optimizable keyframes
     list<MapPoint*> lLocalMapPoints;
-    set<MapPoint*> sRejectedMps;
-    for(auto vpKFs: vpOptimizableKFs)
-    {
-        vector<MapPoint*> vpMPs = vpKFs->GetMapPointMatches();
-        const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
-        //TODO: Remove cut off points later
-        const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
-
-        for(auto i = 0; i < maxPointsToAdd; ++i)
-        {
-            const auto& [id, error] = vObsReprojErrors[i];
-            if(error == std::numeric_limits<double>::max())
-                sRejectedMps.insert(vpMPs[id]);
-            else {
-                auto pMP = vpMPs[id];
-                lLocalMapPoints.push_back(pMP);
-            }
-
-        }
-    }
+    ComputeAndFillLocalMapPoints(vpOptimizableKFs, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
 
     Verbose::PrintMess("LocalInertialBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
@@ -2831,30 +2802,13 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         if(lpOptVisKFs.size() >= maxCovisibleKF)
             break;
 
-        if(pKFi->mnBALocalForKF == pKF->mnId || pKFi->mnBAFixedForKF == pKF->mnId)
+        if(pKFi->mnBALocalForKF == pKF->mnId || pKFi->mnBAFixedForKF == pKF->mnId || pKFi->isBad() || pKFi->GetMap() != pMap)
             continue;
         pKFi->mnBALocalForKF = pKF->mnId;
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap)
-        {
-            lpOptVisKFs.push_back(pKFi);
-
-            vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
-            const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKF);
-
-            //TODO: Remove cut off points later and combine size with previous points
-            const auto maxPointsToAdd = std::min(vObsReprojErrors.size(), maxMapPointsPerFrame);
-
-            for(auto i = 0; i < maxPointsToAdd; ++i)
-            {
-                const auto& [id, error] = vObsReprojErrors[i];
-                if(error == std::numeric_limits<double>::max())
-                    continue;
-                auto pMP = vpMPs[id];
-                lLocalMapPoints.push_back(pMP);
-            }
-        }
+        lpOptVisKFs.push_back(pKFi);
     }
 
+    ComputeAndFillLocalMapPoints(vpOptimizableKFs, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
     Verbose::PrintMess("LocalInertialBA: Total Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
 
     // Fixed KFs which are not covisible optimizable
@@ -3216,6 +3170,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+iniMPid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
         pMP->UpdateNormalAndDepth();
+        pMP->mnBALocalForKF = 0;
     });
 
     pMap->IncreaseChangeIndex();
@@ -5733,5 +5688,24 @@ void Optimizer::OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFram
     }
     //pMap->IncreaseChangeIndex();
 }
+
+ void Optimizer::ComputeAndFillLocalMapPoints(const vector<KeyFrame*> &vpKFs, Map *pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId,  list<MapPoint*> &spLocalMapPoints_mut){
+    for(auto pKFi : vpKFs)
+    {
+        vector<MapPoint*> vpMPs = pKFi->GetMapPointMatches();
+        const auto vObsReprojErrors = KeyFrame::GetSortedReprojectionErrorIndices(vpMPs, pKFi);
+        const auto maxPointsToAdd = min(vObsReprojErrors.size(), maxMapPointsPerFrame);
+        for(auto i = 0; i < maxPointsToAdd; ++i) {
+            const auto& [id, error] = vObsReprojErrors[i];
+            auto pMP = vpMPs[id];
+            if(error == numeric_limits<double>::max() || pMP->mnBALocalForKF==initialFrameId){
+                continue; // Could be rejected due to duplication not only reprojection error
+            } else {
+                pMP->mnBALocalForKF = initialFrameId;
+                spLocalMapPoints_mut.push_back(pMP);
+            }
+        }
+    }
+ }
 
 } //namespace ORB_SLAM

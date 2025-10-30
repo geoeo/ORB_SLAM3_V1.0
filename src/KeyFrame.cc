@@ -436,12 +436,9 @@ vector<std::pair<size_t, double>> KeyFrame::GetSortedReprojectionErrorIndices(co
             optional<Eigen::Vector2d> error_vec = nullopt;
             if(pMP)
                 if(!pMP->isBad()){
-                    if(pMP->mnBALocalForKF!=pKF->mnId){
-                        const auto Tcw = pKF->GetPose().cast<double>();
-                        const auto pose_sim3d = Sophus::Sim3d(1.0,Tcw.unit_quaternion(), Tcw.translation());
-                        error_vec = pKF->ProjectPointUnDistort(pMP->GetWorldPos().cast<double>(),pose_sim3d);
-                        pMP->mnBALocalForKF=pKF->mnId;
-                    }
+                    const auto Tcw = pKF->GetPose().cast<double>();
+                    const auto pose_sim3d = Sophus::Sim3d(1.0,Tcw.unit_quaternion(), Tcw.translation());
+                    error_vec = pKF->ProjectPointUnDistort(pMP->GetWorldPos().cast<double>(),pose_sim3d);  
                 }
             
             if(error_vec.has_value())
