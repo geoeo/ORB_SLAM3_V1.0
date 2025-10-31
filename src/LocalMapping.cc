@@ -713,11 +713,12 @@ void LocalMapping::CreateNewMapPoints()
 }
 
 bool LocalMapping::GeoreferenceKeyframes(){
-    auto vKF = mGeometricReferencer.getFramesToGeoref();
-    Verbose::PrintMess("Georef function called with KFs :" + to_string(vKF.size()), Verbose::VERBOSITY_NORMAL);
-    auto pose_scale_opt = mGeometricReferencer.apply(vKF, mbGeorefUpdate);
+    const auto georefKfs = mGeometricReferencer.getFramesToGeoref();
+    Verbose::PrintMess("Georef function called with KFs :" + to_string(georefKfs.size()), Verbose::VERBOSITY_NORMAL);
+    auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
+        auto vKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
         for (const auto& pKF : vKF){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
@@ -725,11 +726,10 @@ bool LocalMapping::GeoreferenceKeyframes(){
             vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
             for_each(execution::par, vpMPs.begin(), vpMPs.end(), [&](auto pMP)
             {
-                if(pMP)
-                    if(!pMP->isBad())
-                    {
+                if(pMP){
+                    if(!pMP->isBad())                  
                         pMP->UpdateGNSSPos(mGeometricReferencer.getCurrentTransform());
-                    }
+                }
             });
         }
     }

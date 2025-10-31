@@ -406,7 +406,7 @@ void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
         if((useGNSSFrame && !mapPoint->GetGNSSPos().has_value()) || mapPoint->isBad())
             continue;
 
-        const auto obs = Eigen::Vector2d(keypoint.pt.x, keypoint.pt.y);
+
         const auto pWorld = useGNSSFrame ? mapPoint->GetGNSSPos().value() : mapPoint->GetWorldPos().cast<double>();
 
         auto GetTcw = [&](){
@@ -421,6 +421,8 @@ void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
         const auto est_optional = ProjectPointUnDistort(pWorld, GetTcw());
         if(!est_optional.has_value())
             continue;
+            
+        const auto obs = Eigen::Vector2d(keypoint.pt.x, keypoint.pt.y);
         const auto diff = obs - est_optional.value();
         AddReprojectionError(diff);
     }
