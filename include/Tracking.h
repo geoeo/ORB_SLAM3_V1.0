@@ -96,8 +96,6 @@ public:
 
     bool isBACompleteForMap(); 
     vector<float> getMapScales();
-    bool isGeoreferenced();
-    void setGeoreference(bool is_georeferenced);
 
     unsigned int GetLastKeyFrameId() const;
 
@@ -327,7 +325,6 @@ protected:
     int initID, lastID;
 
     Sophus::SE3f mTlr;
-    std::atomic<bool> mIsGeoreferenced;
 
     void newParameterLoader(Settings* settings);
 

@@ -1504,4 +1504,12 @@ vector<pair<long unsigned int,Sophus::SE3f>> LocalMapping::getLatestOptimizedKFP
     return mLatestOptimizedKFPoses;
 }
 
+bool LocalMapping::isGeorefInitialized() const {
+    return mGeometricReferencer.isInitialized();
+}
+
+Sophus::Sim3d LocalMapping::getGeorefTransform() {
+    return mGeometricReferencer.getCurrentTransform();
+}
+
 } //namespace ORB_SLAM

@@ -47,8 +47,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
-    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL)), 
-    mIsGeoreferenced(false)
+    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
 
     newParameterLoader(settings);
@@ -2025,13 +2024,6 @@ bool Tracking::isBACompleteForMap() {
 
 vector<float> Tracking::getMapScales() {
     return mpAtlas->getMapScales();   
-}
-
-bool Tracking::isGeoreferenced() {
-    return mIsGeoreferenced;
-}
-void Tracking::setGeoreference(bool is_georeferenced){
-    mIsGeoreferenced = is_georeferenced;
 }
 
 void Tracking::setTrackingState(eTrackingState newState){

@@ -128,11 +128,10 @@ public:
 
     void ChangeDataset();
 
-    bool isGeoreferenced() const;
     bool isImuInitialized() const;
-    void setGeoreference(bool is_georeferenced);
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> getLatestOptimizedKFPoses();
-
+    bool isGeorefInitialized() const;
+    Sophus::Sim3d getGeorefTransform();
 
 private:
     bool has_suffix(const std::string &str, const std::string &suffix);

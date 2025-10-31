@@ -83,6 +83,8 @@ public:
     std::shared_ptr<std::mutex> getGlobalDataMutex();
     void setLatestOptimizedKFPoses (const std::vector<std::pair<long unsigned int,Sophus::SE3f>>& optimizedKFPoses);
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> getLatestOptimizedKFPoses();
+    bool isGeorefInitialized() const;
+    Sophus::Sim3d getGeorefTransform();
 
     Eigen::MatrixXd mcovInertial;
     Eigen::Matrix3d mRwg;

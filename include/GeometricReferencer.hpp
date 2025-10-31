@@ -22,7 +22,7 @@ namespace ORB_SLAM3
     std::deque<KeyFrame*> getFramesToGeoref();
     std::optional<Sophus::Sim3d> apply(const std::deque<KeyFrame*> &frames, bool do_update);
     Sophus::Sim3d update(const std::deque<KeyFrame *> &spatials);
-    Sophus::Sim3d getCurrentTransform() const;
+    Sophus::Sim3d getCurrentTransform();
 
     bool isInitialized() const;
     void clear();
@@ -34,6 +34,7 @@ namespace ORB_SLAM3
     Sophus::Sim3d mTgw_current;
     std::deque<KeyFrame*> m_latest_frames_to_georef;
     std::mutex mMutexFrames;
+    std::mutex mMutexTransform;
 
     Sophus::Sim3d estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
   };

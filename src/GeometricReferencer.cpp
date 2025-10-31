@@ -30,9 +30,10 @@ bool GeometricReferencer::isInitialized() const
   return m_is_initialized;
 }
 
-Sophus::Sim3d GeometricReferencer::getCurrentTransform() const 
+Sophus::Sim3d GeometricReferencer::getCurrentTransform()
 {
-   return mTgw_current; 
+  unique_lock<mutex> lock(mMutexTransform);
+  return mTgw_current; 
 }
 
 void GeometricReferencer::addKeyFrame(KeyFrame* kf){
@@ -54,7 +55,7 @@ optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &
     return nullopt;
 
   if (m_is_initialized && !do_update)
-    return mTgw_current;
+    return getCurrentTransform();
 
   auto pose = update(getFramesToGeoref()); 
 
@@ -65,16 +66,18 @@ optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &
 Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials)
 { 
   const auto pose = estimateGeorefTransform(spatials, true);
-  //mTgw_current = pose*mTgw_current; //TODO: Fix this
-  mTgw_current = pose;
+
 
   Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
   Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(0,0)) + " " + to_string(mTgw_current.rotationMatrix()(0,1)) + " " + to_string(mTgw_current.rotationMatrix()(0,2)) + " " + to_string(mTgw_current.translation()(0)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(1,0)) + " " + to_string(mTgw_current.rotationMatrix()(1,1)) + " " + to_string(mTgw_current.rotationMatrix()(1,2)) + " " + to_string(mTgw_current.translation()(1)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(mTgw_current.rotationMatrix()(2,0)) + " " + to_string(mTgw_current.rotationMatrix()(2,1)) + " " + to_string(mTgw_current.rotationMatrix()(2,2)) + " " + to_string(mTgw_current.translation()(2)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Scale: " + to_string(mTgw_current.scale()), Verbose::VERBOSITY_NORMAL);
-
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(1,0)) + " " + to_string(pose.rotationMatrix()(1,1)) + " " + to_string(pose.rotationMatrix()(1,2)) + " " + to_string(pose.translation()(1)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_NORMAL);
+  
+  unique_lock<mutex> lock(mMutexTransform);
+  mTgw_current = pose;
+  //mTgw_current = pose*mTgw_current; //TODO: Fix this
   return mTgw_current;
 }
 

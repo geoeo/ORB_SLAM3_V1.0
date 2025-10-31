@@ -366,10 +366,6 @@ void System::ChangeDataset()
     mpTracker->NewDataset();
 }
 
-bool System::isGeoreferenced() const {
-    return mpTracker->isGeoreferenced();
-}
-
 bool System::isImuInitialized() const {
     return mpAtlas->isImuInitialized();
 }
@@ -378,12 +374,16 @@ shared_ptr<mutex> System::getGlobalDataMutex(){
     return mpLocalMapper->getGlobalDataMutex();
 }
 
-void System::setGeoreference(bool is_georeferenced){
-    mpTracker->setGeoreference(is_georeferenced);
-}
-
 vector<pair<long unsigned int,Sophus::SE3f>> System::getLatestOptimizedKFPoses() {
     return mpLocalMapper->getLatestOptimizedKFPoses();
+}
+
+bool System::isGeorefInitialized() const {
+    return mpLocalMapper->isGeorefInitialized();
+}
+
+Sophus::Sim3d System::getGeorefTransform() {
+    return mpLocalMapper->getGeorefTransform();
 }
 
 
