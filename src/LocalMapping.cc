@@ -718,6 +718,7 @@ bool LocalMapping::GeoreferenceKeyframes(){
     auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
+        // Make sure we apply georef to all Kfs up to now
         auto vKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
         for (const auto& pKF : vKF){
             const auto Twc = pKF->GetPoseInverse();
