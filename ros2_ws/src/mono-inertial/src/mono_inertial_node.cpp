@@ -163,8 +163,9 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
-      local_mapper.itsFIBAInit = 3;
-      local_mapper.itsFIBA1 = 2;
+      local_mapper.thFarPoints = 0.0;
+      local_mapper.itsFIBAInit = 5;
+      local_mapper.itsFIBA1 = 5;
       
       // F6
       //double timeshift_cam_imu = 0.006882460203406222; 

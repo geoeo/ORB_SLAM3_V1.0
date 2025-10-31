@@ -115,15 +115,10 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, local_mapper_settings);
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = 0; // seems to be ununsed
-    if(settings_)
-        mpLocalMapper->mThFarPoints = settings_->thFarPoints();
-    if(mpLocalMapper->mThFarPoints!=0)
-    {
+    if(mpLocalMapper->mbFarPoints)
         Verbose::PrintMess("Discard points further than " +to_string(mpLocalMapper->mThFarPoints) + " m from current camera", Verbose::VERBOSITY_NORMAL);
-        mpLocalMapper->mbFarPoints = true;
-    }
-    else
-        mpLocalMapper->mbFarPoints = false;
+    
+
 
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                     mpAtlas, mpKeyFrameDatabase, std::string(), mSensor, settings_);
@@ -370,11 +365,6 @@ void System::ChangeDataset()
     }
 
     mpTracker->NewDataset();
-}
-
-float System::GetImageScale()
-{
-    return mpTracker->GetImageScale();
 }
 
 bool System::isGeoreferenced() const {

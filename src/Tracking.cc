@@ -81,9 +81,6 @@ void Tracking::newParameterLoader(Settings *settings) {
         mDistCoef = cv::Mat::zeros(4,1,CV_32F);
     }
 
-    //TODO: missing image scaling and rectification
-    mImageScale = 1.0f;
-
     mK = cv::Mat::eye(3,3,CV_32F);
     mK.at<float>(0,0) = mpCamera->getParameter(0);
     mK.at<float>(1,1) = mpCamera->getParameter(1);
@@ -1491,7 +1488,7 @@ void Tracking::UpdateLocalKeyFrames()
     {
         for(int i=0; i<mLastFrame.mNumKeypoints; i++)
         {
-            // Using lastframe since current frame has not matches yet
+            // Using lastframe since current frame has not matches yet due to early exit in TrackWithMotionModel
             if(mLastFrame.mvpMapPoints[i])
             {
                 MapPoint* pMP = mLastFrame.mvpMapPoints[i];
@@ -1527,9 +1524,7 @@ void Tracking::UpdateLocalKeyFrames()
         return a.second > b.second;
     });
 
-    //int max=0;
-    //KeyFrame* pKFmax= static_cast<KeyFrame*>(NULL);
-    const size_t nKFs = min((size_t)10,vPairs.size());
+    const auto nKFs = min((size_t)10,vPairs.size());
     mvpLocalKeyFrames.clear();
     mvpLocalKeyFrames.reserve(nKFs);
 
@@ -1541,94 +1536,12 @@ void Tracking::UpdateLocalKeyFrames()
         if(pKF->isBad())
             continue;
 
-        // if(it->second>max)
-        // {
-        //     max=it->second;
-        //     pKFmax=pKF;
-        // }
-
         mvpLocalKeyFrames.push_back(pKF);
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
     Verbose::PrintMess("UpdateLocalKeyFrames: Local KeyFrames: " + to_string(mvpLocalKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
 
-    //Include also some not-already-included keyframes that are neighbors to already-included keyframes
-    // for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
-    // {
-    //     // Limit the number of keyframes
-    //     //if(mvpLocalKeyFrames.size()>80) // 80
-    //     //    break;
-
-    //     KeyFrame* pKF = *itKF;
-
-    //     const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
-
-
-    //     for(vector<KeyFrame*>::const_iterator itNeighKF=vNeighs.begin(), itEndNeighKF=vNeighs.end(); itNeighKF!=itEndNeighKF; itNeighKF++)
-    //     {
-    //         KeyFrame* pNeighKF = *itNeighKF;
-    //         if(!pNeighKF->isBad())
-    //         {
-    //             if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-    //             {
-    //                 mvpLocalKeyFrames.push_back(pNeighKF);
-    //                 pNeighKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     const set<KeyFrame*> spChilds = pKF->GetChilds();
-    //     for(set<KeyFrame*>::const_iterator sit=spChilds.begin(), send=spChilds.end(); sit!=send; sit++)
-    //     {
-    //         KeyFrame* pChildKF = *sit;
-    //         if(!pChildKF->isBad())
-    //         {
-    //             if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-    //             {
-    //                 mvpLocalKeyFrames.push_back(pChildKF);
-    //                 pChildKF->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     KeyFrame* pParent = pKF->GetParent();
-    //     if(pParent)
-    //     {
-    //         if(pParent->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-    //         {
-    //             mvpLocalKeyFrames.push_back(pParent);
-    //             pParent->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // // Add 10 last temporal KFs (mainly for IMU)
-    // if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
-    // {
-    //     KeyFrame* tempKeyFrame = mCurrentFrame.mpLastKeyFrame;
-
-    //     const int Nd = 20;
-    //     for(int i=0; i<Nd; i++){
-    //         if (!tempKeyFrame)
-    //             break;
-    //         if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame.mnId)
-    //         {
-    //             mvpLocalKeyFrames.push_back(tempKeyFrame);
-    //             tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame.mnId;
-    //             tempKeyFrame=tempKeyFrame->mPrevKF;
-    //         }
-    //     }
-    // }
-
-    // if(pKFmax)
-    // {
-    //     mpReferenceKF = pKFmax;
-    //     mCurrentFrame.mpReferenceKF = mpReferenceKF;
-    // }
 }
 
 bool Tracking::Relocalization()
@@ -2105,11 +2018,6 @@ int Tracking::GetNumberDataset()
 int Tracking::GetMatchesInliers()
 {
     return mnMatchesInliers;
-}
-
-float Tracking::GetImageScale()
-{
-    return mImageScale;
 }
 
 bool Tracking::isBACompleteForMap() {

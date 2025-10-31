@@ -93,7 +93,6 @@ public:
     void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder="");
     void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, Map* pMap);
 
-    float GetImageScale();
 
     bool isBACompleteForMap(); 
     vector<float> getMapScales();
@@ -162,8 +161,6 @@ public:
     std::vector<MapPoint*> GetLocalMapMPS();
     void setTrackingState(eTrackingState newState);
     eTrackingState getTrackingState();
-
-    bool mbWriteStats;
 
 
 protected:
@@ -236,7 +233,6 @@ protected:
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
-    //ORBextractor* mpIniORBextractor;
 
     //BoW
     ORBVocabulary* mpORBVocabulary;
@@ -268,7 +264,6 @@ protected:
     Eigen::Matrix3f mK_;
     cv::Mat mDistCoef;
     float mbf;
-    float mImageScale;
 
     float mImuFreq;
     bool mInsertKFsLost;
@@ -315,8 +310,6 @@ protected:
     bool mbRGB;
 
     std::list<MapPoint*> mlpTemporalPoints;
-
-    //int nMapChangeIndex;
 
     int mnNumDataset;
 

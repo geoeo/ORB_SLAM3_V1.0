@@ -171,8 +171,6 @@ namespace ORB_SLAM3 {
         cout << "\t-Loaded viewer settings" << endl;
         readLoadAndSave(fSettings);
         cout << "\t-Loaded Atlas settings" << endl;
-        readOtherParameters(fSettings);
-        cout << "\t-Loaded misc parameters" << endl;
 
         if(bNeedToRectify_){
             precomputeRectificationMaps();
@@ -184,7 +182,7 @@ namespace ORB_SLAM3 {
 
     Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
         const int& sensor, int frameGridCols, int frameGridRows):
-        bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false), thFarPoints_(0.0),
+        bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false),
         imageViewerScale_(1.0), keyFrameSize_(0.05), keyFrameLineWidth_(1.0), graphLineWidth_(0.9), pointSize_(2.0),
         cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0),
         frameGridCols_(frameGridCols), frameGridRows_(frameGridRows) {
@@ -565,12 +563,6 @@ namespace ORB_SLAM3 {
 
         sLoadFrom_ = readParameter<string>(fSettings,"System.LoadAtlasFromFile",found,false);
         sSaveto_ = readParameter<string>(fSettings,"System.SaveAtlasToFile",found,false);
-    }
-
-    void Settings::readOtherParameters(cv::FileStorage& fSettings) {
-        bool found;
-
-        thFarPoints_ = readParameter<float>(fSettings,"System.thFarPoints",found,false);
     }
 
     void Settings::precomputeRectificationMaps() {

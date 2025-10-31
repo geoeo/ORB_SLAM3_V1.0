@@ -70,6 +70,7 @@ namespace ORB_SLAM3 {
         float minTimeForFullBA;
         float itsFIBAInit;
         float itsFIBA1;
+        float thFarPoints;
         bool useGNSS;
         bool useGNSSBA;
         bool writeGNSSData;
@@ -162,8 +163,6 @@ namespace ORB_SLAM3 {
         std::string atlasLoadFile() {return sLoadFrom_;}
         std::string atlasSaveFile() {return sSaveto_;}
 
-        float thFarPoints() {return thFarPoints_;}
-
         cv::Mat M1l() {return M1l_;}
         cv::Mat M2l() {return M2l_;}
         cv::Mat M1r() {return M1r_;}
@@ -202,7 +201,6 @@ namespace ORB_SLAM3 {
         void readORB(cv::FileStorage& fSettings);
         void readViewer(cv::FileStorage& fSettings);
         void readLoadAndSave(cv::FileStorage& fSettings);
-        void readOtherParameters(cv::FileStorage& fSettings);
 
         void precomputeRectificationMaps();
 
@@ -275,9 +273,8 @@ namespace ORB_SLAM3 {
         std::string sLoadFrom_, sSaveto_;
 
         /*
-         * Other stuff
+         * Tracking stuff
          */
-        float thFarPoints_;
         const int frameGridCols_;
         const int frameGridRows_;
 
