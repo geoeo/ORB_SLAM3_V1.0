@@ -714,12 +714,17 @@ void LocalMapping::CreateNewMapPoints()
 
 bool LocalMapping::GeoreferenceKeyframes(){
     const auto georefKfs = mGeometricReferencer.getFramesToGeoref();
+    const auto wasInitialized = mGeometricReferencer.isInitialized();
     Verbose::PrintMess("Georef function called with KFs :" + to_string(georefKfs.size()), Verbose::VERBOSITY_NORMAL);
     auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
-        // Make sure we apply georef to all Kfs up to now
-        auto vKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+
+        // Make sure that on initialisation we apply georef to all Kfs up to now, otherwise, we take the latest ones
+        // TODO: we are not taking the latest ones, but all of KFS in the list. 
+        // TODO: On update, skip frames with already assigned GNSS transformations
+        auto vKF = wasInitialized ? vector<KeyFrame*>(georefKfs.begin(), georefKfs.end()) : mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+        Verbose::PrintMess("Georef applied to KFs :" + to_string(vKF.size()), Verbose::VERBOSITY_NORMAL);
         for (const auto& pKF : vKF){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
