@@ -39,9 +39,11 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const string &strSettingPath, const int sensor, Settings* settings, const string &_nameSeq):
+Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
     mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
-    mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
+    mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
+    mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), mMaxLocalKFCount(tracker_settings.maxLocalKFCount), 
+    mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
@@ -122,9 +124,6 @@ void Tracking::newParameterLoader(Settings *settings) {
     mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
 
     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-
-    mFrameGridCols = settings->frameGridCols(); 
-    mFrameGridRows = settings->frameGridRows();
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -1524,7 +1523,7 @@ void Tracking::UpdateLocalKeyFrames()
         return a.second > b.second;
     });
 
-    const auto nKFs = min((size_t)10,vPairs.size());
+    const auto nKFs = min(mMaxLocalKFCount,vPairs.size());
     mvpLocalKeyFrames.clear();
     mvpLocalKeyFrames.reserve(nKFs);
 

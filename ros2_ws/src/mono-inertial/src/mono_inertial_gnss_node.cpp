@@ -178,6 +178,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.writeGNSSData = true;
       local_mapper.georefUpdate = false;
       local_mapper.minGeorefFrames = 60;
+
       
       // F6
       double timeshift_cam_imu = 0.006882460203406222; 
@@ -185,13 +186,16 @@ class SlamNode : public rclcpp::Node
       // F4 
       //double timeshift_cam_imu = 0.00851880502751802;
 
-      const int frame_grid_cols = 64;
-      const int frame_grid_rows = 48;
+      ORB_SLAM3::TrackerParameters tracker_settings;
+      tracker_settings.frameGridCols = 64;
+      tracker_settings.frameGridRows = 48;
+      tracker_settings.maxLocalKFCount = 10;
+
       const double clahe_clip_limit = 80.0;
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  ORB_SLAM3::System::IMU_MONOCULAR, frame_grid_cols,frame_grid_rows,false, true);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();

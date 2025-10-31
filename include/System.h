@@ -78,7 +78,7 @@ public:
 
     // Headless setup
     System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
-        const eSensor sensor, int frame_grid_cols, int frame_grid_rows, bool activeLC, bool bUseViewer);
+        const TrackerParameters& tracker_settings, const eSensor sensor, bool activeLC, bool bUseViewer);
 
     
     ~System();

@@ -57,7 +57,7 @@ class Tracking
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             KeyFrameDatabase* pKFDB, const std::string &strSettingPath, const int sensor, Settings* settings, const std::string &_nameSeq=std::string());
+             KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings);
 
     ~Tracking();
 
@@ -230,6 +230,7 @@ protected:
     //Frame
     int mFrameGridRows;
     int mFrameGridCols;
+    size_t mMaxLocalKFCount;
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;

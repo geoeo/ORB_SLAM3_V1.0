@@ -126,7 +126,7 @@ namespace ORB_SLAM3 {
 
     Settings::Settings(const std::string &configFile, const int& sensor) :
     bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), 
-    bNeedToResize2_(false), frameGridCols_(64), frameGridRows_(48) {
+    bNeedToResize2_(false) {
         sensor_ = sensor;
 
         //Open settings file
@@ -180,12 +180,10 @@ namespace ORB_SLAM3 {
         cout << "----------------------------------" << endl;
     }
 
-    Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, 
-        const int& sensor, int frameGridCols, int frameGridRows):
+    Settings::Settings(const CameraParameters &cam, const ImuParameters &imu, const OrbParameters &orb, const int& sensor):
         bNeedToUndistort_(false), bNeedToRectify_(false), bNeedToResize1_(false), bNeedToResize2_(false),
         imageViewerScale_(1.0), keyFrameSize_(0.05), keyFrameLineWidth_(1.0), graphLineWidth_(0.9), pointSize_(2.0),
-        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0),
-        frameGridCols_(frameGridCols), frameGridRows_(frameGridRows) {
+        cameraSize_(0.08), cameraLineWidth_(3.0), viewPointX_(0.0), viewPointY_(-0.7), viewPointZ_(-3.5), viewPointF_(500.0){
             sensor_ = sensor;
             cameraType_ = PinHole;
 

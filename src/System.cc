@@ -45,7 +45,7 @@ bool System::has_suffix(const std::string &str, const std::string &suffix) {
 }
 
 System::System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
-    const eSensor sensor, int frameGridCols, int frameGridRows ,bool activeLC, bool bUseViewer):
+    const TrackerParameters& tracker_settings, const eSensor sensor, bool activeLC, bool bUseViewer):
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
@@ -98,7 +98,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
         mpAtlas->SetInertialSensor();
 
-    settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor, frameGridCols, frameGridRows);
+    settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor);
 
     cout << (*settings_) << endl;
 
@@ -120,8 +120,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     
 
 
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
-                    mpAtlas, mpKeyFrameDatabase, std::string(), mSensor, settings_);
+    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, mSensor, settings_, tracker_settings);
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpLocalMapper->SetTracker(mpTracker);
