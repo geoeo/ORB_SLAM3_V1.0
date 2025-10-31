@@ -47,14 +47,14 @@ std::deque<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
   return m_latest_frames_to_georef;
 }
 
-optional<Sophus::Sim3d> GeometricReferencer::init(const std::deque<KeyFrame*> &frames)
+optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &frames, bool do_update)
 {
 
-  if (m_is_initialized)
-    return mTgw_current;
-    
   if (frames.size() < m_min_nrof_frames)
     return nullopt;
+
+  if (m_is_initialized && !do_update)
+    return mTgw_current;
 
   auto pose = update(getFramesToGeoref()); 
 

@@ -45,7 +45,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
     itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
-    mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), 
+    mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
     mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
 }
@@ -715,8 +715,7 @@ void LocalMapping::CreateNewMapPoints()
 bool LocalMapping::GeoreferenceKeyframes(){
     auto vKF = mGeometricReferencer.getFramesToGeoref();
     Verbose::PrintMess("Georef function called with KFs :" + to_string(vKF.size()), Verbose::VERBOSITY_NORMAL);
-    //TODO: include update
-    auto pose_scale_opt = mGeometricReferencer.init(vKF);
+    auto pose_scale_opt = mGeometricReferencer.apply(vKF, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
         for (const auto& pKF : vKF){
@@ -733,11 +732,7 @@ bool LocalMapping::GeoreferenceKeyframes(){
                     }
             });
         }
-
-        mGeometricReferencer.clearFrames();
     }
-
-
     return pose_scale_opt.has_value();
 }
 
@@ -899,6 +894,15 @@ void LocalMapping::Release()
         return;
     mbStopped = false;
     mbStopRequested = false;
+
+    mTElapsedTime = 0.f;
+    mbNotBA2 = true;
+    mbNotBA1 = true;
+    mbBadImu=false;
+
+    mbResetRequested = false;
+    mbResetRequestedActiveMap = false;
+    mGeometricReferencer.clear();
 
     ResetNewKeyFrames();
     Verbose::PrintMess("Local Mapping RELEASE", Verbose::VERBOSITY_NORMAL);
@@ -1112,6 +1116,7 @@ void LocalMapping::ResetIfRequested()
 
             mbResetRequested = false;
             mbResetRequestedActiveMap = false;
+            mGeometricReferencer.clear();
 
             Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
         }

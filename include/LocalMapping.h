@@ -194,6 +194,7 @@ protected:
     bool mbUseGNSS;
     bool mbUseGNSSBA;
     bool mbWriteGNSSData;
+    bool mbGeorefUpdate;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
     GeometricReferencer mGeometricReferencer;

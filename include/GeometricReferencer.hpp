@@ -20,7 +20,7 @@ namespace ORB_SLAM3
 
     void addKeyFrame(KeyFrame* kf);
     std::deque<KeyFrame*> getFramesToGeoref();
-    std::optional<Sophus::Sim3d> init(const std::deque<KeyFrame*> &frames);
+    std::optional<Sophus::Sim3d> apply(const std::deque<KeyFrame*> &frames, bool do_update);
     Sophus::Sim3d update(const std::deque<KeyFrame *> &spatials);
     Sophus::Sim3d getCurrentTransform() const;
 

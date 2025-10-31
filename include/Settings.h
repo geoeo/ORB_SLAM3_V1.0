@@ -72,7 +72,8 @@ namespace ORB_SLAM3 {
         float itsFIBA1;
         bool useGNSS;
         bool useGNSSBA;
-        bool writeGNSSData; 
+        bool writeGNSSData;
+        bool georefUpdate; 
         int minGeorefFrames;
     };
 
