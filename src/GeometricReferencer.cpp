@@ -84,7 +84,7 @@ optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &
 
 Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials)
 { 
-  const auto pose = estimateGeorefTransform(spatials, true);
+  const auto pose = estimateGeorefTransform(spatials);
 
 
   Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
@@ -100,7 +100,7 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
   return mTgw_current;
 }
 
-Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale)
+Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyFrame *> &spatials)
 {
   // First define basic eigen variables
   const auto measurements = 4;
@@ -138,6 +138,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
     const auto Twc = f->GetPoseInverse();
     const auto Twc_sim3 = Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(), Twc.translation().cast<double>());
     //const auto T_c2g = mTgw_current*Twc_sim3;
+    //const auto T_c2g = Sophus::Sim3d(1.0,mTgw_current.rxso3().so3().unit_quaternion(), mTgw_current.translation())*Twc_sim3;
     const auto T_c2g = Twc_sim3;
 
     auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
@@ -164,6 +165,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
 
 
   // Estimates the aligning transformation from camera to gnss coordinate system
+  const bool estimate_scale = !m_is_initialized;
   Eigen::Matrix4d Tgw_mat = Eigen::umeyama(src_points, dst_points, estimate_scale);
   const auto Tgw = Sophus::Sim3d(Tgw_mat);
 
@@ -174,5 +176,5 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
   Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
 
-  return Tgw;
+  return estimate_scale ? Tgw : Sophus::Sim3d(mTgw_current.scale(),Tgw.rxso3().so3().unit_quaternion(), Tgw.translation());
 }

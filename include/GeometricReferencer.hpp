@@ -38,7 +38,7 @@ namespace ORB_SLAM3
     std::mutex mMutexFrames;
     std::mutex mMutexTransform;
 
-    Sophus::Sim3d estimateGeorefTransform(const std::deque<KeyFrame *> &spatials, bool estimate_scale);
+    Sophus::Sim3d estimateGeorefTransform(const std::deque<KeyFrame *> &spatials);
   };
 
 } // namespace ORB_SLAM3
