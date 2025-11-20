@@ -82,7 +82,6 @@ ${ORB_SLAM3_INCLUDE_DIR}
 ${GDAL_INCLUDE_DIR}
 )
 
-
 # Install directories files.
 install(DIRECTORY
   launch

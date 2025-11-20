@@ -1,5 +1,6 @@
 #include <GeometricReferencer.hpp>
 #include <Verbose.h>
+#include <algorithm>
 
 using namespace std;
 using namespace ORB_SLAM3;
@@ -7,7 +8,8 @@ using namespace ORB_SLAM3;
 GeometricReferencer::GeometricReferencer(int min_nrof_frames)
 : m_is_initialized(false),
   m_min_nrof_frames(min_nrof_frames),
-  mTgw_current(Sophus::Sim3d())
+  mTgw_current(Sophus::Sim3d()),
+  m_georefed_kfs_count(0)
 {
 }
 
@@ -17,12 +19,20 @@ void GeometricReferencer::clear()
   mTgw_current = Sophus::Sim3d();
   unique_lock<mutex> lock(mMutexFrames);
   m_latest_frames_to_georef = {};
+  m_georefed_kfs_count = 0;
 }
 
 void GeometricReferencer::clearFrames()
 {
   unique_lock<mutex> lock(mMutexFrames);
   m_latest_frames_to_georef = {};
+  m_georefed_kfs_count = 0;
+}
+
+void GeometricReferencer::updateGeorefKFsCount(size_t count)
+{
+  unique_lock<mutex> lock(mMutexFrames);
+  m_georefed_kfs_count += count;
 }
 
 bool GeometricReferencer::isInitialized() const
@@ -41,11 +51,18 @@ void GeometricReferencer::addKeyFrame(KeyFrame* kf){
     if(m_latest_frames_to_georef.size() >= m_min_nrof_frames)
       m_latest_frames_to_georef.pop_front();
     m_latest_frames_to_georef.push_back(kf);
+    if(m_georefed_kfs_count > 0)
+      --m_georefed_kfs_count;
 }
 
-std::deque<KeyFrame*> GeometricReferencer::getFramesToGeoref() {
+deque<KeyFrame*> GeometricReferencer::getFramesForGeorefEstimation() {
   unique_lock<mutex> lock(mMutexFrames);
   return m_latest_frames_to_georef;
+}
+
+vector<KeyFrame*> GeometricReferencer::getFramesWithoutGeoref() {
+  unique_lock<mutex> lock(mMutexFrames);
+  return m_georefed_kfs_count < m_latest_frames_to_georef.size() ? vector<KeyFrame*>(m_latest_frames_to_georef.cbegin()+m_georefed_kfs_count, m_latest_frames_to_georef.cend()) : vector<KeyFrame*>();
 }
 
 optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &frames, bool do_update)
@@ -57,9 +74,11 @@ optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &
   if (m_is_initialized && !do_update)
     return getCurrentTransform();
 
-  auto pose = update(getFramesToGeoref()); 
+  auto pose = update(frames); 
 
-  m_is_initialized = true;
+  if(!m_is_initialized)
+    m_is_initialized = true;
+
   return pose;
 }
 
