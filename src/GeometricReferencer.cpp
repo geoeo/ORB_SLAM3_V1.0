@@ -165,7 +165,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
 
 
   // Estimates the aligning transformation from camera to gnss coordinate system
-  const bool estimate_scale = !m_is_initialized;
+  const bool estimate_scale = true;
   Eigen::Matrix4d Tgw_mat = Eigen::umeyama(src_points, dst_points, estimate_scale);
   const auto Tgw = Sophus::Sim3d(Tgw_mat);
 
@@ -176,5 +176,5 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
   Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
 
-  return estimate_scale ? Tgw : Sophus::Sim3d(mTgw_current.scale(),Tgw.rxso3().so3().unit_quaternion(), Tgw.translation());
+  return Tgw;
 }
