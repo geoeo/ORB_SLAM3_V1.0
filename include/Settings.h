@@ -83,6 +83,7 @@ namespace ORB_SLAM3 {
         size_t maxLocalKFCount;
         int frameGridCols;
         int frameGridRows;
+        int minFeatNumberForKF;
     };
 
     //TODO: change to double instead of float

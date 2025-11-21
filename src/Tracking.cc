@@ -42,7 +42,7 @@ namespace ORB_SLAM3
 Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
     mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
-    mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), mMaxLocalKFCount(tracker_settings.maxLocalKFCount), 
+    mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mMinFeatNumberForKF(tracker_settings.minFeatNumberForKF),
     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
@@ -1303,7 +1303,7 @@ bool Tracking::NeedNewKeyFrame()
     // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1 = mCurrentFrame.mnId>=mnLastKeyFrameId+mMaxFrames;
     const bool c2 = (((mnMatchesInliers<nRefMatches*thRefRatio)) && mnMatchesInliers>15);
-    const bool c4 = (mnMatchesInliers<200) || getTrackingState()==RECENTLY_LOST;
+    const bool c4 = (mnMatchesInliers<mMinFeatNumberForKF) || getTrackingState()==RECENTLY_LOST;
 
     Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
     return c1 || c4;
