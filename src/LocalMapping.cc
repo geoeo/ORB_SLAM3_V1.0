@@ -38,9 +38,9 @@ namespace ORB_SLAM3
 
 LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
     mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mpSystem(pSys), mbMonocular(bMonocular), 
-    mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), mbResetRequestedActiveMap(false), 
+    mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
-    mbNotStop(false), mbAcceptKeyFrames(true), mMutexPtrGlobalData(make_shared<mutex>()), 
+    mbNotStop(false), mMutexPtrGlobalData(make_shared<mutex>()), 
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
@@ -67,8 +67,8 @@ void LocalMapping::Run()
     while(true)
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
-        // Tracking will see that Local Mapping is busy
-        SetAcceptKeyFrames(false);
+
+        ResetIfRequested();
 
         // If we dont use the IMU the initial map space is the final one
         if(!mbInertial){
@@ -102,8 +102,8 @@ void LocalMapping::Run()
 
                     writeKFAfterGeorefCount = 1;
                 }
-                if(mGeometricReferencer.isInitialized() && mbUseGNSSBA){
-                    unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
+                    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                     if(writeKFAfterGBACount == 0){
                         Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
@@ -143,15 +143,12 @@ void LocalMapping::Run()
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTElapsedTime>resetTimeThresh))
                         {
                             Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_NORMAL);
-                            unique_lock<mutex> lock(mMutexReset);
-                            mbResetRequestedActiveMap = true;
-                            mpMapToReset = mpAtlas->GetCurrentMap();
                             mbBadImu = true;
                         }
 
                         Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_NORMAL);
                         {
-                            //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                            //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                             unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                             setLatestOptimizedKFPoses(optimizedKFPoses);
@@ -164,7 +161,7 @@ void LocalMapping::Run()
                     {
                         Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_NORMAL);
                         {
-                            //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+                            //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                             unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                             Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
@@ -231,8 +228,8 @@ void LocalMapping::Run()
                             Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_NORMAL);
                         }
 
-                        if(mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
-                            unique_lock<mutex> lock(*mMutexPtrGlobalData);
+                        if(!mbResetRequested && !mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
+                            unique_lock<mutex> lock(*getGlobalDataMutex());
                             Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
                             //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
                             auto success = InitializeIMU(0.f, 1e2, true, 200,3, 15);
@@ -257,11 +254,6 @@ void LocalMapping::Run()
             if(CheckFinish())
                 break;
         }
-
-        ResetIfRequested();
-
-        // Tracking will see that Local Mapping is busy
-        SetAcceptKeyFrames(true);
 
         if(CheckFinish())
             break;
@@ -908,23 +900,10 @@ void LocalMapping::Release()
     mbBadImu=false;
 
     mbResetRequested = false;
-    mbResetRequestedActiveMap = false;
     mGeometricReferencer.clear();
 
     ResetNewKeyFrames();
     Verbose::PrintMess("Local Mapping RELEASE", Verbose::VERBOSITY_NORMAL);
-}
-
-bool LocalMapping::AcceptKeyFrames()
-{
-    unique_lock<mutex> lock(mMutexAccept);
-    return mbAcceptKeyFrames;
-}
-
-void LocalMapping::SetAcceptKeyFrames(bool flag)
-{
-    unique_lock<mutex> lock(mMutexAccept);
-    mbAcceptKeyFrames=flag;
 }
 
 bool LocalMapping::SetNotStop(bool flag)
@@ -1084,53 +1063,39 @@ void LocalMapping::KeyFrameCulling()
 
 void LocalMapping::RequestReset()
 {
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        Verbose::PrintMess("LM: Map reset requested", Verbose::VERBOSITY_NORMAL);
-        mbResetRequested = true;
-    }
+    
+    Verbose::PrintMess("LM: Map reset requested", Verbose::VERBOSITY_NORMAL);
+    mbResetRequested = true;
     Verbose::PrintMess("LM: Map reset, waiting...", Verbose::VERBOSITY_NORMAL);
 
     while(true)
     {
-        {
-            unique_lock<mutex> lock(mMutexReset);
-            if(!mbResetRequested)
-                break;
-        }
+        if(!mbResetRequested)
+            break;
         this_thread::sleep_for(chrono::microseconds(3000));
     }
     Verbose::PrintMess("LM: Map reset, Done", Verbose::VERBOSITY_NORMAL);
 }
 
 void LocalMapping::ResetIfRequested()
-{
-    bool executed_reset = false;
+{   
+    if(mbResetRequested)
     {
-        unique_lock<mutex> lock(mMutexReset);
-        if(mbResetRequested)
-        {
-            executed_reset = true;
-            Verbose::PrintMess("LM: Reseting Atlas in Local Mapping...", Verbose::VERBOSITY_NORMAL);
-            ResetNewKeyFrames();
-            mlpRecentAddedMapPoints.clear();
+        Verbose::PrintMess("LM: Reseting Atlas in Local Mapping...", Verbose::VERBOSITY_NORMAL);
+        ResetNewKeyFrames();
+        mlpRecentAddedMapPoints.clear();
 
-            // Inertial parameters
-            mTElapsedTime = 0.f;
-            mbNotBA2 = true;
-            mbNotBA1 = true;
-            mbBadImu=false;
+        // Inertial parameters
+        mTElapsedTime = 0.f;
+        mbNotBA2 = true;
+        mbNotBA1 = true;
+        mbBadImu=false;
 
-            mbResetRequested = false;
-            mbResetRequestedActiveMap = false;
-            mGeometricReferencer.clear();
+        mbResetRequested = false;
+        mGeometricReferencer.clear();
 
-            Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
-        }
+        Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
     }
-    if(executed_reset)
-        Verbose::PrintMess("LM: Reset free the mutex", Verbose::VERBOSITY_NORMAL);
-
 }
 
 void LocalMapping::RequestFinish()
@@ -1196,7 +1161,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
 
-    //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+    //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
 
     // Compute and KF velocities mRwg estimation
@@ -1284,7 +1249,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     chrono::steady_clock::time_point t4 = chrono::steady_clock::now();
     if (bFIBA)
     {
-        //unique_lock<mutex> lockGlobal(*mMutexPtrGlobalData);
+        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
         Verbose::PrintMess("Start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
         if (priorA!=0.f)
@@ -1497,6 +1462,7 @@ KeyFrame* LocalMapping::GetCurrKF()
     return mpCurrentKeyFrame;
 }
 
+// This can become a deadlock if trying to aquire during reset, since the tracker is waiting to the mapper.
 shared_ptr<mutex> LocalMapping::getGlobalDataMutex(){
     return mMutexPtrGlobalData;
 }

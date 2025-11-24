@@ -64,8 +64,6 @@ public:
     void Release();
     bool isStopped();
     bool stopRequested();
-    bool AcceptKeyFrames();
-    void SetAcceptKeyFrames(bool flag);
     bool SetNotStop(bool flag);
 
     void InterruptBA();
@@ -105,7 +103,7 @@ public:
 
     bool mbNotBA1;
     bool mbNotBA2;
-    bool mbBadImu;
+    std::atomic<bool> mbBadImu;
 
     // not consider far points (clouds)
     float mThFarPoints;
@@ -131,9 +129,7 @@ protected:
     bool mbInertial;
 
     void ResetIfRequested();
-    bool mbResetRequested;
-    bool mbResetRequestedActiveMap;
-    Map* mpMapToReset;
+    std::atomic<bool> mbResetRequested;
     std::mutex mMutexReset;
 
     bool CheckFinish();
@@ -163,9 +159,6 @@ protected:
     bool mbStopRequested;
     bool mbNotStop;
     std::mutex mMutexStop;
-
-    bool mbAcceptKeyFrames;
-    std::mutex mMutexAccept;
 
     std::shared_ptr<std::mutex> mMutexPtrGlobalData;
 

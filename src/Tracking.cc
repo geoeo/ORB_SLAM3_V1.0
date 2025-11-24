@@ -1291,9 +1291,6 @@ bool Tracking::NeedNewKeyFrame()
         nMinObs=2;
     int nRefMatches = mpReferenceKF->TrackedMapPoints(nMinObs);
 
-    // Local Mapping accept keyframes?
-    //bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
-    const bool bLocalMappingIdle = true;
 
     // Thresholds
     float thRefRatio = 0.55;
@@ -1781,7 +1778,7 @@ void Tracking::Reset(bool bLocMap)
     if(mpViewer)
         mpViewer->Release();
 
-    Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
 
