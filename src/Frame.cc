@@ -197,8 +197,6 @@ void Frame::AssignFeaturesToGrid()
     // Fill matrix with points
     const int nCells = mFrameGridCols*mFrameGridRows;
 
-    int nReserve = 0.5f*mNumKeypoints/(nCells);
-
     for(int i = 0; i < nCells; ++i)
         mGrid[i].reserve(nCells);
 
