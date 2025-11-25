@@ -1479,7 +1479,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> LocalMapping::getLatestOptimizedKFP
 }
 
 bool LocalMapping::isGeorefInitialized() const {
-    return mGeometricReferencer.isInitialized();
+    return !mbUseGNSS || mGeometricReferencer.isInitialized();
 }
 
 Sophus::Sim3d LocalMapping::getGeorefTransform() {
