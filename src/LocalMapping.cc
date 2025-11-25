@@ -1137,10 +1137,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // if(mpAtlas->KeyFramesInMap()<nMinKF)
     //     return false;
 
-    // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID - TOOD: Check this!
-    auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
-
-    const auto kf_size = vpKF.size();
+    const auto kf_size = mpAtlas->GetCurrentMap()->GetAllKeyFrames().size();
     if(kf_size<nMinKF)
         return false;
 
@@ -1152,16 +1149,20 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     Verbose::PrintMess("Init IMU: Elapsed Time: " + to_string(mTElapsedTime) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
     bInitializing = true;
 
+    // We lock here so that no new kfs can be generated
+    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     while(CheckNewKeyFrames())
     {
         ProcessNewKeyFrame();
-        vpKF.push_back(mpCurrentKeyFrame);
+        //vpKF.push_back(mpCurrentKeyFrame);
     }
 
+    // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID - TOOD: Check this!
+    auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
 
-    //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+
     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
 
     // Compute and KF velocities mRwg estimation
@@ -1267,13 +1268,13 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
 
 
-    Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);
+    //Verbose::PrintMess("Checking New Keyframes ...", Verbose::VERBOSITY_NORMAL);
     // Process keyframes in the queue
-    while(CheckNewKeyFrames()) 
-    {
-        ProcessNewKeyFrame();
-        vpKF.push_back(mpCurrentKeyFrame);
-    }
+    // while(CheckNewKeyFrames()) 
+    // {
+    //     ProcessNewKeyFrame();
+    //     vpKF.push_back(mpCurrentKeyFrame);
+    // }
 
     Verbose::PrintMess("Check done ...", Verbose::VERBOSITY_NORMAL);
 
@@ -1360,13 +1361,13 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // }
 
     Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
-    ResetNewKeyFrames();
+    //ResetNewKeyFrames();
 
     // TODO: Investigate this set
     mpTracker->setTrackingState(Tracking::OK);
     bInitializing = false;
 
-    //mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
+    mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     return true;
 }
