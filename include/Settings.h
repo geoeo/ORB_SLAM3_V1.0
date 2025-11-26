@@ -82,7 +82,7 @@ namespace ORB_SLAM3 {
         size_t maxLocalKFCount;
         int frameGridCols;
         int frameGridRows;
-        int minFeatNumberForKF;
+        int featureThresholdForKF;
         int maxFrames;
     };
 

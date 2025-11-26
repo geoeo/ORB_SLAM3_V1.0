@@ -189,7 +189,7 @@ class SlamNode : public rclcpp::Node
       tracker_settings.frameGridCols = 64;
       tracker_settings.frameGridRows = 48;
       tracker_settings.maxLocalKFCount = 15;
-      tracker_settings.minFeatNumberForKF = 100;
+      tracker_settings.featureThresholdForKF = 100;
       tracker_settings.maxFrames = 10;
 
       const double clahe_clip_limit = 80.0;

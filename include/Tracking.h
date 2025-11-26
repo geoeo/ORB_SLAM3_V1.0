@@ -229,7 +229,7 @@ protected:
     int mFrameGridRows;
     int mFrameGridCols;
     size_t mMaxLocalKFCount;
-    int mMinFeatNumberForKF;
+    int mFeatureThresholdForKF;
 
     //ORB
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
