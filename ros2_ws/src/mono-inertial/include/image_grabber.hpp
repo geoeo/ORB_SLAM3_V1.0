@@ -186,16 +186,14 @@ namespace ros2_orbslam3 {
                     
                     auto has_gnss = gnss_pos_opt.has_value();
                     auto gnss_position = has_gnss ? gnss_pos_opt.value() : Eigen::Vector3f::Zero();
-                    auto tracking_results = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas, has_gnss, gnss_position);
+                    const auto [pose, ba_complete_for_frame, is_keyframe, id, scale_factors] 
+                        = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas, has_gnss, gnss_position);
                     mpSLAM->getGlobalDataMutex()->unlock();
-                    Sophus::Matrix4f pose = std::get<0>(tracking_results).matrix();
-                    bool ba_complete_for_frame = std::get<1>(tracking_results);
-                    bool is_keyframe = std::get<2>(tracking_results);
-                    unsigned long int id = std::get<3>(tracking_results);
-                    auto scale_factors = std::get<4>(tracking_results);
-                    auto last_optimized_kfs = mpSLAM->getLatestOptimizedKFPoses();
                     vImuMeas.clear();
+                    const auto last_optimized_kfs = mpSLAM->getLatestOptimizedKFPoses();
+                    const auto isGeoreferenceInitialized = mpSLAM->isGeorefInitialized();
                     RCLCPP_INFO_STREAM(logger_, "BA completed: " << ba_complete_for_frame);
+                    RCLCPP_INFO_STREAM(logger_, "Georeference completed: " << isGeoreferenceInitialized);
                     if(!scale_factors.empty())
                         RCLCPP_INFO_STREAM(logger_, "Latest Scale Factor: " << scale_factors.back());
                     RCLCPP_INFO_STREAM(logger_, "Current ts: " << tIm);
@@ -204,7 +202,6 @@ namespace ros2_orbslam3 {
                     //for(auto& opt_pair: last_optimized_kfs)
                     //    RCLCPP_INFO_STREAM(logger_, "Frame id: " << opt_pair.first);
                     RCLCPP_INFO_STREAM(logger_,"is keyframe: " << is_keyframe);
-                    RCLCPP_INFO_STREAM(logger_, "pose: " << pose(0,3) << ", " << pose(1,3) << ", " << pose(2,3));
                 }
             }
         }

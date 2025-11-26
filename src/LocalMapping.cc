@@ -106,7 +106,7 @@ void LocalMapping::Run()
                     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                     if(writeKFAfterGBACount == 0){
-                        Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
                         Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
                         if(mbWriteGNSSData){
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
@@ -142,29 +142,29 @@ void LocalMapping::Run()
                     {
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTElapsedTime>resetTimeThresh))
                         {
-                            Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_DEBUG);
                             mbBadImu = true;
                         }
 
-                        Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
                         {
                             //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                             unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                             setLatestOptimizedKFPoses(optimizedKFPoses);
-                            Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
                         }
 
                         b_doneLBA = true;
                     }
                     else
                     {
-                        Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
                         {
                             //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                             unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                             Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
-                            Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
                         }
 
                         b_doneLBA = true;
@@ -175,9 +175,9 @@ void LocalMapping::Run()
                 // Initialize IMU here
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
-                    Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
                     auto success = InitializeIMU(1e1, 1e2, true, itsFIBAInit, minTimeForImuInit, 10);
-                    Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
                     if(false){
                         mpAtlas->GetCurrentMap()->SetInertialBA1();
                         mpAtlas->GetCurrentMap()->SetInertialBA2();
@@ -194,9 +194,9 @@ void LocalMapping::Run()
                 {
                     if(mpAtlas->GetCurrentMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
                     {
-                        Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_DEBUG);
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
                             auto success = false;
                             if (mbMonocular)
                                 success = InitializeIMU(0e0, 0e0, true, itsFIBA1, minTimeForVIBA1, 10);
@@ -210,10 +210,10 @@ void LocalMapping::Run()
                                     mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
                             
-                            Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_DEBUG);
                         }
                         if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_DEBUG);
                             auto success = false;
                             if (mbMonocular)
                                 success = InitializeIMU(0.f, 0e0, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
@@ -225,12 +225,12 @@ void LocalMapping::Run()
                                 if(minTimeForFullBA < 0)
                                     mpAtlas->GetCurrentMap()->SetInertialFullBA();
                             }
-                            Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_DEBUG);
                         }
 
                         if(!mbResetRequested && !mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
                             unique_lock<mutex> lock(*getGlobalDataMutex());
-                            Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_NORMAL);
+                            Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_DEBUG);
                             //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
                             auto success = InitializeIMU(0.f, 1e2, true, 200,3, 15);
                             if(success)
@@ -294,7 +294,7 @@ void LocalMapping::ProcessNewKeyFrame()
 {
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
-        Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
@@ -712,11 +712,11 @@ bool LocalMapping::GeoreferenceKeyframes(){
         return false;
     
     const auto georefKfs = mGeometricReferencer.getFramesForGeorefEstimation();
-    Verbose::PrintMess("Georef function called with KFs :" + to_string(georefKfs.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Georef function called with KFs :" + to_string(georefKfs.size()), Verbose::VERBOSITY_DEBUG);
     auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
-        Verbose::PrintMess("Georef applied to KFs: " + to_string(kfsWithoutGeoref.size()), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Georef applied to KFs: " + to_string(kfsWithoutGeoref.size()), Verbose::VERBOSITY_DEBUG);
         for (const auto& pKF : kfsWithoutGeoref){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
@@ -903,7 +903,7 @@ void LocalMapping::Release()
     mGeometricReferencer.clear();
 
     ResetNewKeyFrames();
-    Verbose::PrintMess("Local Mapping RELEASE", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Local Mapping Release", Verbose::VERBOSITY_NORMAL);
 }
 
 bool LocalMapping::SetNotStop(bool flag)
@@ -1066,7 +1066,7 @@ void LocalMapping::RequestReset()
     
     Verbose::PrintMess("LM: Map reset requested", Verbose::VERBOSITY_NORMAL);
     mbResetRequested = true;
-    Verbose::PrintMess("LM: Map reset, waiting...", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM: Map reset, waiting...", Verbose::VERBOSITY_DEBUG);
 
     while(true)
     {
@@ -1074,7 +1074,7 @@ void LocalMapping::RequestReset()
             break;
         this_thread::sleep_for(chrono::microseconds(3000));
     }
-    Verbose::PrintMess("LM: Map reset, Done", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM: Map reset request, Done", Verbose::VERBOSITY_DEBUG);
 }
 
 void LocalMapping::ResetIfRequested()
@@ -1141,12 +1141,11 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     if(kf_size<nMinKF)
         return false;
 
-    Verbose::PrintMess("Init IMU - KF Size: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
     if(mTElapsedTime<minTime)
         return false;
 
 
-    Verbose::PrintMess("Init IMU: Elapsed Time: " + to_string(mTElapsedTime) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Init IMU: Elapsed Time: " + to_string(mTElapsedTime) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_DEBUG);
     bInitializing = true;
 
     // We lock here so that no new kfs can be generated
@@ -1216,7 +1215,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 
     if (mScale<1e-1)
     {
-        Verbose::PrintMess("scale too small", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("scale too small", Verbose::VERBOSITY_DEBUG);
         bInitializing=false;
         return false;
     }
@@ -1225,7 +1224,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     {
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
-            Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
             Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
@@ -1252,7 +1251,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     {
         //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
-        Verbose::PrintMess("Start Global Bundle Adjustment", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Start Global Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
         if (priorA!=0.f)
             Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), itsFIBA, false, 0, NULL, true, priorG, priorA);
         else
@@ -1261,7 +1260,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 
     chrono::steady_clock::time_point t5 = chrono::steady_clock::now();
 
-    Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Global Bundle Adjustment finished\nUpdating map ...", Verbose::VERBOSITY_DEBUG);
 
     
     // Get Map Mutex
@@ -1276,7 +1275,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     //     vpKF.push_back(mpCurrentKeyFrame);
     // }
 
-    Verbose::PrintMess("Check done ...", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Check done ...", Verbose::VERBOSITY_DEBUG);
 
     // Since we are not doing loop closing (LoopID = 0) these update are unnecessary.
 
@@ -1360,7 +1359,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     //     }
     // }
 
-    Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Map updated!", Verbose::VERBOSITY_DEBUG);
     //ResetNewKeyFrames();
 
     // TODO: Investigate this set
@@ -1380,7 +1379,7 @@ void LocalMapping::ScaleRefinement()
     if (mbResetRequested)
         return;
 
-    Verbose::PrintMess("scale refinement", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("scale refinement", Verbose::VERBOSITY_DEBUG);
     // Retrieve all keyframes in temporal order
     list<KeyFrame*> lpKF;
     KeyFrame* pKF = mpCurrentKeyFrame;
@@ -1410,7 +1409,7 @@ void LocalMapping::ScaleRefinement()
 
     if (mScale<1e-1) // 1e-1
     {
-        Verbose::PrintMess("scale too small", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("scale too small", Verbose::VERBOSITY_DEBUG);
         bInitializing=false;
         return;
     }

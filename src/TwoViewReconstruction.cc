@@ -112,16 +112,16 @@ namespace ORB_SLAM3
 
         float minParallax = 1.0;
 
-        Verbose::PrintMess("Triangulate RH: " + std::to_string(RH), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Triangulate RH: " + std::to_string(RH), Verbose::VERBOSITY_DEBUG);
         // Try to reconstruct from homography or fundamental depending on the ratio (0.40-0.45)
         if(RH>0.40) // if(RH>0.40)
         {
-            Verbose::PrintMess("Initialization from Homography", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Initialization from Homography", Verbose::VERBOSITY_DEBUG);
             return ReconstructH(vbMatchesInliersH,H, mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
         else //if(pF_HF>0.6)
         {
-            Verbose::PrintMess("Initialization from Fundamental", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Initialization from Fundamental", Verbose::VERBOSITY_DEBUG);
             return ReconstructF(vbMatchesInliersF,F,mK,T21,vP3D,vbTriangulated,minParallax,50);
         }
     }
@@ -739,7 +739,7 @@ namespace ORB_SLAM3
             T21 = Sophus::SE3f(vR[bestSolutionIdx], vt[bestSolutionIdx]);
             vbTriangulated = bestTriangulated;
             vP3D = bestP3D;
-            Verbose::PrintMess("Initialization from Homography Success", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Initialization from Homography Success", Verbose::VERBOSITY_DEBUG);
             return true;
         }
 

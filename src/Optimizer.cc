@@ -251,7 +251,7 @@ void Optimizer::BundleAdjustment(Map* pMap, const vector<KeyFrame *> &vpKFs, con
     optimizer.setVerbose(false);
     optimizer.initializeOptimization();
     optimizer.optimize(nIterations);
-    Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("BA: End of the optimization", Verbose::VERBOSITY_DEBUG);
 
     // Get Map Mutex and erase outliers
     // unique_lock<mutex> lock(pMap->mMutexMapUpdate);
@@ -1101,7 +1101,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     list<MapPoint*> lLocalMapPoints;
     ComputeAndFillLocalMapPoints(lLocalKeyFrames, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
 
-    Verbose::PrintMess("LocalBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LocalBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_DEBUG);
 
     // Fixed Keyframes. Keyframes that see Local MapPoints but that are not Local Keyframes
     list<KeyFrame*> lFixedCameras;
@@ -1168,8 +1168,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     num_OptKF = lLocalKeyFrames.size();
-    Verbose::PrintMess("LM-LBA: Opt KFs: " + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
-    Verbose::PrintMess("LM-LBA: Fixed KFs: " + to_string(lFixedCameras.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LBA: Opt KFs: " + to_string(num_OptKF), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("LM-LBA: Fixed KFs: " + to_string(lFixedCameras.size()), Verbose::VERBOSITY_DEBUG);
 
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedCameras.begin(), lFixedCameras.end(), [&pMap,&optimizer,&maxKFid](auto pKFi)
@@ -1277,7 +1277,6 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
         if(*pbStopFlag)
             return;
 
-    Verbose::PrintMess("LocalBA: Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
     optimizer.initializeOptimization();
     optimizer.optimize(maxIterations);
 
@@ -1465,11 +1464,11 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         // DEBUG LBA - TODO: Only activate on visualizer
         pMap->msOptKFs.insert(pKFi->mnId);
         if(fixKF)
-            Verbose::PrintMess("LM-LGNSSBA: Fixed:" + to_string(pKFi->mnId), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("LM-LGNSSBA: Fixed:" + to_string(pKFi->mnId), Verbose::VERBOSITY_DEBUG);
     });
 
     auto num_OptKF = lLocalKeyFrames.size();
-    Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_DEBUG);
 
 
     // Set MapPoint vertices
@@ -1574,7 +1573,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
         //     pKFi->AddReprojectionError(e->error());
     });
 
-    Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_DEBUG);
 
 
     // Get Map Mutex
@@ -1713,7 +1712,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
         pMap->msOptKFs.insert(pKFi->mnId);
     });
     auto num_OptKF = lLocalKeyFrames.size();
-    Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LM-LGNSSBA: Opt KFs:" + to_string(num_OptKF), Verbose::VERBOSITY_DEBUG);
 
     // Set MapPoint vertices
     const int nExpectedSize = lLocalKeyFrames.size()*lLocalMapPoints.size();
@@ -1817,7 +1816,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
             vToErase.push_back(make_pair(pKFi,pMP));
     });
 
-    Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Points to be erased: " + to_string(vToErase.size()) + " out of: " + to_string(vpEdgesMono.size()), Verbose::VERBOSITY_DEBUG);
 
 
     // Get Map Mutex
@@ -2781,7 +2780,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     list<MapPoint*> lLocalMapPoints;
     ComputeAndFillLocalMapPoints(vpOptimizableKFs, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
 
-    Verbose::PrintMess("LocalInertialBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LocalInertialBA: Map Points from optimizable KFs: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_DEBUG);
 
     // Fixed Keyframe: First frame previous KF to optimization window)
     list<KeyFrame*> lFixedKeyFrames;
@@ -2810,7 +2809,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     }
 
     ComputeAndFillLocalMapPoints(vpOptimizableKFs, pMap, maxMapPointsPerFrame, pKF->mnId, lLocalMapPoints);
-    Verbose::PrintMess("LocalInertialBA: Total Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("LocalInertialBA: Total Map Points: " + to_string(lLocalMapPoints.size()), Verbose::VERBOSITY_DEBUG);
 
     // Fixed KFs which are not covisible optimizable
     const int maxFixKF = 20;
@@ -2917,7 +2916,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
         if(!pKFi->mPrevKF)
         {
-            Verbose::PrintMess("LocalInertialBA: No Inertial Link To Previous Frame", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("LocalInertialBA: No Inertial Link To Previous Frame", Verbose::VERBOSITY_DEBUG);
             return;
         }
 
@@ -2935,7 +2934,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
 
             if(!VP1 || !VV1 || !VG1 || !VA1 || !VP2 || !VV2 || !VG2 || !VA2)
             {
-                Verbose::PrintMess("LocalInertialBA: Error in vertices", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("LocalInertialBA: Error in vertices", Verbose::VERBOSITY_DEBUG);
                 return;
             }
 
@@ -3110,7 +3109,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     // TODO: Some convergence problems have been detected here
     if((2*err < err_end || isnan(err) || isnan(err_end))) //bGN)
     {
-        Verbose::PrintMess("LocalInertialBA: FAIL LOCAL-INERTIAL BA!", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("LocalInertialBA: Fail", Verbose::VERBOSITY_NORMAL);
         return {};
     }
 
@@ -3262,7 +3261,7 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &star
 
 void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
 {
-    Verbose::PrintMess("inertial optimization", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Inertial Optimization", Verbose::VERBOSITY_DEBUG);
     int its = 200;
     long unsigned int maxKFid = pMap->GetMaxKFid();
     const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
@@ -3371,7 +3370,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
             if(pKFi->isBad() || pKFi->mPrevKF->mnId>maxKFid)
                 continue;
             if(!pKFi->mpImuPreintegrated)
-                std::cout << "Not preintegrated measurement" << std::endl;
+                Verbose::PrintMess("Inertial Optimization: Not preintegrated measurement", Verbose::VERBOSITY_DEBUG);
 
             pKFi->mpImuPreintegrated->SetNewBias(pKFi->mPrevKF->GetImuBias());
             g2o::HyperGraph::Vertex* VP1 = optimizer.vertex(pKFi->mPrevKF->mnId);
@@ -3384,8 +3383,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
             g2o::HyperGraph::Vertex* VS = optimizer.vertex(maxKFid*2+5);
             if(!VP1 || !VV1 || !VG || !VA || !VP2 || !VV2 || !VGDir || !VS)
             {
-                cout << "Error" << VP1 << ", "<< VV1 << ", "<< VG << ", "<< VA << ", " << VP2 << ", " << VV2 <<  ", "<< VGDir << ", "<< VS <<endl;
-
+                Verbose::PrintMess("Inertial Optimization: Error - A  graph vertex is null!", Verbose::VERBOSITY_NORMAL);
                 continue;
             }
             EdgeInertialGS* ei = new EdgeInertialGS(pKFi->mpImuPreintegrated);
@@ -4725,7 +4723,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     }
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
-    Verbose::PrintMess("KEY init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("KEY init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_DEBUG);
 
     KeyFrame* pKF = pFrame->mpLastKeyFrame;
     VertexPose* VPk = new VertexPose(pKF);
@@ -4954,7 +4952,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
 
     pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H);
 
-    Verbose::PrintMess("KEY final: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("KEY final: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_DEBUG);
 
     return nInitialCorrespondences-nBad;
 }
@@ -5124,7 +5122,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
 
     nInitialCorrespondences = nInitialMonoCorrespondences + nInitialStereoCorrespondences;
 
-    Verbose::PrintMess("Frame init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Frame init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_DEBUG);
 
     // Set Previous Frame Vertex
     Frame* pFp = pFrame->mpPrevFrame;

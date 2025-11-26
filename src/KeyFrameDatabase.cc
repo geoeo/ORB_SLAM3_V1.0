@@ -765,7 +765,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     }
 
     int minCommonWords = maxCommonWords*0.8f;
-    Verbose::PrintMess("Min Common Words: " + to_string(minCommonWords) + " Max Common: " + to_string(maxCommonWords), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Min Common Words: " + to_string(minCommonWords) + " Max Common: " + to_string(maxCommonWords), Verbose::VERBOSITY_DEBUG);
 
     list<pair<float,KeyFrame*> > lScoreAndMatch;
 
@@ -788,7 +788,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
     if(lScoreAndMatch.empty())
         return vector<KeyFrame*>();
 
-    Verbose::PrintMess("Similarities Found: " + std::to_string(lScoreAndMatch.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Similarities Found: " + std::to_string(lScoreAndMatch.size()), Verbose::VERBOSITY_DEBUG);
 
     list<pair<float,KeyFrame*> > lAccScoreAndMatch;
     float bestAccScore = 0;
@@ -842,7 +842,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map
         }
     }
 
-    Verbose::PrintMess("Reloc Candidate Size: " + std::to_string(vpRelocCandidates.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Reloc Candidate Size: " + std::to_string(vpRelocCandidates.size()), Verbose::VERBOSITY_DEBUG);
 
     return vpRelocCandidates;
 }

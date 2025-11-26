@@ -87,12 +87,12 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
   const auto pose = estimateGeorefTransform(spatials);
 
 
-  Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(1,0)) + " " + to_string(pose.rotationMatrix()(1,1)) + " " + to_string(pose.rotationMatrix()(1,2)) + " " + to_string(pose.translation()(1)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(1,0)) + " " + to_string(pose.rotationMatrix()(1,1)) + " " + to_string(pose.rotationMatrix()(1,2)) + " " + to_string(pose.translation()(1)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_DEBUG);
   
   unique_lock<mutex> lock(mMutexTransform);
   mTgw_current = pose;
@@ -111,7 +111,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   //const auto src_offset = mTgw_current*spatials[0]->GetPoseInverse().translation().cast<double>();
   const auto src_offset = Sophus::Sim3d().translation();
 
-  Verbose::PrintMess("Src Offset: " + to_string(src_offset(0)) + " " + to_string(src_offset(1)) + " " + to_string(src_offset(2)), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("Src Offset: " + to_string(src_offset(0)) + " " + to_string(src_offset(1)) + " " + to_string(src_offset(2)), Verbose::VERBOSITY_DEBUG);
 
   int i, j;
   for (i = 0, j = 0; i < spatials.size(); ++i, j+=measurements)
@@ -168,13 +168,5 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   const bool estimate_scale = true;
   Eigen::Matrix4d Tgw_mat = Eigen::umeyama(src_points, dst_points, estimate_scale);
   const auto Tgw = Sophus::Sim3d(Tgw_mat);
-
-  Verbose::PrintMess("Georef function successful", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(0,0)) + " " + to_string(Tgw.rotationMatrix()(0,1)) + " " + to_string(Tgw.rotationMatrix()(0,2)) + " " + to_string(Tgw.translation()(0)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(1,0)) + " " + to_string(Tgw.rotationMatrix()(1,1)) + " " + to_string(Tgw.rotationMatrix()(1,2)) + " " + to_string(Tgw.translation()(1)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(Tgw.rotationMatrix()(2,0)) + " " + to_string(Tgw.rotationMatrix()(2,1)) + " " + to_string(Tgw.rotationMatrix()(2,2)) + " " + to_string(Tgw.translation()(2)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Scale: " + to_string(Tgw.scale()), Verbose::VERBOSITY_NORMAL);
-
   return Tgw;
 }

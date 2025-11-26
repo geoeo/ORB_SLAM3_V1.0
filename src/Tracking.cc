@@ -430,21 +430,21 @@ void Tracking::Track()
     if(nCurMapChangeIndex>nMapChangeIndex)
     {
         mpAtlas->GetCurrentMap()->SetLastMapChange(nCurMapChangeIndex);
-        Verbose::PrintMess("TRACK: Map has been updated. MapChangeIndex: " + to_string(nCurMapChangeIndex), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TRACK: Map has been updated. MapChangeIndex: " + to_string(nCurMapChangeIndex), Verbose::VERBOSITY_DEBUG);
         mbMapUpdated = true;
     }
 
 
     if(getTrackingState()==NOT_INITIALIZED)
     {
-        Verbose::PrintMess("TRACK: Init ", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TRACK: Init ", Verbose::VERBOSITY_DEBUG);
         MonocularInitialization();
         
         //mpFrameDrawer->Update(this);
 
         if(getTrackingState()!=OK) // If rightly initialized, mState=OK
         {
-            Verbose::PrintMess("TRACK: Init was not OK", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("TRACK: Init was not OK", Verbose::VERBOSITY_DEBUG);
             mLastFrame = Frame(mCurrentFrame);
             return;
         }
@@ -748,7 +748,7 @@ void Tracking::MonocularInitialization()
         ORBmatcher matcher(0.9,true);
         int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,10);
 
-        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
         // Check if there are enough correspondences
         if(nmatches<FEAT_INIT_COUNT)
@@ -762,7 +762,7 @@ void Tracking::MonocularInitialization()
 
         if(mpCamera->ReconstructWithTwoViews(mInitialFrame.mvKeysUn,mCurrentFrame.mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
         {
-            Verbose::PrintMess("init matches before 2 view " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("init matches before 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
             
             for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
             {
@@ -773,7 +773,7 @@ void Tracking::MonocularInitialization()
                 }
             }
 
-            Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
             // Set Frame Poses
             mInitialFrame.SetPose(Sophus::SE3f());
@@ -841,7 +841,7 @@ void Tracking::CreateInitialMapMonocular()
     sMPs = pKFini->GetMapPoints();
 
     // Bundle Adjustment
-    Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
+    Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_DEBUG);
     Optimizer::GlobalBundleAdjustemnt(mpAtlas->GetCurrentMap(),20);
 
     float medianDepth = pKFini->ComputeSceneMedianDepth(2);
@@ -853,7 +853,7 @@ void Tracking::CreateInitialMapMonocular()
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
-        Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
+        Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_DEBUG);
         mpSystem->Reset();
         return;
     }
@@ -1087,7 +1087,7 @@ bool Tracking::TrackWithMotionModel()
     // If few matches, uses a wider window search
     if(nmatches<20)
     {
-        Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_DEBUG);
         fill(mCurrentFrame.mvpMapPoints.begin(),mCurrentFrame.mvpMapPoints.end(),static_cast<MapPoint*>(NULL));
 
         nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
@@ -1129,7 +1129,7 @@ bool Tracking::TrackWithMotionModel()
         }
     }
 
-    Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_DEBUG);
     if(mbOnlyTracking)
     {
         mbVO = nmatchesMap<10;
@@ -1163,16 +1163,16 @@ bool Tracking::TrackLocalMap()
     int inliers;
     if (!mpAtlas->isImuInitialized()){
         inliers = Optimizer::PoseOptimization(&mCurrentFrame);
-        Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
     }
     else
     {
         const auto state = getTrackingState();
         if(state==RECENTLY_LOST || state==LOST)
         {
-            Verbose::PrintMess("TLM: PoseOptimization - LOST", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("TLM: PoseOptimization - LOST", Verbose::VERBOSITY_DEBUG);
             inliers = Optimizer::PoseOptimization(&mCurrentFrame);
-            Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
         }
         else
         {
@@ -1184,7 +1184,7 @@ bool Tracking::TrackLocalMap()
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);
-                Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
                 if(inliers < inlierImuThreshold){
                     inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
                     Verbose::PrintMess("2# inliers last key frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
@@ -1195,10 +1195,10 @@ bool Tracking::TrackLocalMap()
             {
                 Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame", Verbose::VERBOSITY_DEBUG);
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(&mCurrentFrame);
-                Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
                 if(inliers < inlierImuThreshold && mpcpiExists){
                     inliers = Optimizer::PoseInertialOptimizationLastFrame(&mCurrentFrame, inlierImuThreshold);  
-                    Verbose::PrintMess("2# inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
+                    Verbose::PrintMess("2# inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_DEBUG);
                 }
 
             }
@@ -1300,7 +1300,7 @@ bool Tracking::NeedNewKeyFrame()
     const bool c2 = (mnMatchesInliers<nRefMatches*thRefRatio) && (mnMatchesInliers>15);
     const bool c4 = (mnMatchesInliers<mFeatureThresholdForKF) || getTrackingState()==RECENTLY_LOST;
 
-    Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_DEBUG);
     return c1 || c4;
 }
 
@@ -1381,7 +1381,7 @@ void Tracking::SearchLocalPoints()
         }
     }
 
-    Verbose::PrintMess("points to match: " + to_string(nToMatch), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("points to match: " + to_string(nToMatch), Verbose::VERBOSITY_DEBUG);
 
     if(nToMatch>0)
     {
@@ -1407,7 +1407,7 @@ void Tracking::SearchLocalPoints()
             th=15; // 15
 
         auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints);
-        Verbose::PrintMess("SearchLocalPoints matches: " +to_string(matches), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("SearchLocalPoints matches: " +to_string(matches), Verbose::VERBOSITY_DEBUG);
     }
 }
 
@@ -1533,14 +1533,14 @@ void Tracking::UpdateLocalKeyFrames()
         pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
     }
 
-    Verbose::PrintMess("UpdateLocalKeyFrames: Local KeyFrames: " + to_string(mvpLocalKeyFrames.size()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("UpdateLocalKeyFrames: Local KeyFrames: " + to_string(mvpLocalKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
 
 }
 
 bool Tracking::Relocalization()
 {
     vector<KeyFrame*> vpCandidateKFs;
-    Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("Starting relocalization", Verbose::VERBOSITY_DEBUG);
     // Compute Bag of Words Vector
     mCurrentFrame.ComputeBoW();
 
@@ -1550,7 +1550,7 @@ bool Tracking::Relocalization()
 
 
     if(vpCandidateKFs.empty()) {
-        Verbose::PrintMess("There are not enough candidates", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("There are not enough candidates", Verbose::VERBOSITY_DEBUG);
         return false;
     }
 
