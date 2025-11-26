@@ -263,7 +263,6 @@ namespace ORB_SLAM3 {
             initThFAST_ = orb.iniThFast;
             minThFAST_ = orb.minThFast;
 
-            fps_ = cam.fps;
             bRGB_ = false;
     }
 
@@ -493,7 +492,6 @@ namespace ORB_SLAM3 {
             }
         }
 
-        fps_ = readParameter<int>(fSettings,"Camera.fps",found);
         bRGB_ = (bool) readParameter<int>(fSettings,"Camera.RGB",found);
     }
 
@@ -680,8 +678,6 @@ namespace ORB_SLAM3 {
                 output << " ]" << endl;
             }
         }
-
-        output << "\t-Sequence FPS: " << settings.fps_ << endl;
 
         //Stereo stuff
         if(settings.sensor_ == System::STEREO || settings.sensor_ == System::IMU_STEREO){

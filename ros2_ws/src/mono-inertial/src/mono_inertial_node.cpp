@@ -76,7 +76,6 @@ class SlamNode : public rclcpp::Node
       cam.K.at<float>(1,2) *= resize_factor;
 
 
-      cam.fps        = 5;
       cam.orig_width      = static_cast<int>(2048*resize_factor);
       cam.orig_height     = static_cast<int>(1536*resize_factor);
 
@@ -177,6 +176,8 @@ class SlamNode : public rclcpp::Node
       tracker_settings.frameGridCols = 64;
       tracker_settings.frameGridRows = 48;
       tracker_settings.maxLocalKFCount = 10;
+      tracker_settings.minFeatNumberForKF = 100;
+      tracker_settings.maxFrames = 10;
 
       const double clahe_clip_limit = 80.0;
       const int clahe_grid_size = 8;

@@ -31,7 +31,6 @@ namespace ORB_SLAM3 {
     struct CameraParameters
     {  
     bool isRGB;
-    float fps;
     int orig_width;
     int orig_height;
     int new_width;
@@ -84,6 +83,7 @@ namespace ORB_SLAM3 {
         int frameGridCols;
         int frameGridRows;
         int minFeatNumberForKF;
+        int maxFrames;
     };
 
     //TODO: change to double instead of float
@@ -133,7 +133,6 @@ namespace ORB_SLAM3 {
         bool needToUndistort() {return bNeedToUndistort_;}
 
         cv::Size newImSize() {return newImSize_;}
-        float fps() {return fps_;}
         bool rgb() {return bRGB_;}
         bool needToResize() {return bNeedToResize1_;}
         bool needToRectify() {return bNeedToRectify_;}
@@ -219,7 +218,6 @@ namespace ORB_SLAM3 {
         std::vector<float> vPinHoleDistorsion1_, vPinHoleDistorsion2_;
 
         cv::Size originalImSize_, newImSize_;
-        float fps_;
         bool bRGB_;
 
         bool bNeedToUndistort_;

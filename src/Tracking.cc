@@ -43,6 +43,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mState(NO_IMAGES_YET), mSensor(sensor), mTrackedFr(0), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
     mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mMinFeatNumberForKF(tracker_settings.minFeatNumberForKF),
+    mMinFrames(0),mMaxFrames(tracker_settings.maxFrames),
     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
@@ -94,9 +95,6 @@ void Tracking::newParameterLoader(Settings *settings) {
     mK_(0,2) = mpCamera->getParameter(2);
     mK_(1,2) = mpCamera->getParameter(3);
 
-
-    mMinFrames = 0;
-    mMaxFrames = settings->fps();
     mbRGB = settings->rgb();
 
     //ORB parameters
