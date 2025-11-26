@@ -731,7 +731,7 @@ void Tracking::MonocularInitialization()
 
             }
 
-            Verbose::PrintMess("Ready to initialize", Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("Ready to initialize", Verbose::VERBOSITY_DEBUG);
             mbReadyToInitializate = true;
             return;
         }
