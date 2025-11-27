@@ -101,7 +101,7 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw)
     mTwc = mTcw.inverse();
     mRwc = mTwc.rotationMatrix();
 
-    if (mImuCalib.mbIsSet) // TODO Use a flag instead of the OpenCV matrix
+    if (mImuCalib.mbIsSet)
     {
         mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
     }

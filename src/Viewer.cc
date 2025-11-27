@@ -316,7 +316,7 @@ void Viewer::Run()
         pangolin::FinishFrame();
 
         if((mpTracker->isBACompleteForMap() && !mbWrittenInitTrajectory && mbSaveInitTrajectory) || menuSaveTrajectory){
-            const vector<KeyFrame*> vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+            const vector<KeyFrame*> vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
             unique_lock<mutex> lock(mpMapDrawer->mpAtlas->GetCurrentMap()->mMutexMapUpdate);
             try {
                 Map::writeKeyframesCsv("keyframes", vpKFs);

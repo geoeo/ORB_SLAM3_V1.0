@@ -85,9 +85,9 @@ public:
     Sophus::Sim3d getGeorefTransform();
 
     Eigen::MatrixXd mcovInertial;
-    Eigen::Matrix3d mRwg;
-    Eigen::Vector3d mbg;
-    Eigen::Vector3d mba;
+    Eigen::Matrix3d mRw_gravity;
+    Eigen::Vector3d mb_gyro;
+    Eigen::Vector3d mb_accelerometer;
     double mScale;
     double mInitTime;
     double mCostTime;

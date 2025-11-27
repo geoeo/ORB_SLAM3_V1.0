@@ -1828,7 +1828,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     Verbose::PrintMess("mnFirstFrameId = " + to_string(mnFirstFrameId), Verbose::VERBOSITY_NORMAL);
     for(Map* pMap : mpAtlas->GetAllMaps())
     {
-        if(pMap->GetAllKeyFrames().size() > 0)
+        if(pMap->GetAllKeyFrames(false).size() > 0)
         {
             if(index > pMap->GetLowerKFID())
                 index = pMap->GetLowerKFID();

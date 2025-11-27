@@ -343,7 +343,7 @@ bool LoopClosing::NewDetectCommonRegions()
         return false;
     }
 
-    if(mpTracker->mSensor == System::STEREO && mpLastMap->GetAllKeyFrames().size() < 5) //12
+    if(mpTracker->mSensor == System::STEREO && mpLastMap->GetAllKeyFrames(false).size() < 5) //12
     {
         // cout << "LoopClousure: Stereo KF inserted without check: " << mpCurrentKF->mnId << endl;
         mpKeyFrameDB->add(mpCurrentKF);
@@ -351,7 +351,7 @@ bool LoopClosing::NewDetectCommonRegions()
         return false;
     }
 
-    if(mpLastMap->GetAllKeyFrames().size() < 12)
+    if(mpLastMap->GetAllKeyFrames(false).size() < 12)
     {
         // cout << "LoopClousure: Stereo KF inserted without check, map is small: " << mpCurrentKF->mnId << endl;
         mpKeyFrameDB->add(mpCurrentKF);
@@ -1633,7 +1633,7 @@ void LoopClosing::MergeLocal()
     mpLocalMapper->Release();
 
     //Update the non critical area from the current map to the merged map
-    vector<KeyFrame*> vpCurrentMapKFs = pCurrentMap->GetAllKeyFrames();
+    vector<KeyFrame*> vpCurrentMapKFs = pCurrentMap->GetAllKeyFrames(false);
     vector<MapPoint*> vpCurrentMapMPs = pCurrentMap->GetAllMapPoints();
 
     if(vpCurrentMapKFs.size() == 0){}
@@ -1820,6 +1820,7 @@ void LoopClosing::MergeLocal2()
 
     Map* pCurrentMap = mpCurrentKF->GetMap();
     Map* pMergeMap = mpMergeMatchedKF->GetMap();
+    auto vpKFsCurrentMap = pCurrentMap->GetAllKeyFrames(true);
 
     {
         float s_on = mSold_new.scale();
@@ -1838,7 +1839,7 @@ void LoopClosing::MergeLocal2()
         bool bScaleVel=false;
         if(s_on!=1)
             bScaleVel=true;
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(T_on,s_on,bScaleVel);
+        mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKFsCurrentMap,T_on,s_on,bScaleVel);
         mpTracker->UpdateFrameIMU(s_on,mpCurrentKF->GetImuBias(),mpTracker->GetLastKeyFrame());
         //TODO: save/accumulate scale
 
@@ -1876,7 +1877,7 @@ void LoopClosing::MergeLocal2()
         unique_lock<mutex> mergeLock(pMergeMap->mMutexMapUpdate); // We remove the Kfs and MPs in the merged area from the old map
 
 
-        vector<KeyFrame*> vpMergeMapKFs = pMergeMap->GetAllKeyFrames();
+        vector<KeyFrame*> vpMergeMapKFs = pMergeMap->GetAllKeyFrames(false);
         vector<MapPoint*> vpMergeMapMPs = pMergeMap->GetAllMapPoints();
 
 
@@ -1904,7 +1905,7 @@ void LoopClosing::MergeLocal2()
         }
 
         // Save non corrected poses (already merged maps)
-        vector<KeyFrame*> vpKFs = pCurrentMap->GetAllKeyFrames();
+        vector<KeyFrame*> vpKFs = pCurrentMap->GetAllKeyFrames(false);
         for(KeyFrame* pKFi : vpKFs)
         {
             Sophus::SE3d Tiw = (pKFi->GetPose()).cast<double>();
@@ -2267,7 +2268,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
 
     nFGBA_exec += 1;
 
-    vnGBAKFs.push_back(pActiveMap->GetAllKeyFrames().size());
+    vnGBAKFs.push_back(pActiveMap->GetAllKeyFrames(false).size());
     vnGBAMPs.push_back(pActiveMap->GetAllMapPoints().size());
 #endif
 

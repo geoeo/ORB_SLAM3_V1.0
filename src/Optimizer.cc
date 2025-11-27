@@ -58,7 +58,7 @@ bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
 
 void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
-    vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
     vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
     BundleAdjustment(pMap,vpKFs,vpMP,nIterations,pbStopFlag, nLoopKF, bRobust);
 }
@@ -154,7 +154,7 @@ void Optimizer::BundleAdjustment(Map* pMap, const vector<KeyFrame *> &vpKFs, con
        const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
 
         int nEdges = 0;
-        //SET EDGES
+        //Set Edges
         for(map<KeyFrame*,tuple<int,int>>::const_iterator mit=observations.begin(); mit!=observations.end(); mit++)
         {
             KeyFrame* pKF = mit->first;
@@ -370,7 +370,7 @@ void Optimizer::BundleAdjustment(Map* pMap, const vector<KeyFrame *> &vpKFs, con
 void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool *pbStopFlag, bool bInit, float priorG, float priorA, Eigen::VectorXd *vSingVal, bool *bHess)
 {
     long unsigned int maxKFid = pMap->GetMaxKFid();
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
     const vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
     // Setup optimizer
@@ -1367,11 +1367,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     pKF->mnBALocalForKF = pKF->mnId;
 
-    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames();
-    std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b)
-                                  {
-                                      return a->mnId < b->mnId;
-                                  });
+    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames(true);
     
     // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
     // vAllKfs = newKfs;
@@ -1616,11 +1612,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(KeyFrame *pKF, bool* pbStopFlag, M
     //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
 
-    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames();
-    std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b)
-                                  {
-                                      return a->mnId < b->mnId;
-                                  });
+    vector<KeyFrame*> vAllKfs = pMap->GetAllKeyFrames(true);
     
     // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
     // vAllKfs = newKfs;
@@ -1874,7 +1866,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
     optimizer.setAlgorithm(solver);
 
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
     const vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
     const unsigned int nMaxKFid = pMap->GetMaxKFid();
@@ -3264,7 +3256,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     Verbose::PrintMess("Inertial Optimization", Verbose::VERBOSITY_DEBUG);
     int its = 200;
     long unsigned int maxKFid = pMap->GetMaxKFid();
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -3456,7 +3448,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vect
 {
     int its = 200; // Check number of iterations
     long unsigned int maxKFid = pMap->GetMaxKFid();
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -3618,7 +3610,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
 {
     int its = 10;
     long unsigned int maxKFid = pMap->GetMaxKFid();
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
 
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -5408,7 +5400,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFram
 
     optimizer.setAlgorithm(solver);
 
-    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
     const vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
     const unsigned int nMaxKFid = pMap->GetMaxKFid();

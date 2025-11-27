@@ -202,7 +202,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     if(!pActiveMap)
         return;
 
-    const vector<KeyFrame*> vpKFs = pActiveMap->GetAllKeyFrames();
+    const vector<KeyFrame*> vpKFs = pActiveMap->GetAllKeyFrames(false);
 
     if(bDrawKF)
     {
@@ -355,7 +355,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             if(pMap == pActiveMap)
                 continue;
 
-            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
 
             for(size_t i=0; i<vpKFs.size(); i++)
             {

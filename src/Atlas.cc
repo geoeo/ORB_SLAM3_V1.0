@@ -194,7 +194,7 @@ long unsigned Atlas::KeyFramesInMap()
 std::vector<KeyFrame*> Atlas::GetAllKeyFrames()
 {
     unique_lock<mutex> lock(mMutexAtlas);
-    return mpCurrentMap->GetAllKeyFrames();
+    return mpCurrentMap->GetAllKeyFrames(false);
 }
 
 std::vector<MapPoint*> Atlas::GetAllMapPoints()
@@ -348,7 +348,7 @@ void Atlas::PreSave()
         if(!pMi || pMi->IsBad())
             continue;
 
-        if(pMi->GetAllKeyFrames().size() == 0) {
+        if(pMi->GetAllKeyFrames(false).size() == 0) {
             // Empty map, erase before of save it.
             SetMapBad(pMi);
             continue;
@@ -372,7 +372,7 @@ void Atlas::PostLoad()
     {
         mspMaps.insert(pMi);
         pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams);
-        numKF += pMi->GetAllKeyFrames().size();
+        numKF += pMi->GetAllKeyFrames(false).size();
         numMP += pMi->GetAllMapPoints().size();
     }
     mvpBackupMaps.clear();
@@ -404,7 +404,7 @@ long unsigned int Atlas::GetNumLivedKF()
     long unsigned int num = 0;
     for(Map* pMap_i : mspMaps)
     {
-        num += pMap_i->GetAllKeyFrames().size();
+        num += pMap_i->GetAllKeyFrames(false).size();
     }
 
     return num;
@@ -425,7 +425,7 @@ map<long unsigned int, KeyFrame*> Atlas::GetAtlasKeyframes()
     map<long unsigned int, KeyFrame*> mpIdKFs;
     for(Map* pMap_i : mvpBackupMaps)
     {
-        vector<KeyFrame*> vpKFs_Mi = pMap_i->GetAllKeyFrames();
+        vector<KeyFrame*> vpKFs_Mi = pMap_i->GetAllKeyFrames(false);
 
         for(KeyFrame* pKF_j_Mi : vpKFs_Mi)
         {

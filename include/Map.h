@@ -51,7 +51,7 @@ public:
     void InformNewBigChange();
     int GetLastBigChangeIdx();
 
-    std::vector<KeyFrame*> GetAllKeyFrames();
+    std::vector<KeyFrame*> GetAllKeyFrames(bool sort);
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
 
@@ -85,7 +85,7 @@ public:
     void SetImuInitialized();
     bool isImuInitialized();
 
-    void ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
+    void ApplyScaledRotation(std::vector<KeyFrame*> sortedKeyframes, const Sophus::SE3f &T, const float s, const bool bScaledVel=false);
     void ApplyGNSSTransformation(const Sophus::SE3f &T);
 
     void SetInertialSensor();

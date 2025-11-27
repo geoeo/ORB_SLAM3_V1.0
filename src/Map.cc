@@ -146,10 +146,13 @@ int Map::GetLastBigChangeIdx()
     return mnBigChangeIdx;
 }
 
-vector<KeyFrame*> Map::GetAllKeyFrames()
+vector<KeyFrame*> Map::GetAllKeyFrames(bool sort)
 {
     unique_lock<mutex> lock(mMutexMap);
-    return vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
+    auto vAllKfs = vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
+    if(sort)
+        std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b){return a->mnId < b->mnId;});
+    return vAllKfs;
 }
 
 vector<MapPoint*> Map::GetAllMapPoints()
@@ -255,16 +258,15 @@ bool Map::IsBad()
 }
 
 
-void Map::ApplyScaledRotation(const Sophus::SE3f &T, const float s, const bool bScaledVel)
+void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::SE3f &T, const float s, const bool bScaledVel)
 {
     unique_lock<mutex> lock(mMutexMap);
-
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
     Sophus::SE3f Tyw = T;
     Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
     Eigen::Vector3f tyw = Tyw.translation();
 
-    for(set<KeyFrame*>::iterator sit=mspKeyFrames.begin(); sit!=mspKeyFrames.end(); sit++)
+    for(vector<KeyFrame*>::iterator sit=sortedKeyframes.begin(); sit!=sortedKeyframes.end(); sit++)
     {
         KeyFrame* pKF = *sit;
         Sophus::SE3f Twc = pKF->GetPoseInverse();

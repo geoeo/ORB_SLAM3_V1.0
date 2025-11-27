@@ -93,7 +93,7 @@ void LocalMapping::Run()
                 const auto georef_succcess = GeoreferenceKeyframes();
                 if(georef_succcess && writeKFAfterGeorefCount == 0){
                     if(mbWriteGNSSData){
-                        const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+                        const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
                         for(const auto kf : kfs)
                             kf->ComputeReprojectionErrors(true);
                         Map::writeKeyframesCsv("keyframes_after_georef", kfs);
@@ -109,7 +109,7 @@ void LocalMapping::Run()
                         Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
                         Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
                         if(mbWriteGNSSData){
-                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
                             Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
                             Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
                         }
@@ -241,7 +241,7 @@ void LocalMapping::Run()
             }
 
             //mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
-            Verbose::PrintMess("LocalMapper - Elapsed Time: " + to_string(mTElapsedTime) + " KF size:" + to_string(mpAtlas->GetCurrentMap()->GetAllKeyFrames().size()), Verbose::VERBOSITY_NORMAL);
+            Verbose::PrintMess("LocalMapper - Elapsed Time: " + to_string(mTElapsedTime) + " KF size:" + to_string(mpAtlas->GetCurrentMap()->GetAllKeyFrames(false).size()), Verbose::VERBOSITY_NORMAL);
 
         }
         else if(Stop() && !mbBadImu)
@@ -708,7 +708,7 @@ void LocalMapping::CreateNewMapPoints()
 bool LocalMapping::GeoreferenceKeyframes(){
     const auto wasInitialized = mGeometricReferencer.isInitialized();
     // First check if we have any frames which we need to georeference
-    const auto kfsWithoutGeoref = wasInitialized ? mGeometricReferencer.getFramesWithoutGeoref() : mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+    const auto kfsWithoutGeoref = wasInitialized ? mGeometricReferencer.getFramesWithoutGeoref() : mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
     if(kfsWithoutGeoref.empty())
         return false;
     
@@ -1138,7 +1138,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // if(mpAtlas->KeyFramesInMap()<nMinKF)
     //     return false;
 
-    const auto kf_size = mpAtlas->GetCurrentMap()->GetAllKeyFrames().size();
+    const auto kf_size = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false).size();
     if(kf_size<nMinKF)
         return false;
 
@@ -1157,18 +1157,16 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
         //vpKF.push_back(mpCurrentKeyFrame);
     }
 
-    // Since we dont do loop closing, all keyframes are implicitly in temporal order via ID - TOOD: Check this!
-    auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames();
+    auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
 
 
     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
 
-    // Compute and KF velocities mRwg estimation
+    // Compute and KF velocities mRw_gravity estimation
     if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
     {
-        Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
         for(vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF!=vpKF.end(); itKF++)
@@ -1198,20 +1196,19 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
         const float ang = acos(cosg);
         Verbose::PrintMess("InitializeIMU - before exp call ...", Verbose::VERBOSITY_DEBUG);
         Eigen::Vector3f vzg = v*ang/nv;
-        Rwg = Sophus::SO3f::exp(vzg).matrix();
-        mRwg = Rwg.cast<double>();
+        mRw_gravity = Sophus::SO3f::exp(vzg).matrix().cast<double>();
     }
     else
     {
-        mRwg = Eigen::Matrix3d::Identity();
-        mbg = mpCurrentKeyFrame->GetGyroBias().cast<double>();
-        mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
+        mRw_gravity = Eigen::Matrix3d::Identity();
+        mb_gyro = mpCurrentKeyFrame->GetGyroBias().cast<double>();
+        mb_accelerometer = mpCurrentKeyFrame->GetAccBias().cast<double>();
     }
 
     mScale=1.0;
     {
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate); 
-        Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbFixScale, infoInertial, false, false, priorG, priorA);
+        Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRw_gravity, mScale, mb_gyro, mb_accelerometer, mbFixScale, infoInertial, false, false, priorG, priorA);
     }
 
     if (mScale<1e-1)
@@ -1226,8 +1223,8 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
-            Sophus::SE3f Twg(mRwg.cast<float>().transpose(), Eigen::Vector3f::Zero());
-            mpAtlas->GetCurrentMap()->ApplyScaledRotation(Twg, mScale, true);
+            Sophus::SE3f Tw_gravity(mRw_gravity.cast<float>().transpose(), Eigen::Vector3f::Zero());
+            mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tw_gravity, mScale, true);
             mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
         }
 
@@ -1401,11 +1398,11 @@ void LocalMapping::ScaleRefinement()
 
     const int N = vpKF.size();
 
-    mRwg = Eigen::Matrix3d::Identity();
+    mRw_gravity = Eigen::Matrix3d::Identity();
     mScale=1.0;
 
     chrono::steady_clock::time_point t0 = chrono::steady_clock::now();
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale);
+    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRw_gravity, mScale);
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
 
     if (mScale<1e-1) // 1e-1
@@ -1415,14 +1412,14 @@ void LocalMapping::ScaleRefinement()
         return;
     }
     
-    Sophus::SO3d so3wg(mRwg);
+    Sophus::SO3d so3wg(mRw_gravity);
     // Before this line we are not changing the map
     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     if ((fabs(mScale-1.f)>0.002)||!mbMonocular)
     {
-        Sophus::SE3f Tgw(mRwg.cast<float>().transpose(),Eigen::Vector3f::Zero());
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(Tgw,mScale,true);
+        Sophus::SE3f Tgw(mRw_gravity.cast<float>().transpose(),Eigen::Vector3f::Zero());
+        mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tgw, mScale, true);
         mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
     }
     chrono::steady_clock::time_point t3 = chrono::steady_clock::now();

@@ -86,7 +86,6 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
 { 
   const auto pose = estimateGeorefTransform(spatials);
 
-
   Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_DEBUG);
