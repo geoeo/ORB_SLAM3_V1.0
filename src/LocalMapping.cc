@@ -461,7 +461,6 @@ void LocalMapping::CreateNewMapPoints()
         // Search matches that fullfil epipolar constraint
         vector<pair<size_t,size_t> > vMatchedIndices;
         bool bCoarse = mbInertial && mpTracker->mState==Tracking::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
-        //bCoarse= true;
 
         // threshold does not seem to affect triangulation
         float th = 0.6f;
