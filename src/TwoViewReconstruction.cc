@@ -516,13 +516,13 @@ namespace ORB_SLAM3
 
 
         
-        Verbose::PrintMess("Fundamental: Min Good " + std::to_string(nMinGood), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: Max Good " + std::to_string(maxGood), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: nsimilar " + std::to_string(nsimilar), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: nGood1 " + std::to_string(nGood1), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: nGood2 " + std::to_string(nGood2), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: nGood3 " + std::to_string(nGood3), Verbose::VERBOSITY_NORMAL);
-        Verbose::PrintMess("Fundamental: nGood4 " + std::to_string(nGood4), Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("Fundamental: Min Good " + std::to_string(nMinGood), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: Max Good " + std::to_string(maxGood), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nsimilar " + std::to_string(nsimilar), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nGood1 " + std::to_string(nGood1), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nGood2 " + std::to_string(nGood2), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nGood3 " + std::to_string(nGood3), Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Fundamental: nGood4 " + std::to_string(nGood4), Verbose::VERBOSITY_DEBUG);
 
         // If there is not a clear winner or not enough triangulated points reject initialization
         if(maxGood<nMinGood || nsimilar>1)
