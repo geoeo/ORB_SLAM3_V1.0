@@ -391,10 +391,10 @@ void LocalMapping::MapPointCulling()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    size_t nn = 10;
+    size_t nn = 15;
     // For stereo inertial case
-    if(mbMonocular)
-        nn=30;
+    // if(mbMonocular)
+    //     nn=30;
     vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     if (mbInertial)
@@ -409,10 +409,6 @@ void LocalMapping::CreateNewMapPoints()
             pKF = pKF->mPrevKF;
         }
     }
-
-    // threshold does not seem to affect triangulation
-    float th = 0.6f;
-    ORBmatcher matcher(th,false);
 
     Sophus::SE3<float> sophTcw1 = mpCurrentKeyFrame->GetPose();
     Eigen::Matrix<float,3,4> eigTcw1 = sophTcw1.matrix3x4();
@@ -456,14 +452,20 @@ void LocalMapping::CreateNewMapPoints()
             const float medianDepthKF2 = pKF2->ComputeSceneMedianDepth(2);
             const float ratioBaselineDepth = baseline/medianDepthKF2;
 
-            if(ratioBaselineDepth<0.01)
+            if(ratioBaselineDepth<0.01){
+                Verbose::PrintMess("LocalMapping::CreateNewMapPoints: Baseline too short: " + to_string(ratioBaselineDepth), Verbose::VERBOSITY_DEBUG);
                 continue;
+            }
         }
 
         // Search matches that fullfil epipolar constraint
         vector<pair<size_t,size_t> > vMatchedIndices;
         bool bCoarse = mbInertial && mpTracker->mState==Tracking::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
+        //bCoarse= true;
 
+        // threshold does not seem to affect triangulation
+        float th = 0.6f;
+        ORBmatcher matcher(th,false);
         matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,vMatchedIndices,false,bCoarse);
 
         Sophus::SE3<float> sophTcw2 = pKF2->GetPose();

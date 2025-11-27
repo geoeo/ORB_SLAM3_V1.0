@@ -926,10 +926,12 @@ namespace ORB_SLAM3
 
                         if(!bStereo1 && !bStereo2 && !pKF1->mpCamera2)
                         {
-                            const float distex = ep(0)-kp2.pt.x;
-                            const float distey = ep(1)-kp2.pt.y;
-                            if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
+                            const auto distex = ep(0)-kp2.pt.x;
+                            const auto distey = ep(1)-kp2.pt.y;
+                            const auto error_magnitude = distex*distex+distey*distey;
+                            if(error_magnitude<100*pKF2->mvScaleFactors[kp2.octave])
                             {
+                                Verbose::PrintMess("Epipole check failed: " + to_string(error_magnitude), Verbose::VERBOSITY_DEBUG);
                                 continue;
                             }
                         }
@@ -969,8 +971,8 @@ namespace ORB_SLAM3
                             }
 
                         }
-
-                        if(bCoarse || pCamera1->epipolarConstrain(pCamera2,kp1,kp2,R12,t12,pKF1->mvLevelSigma2[kp1.octave],pKF2->mvLevelSigma2[kp2.octave])) // MODIFICATION_2
+                        const auto epipolarConstrainSuccess = pCamera1->epipolarConstrain(pCamera2,kp1,kp2,R12,t12,pKF1->mvLevelSigma2[kp1.octave],1.0);
+                        if(bCoarse || epipolarConstrainSuccess) // MODIFICATION_2
                         {
                             bestIdx2 = idx2;
                             bestDist = dist;

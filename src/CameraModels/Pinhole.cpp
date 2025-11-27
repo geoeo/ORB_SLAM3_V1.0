@@ -17,6 +17,7 @@
 */
 
 #include <CameraModels/Pinhole.h>
+#include <Verbose.h>
 
 namespace ORB_SLAM3 {
 
@@ -118,8 +119,13 @@ namespace ORB_SLAM3 {
             return false;
 
         const float dsqr = num*num/den;
+        const float error_threshold = 3.84*unc;
+        const bool success = dsqr<error_threshold;
+        if(!success) 
+            Verbose::PrintMess("Epipolar constrain failed: " + std::to_string(dsqr) + " >= " + std::to_string(error_threshold), Verbose::VERBOSITY_DEBUG);
+        
 
-        return dsqr<3.84*unc;
+        return success;
     }
 
     std::ostream & operator<<(std::ostream &os, const Pinhole &ph) {
