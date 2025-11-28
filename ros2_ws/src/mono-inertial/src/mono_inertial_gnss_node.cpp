@@ -175,7 +175,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.useGNSS = true;
       local_mapper.useGNSSBA = true;
       local_mapper.writeGNSSData = true;
-      local_mapper.georefUpdate = false;
+      local_mapper.georefUpdate = true;
       local_mapper.minGeorefFrames = 60;
 
       
