@@ -196,7 +196,7 @@ void Tracking::PreintegrateIMU()
     mvImuFromLastFrame.reserve(mlQueueImuData.size());
     if(mlQueueImuData.size() == 0)
     {
-        Verbose::PrintMess("Not IMU data in mlQueueImuData!!", Verbose::VERBOSITY_NORMAL);
+        Verbose::PrintMess("No IMU data in mlQueueImuData!!", Verbose::VERBOSITY_NORMAL);
         mCurrentFrame.setIntegrated();
         return;
     }
@@ -301,34 +301,34 @@ bool Tracking::PredictStateIMU()
         return false;
     }
 
-    if(mbMapUpdated && mpLastKeyFrame)
-    {
-        const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
-        const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
-        const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
+    // if(mbMapUpdated  && mpLastKeyFrame)
+    // {
+    //     const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
+    //     const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
+    //     const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
 
-        const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        const float t12 = mpImuPreintegratedFromLastKF->dT;
-        auto b = mpLastKeyFrame->GetImuBias();
-        Verbose::PrintMess("KF Bias ax: " + to_string(b.bax) + "  ay: " + to_string(b.bay) + " az: " + to_string(b.baz), Verbose::VERBOSITY_DEBUG);
-        Verbose::PrintMess("KF Bias wx: " + to_string(b.bwx) + "  wy: " + to_string(b.bwy) + " wz: " + to_string(b.bwz), Verbose::VERBOSITY_DEBUG);
-        try{
-            Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
-            Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
-            Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
-            mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
-        } catch(...){
-            Verbose::PrintMess("Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
-            return false;
-        }
+    //     const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+    //     const float t12 = mpImuPreintegratedFromLastKF->dT;
+    //     auto b = mpLastKeyFrame->GetImuBias();
+    //     Verbose::PrintMess("KF Bias ax: " + to_string(b.bax) + "  ay: " + to_string(b.bay) + " az: " + to_string(b.baz), Verbose::VERBOSITY_DEBUG);
+    //     Verbose::PrintMess("KF Bias wx: " + to_string(b.bwx) + "  wy: " + to_string(b.bwy) + " wz: " + to_string(b.bwz), Verbose::VERBOSITY_DEBUG);
+    //     try{
+    //         Eigen::Matrix3f Rwb2 = IMU::NormalizeRotation(Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaRotation(b));
+    //         Eigen::Vector3f twb2 = twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(b);
+    //         Eigen::Vector3f Vwb2 = Vwb1 + t12*Gz + Rwb1 * mpImuPreintegratedFromLastKF->GetDeltaVelocity(b);
+    //         mCurrentFrame.SetImuPoseVelocity(Rwb2,twb2,Vwb2);
+    //     } catch(...){
+    //         Verbose::PrintMess("Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
+    //         return false;
+    //     }
 
 
-        mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
-        mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
-        return true;
-    }
-    else if(!mbMapUpdated)
-    {
+    //     mCurrentFrame.mImuBias = mpLastKeyFrame->GetImuBias();
+    //     mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
+    //     return true;
+    // }
+    // else
+    // {
         const Eigen::Vector3f twb1 = mLastFrame.GetImuPosition();
         const Eigen::Matrix3f Rwb1 = mLastFrame.GetImuRotation();
         const Eigen::Vector3f Vwb1 = mLastFrame.GetVelocity();
@@ -350,11 +350,9 @@ bool Tracking::PredictStateIMU()
         mCurrentFrame.mImuBias = mLastFrame.mImuBias;
         mCurrentFrame.mPredBias = mCurrentFrame.mImuBias;
         return true;
-    }
-    else
-        Verbose::PrintMess("No IMU Prediction", Verbose::VERBOSITY_NORMAL);
+    // }
 
-    return false;
+    //return false;
 }
 
 void Tracking::ResetFrameIMU()
@@ -1150,14 +1148,14 @@ bool Tracking::TrackLocalMap()
     SearchLocalPoints();
 
     // TOO check outliers before PO
-    int aux1 = 0, aux2=0;
-    for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
-        if( mCurrentFrame.mvpMapPoints[i])
-        {
-            aux1++;
-            if(mCurrentFrame.mvbOutlier[i])
-                aux2++;
-        }
+    // int aux1 = 0, aux2=0;
+    // for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
+    //     if( mCurrentFrame.mvpMapPoints[i])
+    //     {
+    //         aux1++;
+    //         if(mCurrentFrame.mvbOutlier[i])
+    //             aux2++;
+    //     }
 
     const auto inlierImuThreshold = 8;
     int inliers;
@@ -1205,14 +1203,14 @@ bool Tracking::TrackLocalMap()
         }
     }
 
-    aux1 = 0, aux2 = 0;
-    for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
-        if( mCurrentFrame.mvpMapPoints[i])
-        {
-            aux1++;
-            if(mCurrentFrame.mvbOutlier[i])
-                aux2++;
-        }
+    // aux1 = 0, aux2 = 0;
+    // for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
+    //     if( mCurrentFrame.mvpMapPoints[i])
+    //     {
+    //         aux1++;
+    //         if(mCurrentFrame.mvbOutlier[i])
+    //             aux2++;
+    //     }
 
     mnMatchesInliers = 0;
 
