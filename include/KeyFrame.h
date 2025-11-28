@@ -286,9 +286,7 @@ public:
 protected:
     // sophus poses
     Sophus::SE3f mTcw;
-    Eigen::Matrix3f mRcw;
     Sophus::SE3f mTwc;
-    Eigen::Matrix3f mRwc;
     const Eigen::Vector3d mRawGNSSPosition;
     Sophus::Sim3d mTgc;
 

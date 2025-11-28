@@ -60,7 +60,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
     mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), 
     mRawGNSSPosition(F.GetGNSS().cast<double>()), mTgc(Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),F.GetGNSS().cast<double>())) ,
-    mbHasVelocity(false), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
+    mbHasVelocity(F.HasVelocity()), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
 {
     mnId=nNextId++;
     mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
@@ -97,13 +97,11 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw)
     unique_lock<mutex> lock(mMutexPose);
 
     mTcw = Tcw;
-    mRcw = mTcw.rotationMatrix();
     mTwc = mTcw.inverse();
-    mRwc = mTwc.rotationMatrix();
 
     if (mImuCalib.mbIsSet)
     {
-        mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
+        mOwb = mTwc.rotationMatrix() * mImuCalib.mTcb.translation() + mTwc.translation();
     }
 }
 
@@ -151,7 +149,7 @@ Sophus::SE3f KeyFrame::GetImuPose()
 
 Eigen::Matrix3f KeyFrame::GetRotation(){
     unique_lock<mutex> lock(mMutexPose);
-    return mRcw;
+    return mTcw.rotationMatrix();
 }
 
 Eigen::Vector3f KeyFrame::GetTranslation()
@@ -857,7 +855,7 @@ bool KeyFrame::UnprojectStereo(int i, Eigen::Vector3f &x3D)
         Eigen::Vector3f x3Dc(x, y, z);
 
         unique_lock<mutex> lock(mMutexPose);
-        x3D = mRwc * x3Dc + mTwc.translation();
+        x3D = mTwc.rotationMatrix() * x3Dc + mTwc.translation();
         return true;
     }
     else
@@ -877,7 +875,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
         unique_lock<mutex> lock2(mMutexPose);
         vpMapPoints = mvpMapPoints;
         tcw = mTcw.translation();
-        Rcw = mRcw;
+        Rcw = mTcw.rotationMatrix();
     }
 
     vector<float> vDepths;

@@ -5117,7 +5117,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     Verbose::PrintMess("Frame init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_DEBUG);
 
     // Set Previous Frame Vertex
-    Frame* pFp = pFrame->mpPrevFrame;
+    Frame* pFp = pFrame->mpPrevFrame.get();
 
     VertexPose* VPk = new VertexPose(pFp);
     VPk->setId(4);

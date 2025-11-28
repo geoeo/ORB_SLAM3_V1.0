@@ -55,14 +55,13 @@ public:
     // Copy constructor.
     Frame(const Frame &frame);
 
+    //Frame& operator=(const Frame& other);
+
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
-        bool hasGNSS, Eigen::Vector3f GNSSPosition,
-        Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
+        bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
 
-    // Destructor
-    // ~Frame();
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::cuda::HostMem &im_managed);
@@ -112,13 +111,7 @@ public:
 
     bool isSet() const;
 
-    // Computes rotation, translation and camera center matrices from the camera pose.
-    void UpdatePoseMatrices();
 
-    // Returns inverse of rotation
-    inline Eigen::Matrix3f GetRotationInverse(){
-        return mRwc;
-    }
 
     inline Sophus::SE3<float> GetPose() const {
         //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
@@ -129,12 +122,20 @@ public:
         return mGNSSPosition;
     }
 
+    inline Eigen::Matrix3f GetRcw() const {
+        return mTcw.rotationMatrix();
+    }
+
+    inline Eigen::Vector3f GetTcw() const {
+        return mTcw.translation();
+    }
+
     inline Eigen::Matrix3f GetRwc() const {
-        return mRwc;
+        return mTwc.rotationMatrix();
     }
 
     inline Eigen::Vector3f GetTwc() const {
-        return mtwc;
+        return mTwc.translation();
     }
 
     inline bool HasPose() const {
@@ -151,11 +152,8 @@ public:
 
 private:
     //Sophus/Eigen migration
+    Sophus::SE3<float> mTwc;
     Sophus::SE3<float> mTcw;
-    Eigen::Matrix<float,3,3> mRwc;
-    Eigen::Vector3f mtwc;
-    Eigen::Matrix<float,3,3> mRcw;
-    Eigen::Vector3f mtcw;
     bool mbHasPose;
 
     Eigen::Vector3f mGNSSPosition;
@@ -252,7 +250,7 @@ public:
     KeyFrame* mpLastKeyFrame;
 
     // Pointer to previous frame
-    Frame* mpPrevFrame;
+    std::shared_ptr<Frame> mpPrevFrame;
     IMU::Preintegrated* mpImuPreintegratedFrame;
 
     // Current and Next Frame id.
@@ -302,8 +300,6 @@ private:
 
     bool mbImuPreintegrated;
 
-    std::shared_ptr<std::mutex> mpMutexImu;
-
     int mFrameGridRows; 
     int mFrameGridCols; 
 
@@ -325,8 +321,6 @@ public:
     //computed during ComputeStereoFishEyeMatches
     std::vector<Eigen::Vector3f> mvStereo3Dpoints;
 
-
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, Sophus::SE3f& Tlr,Frame* pPrevF = static_cast<Frame*>(NULL), const IMU::Calib &ImuCalib = IMU::Calib());
 
     static int computeLinearGridIndex(int col, int row, int cols);
 

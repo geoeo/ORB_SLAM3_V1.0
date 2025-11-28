@@ -120,7 +120,7 @@ public:
 
     // Current Frame
     Frame mCurrentFrame;
-    Frame mLastFrame;
+    std::shared_ptr<Frame> mLastFrame;
 
     cv::Mat mImGrayViewer;
 
@@ -129,7 +129,7 @@ public:
     std::vector<int> mvIniMatches;
     std::vector<cv::Point2f> mvbPrevMatched;
     std::vector<cv::Point3f> mvIniP3D;
-    Frame mInitialFrame;
+    std::shared_ptr<Frame> mInitialFrame;
 
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation

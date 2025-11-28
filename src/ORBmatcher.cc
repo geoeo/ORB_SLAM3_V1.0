@@ -549,12 +549,11 @@ namespace ORB_SLAM3
         return nmatches;
     }
 
-    int ORBmatcher::SearchForInitialization(Frame &F1, Frame &F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
+    int ORBmatcher::SearchForInitialization(std::shared_ptr<Frame> F1, Frame &F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
     {
         ZoneNamedN(SearchForInitialization, "SearchForInitialization", true);
         int nmatches=0;
-        vnMatches12 = vector<int>(F1.mvKeysUn->size(),-1);
-
+        vnMatches12 = vector<int>(F1->mvKeysUn->size(),-1);
         vector<int> rotHist[HISTO_LENGTH];
         for(int i=0;i<HISTO_LENGTH;i++)
             rotHist[i].reserve(500);
@@ -563,9 +562,9 @@ namespace ORB_SLAM3
         vector<int> vMatchedDistance(F2.mvKeysUn->size(),INT_MAX);
         vector<int> vnMatches21(F2.mvKeysUn->size(),-1);
 
-        for(size_t i1=0, iend1=F1.mvKeysUn->size(); i1<iend1; i1++)
+        for(size_t i1=0, iend1=F1->mvKeysUn->size(); i1<iend1; i1++)
         {
-            auto kp1 = F1.mvKeysUn->operator[](i1);
+            auto kp1 = F1->mvKeysUn->operator[](i1);
             int level1 = kp1.octave;
             if(level1>0)
                 continue;
@@ -575,7 +574,7 @@ namespace ORB_SLAM3
             if(vIndices2.empty())
                 continue;
 
-            cv::Mat d1 = F1.mDescriptors.createMatHeader().row(i1);
+            cv::Mat d1 = F1->mDescriptors.createMatHeader().row(i1);
 
             int bestDist = INT_MAX;
             int bestDist2 = INT_MAX;
@@ -620,7 +619,7 @@ namespace ORB_SLAM3
 
                     if(mbCheckOrientation)
                     {
-                        float rot = F1.mvKeysUn->operator[](i1).angle-F2.mvKeysUn->operator[](bestIdx2).angle;
+                        float rot = F1->mvKeysUn->operator[](i1).angle-F2.mvKeysUn->operator[](bestIdx2).angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);
@@ -1563,7 +1562,7 @@ namespace ORB_SLAM3
         return nFound;
     }
 
-    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
+    int ORBmatcher::SearchByProjection(Frame &CurrentFrame, const std::shared_ptr<Frame> LastFrame, const float th, const bool bMono)
     {
         ZoneNamedN(SearchByProjectionCall_2, "SearchByProjectionCall_2", true); 
         int nmatches = 0;
@@ -1577,18 +1576,18 @@ namespace ORB_SLAM3
         const Sophus::SE3f Tcw = CurrentFrame.GetPose();
         const Eigen::Vector3f twc = Tcw.inverse().translation();
 
-        const Sophus::SE3f Tlw = LastFrame.GetPose();
+        const Sophus::SE3f Tlw = LastFrame->GetPose();
         const Eigen::Vector3f tlc = Tlw * twc;
 
         const bool bForward = tlc(2)>CurrentFrame.mb && !bMono;
         const bool bBackward = -tlc(2)>CurrentFrame.mb && !bMono;
 
-        for(int i=0; i<LastFrame.mNumKeypoints; i++)
+        for(int i=0; i<LastFrame->mNumKeypoints; i++)
         {
-            MapPoint* pMP = LastFrame.mvpMapPoints[i];
+            MapPoint* pMP = LastFrame->mvpMapPoints[i];
             if(pMP)
             {
-                if(!LastFrame.mvbOutlier[i])
+                if(!LastFrame->mvbOutlier[i])
                 {
                     // Project
                     Eigen::Vector3f x3Dw = pMP->GetWorldPos();
@@ -1606,7 +1605,7 @@ namespace ORB_SLAM3
                     if(uv(1)<CurrentFrame.mnMinY || uv(1)>CurrentFrame.mnMaxY)
                         continue;
 
-                    int nLastOctave = LastFrame.mvKeys->operator[](i).octave;
+                    int nLastOctave = LastFrame->mvKeys->operator[](i).octave;
 
                     // Search in a window. Size depends on scale
                     float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
@@ -1661,7 +1660,7 @@ namespace ORB_SLAM3
 
                         if(mbCheckOrientation)
                         {
-                            auto kpLF = LastFrame.mvKeysUn->operator[](i);
+                            auto kpLF = LastFrame->mvKeysUn->operator[](i);
                             auto kpCF = CurrentFrame.mvKeysUn->operator[](bestIdx2);
                             float rot = kpLF.angle-kpCF.angle;
                             if(rot<0.0)

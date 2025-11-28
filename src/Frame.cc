@@ -44,10 +44,10 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 //For stereo fisheye matching
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
-Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuPreintegratedFrame(NULL), 
+Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpImuPreintegratedFrame(NULL), 
     mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
     mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false), mbHasVelocity(false),
-    mFrameGridRows(0), mFrameGridCols(0),mpMutexImu(std::make_shared<std::mutex>())
+    mFrameGridRows(0), mFrameGridCols(0)
 {
 }
 
@@ -66,13 +66,13 @@ Frame::Frame(const Frame &frame)
      mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
      mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors), mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
      mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame),
-     mbIsSet(frame.mbIsSet), mbImuPreintegrated(frame.mbImuPreintegrated), mpMutexImu(frame.mpMutexImu),
+     mbIsSet(frame.mbIsSet), mbImuPreintegrated(frame.mbImuPreintegrated),
      mFrameGridRows(frame.mFrameGridRows), mFrameGridCols(frame.mFrameGridCols),
      mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
      monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
      mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
      mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
-     mTcw(frame.mTcw), mbHasPose(false), mGNSSPosition(frame.mGNSSPosition), mbHasGNSS(frame.mbHasGNSS), mbHasVelocity(false)
+     mTcw(frame.mTcw), mbHasPose(frame.mbHasPose), mGNSSPosition(frame.mGNSSPosition), mbHasGNSS(frame.mbHasGNSS), mbHasVelocity(frame.mbHasVelocity)
 {
     mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
 
@@ -80,24 +80,106 @@ Frame::Frame(const Frame &frame)
         SetPose(frame.GetPose());
 
     if(frame.HasVelocity())
-    {
         SetVelocity(frame.GetVelocity());
-    }
+    
 
     mmProjectPoints = frame.mmProjectPoints;
     mmMatchedInImage = frame.mmMatchedInImage;
-
 }
+
+// Frame& Frame::operator=(const Frame& other){
+//     // Guard self assignment
+//     if (this == &other)
+//         return *this;
+    
+//     mpcpi = other.mpcpi;
+//     mpORBvocabulary = other.mpORBvocabulary;
+//     mpORBextractorLeft = other.mpORBextractorLeft;
+//     mpORBextractorRight = other.mpORBextractorRight;
+//     mTimeStamp = other.mTimeStamp;
+//     mK = other.mK.clone();
+//     mK_ = Converter::toMatrix3f(other.mK);
+//     mDistCoef = other.mDistCoef.clone();
+//     mbf = other.mbf;
+//     mb = other.mb;
+//     mThDepth = other.mThDepth;
+//     mNumKeypoints = other.mNumKeypoints;
+//     mvKeys = other.mvKeys;
+//     mvKeysRight = other.mvKeysRight;
+//     mvKeysUn = other.mvKeysUn;
+//     mvuRight = other.mvuRight;
+//     mvDepth = other.mvDepth;
+//     mBowVec = other.mBowVec;
+//     mFeatVec = other.mFeatVec;
+//     mDescriptors = other.mDescriptors.clone();
+//     mDescriptorsRight = other.mDescriptorsRight.clone();
+//     mvpMapPoints = other.mvpMapPoints;
+//     mvbOutlier = other.mvbOutlier;
+//     mImuCalib = other.mImuCalib;
+//     mnCloseMPs = other.mnCloseMPs;
+//     mpImuPreintegrated = other.mpImuPreintegrated;
+//     mpImuPreintegratedFrame = other.mpImuPreintegratedFrame;
+//     mImuBias = other.mImuBias;
+//     mnId = other.mnId;
+//     mpReferenceKF = other.mpReferenceKF;
+//     mnScaleLevels = other.mnScaleLevels;
+//     mfScaleFactor = other.mfScaleFactor;
+//     mfLogScaleFactor = other.mfLogScaleFactor;
+//     mvScaleFactors = other.mvScaleFactors;
+//     mvInvScaleFactors = other.mvInvScaleFactors;
+//     mNameFile = other.mNameFile;
+//     mnDataset = other.mnDataset;
+//     mvLevelSigma2 = other.mvLevelSigma2;
+//     mvInvLevelSigma2 = other.mvInvLevelSigma2;
+//     mpPrevFrame = other.mpPrevFrame;
+//     mpLastKeyFrame = other.mpLastKeyFrame;
+//     mbIsSet = other.mbIsSet;
+//     mbImuPreintegrated.store(other.mbImuPreintegrated.load());
+//     mFrameGridRows = other.mFrameGridRows;
+//     mFrameGridCols = other.mFrameGridCols;
+//     mpCamera = other.mpCamera;
+//     mpCamera2 = other.mpCamera2;
+//     Nleft = other.Nleft;
+//     Nright = other.Nright;
+//     monoLeft = other.monoLeft;
+//     monoRight = other.monoRight;
+//     mvLeftToRightMatch = other.mvLeftToRightMatch;
+//     mvRightToLeftMatch = other.mvRightToLeftMatch;
+//     mvStereo3Dpoints = other.mvStereo3Dpoints;
+//     mTlr = other.mTlr;
+//     mRlr = other.mRlr;
+//     mtlr = other.mtlr;
+//     mTrl = other.mTrl;
+//     mTcw = other.mTcw;
+//     mbHasPose = other.mbHasPose;
+//     mGNSSPosition = other.mGNSSPosition;
+//     mbHasGNSS = other.mbHasGNSS;
+//     mbHasVelocity = other.mbHasVelocity;
+
+//     mGrid.insert(mGrid.end(), other.mGrid.begin(), other.mGrid.end());
+//     if(other.mbHasPose)
+//         SetPose(other.GetPose());
+
+//     if(other.HasVelocity())
+//         SetVelocity(other.GetVelocity());
+    
+
+//     mmProjectPoints = other.mmProjectPoints;
+//     mmMatchedInImage = other.mmMatchedInImage;
+
+
+//     return *this;
+// }
 
 
 Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
-    bool hasGNSS, Eigen::Vector3f GNSSPosition, Frame* pPrevF, const IMU::Calib &ImuCalib)
+    bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
      mThDepth(thDepth),mNumKeypoints(0),mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
-     mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false), mpMutexImu(std::make_shared<std::mutex>())
+     mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false)
 {
     ZoneNamedN(Frame, "Frame", true); 
     const auto size = frameGridCols*frameGridRows;
@@ -233,8 +315,8 @@ bool Frame::isSet() const {
 
 void Frame::SetPose(const Sophus::SE3<float> &Tcw) {
     mTcw = Tcw;
+    mTwc = mTcw.inverse();
 
-    UpdatePoseMatrices();
     mbIsSet = true;
     mbHasPose = true;
 }
@@ -270,27 +352,19 @@ void Frame::SetImuPoseVelocity(const Eigen::Matrix3f &Rwb, const Eigen::Vector3f
     Sophus::SE3f Tbw = Twb.inverse();
 
     mTcw = mImuCalib.mTcb * Tbw;
+    mTwc = mTcw.inverse();
 
-    UpdatePoseMatrices();
     mbIsSet = true;
     mbHasPose = true;
 }
 
-void Frame::UpdatePoseMatrices()
-{
-    Sophus::SE3<float> Twc = mTcw.inverse();
-    mRwc = Twc.rotationMatrix();
-    mtwc = Twc.translation();
-    mRcw = mTcw.rotationMatrix();
-    mtcw = mTcw.translation();
-}
 
 Eigen::Matrix<float,3,1> Frame::GetImuPosition() const {
-    return mRwc * mImuCalib.mTcb.translation() + mtwc;
+    return GetRwc() * mImuCalib.mTcb.translation() + GetTwc();
 }
 
 Eigen::Matrix<float,3,3> Frame::GetImuRotation() {
-    return mRwc * mImuCalib.mTcb.rotationMatrix();
+    return GetRwc() * mImuCalib.mTcb.rotationMatrix();
 }
 
 Sophus::SE3<float> Frame::GetImuPose() {
@@ -326,7 +400,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     Eigen::Matrix<float,3,1> P = pMP->GetWorldPos();
 
     // 3D in camera coordinates
-    const Eigen::Matrix<float,3,1> Pc = mRcw * P + mtcw;
+    const Eigen::Matrix<float,3,1> Pc = GetRcw() * P + GetTcw();
     const float Pc_dist = Pc.norm();
 
     // Check positive depth
@@ -348,7 +422,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     // Check distance is in the scale invariance region of the MapPoint
     const float maxDistance = pMP->GetMaxDistanceInvariance();
     const float minDistance = pMP->GetMinDistanceInvariance();
-    const Eigen::Vector3f PO = P - mtwc;
+    const Eigen::Vector3f PO = P - GetTwc();
     const float dist = PO.norm();
 
     if(dist<minDistance || dist>maxDistance)
@@ -385,7 +459,7 @@ bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float 
     Eigen::Vector3f P = pMP->GetWorldPos();
 
     // 3D in camera coordinates
-    const Eigen::Vector3f Pc = mRcw * P + mtcw;
+    const Eigen::Vector3f Pc = GetRcw() * P + GetTcw();
     const float &PcX = Pc(0);
     const float &PcY= Pc(1);
     const float &PcZ = Pc(2);
@@ -444,7 +518,7 @@ bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float 
 
 Eigen::Vector3f Frame::inRefCoordinates(Eigen::Vector3f pCw)
 {
-    return mRcw * pCw + mtcw;
+    return GetRcw() * pCw + GetTcw();
 }
 
 vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel, const bool bRight) const
@@ -574,13 +648,13 @@ void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)
 
 bool Frame::imuIsPreintegrated()
 {
-    unique_lock<std::mutex> lock(*mpMutexImu);
+    //unique_lock<std::mutex> lock(mpMutexImu);
     return mbImuPreintegrated;
 }
 
 void Frame::setIntegrated()
 {
-    unique_lock<std::mutex> lock(*mpMutexImu);
+    //unique_lock<std::mutex> lock(mpMutexImu);
     mbImuPreintegrated = true;
 }
 
@@ -593,14 +667,14 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
     if(bRight){
         Eigen::Matrix3f Rrl = mTrl.rotationMatrix();
         Eigen::Vector3f trl = mTrl.translation();
-        mR = Rrl * mRcw;
-        mt = Rrl * mtcw + trl;
-        twc = mRwc * mTlr.translation() + mtwc;
+        mR = Rrl * GetRcw();
+        mt = Rrl * GetTcw() + trl;
+        twc = GetRwc() * mTlr.translation() + GetTwc();
     }
     else{
-        mR = mRcw;
-        mt = mtcw;
-        twc = mtwc;
+        mR = GetRcw();
+        mt = GetTcw();
+        twc = GetTwc();
     }
 
     // 3D in camera coordinates
@@ -661,7 +735,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
 }
 
 Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i){
-    return mRwc * mvStereo3Dpoints[i] + mtwc;
+    return GetRwc() * mvStereo3Dpoints[i] + GetTwc();
 }
 
 } //namespace ORB_SLAM
