@@ -821,7 +821,7 @@ namespace ORB_SLAM3
         Sophus::SE3f T1w = pKF1->GetPose();
         Sophus::SE3f T2w = pKF2->GetPose();
         Sophus::SE3f Tw2 = pKF2->GetPoseInverse(); // for convenience
-        Eigen::Vector3f Cw = pKF1->GetCameraCenter();
+        Eigen::Vector3f Cw = pKF1->GetTranslationInverse();
         Eigen::Vector3f C2 = T2w * Cw;
 
         Eigen::Vector2f ep = pKF2->mpCamera->project(C2);
@@ -1050,16 +1050,16 @@ namespace ORB_SLAM3
     {
         GeometricCamera* pCamera;
         Sophus::SE3f Tcw;
-        Eigen::Vector3f Ow;
+        Eigen::Vector3f Twc;
 
         if(bRight){
             Tcw = pKF->GetRightPose();
-            Ow = pKF->GetRightCameraCenter();
+            Twc = pKF->GetRightTranslationInverse();
             pCamera = pKF->mpCamera2;
         }
         else{
             Tcw = pKF->GetPose();
-            Ow = pKF->GetCameraCenter();
+            Twc = pKF->GetTranslationInverse();
             pCamera = pKF->mpCamera;
         }
 
@@ -1117,7 +1117,7 @@ namespace ORB_SLAM3
 
             const float maxDistance = pMP->GetMaxDistanceInvariance();
             const float minDistance = pMP->GetMinDistanceInvariance();
-            Eigen::Vector3f PO = p3Dw-Ow;
+            Eigen::Vector3f PO = p3Dw-Twc;
             const float dist3D = PO.norm();
 
             // Depth must be inside the scale pyramid of the image

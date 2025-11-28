@@ -115,11 +115,6 @@ public:
     // Computes rotation, translation and camera center matrices from the camera pose.
     void UpdatePoseMatrices();
 
-    // Returns the camera center.
-    inline Eigen::Vector3f GetCameraCenter(){
-        return mOw;
-    }
-
     // Returns inverse of rotation
     inline Eigen::Matrix3f GetRotationInverse(){
         return mRwc;
@@ -138,8 +133,8 @@ public:
         return mRwc;
     }
 
-    inline Eigen::Vector3f GetOw() const {
-        return mOw;
+    inline Eigen::Vector3f GetTwc() const {
+        return mtwc;
     }
 
     inline bool HasPose() const {
@@ -158,9 +153,9 @@ private:
     //Sophus/Eigen migration
     Sophus::SE3<float> mTcw;
     Eigen::Matrix<float,3,3> mRwc;
-    Eigen::Matrix<float,3,1> mOw;
+    Eigen::Vector3f mtwc;
     Eigen::Matrix<float,3,3> mRcw;
-    Eigen::Matrix<float,3,1> mtcw;
+    Eigen::Vector3f mtcw;
     bool mbHasPose;
 
     Eigen::Vector3f mGNSSPosition;

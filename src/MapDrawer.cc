@@ -286,16 +286,16 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         {
             // Covisibility Graph
             const vector<KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
-            Eigen::Vector3f Ow = vpKFs[i]->GetCameraCenter();
+            Eigen::Vector3f twc = vpKFs[i]->GetTranslationInverse();
             if(!vCovKFs.empty())
             {
                 for(vector<KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
                 {
                     if((*vit)->mnId<vpKFs[i]->mnId)
                         continue;
-                    Eigen::Vector3f Ow2 = (*vit)->GetCameraCenter();
-                    glVertex3f(Ow(0),Ow(1),Ow(2));
-                    glVertex3f(Ow2(0),Ow2(1),Ow2(2));
+                    Eigen::Vector3f twc2 = (*vit)->GetTranslationInverse();
+                    glVertex3f(twc(0),twc(1),twc(2));
+                    glVertex3f(twc2(0),twc2(1),twc2(2));
                 }
             }
 
@@ -303,9 +303,9 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             KeyFrame* pParent = vpKFs[i]->GetParent();
             if(pParent)
             {
-                Eigen::Vector3f Owp = pParent->GetCameraCenter();
-                glVertex3f(Ow(0),Ow(1),Ow(2));
-                glVertex3f(Owp(0),Owp(1),Owp(2));
+                Eigen::Vector3f twcParent = pParent->GetTranslationInverse();
+                glVertex3f(twc(0),twc(1),twc(2));
+                glVertex3f(twcParent(0),twcParent(1),twcParent(2));
             }
 
             // Loops
@@ -314,9 +314,9 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             {
                 if((*sit)->mnId<vpKFs[i]->mnId)
                     continue;
-                Eigen::Vector3f Owl = (*sit)->GetCameraCenter();
-                glVertex3f(Ow(0),Ow(1),Ow(2));
-                glVertex3f(Owl(0),Owl(1),Owl(2));
+                Eigen::Vector3f twcLoop = (*sit)->GetTranslationInverse();
+                glVertex3f(twc(0),twc(1),twc(2));
+                glVertex3f(twcLoop(0),twcLoop(1),twcLoop(2));
             }
         }
 
@@ -333,13 +333,13 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         for(size_t i=0; i<vpKFs.size(); i++)
         {
             KeyFrame* pKFi = vpKFs[i];
-            Eigen::Vector3f Ow = pKFi->GetCameraCenter();
+            Eigen::Vector3f twc = pKFi->GetTranslationInverse();
             KeyFrame* pNext = pKFi->mNextKF;
             if(pNext)
             {
-                Eigen::Vector3f Owp = pNext->GetCameraCenter();
-                glVertex3f(Ow(0),Ow(1),Ow(2));
-                glVertex3f(Owp(0),Owp(1),Owp(2));
+                Eigen::Vector3f twcNext = pNext->GetTranslationInverse();
+                glVertex3f(twc(0),twc(1),twc(2));
+                glVertex3f(twcNext(0),twcNext(1),twcNext(2));
             }
         }
 

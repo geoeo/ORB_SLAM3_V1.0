@@ -55,7 +55,7 @@ public:
 
     Sophus::SE3f GetPose();
     Sophus::SE3f GetPoseInverse();
-    Eigen::Vector3f GetCameraCenter();
+    Eigen::Vector3f GetTranslationInverse();
 
     Eigen::Vector3f GetImuPosition();
     Eigen::Matrix3f GetImuRotation();
@@ -381,7 +381,7 @@ public:
     Sophus::SE3<float> GetRightPose();
     Sophus::SE3<float> GetRightPoseInverse();
 
-    Eigen::Vector3f GetRightCameraCenter();
+    Eigen::Vector3f GetRightTranslationInverse();
     Eigen::Matrix<float,3,3> GetRightRotation();
     Eigen::Vector3f GetRightTranslation();
 

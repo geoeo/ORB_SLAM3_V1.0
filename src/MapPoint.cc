@@ -84,12 +84,12 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, Frame* pFrame, const i
 
     Eigen::Vector3f Ow;
     if(pFrame -> Nleft == -1 || idxF < pFrame -> Nleft){
-        Ow = pFrame->GetCameraCenter();
+        Ow = pFrame->GetTwc();
     }
     else{
         Eigen::Matrix3f Rwl = pFrame->GetRwc();
         Eigen::Vector3f tlr = pFrame->GetRelativePoseTlr().translation();
-        Eigen::Vector3f twl = pFrame->GetOw();
+        Eigen::Vector3f twl = pFrame->GetTwc();
 
         Ow = Rwl * tlr + twl;
     }
@@ -466,20 +466,20 @@ void MapPoint::UpdateNormalAndDepth()
         int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
 
         if(leftIndex != -1){
-            Eigen::Vector3f Owi = pKF->GetCameraCenter();
-            Eigen::Vector3f normali = Pos - Owi;
+            Eigen::Vector3f twc = pKF->GetTranslationInverse();
+            Eigen::Vector3f normali = Pos - twc;
             normal = normal + normali / normali.norm();
             n++;
         }
         if(rightIndex != -1){
-            Eigen::Vector3f Owi = pKF->GetRightCameraCenter();
-            Eigen::Vector3f normali = Pos - Owi;
+            Eigen::Vector3f twcRight = pKF->GetRightTranslationInverse();
+            Eigen::Vector3f normali = Pos - twcRight;
             normal = normal + normali / normali.norm();
             n++;
         }
     }
 
-    Eigen::Vector3f PC = Pos - pRefKF->GetCameraCenter();
+    Eigen::Vector3f PC = Pos - pRefKF->GetTranslationInverse();
     const float dist = PC.norm();
 
     tuple<int ,int> indexes = observations[pRefKF];

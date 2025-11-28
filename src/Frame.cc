@@ -280,13 +280,13 @@ void Frame::UpdatePoseMatrices()
 {
     Sophus::SE3<float> Twc = mTcw.inverse();
     mRwc = Twc.rotationMatrix();
-    mOw = Twc.translation();
+    mtwc = Twc.translation();
     mRcw = mTcw.rotationMatrix();
     mtcw = mTcw.translation();
 }
 
 Eigen::Matrix<float,3,1> Frame::GetImuPosition() const {
-    return mRwc * mImuCalib.mTcb.translation() + mOw;
+    return mRwc * mImuCalib.mTcb.translation() + mtwc;
 }
 
 Eigen::Matrix<float,3,3> Frame::GetImuRotation() {
@@ -348,7 +348,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     // Check distance is in the scale invariance region of the MapPoint
     const float maxDistance = pMP->GetMaxDistanceInvariance();
     const float minDistance = pMP->GetMinDistanceInvariance();
-    const Eigen::Vector3f PO = P - mOw;
+    const Eigen::Vector3f PO = P - mtwc;
     const float dist = PO.norm();
 
     if(dist<minDistance || dist>maxDistance)
@@ -595,12 +595,12 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         Eigen::Vector3f trl = mTrl.translation();
         mR = Rrl * mRcw;
         mt = Rrl * mtcw + trl;
-        twc = mRwc * mTlr.translation() + mOw;
+        twc = mRwc * mTlr.translation() + mtwc;
     }
     else{
         mR = mRcw;
         mt = mtcw;
-        twc = mOw;
+        twc = mtwc;
     }
 
     // 3D in camera coordinates
@@ -661,7 +661,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
 }
 
 Eigen::Vector3f Frame::UnprojectStereoFishEye(const int &i){
-    return mRwc * mvStereo3Dpoints[i] + mOw;
+    return mRwc * mvStereo3Dpoints[i] + mtwc;
 }
 
 } //namespace ORB_SLAM

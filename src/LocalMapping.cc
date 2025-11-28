@@ -415,7 +415,7 @@ void LocalMapping::CreateNewMapPoints()
     Eigen::Matrix<float,3,3> Rcw1 = eigTcw1.block<3,3>(0,0);
     Eigen::Matrix<float,3,3> Rwc1 = Rcw1.transpose();
     Eigen::Vector3f tcw1 = sophTcw1.translation();
-    Eigen::Vector3f Ow1 = mpCurrentKeyFrame->GetCameraCenter();
+    Eigen::Vector3f twc1 = mpCurrentKeyFrame->GetTranslationInverse();
 
     const float &fx1 = mpCurrentKeyFrame->fx;
     const float &fy1 = mpCurrentKeyFrame->fy;
@@ -438,8 +438,8 @@ void LocalMapping::CreateNewMapPoints()
         GeometricCamera* pCamera1 = mpCurrentKeyFrame->mpCamera, *pCamera2 = pKF2->mpCamera;
 
         // Check first that baseline is not too short
-        Eigen::Vector3f Ow2 = pKF2->GetCameraCenter();
-        Eigen::Vector3f vBaseline = Ow2-Ow1;
+        Eigen::Vector3f twc2 = pKF2->GetTranslationInverse();
+        Eigen::Vector3f vBaseline = twc2-twc1;
         const float baseline = vBaseline.norm();
 
         if(!mbMonocular)
@@ -499,40 +499,40 @@ void LocalMapping::CreateNewMapPoints()
             if(mpCurrentKeyFrame->mpCamera2 && pKF2->mpCamera2){
                 if(bRight1 && bRight2){
                     sophTcw1 = mpCurrentKeyFrame->GetRightPose();
-                    Ow1 = mpCurrentKeyFrame->GetRightCameraCenter();
+                    twc1 = mpCurrentKeyFrame->GetRightTranslationInverse();
 
                     sophTcw2 = pKF2->GetRightPose();
-                    Ow2 = pKF2->GetRightCameraCenter();
+                    twc2 = pKF2->GetRightTranslationInverse();
 
                     pCamera1 = mpCurrentKeyFrame->mpCamera2;
                     pCamera2 = pKF2->mpCamera2;
                 }
                 else if(bRight1 && !bRight2){
                     sophTcw1 = mpCurrentKeyFrame->GetRightPose();
-                    Ow1 = mpCurrentKeyFrame->GetRightCameraCenter();
+                    twc1 = mpCurrentKeyFrame->GetRightTranslationInverse();
 
                     sophTcw2 = pKF2->GetPose();
-                    Ow2 = pKF2->GetCameraCenter();
+                    twc2 = pKF2->GetTranslationInverse();
 
                     pCamera1 = mpCurrentKeyFrame->mpCamera2;
                     pCamera2 = pKF2->mpCamera;
                 }
                 else if(!bRight1 && bRight2){
                     sophTcw1 = mpCurrentKeyFrame->GetPose();
-                    Ow1 = mpCurrentKeyFrame->GetCameraCenter();
+                    twc1 = mpCurrentKeyFrame->GetTranslationInverse();
 
                     sophTcw2 = pKF2->GetRightPose();
-                    Ow2 = pKF2->GetRightCameraCenter();
+                    twc2 = pKF2->GetRightTranslationInverse();
 
                     pCamera1 = mpCurrentKeyFrame->mpCamera;
                     pCamera2 = pKF2->mpCamera2;
                 }
                 else{
                     sophTcw1 = mpCurrentKeyFrame->GetPose();
-                    Ow1 = mpCurrentKeyFrame->GetCameraCenter();
+                    twc1 = mpCurrentKeyFrame->GetTranslationInverse();
 
                     sophTcw2 = pKF2->GetPose();
-                    Ow2 = pKF2->GetCameraCenter();
+                    twc2 = pKF2->GetTranslationInverse();
 
                     pCamera1 = mpCurrentKeyFrame->mpCamera;
                     pCamera2 = pKF2->mpCamera;
@@ -666,10 +666,10 @@ void LocalMapping::CreateNewMapPoints()
             }
 
             //Check scale consistency
-            Eigen::Vector3f normal1 = x3D - Ow1;
+            Eigen::Vector3f normal1 = x3D - twc1;
             float dist1 = normal1.norm();
 
-            Eigen::Vector3f normal2 = x3D - Ow2;
+            Eigen::Vector3f normal2 = x3D - twc2;
             float dist2 = normal2.norm();
 
             if(dist1==0 || dist2==0)
