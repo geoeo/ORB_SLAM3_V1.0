@@ -711,6 +711,8 @@ void Tracking::MonocularInitialization()
         {
 
             mInitialFrame = std::make_shared<Frame>(mCurrentFrame);
+            mInitialFrame->SetPose(Sophus::SE3f());
+
             mLastFrame = std::make_shared<Frame>(mCurrentFrame);
             mvbPrevMatched.resize(mCurrentFrame.mvKeysUn->size());
             for(size_t i=0; i<mCurrentFrame.mvKeysUn->size(); i++)
@@ -773,10 +775,8 @@ void Tracking::MonocularInitialization()
 
             Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
-            // Set Frame Poses
-            mInitialFrame->SetPose(Sophus::SE3f());
+            // Set Frame Pose
             mCurrentFrame.SetPose(Tcw);
-
             CreateInitialMapMonocular();
         }
     }
