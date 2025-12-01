@@ -728,7 +728,7 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
 }
 
 
-vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F, Map* pMap)
+vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(shared_ptr<Frame> F, Map* pMap)
 {
     list<KeyFrame*> lKFsSharingWords;
 

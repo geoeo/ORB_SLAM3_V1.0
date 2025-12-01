@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <utility>
+#include <memory>
 #include <Map.h>
 #include <MapPoint.h>
 #include <KeyFrame.h>
@@ -60,9 +61,9 @@ public:
 
     void static LocalGNSSBundleAdjustmentSim3(KeyFrame* pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
 
-    int static PoseOptimization(Frame* pFrame);
-    int static PoseInertialOptimizationLastKeyFrame(Frame* pFrame, bool bRecInit = false);
-    int static PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThreshold, bool bRecInit = false);
+    int static PoseOptimization(std::shared_ptr<Frame> pFrame);
+    int static PoseInertialOptimizationLastKeyFrame(std::shared_ptr<Frame> pFrame, bool bRecInit = false);
+    int static PoseInertialOptimizationLastFrame(std::shared_ptr<Frame> pFrame, int inlierThreshold, bool bRecInit = false);
 
     // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
     void static OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,

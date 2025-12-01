@@ -1240,7 +1240,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     if (!mpAtlas->isImuInitialized())
     {
         mpAtlas->SetImuInitialized();
-        mpTracker->t0IMU = mpTracker->mCurrentFrame.mTimeStamp;
+        mpTracker->t0IMU = mpTracker->mCurrentFrame->mTimeStamp;
         mpCurrentKeyFrame->bImu = true;
     }
 

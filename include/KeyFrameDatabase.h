@@ -23,6 +23,7 @@
 #include <list>
 #include <set>
 #include <mutex>
+#include <memory>
 
 #include <KeyFrame.h>
 #include <Frame.h>
@@ -62,7 +63,7 @@ public:
     void DetectNBestCandidates(KeyFrame *pKF, std::vector<KeyFrame*> &vpLoopCand, std::vector<KeyFrame*> &vpMergeCand, int nNumCandidates);
 
     // Relocalization
-    std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F, Map* pMap);
+    std::vector<KeyFrame*> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, Map* pMap);
 
     void PreSave();
     void PostLoad(std::map<long unsigned int, KeyFrame*> mpKFid);

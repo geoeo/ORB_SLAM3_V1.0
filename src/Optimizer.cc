@@ -761,7 +761,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 }
 
 
-int Optimizer::PoseOptimization(Frame *pFrame)
+int Optimizer::PoseOptimization(shared_ptr<Frame> pFrame)
 {
     ZoneNamedN(PoseOptimization, "PoseOptimization", true); 
     g2o::SparseOptimizer optimizer;
@@ -4550,7 +4550,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
     //pMap->IncreaseChangeIndex();
 }
 
-int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit)
+int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bool bRecInit)
 {
     ZoneNamedN(PoseInertialOptimizationLastKeyFrame, "PoseInertialOptimizationLastKeyFrame", true); 
     g2o::SparseOptimizer optimizer;
@@ -4570,19 +4570,19 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     int nInitialCorrespondences=0;
 
     // Set Frame vertex
-    VertexPose* VP = new VertexPose(pFrame);
+    VertexPose* VP = new VertexPose(pFrame.get());
     VP->setId(0);
     VP->setFixed(false);
     optimizer.addVertex(VP);
-    VertexVelocity* VV = new VertexVelocity(pFrame);
+    VertexVelocity* VV = new VertexVelocity(pFrame.get());
     VV->setId(1);
     VV->setFixed(false);
     optimizer.addVertex(VV);
-    VertexGyroBias* VG = new VertexGyroBias(pFrame);
+    VertexGyroBias* VG = new VertexGyroBias(pFrame.get());
     VG->setId(2);
     VG->setFixed(false);
     optimizer.addVertex(VG);
-    VertexAccBias* VA = new VertexAccBias(pFrame);
+    VertexAccBias* VA = new VertexAccBias(pFrame.get());
     VA->setId(3);
     VA->setFixed(false);
     optimizer.addVertex(VA);
@@ -4949,7 +4949,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(Frame *pFrame, bool bRecInit
     return nInitialCorrespondences-nBad;
 }
 
-int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThreshold ,bool bRecInit)
+int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int inlierThreshold ,bool bRecInit)
 {
     ZoneNamedN(PoseInertialOptimizationLastFrame, "PoseInertialOptimizationLastFrame", true); 
     g2o::SparseOptimizer optimizer;
@@ -4969,19 +4969,19 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame *pFrame, int inlierThresh
     int nInitialCorrespondences=0;
 
     // Set Current Frame vertex
-    VertexPose* VP = new VertexPose(pFrame);
+    VertexPose* VP = new VertexPose(pFrame.get());
     VP->setId(0);
     VP->setFixed(false);
     optimizer.addVertex(VP);
-    VertexVelocity* VV = new VertexVelocity(pFrame);
+    VertexVelocity* VV = new VertexVelocity(pFrame.get());
     VV->setId(1);
     VV->setFixed(false);
     optimizer.addVertex(VV);
-    VertexGyroBias* VG = new VertexGyroBias(pFrame);
+    VertexGyroBias* VG = new VertexGyroBias(pFrame.get());
     VG->setId(2);
     VG->setFixed(false);
     optimizer.addVertex(VG);
-    VertexAccBias* VA = new VertexAccBias(pFrame);
+    VertexAccBias* VA = new VertexAccBias(pFrame.get());
     VA->setId(3);
     VA->setFixed(false);
     optimizer.addVertex(VA);

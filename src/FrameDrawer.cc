@@ -413,20 +413,20 @@ void FrameDrawer::Update(Tracking *pTracker)
     unique_lock<mutex> lock(mMutex);
     //Variables for the new visualization
     pTracker->mImGrayViewer.copyTo(mIm);
-    auto& currentFrame = pTracker->mCurrentFrame;
+    auto currentFrame = pTracker->mCurrentFrame;
 
-    mvCurrentKeys=currentFrame.mvKeysUn;
-    mmProjectPoints = currentFrame.mmProjectPoints;
+    mvCurrentKeys=currentFrame->mvKeysUn;
+    mmProjectPoints = currentFrame->mmProjectPoints;
     mvpLocalMap = pTracker->GetLocalMapMPS();
     mbOnlyTracking = pTracker->mbOnlyTracking;
     mvIniKeys=pTracker->mInitialFrame->mvKeysUn;
     mvIniMatches=pTracker->mvIniMatches;
-    mvCurrentTrackedMapPoints = currentFrame.mvpMapPoints;
-    const auto mvCurrentOutliers = currentFrame.mvbOutlier;
+    mvCurrentTrackedMapPoints = currentFrame->mvpMapPoints;
+    const auto mvCurrentOutliers = currentFrame->mvbOutlier;
     const auto lastProcessedState = pTracker->mLastProcessedState;
 
     if(both){
-        mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
+        mvCurrentKeysRight = pTracker->mCurrentFrame->mvKeysRight;
         pTracker->mImRight.copyTo(mImRight);
         N = mvCurrentKeys->size() + mvCurrentKeysRight->size();
     }

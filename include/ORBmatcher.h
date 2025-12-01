@@ -43,15 +43,15 @@ namespace ORB_SLAM3
 
         // Search matches between Frame keypoints and projected MapPoints. Returns number of matches
         // Used to track the local map (Tracking)
-        int SearchByProjection(Frame &F, const std::vector<MapPoint*> &vpMapPoints, const float th=3, const bool bFarPoints = false, const float thFarPoints = 50.0f);
+        int SearchByProjection(std::shared_ptr<Frame> F, const std::vector<MapPoint*> &vpMapPoints, const float th=3, const bool bFarPoints = false, const float thFarPoints = 50.0f);
 
         // Project MapPoints tracked in last frame into the current frame and search matches.
         // Used to track from previous frame (Tracking)
-        int SearchByProjection(Frame &CurrentFrame, const std::shared_ptr<Frame> LastFrame, const float th, const bool bMono);
+        int SearchByProjection(std::shared_ptr<Frame> CurrentFrame, const std::shared_ptr<Frame> LastFrame, const float th, const bool bMono);
 
         // Project MapPoints seen in KeyFrame into the Frame and search matches.
         // Used in relocalisation (Tracking)
-        int SearchByProjection(Frame &CurrentFrame, KeyFrame* pKF, const std::set<MapPoint*> &sAlreadyFound, const float th, const int ORBdist);
+        int SearchByProjection(std::shared_ptr<Frame> CurrentFrame, KeyFrame* pKF, const std::set<MapPoint*> &sAlreadyFound, const float th, const int ORBdist);
 
         // Project MapPoints using a Similarity Transformation and search matches.
         // Used in loop detection (Loop Closing)
@@ -64,11 +64,11 @@ namespace ORB_SLAM3
         // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
         // Brute force constrained to ORB that belong to the same vocabulary node (at a certain level)
         // Used in Relocalisation and Loop Detection
-        int SearchByBoW(KeyFrame *pKF, Frame &F, std::vector<MapPoint*> &vpMapPointMatches);
+        int SearchByBoW(KeyFrame *pKF, std::shared_ptr<Frame> F, std::vector<MapPoint*> &vpMapPointMatches);
         int SearchByBoW(KeyFrame *pKF1, KeyFrame* pKF2, std::vector<MapPoint*> &vpMatches12);
 
         // Matching for the Map Initialization (only used in the monocular case)
-        int SearchForInitialization(std::shared_ptr<Frame> F1, Frame &F2, std::vector<cv::Point2f> &vbPrevMatched, std::vector<int> &vnMatches12, int windowSize=10);
+        int SearchForInitialization(std::shared_ptr<Frame> F1, std::shared_ptr<Frame> F2, std::vector<cv::Point2f> &vbPrevMatched, std::vector<int> &vnMatches12, int windowSize=10);
 
         // Matching to triangulate new MapPoints. Check Epipolar Constraint.
         int SearchForTriangulation(KeyFrame *pKF1, KeyFrame* pKF2,

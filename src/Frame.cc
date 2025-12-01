@@ -53,38 +53,38 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpI
 
 
 //Copy Constructor
-Frame::Frame(const Frame &frame)
-    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
-     mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mK_(Converter::toMatrix3f(frame.mK)), mDistCoef(frame.mDistCoef.clone()),
-     mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), mNumKeypoints(frame.mNumKeypoints), mvKeys(frame.mvKeys),
-     mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
-     mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
-     mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
-     mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mImuCalib(frame.mImuCalib), mnCloseMPs(frame.mnCloseMPs),
-     mpImuPreintegrated(frame.mpImuPreintegrated), mpImuPreintegratedFrame(frame.mpImuPreintegratedFrame), mImuBias(frame.mImuBias),
-     mnId(frame.mnId), mpReferenceKF(frame.mpReferenceKF), mnScaleLevels(frame.mnScaleLevels),
-     mfScaleFactor(frame.mfScaleFactor), mfLogScaleFactor(frame.mfLogScaleFactor),
-     mvScaleFactors(frame.mvScaleFactors), mvInvScaleFactors(frame.mvInvScaleFactors), mNameFile(frame.mNameFile), mnDataset(frame.mnDataset),
-     mvLevelSigma2(frame.mvLevelSigma2), mvInvLevelSigma2(frame.mvInvLevelSigma2), mpPrevFrame(frame.mpPrevFrame), mpLastKeyFrame(frame.mpLastKeyFrame),
-     mbIsSet(frame.mbIsSet), mbImuPreintegrated(frame.mbImuPreintegrated),
-     mFrameGridRows(frame.mFrameGridRows), mFrameGridCols(frame.mFrameGridCols),
-     mpCamera(frame.mpCamera), mpCamera2(frame.mpCamera2), Nleft(frame.Nleft), Nright(frame.Nright),
-     monoLeft(frame.monoLeft), monoRight(frame.monoRight), mvLeftToRightMatch(frame.mvLeftToRightMatch),
-     mvRightToLeftMatch(frame.mvRightToLeftMatch), mvStereo3Dpoints(frame.mvStereo3Dpoints),
-     mTlr(frame.mTlr), mRlr(frame.mRlr), mtlr(frame.mtlr), mTrl(frame.mTrl),
-     mTcw(frame.mTcw), mbHasPose(frame.mbHasPose), mGNSSPosition(frame.mGNSSPosition), mbHasGNSS(frame.mbHasGNSS), mbHasVelocity(frame.mbHasVelocity)
+Frame::Frame(const shared_ptr<Frame> frame)
+    :mpcpi(frame->mpcpi),mpORBvocabulary(frame->mpORBvocabulary), mpORBextractorLeft(frame->mpORBextractorLeft), mpORBextractorRight(frame->mpORBextractorRight),
+     mTimeStamp(frame->mTimeStamp), mK(frame->mK.clone()), mK_(Converter::toMatrix3f(frame->mK)), mDistCoef(frame->mDistCoef.clone()),
+     mbf(frame->mbf), mb(frame->mb), mThDepth(frame->mThDepth), mNumKeypoints(frame->mNumKeypoints), mvKeys(frame->mvKeys),
+     mvKeysRight(frame->mvKeysRight), mvKeysUn(frame->mvKeysUn), mvuRight(frame->mvuRight),
+     mvDepth(frame->mvDepth), mBowVec(frame->mBowVec), mFeatVec(frame->mFeatVec),
+     mDescriptors(frame->mDescriptors.clone()), mDescriptorsRight(frame->mDescriptorsRight.clone()),
+     mvpMapPoints(frame->mvpMapPoints), mvbOutlier(frame->mvbOutlier), mImuCalib(frame->mImuCalib), mnCloseMPs(frame->mnCloseMPs),
+     mpImuPreintegrated(frame->mpImuPreintegrated), mpImuPreintegratedFrame(frame->mpImuPreintegratedFrame), mImuBias(frame->mImuBias),
+     mnId(frame->mnId), mpReferenceKF(frame->mpReferenceKF), mnScaleLevels(frame->mnScaleLevels),
+     mfScaleFactor(frame->mfScaleFactor), mfLogScaleFactor(frame->mfLogScaleFactor),
+     mvScaleFactors(frame->mvScaleFactors), mvInvScaleFactors(frame->mvInvScaleFactors), mNameFile(frame->mNameFile), mnDataset(frame->mnDataset),
+     mvLevelSigma2(frame->mvLevelSigma2), mvInvLevelSigma2(frame->mvInvLevelSigma2), mpPrevFrame(frame->mpPrevFrame), mpLastKeyFrame(frame->mpLastKeyFrame),
+     mbIsSet(frame->mbIsSet), mbImuPreintegrated(frame->mbImuPreintegrated),
+     mFrameGridRows(frame->mFrameGridRows), mFrameGridCols(frame->mFrameGridCols),
+     mpCamera(frame->mpCamera), mpCamera2(frame->mpCamera2), Nleft(frame->Nleft), Nright(frame->Nright),
+     monoLeft(frame->monoLeft), monoRight(frame->monoRight), mvLeftToRightMatch(frame->mvLeftToRightMatch),
+     mvRightToLeftMatch(frame->mvRightToLeftMatch), mvStereo3Dpoints(frame->mvStereo3Dpoints),
+     mTlr(frame->mTlr), mRlr(frame->mRlr), mtlr(frame->mtlr), mTrl(frame->mTrl),
+     mTcw(frame->mTcw), mbHasPose(frame->mbHasPose), mGNSSPosition(frame->mGNSSPosition), mbHasGNSS(frame->mbHasGNSS), mbHasVelocity(frame->mbHasVelocity)
 {
-    mGrid.insert(mGrid.end(), frame.mGrid.begin(), frame.mGrid.end());
+    mGrid.insert(mGrid.end(), frame->mGrid.cbegin(), frame->mGrid.cend());
 
-    if(frame.mbHasPose)
-        SetPose(frame.GetPose());
+    if(frame->mbHasPose)
+        SetPose(frame->GetPose());
 
-    if(frame.HasVelocity())
-        SetVelocity(frame.GetVelocity());
+    if(frame->HasVelocity())
+        SetVelocity(frame->GetVelocity());
     
 
-    mmProjectPoints = frame.mmProjectPoints;
-    mmMatchedInImage = frame.mmMatchedInImage;
+    mmProjectPoints = frame->mmProjectPoints;
+    mmMatchedInImage = frame->mmMatchedInImage;
 }
 
 // Frame& Frame::operator=(const Frame& other){

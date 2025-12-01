@@ -119,7 +119,7 @@ public:
     int mSensor;
 
     // Current Frame
-    Frame mCurrentFrame;
+    std::shared_ptr<Frame> mCurrentFrame;
     std::shared_ptr<Frame> mLastFrame;
 
     cv::Mat mImGrayViewer;

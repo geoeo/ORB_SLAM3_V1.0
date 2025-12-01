@@ -48,6 +48,7 @@
 
 #pragma once
 
+#include <memory>
 #include <MapPoint.h>
 #include <Frame.h>
 
@@ -59,7 +60,7 @@ namespace ORB_SLAM3{
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        MLPnPsolver(const Frame &F, const vector<MapPoint*> &vpMapPointMatches);
+        MLPnPsolver(const std::shared_ptr<Frame> F, const vector<MapPoint*> &vpMapPointMatches);
 
         ~MLPnPsolver();
 

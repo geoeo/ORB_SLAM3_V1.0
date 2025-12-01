@@ -41,42 +41,42 @@ KeyFrame::KeyFrame():
 {
 }
 
-KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
-    bImu(pMap->isImuInitialized()), mnFrameId(F.mnId),  mTimeStamp(F.mTimeStamp), mnGridCols(F.getFrameGridCols()), mnGridRows(F.getFrameGridRows()),
-    mfGridElementWidthInv(F.mfGridElementWidthInv), mfGridElementHeightInv(F.mfGridElementHeightInv),
+KeyFrame::KeyFrame(shared_ptr<Frame> F, Map *pMap, KeyFrameDatabase *pKFDB):
+    bImu(pMap->isImuInitialized()), mnFrameId(F->mnId),  mTimeStamp(F->mTimeStamp), mnGridCols(F->getFrameGridCols()), mnGridRows(F->getFrameGridRows()),
+    mfGridElementWidthInv(F->mfGridElementWidthInv), mfGridElementHeightInv(F->mfGridElementHeightInv),
     mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0), mnBALocalForMerge(0), mfScale(1.0),
     mnLoopQuery(0), mnLoopWords(0), mnRelocQuery(0), mnRelocWords(0), mnBAGlobalForKF(0), mnPlaceRecognitionQuery(0), mnPlaceRecognitionWords(0), mPlaceRecognitionScore(0),
-    fx(F.fx), fy(F.fy), cx(F.cx), cy(F.cy), invfx(F.invfx), invfy(F.invfy),
-    mbf(F.mbf), mb(F.mb), mThDepth(F.mThDepth), N(F.mNumKeypoints), mvKeys(F.mvKeys), mvKeysUn(F.mvKeysUn),
-    mvuRight(F.mvuRight), mvDepth(F.mvDepth), mDescriptors(F.mDescriptors.createMatHeader().clone()),
-    mBowVec(F.mBowVec), mFeatVec(F.mFeatVec), mnScaleLevels(F.mnScaleLevels), mfScaleFactor(F.mfScaleFactor),
-    mfLogScaleFactor(F.mfLogScaleFactor), mvScaleFactors(F.mvScaleFactors),mvInvScaleFactors(F.mvInvScaleFactors), mvLevelSigma2(F.mvLevelSigma2),
-    mvInvLevelSigma2(F.mvInvLevelSigma2), mnMinX(F.mnMinX), mnMinY(F.mnMinY), mnMaxX(F.mnMaxX),
-    mnMaxY(F.mnMaxY), mK_(F.mK_), mPrevKF(NULL), mNextKF(NULL), mpImuPreintegrated(F.mpImuPreintegrated),
-    mImuCalib(F.mImuCalib), mvpMapPoints(F.mvpMapPoints), mpKeyFrameDB(pKFDB),
-    mpORBvocabulary(F.mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mDistCoef(F.mDistCoef), mbNotErase(false), mnDataset(F.mnDataset),
-    mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F.mNameFile), mnMergeCorrectedForKF(0),
-    mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
-    mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
-    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), 
-    mRawGNSSPosition(F.GetGNSS().cast<double>()), mTgc(Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),F.GetGNSS().cast<double>())) ,
-    mbHasVelocity(F.HasVelocity()), mGNSSPosition(F.GetGNSS()), mbHasGNSS(F.HasGNSS())
+    fx(F->fx), fy(F->fy), cx(F->cx), cy(F->cy), invfx(F->invfx), invfy(F->invfy),
+    mbf(F->mbf), mb(F->mb), mThDepth(F->mThDepth), N(F->mNumKeypoints), mvKeys(F->mvKeys), mvKeysUn(F->mvKeysUn),
+    mvuRight(F->mvuRight), mvDepth(F->mvDepth), mDescriptors(F->mDescriptors.createMatHeader().clone()),
+    mBowVec(F->mBowVec), mFeatVec(F->mFeatVec), mnScaleLevels(F->mnScaleLevels), mfScaleFactor(F->mfScaleFactor),
+    mfLogScaleFactor(F->mfLogScaleFactor), mvScaleFactors(F->mvScaleFactors),mvInvScaleFactors(F->mvInvScaleFactors), mvLevelSigma2(F->mvLevelSigma2),
+    mvInvLevelSigma2(F->mvInvLevelSigma2), mnMinX(F->mnMinX), mnMinY(F->mnMinY), mnMaxX(F->mnMaxX),
+    mnMaxY(F->mnMaxY), mK_(F->mK_), mPrevKF(NULL), mNextKF(NULL), mpImuPreintegrated(F->mpImuPreintegrated),
+    mImuCalib(F->mImuCalib), mvpMapPoints(F->mvpMapPoints), mpKeyFrameDB(pKFDB),
+    mpORBvocabulary(F->mpORBvocabulary), mbFirstConnection(true), mpParent(NULL), mDistCoef(F->mDistCoef), mbNotErase(false), mnDataset(F->mnDataset),
+    mbToBeErased(false), mbBad(false), mHalfBaseline(F->mbf/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F->mNameFile), mnMergeCorrectedForKF(0),
+    mpCamera(F->mpCamera), mpCamera2(F->mpCamera2),
+    mvLeftToRightMatch(F->mvLeftToRightMatch),mvRightToLeftMatch(F->mvRightToLeftMatch), mTlr(F->GetRelativePoseTlr()),
+    mvKeysRight(F->mvKeysRight), NLeft(F->Nleft), NRight(F->Nright), mTrl(F->GetRelativePoseTrl()), mnNumberOfOpt(0), 
+    mRawGNSSPosition(F->GetGNSS().cast<double>()), mTgc(Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),F->GetGNSS().cast<double>())) ,
+    mbHasVelocity(F->HasVelocity()), mGNSSPosition(F->GetGNSS()), mbHasGNSS(F->HasGNSS())
 {
     mnId=nNextId++;
-    mGrid.insert(mGrid.end(), F.mGrid.begin(), F.mGrid.end());
+    mGrid.insert(mGrid.end(), F->mGrid.begin(), F->mGrid.end());
 
-    if(!F.HasVelocity()) {
+    if(!F->HasVelocity()) {
         mVw.setZero();
         mbHasVelocity = false;
     }
     else
     {
-        mVw = F.GetVelocity();
+        mVw = F->GetVelocity();
         mbHasVelocity = true;
     }
 
-    mImuBias = F.mImuBias;
-    SetPose(F.GetPose());
+    mImuBias = F->mImuBias;
+    SetPose(F->GetPose());
 
     mnOriginMapId = pMap->GetId();
 }

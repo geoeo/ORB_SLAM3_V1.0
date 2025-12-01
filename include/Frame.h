@@ -53,7 +53,7 @@ public:
     Frame();
 
     // Copy constructor.
-    Frame(const Frame &frame);
+    Frame(const std::shared_ptr<Frame> frame);
 
     //Frame& operator=(const Frame& other);
 
@@ -115,7 +115,7 @@ public:
 
 
 
-    inline Sophus::SE3<float> GetPose() const {
+    inline Sophus::SE3f GetPose() const {
         //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
         return mTcw;
     }
