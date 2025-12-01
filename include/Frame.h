@@ -55,16 +55,12 @@ public:
     // Copy constructor.
     Frame(const std::shared_ptr<Frame> frame);
 
-    //Frame& operator=(const Frame& other);
-
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
 
     
-
-
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::cuda::HostMem &im_managed);
 
@@ -296,7 +292,7 @@ private:
 
     bool mbIsSet;
 
-    bool mbImuPreintegrated;
+    std::atomic<bool> mbImuPreintegrated;
 
     int mFrameGridRows; 
     int mFrameGridCols; 

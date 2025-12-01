@@ -66,7 +66,7 @@ Frame::Frame(const shared_ptr<Frame> frame)
      mfScaleFactor(frame->mfScaleFactor), mfLogScaleFactor(frame->mfLogScaleFactor),
      mvScaleFactors(frame->mvScaleFactors), mvInvScaleFactors(frame->mvInvScaleFactors), mNameFile(frame->mNameFile), mnDataset(frame->mnDataset),
      mvLevelSigma2(frame->mvLevelSigma2), mvInvLevelSigma2(frame->mvInvLevelSigma2), mpPrevFrame(frame->mpPrevFrame), mpLastKeyFrame(frame->mpLastKeyFrame),
-     mbIsSet(frame->mbIsSet), mbImuPreintegrated(frame->mbImuPreintegrated),
+     mbIsSet(frame->mbIsSet), mbImuPreintegrated(frame->mbImuPreintegrated.load()),
      mFrameGridRows(frame->mFrameGridRows), mFrameGridCols(frame->mFrameGridCols),
      mpCamera(frame->mpCamera), mpCamera2(frame->mpCamera2), Nleft(frame->Nleft), Nright(frame->Nright),
      monoLeft(frame->monoLeft), monoRight(frame->monoRight), mvLeftToRightMatch(frame->mvLeftToRightMatch),
@@ -86,90 +86,6 @@ Frame::Frame(const shared_ptr<Frame> frame)
     mmProjectPoints = frame->mmProjectPoints;
     mmMatchedInImage = frame->mmMatchedInImage;
 }
-
-// Frame& Frame::operator=(const Frame& other){
-//     // Guard self assignment
-//     if (this == &other)
-//         return *this;
-    
-//     mpcpi = other.mpcpi;
-//     mpORBvocabulary = other.mpORBvocabulary;
-//     mpORBextractorLeft = other.mpORBextractorLeft;
-//     mpORBextractorRight = other.mpORBextractorRight;
-//     mTimeStamp = other.mTimeStamp;
-//     mK = other.mK.clone();
-//     mK_ = Converter::toMatrix3f(other.mK);
-//     mDistCoef = other.mDistCoef.clone();
-//     mbf = other.mbf;
-//     mb = other.mb;
-//     mThDepth = other.mThDepth;
-//     mNumKeypoints = other.mNumKeypoints;
-//     mvKeys = other.mvKeys;
-//     mvKeysRight = other.mvKeysRight;
-//     mvKeysUn = other.mvKeysUn;
-//     mvuRight = other.mvuRight;
-//     mvDepth = other.mvDepth;
-//     mBowVec = other.mBowVec;
-//     mFeatVec = other.mFeatVec;
-//     mDescriptors = other.mDescriptors.clone();
-//     mDescriptorsRight = other.mDescriptorsRight.clone();
-//     mvpMapPoints = other.mvpMapPoints;
-//     mvbOutlier = other.mvbOutlier;
-//     mImuCalib = other.mImuCalib;
-//     mnCloseMPs = other.mnCloseMPs;
-//     mpImuPreintegrated = other.mpImuPreintegrated;
-//     mpImuPreintegratedFrame = other.mpImuPreintegratedFrame;
-//     mImuBias = other.mImuBias;
-//     mnId = other.mnId;
-//     mpReferenceKF = other.mpReferenceKF;
-//     mnScaleLevels = other.mnScaleLevels;
-//     mfScaleFactor = other.mfScaleFactor;
-//     mfLogScaleFactor = other.mfLogScaleFactor;
-//     mvScaleFactors = other.mvScaleFactors;
-//     mvInvScaleFactors = other.mvInvScaleFactors;
-//     mNameFile = other.mNameFile;
-//     mnDataset = other.mnDataset;
-//     mvLevelSigma2 = other.mvLevelSigma2;
-//     mvInvLevelSigma2 = other.mvInvLevelSigma2;
-//     mpPrevFrame = other.mpPrevFrame;
-//     mpLastKeyFrame = other.mpLastKeyFrame;
-//     mbIsSet = other.mbIsSet;
-//     mbImuPreintegrated.store(other.mbImuPreintegrated.load());
-//     mFrameGridRows = other.mFrameGridRows;
-//     mFrameGridCols = other.mFrameGridCols;
-//     mpCamera = other.mpCamera;
-//     mpCamera2 = other.mpCamera2;
-//     Nleft = other.Nleft;
-//     Nright = other.Nright;
-//     monoLeft = other.monoLeft;
-//     monoRight = other.monoRight;
-//     mvLeftToRightMatch = other.mvLeftToRightMatch;
-//     mvRightToLeftMatch = other.mvRightToLeftMatch;
-//     mvStereo3Dpoints = other.mvStereo3Dpoints;
-//     mTlr = other.mTlr;
-//     mRlr = other.mRlr;
-//     mtlr = other.mtlr;
-//     mTrl = other.mTrl;
-//     mTcw = other.mTcw;
-//     mbHasPose = other.mbHasPose;
-//     mGNSSPosition = other.mGNSSPosition;
-//     mbHasGNSS = other.mbHasGNSS;
-//     mbHasVelocity = other.mbHasVelocity;
-
-//     mGrid.insert(mGrid.end(), other.mGrid.begin(), other.mGrid.end());
-//     if(other.mbHasPose)
-//         SetPose(other.GetPose());
-
-//     if(other.HasVelocity())
-//         SetVelocity(other.GetVelocity());
-    
-
-//     mmProjectPoints = other.mmProjectPoints;
-//     mmMatchedInImage = other.mmMatchedInImage;
-
-
-//     return *this;
-// }
 
 
 Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
@@ -648,13 +564,11 @@ void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)
 
 bool Frame::imuIsPreintegrated()
 {
-    //unique_lock<std::mutex> lock(mpMutexImu);
     return mbImuPreintegrated;
 }
 
 void Frame::setIntegrated()
 {
-    //unique_lock<std::mutex> lock(mpMutexImu);
     mbImuPreintegrated = true;
 }
 
