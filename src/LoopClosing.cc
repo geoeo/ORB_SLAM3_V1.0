@@ -1840,7 +1840,7 @@ void LoopClosing::MergeLocal2()
         if(s_on!=1)
             bScaleVel=true;
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKFsCurrentMap,T_on,s_on,bScaleVel);
-        mpTracker->UpdateFrameIMU(s_on,mpCurrentKF->GetImuBias(),mpTracker->GetLastKeyFrame());
+        mpTracker->UpdateFrameIMU(s_on,Sophus::SE3f(),mpCurrentKF->GetImuBias(),mpTracker->GetLastKeyFrame(), mpAtlas->GetCurrentMap());
         //TODO: save/accumulate scale
 
         chrono::steady_clock::time_point t3 = chrono::steady_clock::now();
@@ -1857,7 +1857,7 @@ void LoopClosing::MergeLocal2()
         Optimizer::InertialOptimization(pCurrentMap,bg,ba);
         IMU::Bias b (ba[0],ba[1],ba[2],bg[0],bg[1],bg[2]);
         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-        mpTracker->UpdateFrameIMU(1.0f,b,mpTracker->GetLastKeyFrame());
+        mpTracker->UpdateFrameIMU(1.0f,Sophus::SE3f(),b,mpTracker->GetLastKeyFrame(), mpAtlas->GetCurrentMap());
 
         // Set map initialized
         pCurrentMap->SetInertialBA2();

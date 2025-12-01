@@ -116,6 +116,11 @@ public:
         return mTcw;
     }
 
+    inline Sophus::SE3f GetPoseInverse() const {
+        //TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
+        return mTwc;
+    }
+
     inline Eigen::Vector3f GetGNSS() const {
         return mGNSSPosition;
     }

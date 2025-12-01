@@ -78,7 +78,7 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
-    void UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame);
+    void UpdateFrameIMU(const float s, const Sophus::SE3f &T, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame, Map* pMap);
     KeyFrame* GetLastKeyFrame();
 
     void CreateMapInAtlas();
@@ -121,6 +121,7 @@ public:
     // Current Frame
     std::shared_ptr<Frame> mCurrentFrame;
     std::shared_ptr<Frame> mLastFrame;
+    std::shared_ptr<Frame> mInitialFrame;
 
     cv::Mat mImGrayViewer;
 
@@ -129,7 +130,6 @@ public:
     std::vector<int> mvIniMatches;
     std::vector<cv::Point2f> mvbPrevMatched;
     std::vector<cv::Point3f> mvIniP3D;
-    std::shared_ptr<Frame> mInitialFrame;
 
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation

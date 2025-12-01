@@ -40,7 +40,7 @@ namespace ORB_SLAM3
 {
 
 Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
-    mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()) , mTrackedFr(0), mbStep(false),
+    mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()), mInitialFrame(make_shared<Frame>()), mTrackedFr(0), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
     mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mFeatureThresholdForKF(tracker_settings.featureThresholdForKF),
     mMinFrames(0),mMaxFrames(tracker_settings.maxFrames),
@@ -773,6 +773,7 @@ void Tracking::MonocularInitialization()
             }
 
             Verbose::PrintMess("init matches after 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
 
             // Set Frame Pose
             mCurrentFrame->SetPose(Tcw);
@@ -1624,7 +1625,6 @@ bool Tracking::Relocalization()
             {
                 Sophus::SE3f Tcw(eigTcw);
                 mCurrentFrame->SetPose(Tcw);
-                // Tcw.copyTo(mCurrentFrame.mTcw);
 
                 set<MapPoint*> sFound;
 
@@ -1917,10 +1917,8 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame)
+void Tracking::UpdateFrameIMU(const float s, const Sophus::SE3f &T, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame, Map* pMap)
 {
-    Map * pMap = pCurrentKeyFrame->GetMap();
-    unsigned int index = mnFirstFrameId;
     list<ORB_SLAM3::KeyFrame*>::iterator lRit = mlpReferences.begin();
     list<bool>::iterator lbL = mlbLost.begin();
 
@@ -1954,9 +1952,6 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
 
     mLastFrame->SetNewBias(mLastBias);
     mCurrentFrame->SetNewBias(mLastBias);
-
-    while(!mCurrentFrame->imuIsPreintegrated())
-       this_thread::sleep_for(chrono::microseconds(500));
     
     if(mLastFrame->mnId == mLastFrame->mpLastKeyFrame->mnFrameId)
     {
@@ -1976,8 +1971,7 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
                                       Vwb1 + Gz*t12 + Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
     }
 
-    if (mCurrentFrame->mpImuPreintegrated)
-    {
+    if(mCurrentFrame->imuIsPreintegrated()){
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
 
         const Eigen::Vector3f twb1 = mCurrentFrame->mpLastKeyFrame->GetImuPosition();
@@ -1986,10 +1980,19 @@ void Tracking::UpdateFrameIMU(const float s, const IMU::Bias &b, KeyFrame* pCurr
         float t12 = mCurrentFrame->mpImuPreintegrated->dT;
 
         mCurrentFrame->SetImuPoseVelocity(IMU::NormalizeRotation(Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaRotation()),
-                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
-                                      Vwb1 + Gz*t12 + Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
-    }
+                                        twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
+                                        Vwb1 + Gz*t12 + Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
+    } else {
+        Sophus::SE3f Tyw = T;
+        Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
+        Eigen::Vector3f tyw = Tyw.translation();
 
+        Sophus::SE3f Twc = mCurrentFrame->GetPoseInverse();
+        Twc.translation() *= s;
+        Sophus::SE3f Tyc = Tyw*Twc;
+        Sophus::SE3f Tcy = Tyc.inverse();
+        mCurrentFrame->SetPose(Tcy);
+    }
     mnFirstImuFrameId = mCurrentFrame->mnId;
 }
 

@@ -1225,7 +1225,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
             Sophus::SE3f Tw_gravity(mRw_gravity.cast<float>().transpose(), Eigen::Vector3f::Zero());
             mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tw_gravity, mScale, true);
-            mpTracker->UpdateFrameIMU(mScale, vpKF[0]->GetImuBias(), mpCurrentKeyFrame);
+            mpTracker->UpdateFrameIMU(mScale, Tw_gravity, vpKF[0]->GetImuBias(), mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
         }
 
         // Check if initialization OK
@@ -1236,7 +1236,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
             }
     }
 
-    mpTracker->UpdateFrameIMU(1.0,vpKF[0]->GetImuBias(),mpCurrentKeyFrame);
+    //mpTracker->UpdateFrameIMU(1.0,vpKF[0]->GetImuBias(),mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
     if (!mpAtlas->isImuInitialized())
     {
         mpAtlas->SetImuInitialized();
@@ -1420,7 +1420,7 @@ void LocalMapping::ScaleRefinement()
     {
         Sophus::SE3f Tgw(mRw_gravity.cast<float>().transpose(),Eigen::Vector3f::Zero());
         mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tgw, mScale, true);
-        mpTracker->UpdateFrameIMU(mScale,mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame);
+        mpTracker->UpdateFrameIMU(mScale,Tgw, mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
     }
     chrono::steady_clock::time_point t3 = chrono::steady_clock::now();
 
