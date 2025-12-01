@@ -62,6 +62,8 @@ public:
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
 
+    
+
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::cuda::HostMem &im_managed);
@@ -158,10 +160,6 @@ private:
 
     Eigen::Vector3f mGNSSPosition;
     bool mbHasGNSS;
-
-    //Rcw_ not necessary as Sophus has a method for extracting the rotation matrix: Tcw_.rotationMatrix()
-    //tcw_ not necessary as Sophus has a method for extracting the translation vector: Tcw_.translation()
-    //Twc_ not necessary as Sophus has a method for easily computing the inverse pose: Tcw_.inverse()
 
     Sophus::SE3<float> mTlr, mTrl;
     Eigen::Matrix<float,3,3> mRlr;
@@ -346,7 +344,6 @@ public:
         std::cout << "Point distribution in Frame: left-> " << left << " --- right-> " << right << std::endl;
     }
 
-    Sophus::SE3<double> T_test;
 };
 
 }// namespace ORB_SLAM

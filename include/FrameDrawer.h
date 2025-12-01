@@ -67,20 +67,18 @@ protected:
     std::shared_ptr<std::vector<KeyPoint>> mvIniKeys;
     std::vector<int> mvIniMatches;
     int mState;
-    std::vector<float> mvCurrentDepth;
-    float mThDepth;
 
     Atlas* mpAtlas;
 
     std::mutex mMutex;
     std::vector<std::pair<cv::Point2f, cv::Point2f> > mvTracks;
 
-    Frame mCurrentFrame;
     std::vector<MapPoint*> mvpLocalMap;
     std::vector<KeyPoint> mvMatchedKeys;
     std::vector<MapPoint*> mvpMatchedMPs;
     std::vector<KeyPoint> mvOutlierKeys;
     std::vector<MapPoint*> mvpOutlierMPs;
+    std::vector<MapPoint*> mvCurrentTrackedMapPoints;
 
     std::map<long unsigned int, cv::Point2f> mmProjectPoints;
     std::map<long unsigned int, cv::Point2f> mmMatchedInImage;

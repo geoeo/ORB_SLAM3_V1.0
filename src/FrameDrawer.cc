@@ -46,9 +46,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
     vector<pair<cv::Point2f, cv::Point2f> > vTracks;
     int state; // Tracking state
     vector<float> vCurrentDepth;
-    float thDepth;
 
-    Frame currentFrame;
     vector<MapPoint*> vpLocalMap;
     vector<KeyPoint> vMatchesKeys;
     vector<MapPoint*> vpMatchedMPs;
@@ -84,7 +82,6 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             vbVO = mvbVO;
             vbMap = mvbMap;
 
-            currentFrame = mCurrentFrame;
             vpLocalMap = mvpLocalMap;
             vMatchesKeys = mvMatchedKeys;
             vpMatchedMPs = mvpMatchedMPs;
@@ -92,9 +89,6 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             vpOutlierMPs = mvpOutlierMPs;
             mProjectPoints = mmProjectPoints;
             mMatchedInImage = mmMatchedInImage;
-
-            vCurrentDepth = mvCurrentDepth;
-            thDepth = mThDepth;
 
         }
         else if(mState==Tracking::LOST)
@@ -250,7 +244,7 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
 {
     cv::Mat im;
     shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
-    vector<int> vMatches; // Initialization: correspondeces with reference keypoints
+    vector<int> vMatches; // Initialization: correspondences with reference keypoints
     shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     int state; // Tracking state
@@ -417,10 +411,19 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 void FrameDrawer::Update(Tracking *pTracker)
 {
     unique_lock<mutex> lock(mMutex);
+    //Variables for the new visualization
     pTracker->mImGrayViewer.copyTo(mIm);
-    mvCurrentKeys=pTracker->mCurrentFrame.mvKeys;
-    mThDepth = pTracker->mCurrentFrame.mThDepth;
-    mvCurrentDepth = pTracker->mCurrentFrame.mvDepth;
+    auto& currentFrame = pTracker->mCurrentFrame;
+
+    mvCurrentKeys=currentFrame.mvKeysUn;
+    mmProjectPoints = currentFrame.mmProjectPoints;
+    mvpLocalMap = pTracker->GetLocalMapMPS();
+    mbOnlyTracking = pTracker->mbOnlyTracking;
+    mvIniKeys=pTracker->mInitialFrame->mvKeysUn;
+    mvIniMatches=pTracker->mvIniMatches;
+    mvCurrentTrackedMapPoints = currentFrame.mvpMapPoints;
+    const auto mvCurrentOutliers = currentFrame.mvbOutlier;
+    const auto lastProcessedState = pTracker->mLastProcessedState;
 
     if(both){
         mvCurrentKeysRight = pTracker->mCurrentFrame.mvKeysRight;
@@ -433,14 +436,9 @@ void FrameDrawer::Update(Tracking *pTracker)
 
     mvbVO = vector<bool>(N,false);
     mvbMap = vector<bool>(N,false);
-    mbOnlyTracking = pTracker->mbOnlyTracking;
 
-    //Variables for the new visualization
-    mCurrentFrame = pTracker->mCurrentFrame;
-    mmProjectPoints = mCurrentFrame.mmProjectPoints;
+
     mmMatchedInImage.clear();
-
-    mvpLocalMap = pTracker->GetLocalMapMPS();
     mvMatchedKeys.clear();
     mvMatchedKeys.reserve(N);
     mvpMatchedMPs.clear();
@@ -450,19 +448,14 @@ void FrameDrawer::Update(Tracking *pTracker)
     mvpOutlierMPs.clear();
     mvpOutlierMPs.reserve(N);
 
-    if(pTracker->mLastProcessedState==Tracking::NOT_INITIALIZED)
-    {
-        mvIniKeys=pTracker->mInitialFrame->mvKeys;
-        mvIniMatches=pTracker->mvIniMatches;
-    }
-    else if(pTracker->mLastProcessedState==Tracking::OK)
+    if(lastProcessedState==Tracking::OK)
     {
         for(int i=0;i<N;i++)
         {
-            MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+            MapPoint* pMP = mvCurrentTrackedMapPoints[i];
             if(pMP)
             {
-                if(!mCurrentFrame.mvbOutlier[i])
+                if(!mvCurrentOutliers[i])
                 {
                     if(pMP->Observations()>0)
                         mvbMap[i]=true;
@@ -480,7 +473,7 @@ void FrameDrawer::Update(Tracking *pTracker)
         }
 
     }
-    mState=static_cast<int>(pTracker->mLastProcessedState);
+    mState=static_cast<int>(lastProcessedState);
 }
 
 } //namespace ORB_SLAM
