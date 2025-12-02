@@ -48,7 +48,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mbReadyToInitializate(false), mpSystem(pSys), mpViewer(NULL), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
-    mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
+    mnInitialFrameId(0), mbCreatedMap(false), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
 {
 
     newParameterLoader(settings);
@@ -440,16 +440,7 @@ void Tracking::Track()
         //mpFrameDrawer->Update(this);
 
         if(getTrackingState()!=OK) // If rightly initialized, mState=OK
-        {
             Verbose::PrintMess("TRACK: Init was not OK", Verbose::VERBOSITY_DEBUG);
-            mLastFrame = make_shared<Frame>(mCurrentFrame);
-            return;
-        }
-
-        if(mpAtlas->GetAllMaps().size() == 1)
-        {
-            mnFirstFrameId = mCurrentFrame->mnId;
-        }
     }
     else
     {
@@ -668,12 +659,12 @@ void Tracking::Track()
         if(!mCurrentFrame->mpReferenceKF)
             mCurrentFrame->mpReferenceKF = mpReferenceKF;
 
-        mLastFrame = std::make_shared<Frame>(mCurrentFrame);
+        //mLastFrame = std::make_shared<Frame>(mCurrentFrame);
     }
 
 
 
-    auto state = getTrackingState();
+    const auto state = getTrackingState();
     if(state==OK || state==RECENTLY_LOST)
     {
         // Store frame pose information to retrieve the complete camera trajectory afterwards.
@@ -695,9 +686,10 @@ void Tracking::Track()
         }
 
     }
+    mLastFrame = make_shared<Frame>(mCurrentFrame);
 
+    Verbose::PrintMess("Tracking State:  " + to_string(state), Verbose::VERBOSITY_NORMAL);
 }
-
 
 
 void Tracking::MonocularInitialization()
@@ -706,18 +698,11 @@ void Tracking::MonocularInitialization()
     if(!mbReadyToInitializate)
     {
         // Set Reference Frame
-        if(mCurrentFrame->mvKeys->size()>FEAT_INIT_COUNT)
+        if(mCurrentFrame->mvKeysUn->size()>FEAT_INIT_COUNT)
         {
 
             mInitialFrame = std::make_shared<Frame>(mCurrentFrame);
             mInitialFrame->SetPose(Sophus::SE3f());
-
-            mLastFrame = std::make_shared<Frame>(mCurrentFrame);
-            mvbPrevMatched.resize(mCurrentFrame->mvKeysUn->size());
-            for(size_t i=0; i<mCurrentFrame->mvKeysUn->size(); i++)
-                mvbPrevMatched[i]=mCurrentFrame->mvKeysUn->operator[](i).pt;
-
-            fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
 
             if (mSensor == System::IMU_MONOCULAR)
             {
@@ -732,12 +717,13 @@ void Tracking::MonocularInitialization()
 
             Verbose::PrintMess("Ready to initialize", Verbose::VERBOSITY_DEBUG);
             mbReadyToInitializate = true;
-            return;
         }
     }
-    else
+    else if(mCurrentFrame->mvKeysUn->size()>=FEAT_INIT_COUNT)
     {
-        if (((int)mCurrentFrame->mvKeys->size()<=FEAT_INIT_COUNT)||((mSensor == System::IMU_MONOCULAR)&&(mLastFrame->mTimeStamp-mInitialFrame->mTimeStamp>1.0)))
+        // If time difference is too large, reset init try
+        const auto timeDiff = mCurrentFrame->mTimeStamp-mInitialFrame->mTimeStamp;
+        if (timeDiff > 2.0f) // 2 seconds
         {
             mbReadyToInitializate = false;
             return;
@@ -745,9 +731,11 @@ void Tracking::MonocularInitialization()
 
         // Find correspondences
         ORBmatcher matcher(0.9,true);
-        int nmatches = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,mvbPrevMatched,mvIniMatches,10);
+        const auto windowSize = 30; // This parameter has to be large enough to ensure a good disparity but size will impact performance
+        auto [nmatches, vIniMatches] = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize);
 
-        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
+
+        Verbose::PrintMess("init matches: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
         // Check if there are enough correspondences
         if(nmatches<FEAT_INIT_COUNT)
@@ -757,17 +745,17 @@ void Tracking::MonocularInitialization()
         }
 
         Sophus::SE3f Tcw;
-        vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches)
-
-        if(mpCamera->ReconstructWithTwoViews(mInitialFrame->mvKeysUn,mCurrentFrame->mvKeysUn,mvIniMatches,Tcw,mvIniP3D,vbTriangulated))
+        vector<bool> vbTriangulated; // Triangulated Correspondences (vIniMatches)
+        vector<cv::Point3f> vIniP3D; // Initial Correspondences in 3D
+        if(mpCamera->ReconstructWithTwoViews(mInitialFrame->mvKeysUn,mCurrentFrame->mvKeysUn,vIniMatches,Tcw,vIniP3D,vbTriangulated))
         {
             Verbose::PrintMess("init matches before 2 view " + to_string(nmatches), Verbose::VERBOSITY_DEBUG);
             
-            for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
+            for(size_t i=0, iend=vIniMatches.size(); i<iend;i++)
             {
-                if(mvIniMatches[i]>=0 && !vbTriangulated[i])
+                if(vIniMatches[i]>=0 && !vbTriangulated[i])
                 {
-                    mvIniMatches[i]=-1;
+                    vIniMatches[i]=-1;
                     nmatches--;
                 }
             }
@@ -776,160 +764,15 @@ void Tracking::MonocularInitialization()
 
             // Set Frame Pose
             mCurrentFrame->SetPose(Tcw);
-            CreateInitialMapMonocular();
+
+            CreateInitialMapMonocular(vIniMatches,vIniP3D);
         }
-
-
-
-
-        // "Good Enough" initial orientation
-        // const auto quat = Eigen::Quaternionf(Eigen::AngleAxisf(0.0, Eigen::Vector3f(0,0,-1)));
-        // const auto rot = Sophus::SO3f(quat);
-        // const auto trans_delta = mCurrentFrame->GetGNSS() - mInitialFrame->GetGNSS();
-        // const auto Tgw = Sophus::SE3f(rot, trans_delta);
-
-        // const auto R = rot.matrix();
-        // const auto t = trans_delta;
-        // const auto K = mCurrentFrame->mK_;
-        // auto& vKeys1 = mInitialFrame->mvKeysUn;
-        // auto& vKeys2 = mCurrentFrame->mvKeysUn;
-
-        // std::vector<pair<int,int>> mvMatches12;
-        // std::vector<bool> vbMatched1;
-        // mvMatches12.reserve(vKeys2->size());
-        // vbMatched1.resize(vKeys1->size());
-        // for(size_t i=0, iend=mvIniMatches.size();i<iend; i++)
-        // {
-        //     if(mvIniMatches[i]>=0)
-        //     {
-        //         mvMatches12.push_back(make_pair(i,mvIniMatches[i]));
-        //         vbMatched1[i]=true;
-        //     }
-        //     else
-        //         vbMatched1[i]=false;
-        // }
-
-
-        // // Calibration parameters
-        // const float fx = K(0,0);
-        // const float fy = K(1,1);
-        // const float cx = K(0,2);
-        // const float cy = K(1,2);
-
-        // auto vP3D = vector<cv::Point3f>(vKeys1->size());
-
-        // vector<float> vCosParallax;
-        // vCosParallax.reserve(vKeys1->size());
-
-        // // Camera 1 Projection Matrix K[I|0]
-        // Eigen::Matrix<float,3,4> P1;
-        // P1.setZero();
-        // P1.block<3,3>(0,0) = K;
-
-        // Eigen::Vector3f O1;
-        // O1.setZero();
-
-        // // Camera 2 Projection Matrix K[R|t]
-        // Eigen::Matrix<float,3,4> P2;
-        // P2.block<3,3>(0,0) = R;
-        // P2.block<3,1>(0,3) = t;
-        // P2 = K * P2;
-
-        // Eigen::Vector3f O2 = -R.transpose() * t;
-
-        // int nGood=0;
-
-        // for(size_t i=0, iend=mvMatches12.size();i<iend;i++)
-        // {
-        //     if(!vbTriangulated[mvMatches12[i].first])
-        //         continue;
-
-        //     const auto &kp1 = vKeys1->operator[](mvMatches12[i].first);
-        //     const auto &kp2 = vKeys2->operator[](mvMatches12[i].second);
-
-        //     Eigen::Vector3f p3dC1;
-        //     Eigen::Vector3f x_p1(kp1.pt.x, kp1.pt.y, 1);
-        //     Eigen::Vector3f x_p2(kp2.pt.x, kp2.pt.y, 1);
-
-        //     GeometricTools::Triangulate(x_p1, x_p2, P1, P2, p3dC1);
-
-
-        //     if(!isfinite(p3dC1(0)) || !isfinite(p3dC1(1)) || !isfinite(p3dC1(2)))
-        //     {
-        //         vbTriangulated[mvMatches12[i].first]=false;
-        //         continue;
-        //     }
-
-        //     // Check parallax
-        //     Eigen::Vector3f normal1 = p3dC1 - O1;
-        //     float dist1 = normal1.norm();
-
-        //     Eigen::Vector3f normal2 = p3dC1 - O2;
-        //     float dist2 = normal2.norm();
-
-        //     float cosParallax = normal1.dot(normal2) / (dist1*dist2);
-
-        //     // Check depth in front of first camera (only if enough parallax, as "infinite" points can easily go to negative depth)
-        //     if(p3dC1(2)<=0 && cosParallax<0.99998)
-        //         continue;
-
-        //     // Check depth in front of second camera (only if enough parallax, as "infinite" points can easily go to negative depth)
-        //     Eigen::Vector3f p3dC2 = R * p3dC1 + t;
-
-        //     if(p3dC2(2)<=0 && cosParallax<0.99998)
-        //         continue;
-
-        //     // Check reprojection error in first image
-        //     float im1x, im1y;
-        //     float invZ1 = 1.0/p3dC1(2);
-        //     im1x = fx*p3dC1(0)*invZ1+cx;
-        //     im1y = fy*p3dC1(1)*invZ1+cy;
-
-        //     const float squareError1 = (im1x-kp1.pt.x)*(im1x-kp1.pt.x)+(im1y-kp1.pt.y)*(im1y-kp1.pt.y);
-        //     const float th2 = 4.0f;
-        //     if(squareError1>th2)
-        //         continue;
-
-        //     // Check reprojection error in second image
-        //     float im2x, im2y;
-        //     float invZ2 = 1.0/p3dC2(2);
-        //     im2x = fx*p3dC2(0)*invZ2+cx;
-        //     im2y = fy*p3dC2(1)*invZ2+cy;
-
-        //     float squareError2 = (im2x-kp2.pt.x)*(im2x-kp2.pt.x)+(im2y-kp2.pt.y)*(im2y-kp2.pt.y);
-
-        //     if(squareError2>th2)
-        //         continue;
-
-        //     vCosParallax.push_back(cosParallax);
-        //     vP3D[mvMatches12[i].first] = cv::Point3f(p3dC1(0), p3dC1(1), p3dC1(2));
-        //     nGood++;
-
-        //     if(cosParallax<0.99998)
-        //         vbTriangulated[mvMatches12[i].first]=true;
-        // }
-
-        // for(size_t i=0, iend=mvIniMatches.size(); i<iend;i++)
-        // {
-        //     if(mvIniMatches[i]>=0 && !vbTriangulated[i])
-        //     {
-        //         mvIniMatches[i]=-1;
-        //         nmatches--;
-        //     }
-        // }
-
-        // mvIniP3D = vP3D;
-
-        // Set Frame Pose
-        //mCurrentFrame->SetPose(Tgw);
-        //CreateInitialMapMonocular();
-
     }
 }
 
 
 
-void Tracking::CreateInitialMapMonocular()
+void Tracking::CreateInitialMapMonocular(const vector<int> &vIniMatches, const vector<cv::Point3f> &vIniP3D)
 {
     // Create KeyFrames
     KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
@@ -946,30 +789,30 @@ void Tracking::CreateInitialMapMonocular()
     mpAtlas->AddKeyFrame(pKFini);
     mpAtlas->AddKeyFrame(pKFcur);
 
-    Verbose::PrintMess("CreateInitialMapMonocular init matches: " + to_string(mvIniMatches.size()), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("CreateInitialMapMonocular init matches: " + to_string(vIniMatches.size()), Verbose::VERBOSITY_DEBUG);
 
-    for(size_t i=0; i<mvIniMatches.size();i++)
+    for(size_t i=0; i<vIniMatches.size();i++)
     {
-        if(mvIniMatches[i]<0)
+        if(vIniMatches[i]<0)
             continue;
 
         //Create MapPoint.
         Eigen::Vector3f worldPos;
-        worldPos << mvIniP3D[i].x, mvIniP3D[i].y, mvIniP3D[i].z;
+        worldPos << vIniP3D[i].x, vIniP3D[i].y, vIniP3D[i].z;
         MapPoint* pMP = new MapPoint(worldPos,pKFcur,mpAtlas->GetCurrentMap());
 
         pKFini->AddMapPoint(pMP,i);
-        pKFcur->AddMapPoint(pMP,mvIniMatches[i]);
+        pKFcur->AddMapPoint(pMP,vIniMatches[i]);
 
         pMP->AddObservation(pKFini,i);
-        pMP->AddObservation(pKFcur,mvIniMatches[i]);
+        pMP->AddObservation(pKFcur,vIniMatches[i]);
 
         pMP->ComputeDistinctiveDescriptors();
         pMP->UpdateDepth();
 
         //Fill Current Frame structure
-        mCurrentFrame->mvpMapPoints[mvIniMatches[i]] = pMP;
-        mCurrentFrame->mvbOutlier[mvIniMatches[i]] = false;
+        mCurrentFrame->mvpMapPoints[vIniMatches[i]] = pMP;
+        mCurrentFrame->mvbOutlier[vIniMatches[i]] = false;
 
         //Add to Map
         mpAtlas->AddMapPoint(pMP);
@@ -996,7 +839,7 @@ void Tracking::CreateInitialMapMonocular()
 
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
-        Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_DEBUG);
+        Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_NORMAL);
         mpSystem->Reset();
         return;
     }
@@ -1096,7 +939,6 @@ void Tracking::CreateMapInAtlas()
 
     mLastFrame = std::make_shared<Frame>();
     mCurrentFrame = std::make_shared<Frame>();
-    mvIniMatches.clear();
 
     mbCreatedMap = true;
 }
@@ -1912,7 +1754,6 @@ void Tracking::Reset(bool bLocMap)
     mLastFrame = std::make_shared<Frame>();
     mpReferenceKF = static_cast<KeyFrame*>(NULL);
     mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-    mvIniMatches.clear();
 
     if(mpViewer)
         mpViewer->Release();
@@ -1921,7 +1762,7 @@ void Tracking::Reset(bool bLocMap)
 }
 
 
-// Unsued, since we only have on map. Only difference to Reset() is the mAtlas, mpKeyFrameDB call -> Merge with Reset() function
+// Unsued, since we only have one map. Only difference to Reset() is the mAtlas, mpKeyFrameDB call -> Merge with Reset() function
 void Tracking::ResetActiveMap(bool bLocMap)
 {
     Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
@@ -1965,8 +1806,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     list<bool> lbLost;
     // lbLost.reserve(mlbLost.size());
-    unsigned int index = mnFirstFrameId;
-    Verbose::PrintMess("mnFirstFrameId = " + to_string(mnFirstFrameId), Verbose::VERBOSITY_NORMAL);
+    unsigned int index = numeric_limits<unsigned int>::max();
     for(Map* pMap : mpAtlas->GetAllMaps())
     {
         if(pMap->GetAllKeyFrames(false).size() > 0)
@@ -2002,7 +1842,6 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mLastFrame = std::make_shared<Frame>();
     mpReferenceKF = static_cast<KeyFrame*>(NULL);
     mpLastKeyFrame = static_cast<KeyFrame*>(NULL);
-    mvIniMatches.clear();
     mRelocCount = 0;
 
     mbVelocity = false;

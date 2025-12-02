@@ -124,13 +124,6 @@ public:
     std::shared_ptr<Frame> mInitialFrame;
 
     cv::Mat mImGrayViewer;
-
-    // Initialization Variables (Monocular)
-    std::vector<int> mvIniLastMatches;
-    std::vector<int> mvIniMatches;
-    std::vector<cv::Point2f> mvbPrevMatched;
-    std::vector<cv::Point3f> mvIniP3D;
-
     // Lists used to recover the full camera trajectory at the end of the execution.
     // Basically we store the reference keyframe for each frame and its relative transformation
     std::list<Sophus::SE3f> mlRelativeFramePoses;
@@ -169,7 +162,7 @@ protected:
     // Map initialization for monocular
     void MonocularInitialization();
     //void CreateNewMapPoints();
-    void CreateInitialMapMonocular();
+    void CreateInitialMapMonocular(const vector<int> &vIniMatches, const vector<cv::Point3f> &vIniP3D);
 
     void CheckReplacedInLastFrame();
     bool TrackReferenceKeyFrame();
@@ -195,7 +188,7 @@ protected:
     // Reset IMU biases and compute frame velocity
     void ResetFrameIMU();
 
-    static constexpr int FEAT_INIT_COUNT = 100;
+    static constexpr size_t FEAT_INIT_COUNT = 100;
 
     bool mbMapUpdated;
 
@@ -296,7 +289,6 @@ protected:
     int mRelocCount;
     int mRelocThresh;
 
-    unsigned int mnFirstFrameId;
     unsigned int mnInitialFrameId;
     unsigned int mnLastInitFrameId;
 

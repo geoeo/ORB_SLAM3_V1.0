@@ -549,17 +549,17 @@ namespace ORB_SLAM3
         return nmatches;
     }
 
-    int ORBmatcher::SearchForInitialization(shared_ptr<Frame> F1, shared_ptr<Frame> F2, vector<cv::Point2f> &vbPrevMatched, vector<int> &vnMatches12, int windowSize)
+    pair<int,vector<int>> ORBmatcher::SearchForInitialization(shared_ptr<Frame> F1, shared_ptr<Frame> F2, int windowSize)
     {
         ZoneNamedN(SearchForInitialization, "SearchForInitialization", true);
         int nmatches=0;
-        vnMatches12 = vector<int>(F1->mvKeysUn->size(),-1);
+        auto vnMatches12 = vector<int>(F1->mvKeysUn->size(),-1);
         vector<int> rotHist[HISTO_LENGTH];
         for(int i=0;i<HISTO_LENGTH;i++)
             rotHist[i].reserve(500);
         const float factor = 1.0f/HISTO_LENGTH;
 
-        vector<int> vMatchedDistance(F2->mvKeysUn->size(),INT_MAX);
+        vector<int> vMatchedDistance(F2->mvKeysUn->size(),numeric_limits<int>::max());
         vector<int> vnMatches21(F2->mvKeysUn->size(),-1);
 
         for(size_t i1=0, iend1=F1->mvKeysUn->size(); i1<iend1; i1++)
@@ -569,15 +569,15 @@ namespace ORB_SLAM3
             if(level1>0)
                 continue;
 
-            vector<size_t> vIndices2 = F2->GetFeaturesInArea(vbPrevMatched[i1].x,vbPrevMatched[i1].y, windowSize,level1,level1);
+            vector<size_t> vIndices2 = F2->GetFeaturesInArea(F1->mvKeysUn->operator[](i1).pt.x,F1->mvKeysUn->operator[](i1).pt.y, windowSize,level1,level1);
 
             if(vIndices2.empty())
                 continue;
 
             cv::Mat d1 = F1->mDescriptors.createMatHeader().row(i1);
 
-            int bestDist = INT_MAX;
-            int bestDist2 = INT_MAX;
+            int bestDist = numeric_limits<int>::max();
+            int bestDist2 = numeric_limits<int>::max();
             int bestIdx2 = -1;
 
             for(vector<size_t>::iterator vit=vIndices2.begin(); vit!=vIndices2.end(); vit++)
@@ -658,12 +658,7 @@ namespace ORB_SLAM3
 
         }
 
-        //Update prev matched
-        for(size_t i1=0, iend1=vnMatches12.size(); i1<iend1; i1++)
-            if(vnMatches12[i1]>=0)
-                vbPrevMatched[i1]=F2->mvKeysUn->operator[](vnMatches12[i1]).pt;
-
-        return nmatches;
+        return {nmatches, vnMatches12};
     }
 
     int ORBmatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)

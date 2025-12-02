@@ -68,7 +68,7 @@ namespace ORB_SLAM3
         int SearchByBoW(KeyFrame *pKF1, KeyFrame* pKF2, std::vector<MapPoint*> &vpMatches12);
 
         // Matching for the Map Initialization (only used in the monocular case)
-        int SearchForInitialization(std::shared_ptr<Frame> F1, std::shared_ptr<Frame> F2, std::vector<cv::Point2f> &vbPrevMatched, std::vector<int> &vnMatches12, int windowSize=10);
+        std::pair<int,std::vector<int>> SearchForInitialization(std::shared_ptr<Frame> F1, std::shared_ptr<Frame> F2, int windowSize);
 
         // Matching to triangulate new MapPoints. Check Epipolar Constraint.
         int SearchForTriangulation(KeyFrame *pKF1, KeyFrame* pKF2,

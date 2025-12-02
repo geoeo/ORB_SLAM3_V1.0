@@ -40,7 +40,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
 {
     cv::Mat im;
     shared_ptr<vector<KeyPoint>> vIniKeys; // Initialization: KeyPoints in reference frame
-    vector<int> vMatches; // Initialization: correspondeces with reference keypoints
+    vector<int> vMatches; // Initialization: correspondeces with reference keypoints - TODO: rework
     shared_ptr<vector<KeyPoint>> vCurrentKeys; // KeyPoints in current frame
     vector<bool> vbVO, vbMap; // Tracked MapPoints in current frame
     vector<pair<cv::Point2f, cv::Point2f> > vTracks;
@@ -73,7 +73,6 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
         {
             vCurrentKeys = mvCurrentKeys;
             vIniKeys = mvIniKeys;
-            vMatches = mvIniMatches;
             vTracks = mvTracks;
         }
         else if(mState==Tracking::OK)
@@ -262,7 +261,6 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale)
         {
             vCurrentKeys = mvCurrentKeysRight;
             vIniKeys = mvIniKeys;
-            vMatches = mvIniMatches;
         }
         else if(mState==Tracking::OK)
         {
@@ -420,7 +418,6 @@ void FrameDrawer::Update(Tracking *pTracker)
     mvpLocalMap = pTracker->GetLocalMapMPS();
     mbOnlyTracking = pTracker->mbOnlyTracking;
     mvIniKeys=pTracker->mInitialFrame->mvKeysUn;
-    mvIniMatches=pTracker->mvIniMatches;
     mvCurrentTrackedMapPoints = currentFrame->mvpMapPoints;
     const auto mvCurrentOutliers = currentFrame->mvbOutlier;
     const auto lastProcessedState = pTracker->mLastProcessedState;

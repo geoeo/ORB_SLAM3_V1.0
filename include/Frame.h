@@ -181,7 +181,7 @@ public:
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
 
     // Frame timestamp.
-    double mTimeStamp;
+    double mTimeStamp; //TODO: change to chrono
 
     // Calibration matrix and OpenCV distortion parameters.
     cv::Mat mK;
