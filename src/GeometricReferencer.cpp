@@ -93,9 +93,9 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
   Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_DEBUG);
   Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_DEBUG);
   
+  // TODO: incremental updates dont seem to work
   unique_lock<mutex> lock(mMutexTransform);
   mTgw_current = pose;
-  //mTgw_current = pose*mTgw_current; //TODO: Fix this
   return mTgw_current;
 }
 
@@ -107,10 +107,6 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
   Eigen::Matrix< Eigen::Vector3d::Scalar, Eigen::Dynamic, Eigen::Dynamic> src_points(3, nrof_points);
   Eigen::Matrix< Eigen::Vector3d::Scalar, Eigen::Dynamic, Eigen::Dynamic> dst_points(3, nrof_points);
 
-  //const auto src_offset = mTgw_current*spatials[0]->GetPoseInverse().translation().cast<double>();
-  const auto src_offset = Sophus::Sim3d().translation();
-
-  Verbose::PrintMess("Src Offset: " + to_string(src_offset(0)) + " " + to_string(src_offset(1)) + " " + to_string(src_offset(2)), Verbose::VERBOSITY_DEBUG);
 
   int i, j;
   for (i = 0, j = 0; i < spatials.size(); ++i, j+=measurements)
@@ -129,15 +125,8 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
     dst_points.col(j+2) << e_gis_y(0), e_gis_y(1), e_gis_y(2);
     dst_points.col(j+3) << e_gis_z(0), e_gis_z(1), e_gis_z(2);
 
-    dst_points.col(j) -= src_offset;
-    dst_points.col(j+1) -= src_offset;
-    dst_points.col(j+2) -= src_offset;
-    dst_points.col(j+3) -= src_offset;
-
     const auto Twc = f->GetPoseInverse();
     const auto Twc_sim3 = Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(), Twc.translation().cast<double>());
-    //const auto T_c2g = mTgw_current*Twc_sim3;
-    //const auto T_c2g = Sophus::Sim3d(1.0,mTgw_current.rxso3().so3().unit_quaternion(), mTgw_current.translation())*Twc_sim3;
     const auto T_c2g = Twc_sim3;
 
     auto e_vis_0 = T_c2g* Eigen::Vector4d(0.0, 0.0, 0.0, 1.0);
@@ -149,18 +138,7 @@ Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyF
     src_points.col(j+1) << e_vis_x(0), e_vis_x(1), e_vis_x(2);
     src_points.col(j+2) << e_vis_y(0), e_vis_y(1), e_vis_y(2);
     src_points.col(j+3) << e_vis_z(0), e_vis_z(1), e_vis_z(2);
-
-    src_points.col(j) -= src_offset;
-    src_points.col(j+1) -= src_offset;  
-    src_points.col(j+2) -= src_offset;
-    src_points.col(j+3) -= src_offset;
-
   }
-
-  // for(int c = 0; c < spatials.size(); ++c){
-  //   Verbose::PrintMess("Src: " + to_string(src_points(0,c)) + " " + to_string(src_points(1,c)) + " " + to_string(src_points(2,c)), Verbose::VERBOSITY_NORMAL);
-  //   Verbose::PrintMess("Dst: " + to_string(dst_points(0,c)) + " " + to_string(dst_points(1,c)) + " " + to_string(dst_points(2,c)), Verbose::VERBOSITY_NORMAL);
-  // }
 
 
   // Estimates the aligning transformation from camera to gnss coordinate system
