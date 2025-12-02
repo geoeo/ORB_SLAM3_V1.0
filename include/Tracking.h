@@ -118,21 +118,14 @@ public:
     // Input sensor
     int mSensor;
 
-    // Current Frame
+    // Frames
     std::shared_ptr<Frame> mCurrentFrame;
     std::shared_ptr<Frame> mLastFrame;
     std::shared_ptr<Frame> mInitialFrame;
 
     cv::Mat mImGrayViewer;
-    // Lists used to recover the full camera trajectory at the end of the execution.
-    // Basically we store the reference keyframe for each frame and its relative transformation
-    std::list<Sophus::SE3f> mlRelativeFramePoses;
-    std::list<KeyFrame*> mlpReferences;
-    std::list<double> mlFrameTimes;
-    std::list<bool> mlbLost;
 
     // frames with estimated pose
-    int mTrackedFr;
     bool mbStep;
 
     // True if local mapping is deactivated and we are performing only localization
@@ -141,21 +134,10 @@ public:
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);
 
-    float mMeanTrack;
-    bool mbInitWith3KFs;
-    double t0; // time-stamp of first read frame
-    double t0vis; // time-stamp of first inserted keyframe
-    double t0IMU; // time-stamp of IMU initialization
-    bool mFastInit = false;
-
-
     std::vector<MapPoint*> GetLocalMapMPS();
     void setTrackingState(eTrackingState newState);
     eTrackingState getTrackingState();
-
-
 protected:
-
     // Main tracking function. It is independent of the input sensor.
     void Track();
 
@@ -166,7 +148,6 @@ protected:
 
     void CheckReplacedInLastFrame();
     bool TrackReferenceKeyFrame();
-    void UpdateLastFrame();
     bool TrackWithMotionModel();
     bool PredictStateIMU();
 
@@ -239,6 +220,8 @@ protected:
     KeyFrame* mpReferenceKF;
     std::vector<KeyFrame*> mvpLocalKeyFrames;
     std::vector<MapPoint*> mvpLocalMapPoints;
+
+    std::vector<std::shared_ptr<Frame>> mvpInitFrames;
     
     // System
     System* mpSystem;
@@ -295,8 +278,8 @@ protected:
     bool mbCreatedMap;
 
     //Motion Model
-    bool mbVelocity{false};
-    Sophus::SE3f mVelocity;
+    bool mbVelocity;
+    Sophus::SE3f mLastFramePostDelta;
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
