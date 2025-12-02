@@ -345,12 +345,13 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
         return false;
 
     // Check viewing angle
-    Eigen::Vector3f Pn = pMP->GetNormal();
+    // Eigen::Vector3f Pn = pMP->GetNormal();
 
-    const float viewCos = PO.dot(Pn)/dist;
+    // const float viewCos = PO.dot(Pn)/dist;
+    const auto viewCos = 1.0f;
 
-    if(viewCos<viewingCosLimit)
-        return false;
+    // if(viewCos<viewingCosLimit)
+    //     return false;
 
     // Predict scale in the image
     const int nPredictedLevel = pMP->PredictScale(dist,this);
@@ -620,12 +621,13 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
         return false;
 
     // Check viewing angle
-    Eigen::Vector3f Pn = pMP->GetNormal();
+    // Eigen::Vector3f Pn = pMP->GetNormal();
 
-    const float viewCos = PO.dot(Pn) / dist;
+    // const float viewCos = PO.dot(Pn) / dist;
+    const auto viewCos = 1.0f;
 
-    if(viewCos<viewingCosLimit)
-        return false;
+    // if(viewCos<viewingCosLimit)
+    //     return false;
 
     // Predict scale in the image
     const int nPredictedLevel = pMP->PredictScale(dist,this);

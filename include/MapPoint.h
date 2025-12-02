@@ -81,6 +81,7 @@ public:
 
     cv::Mat GetDescriptor();
 
+    void UpdateDepth();
     void UpdateNormalAndDepth();
 
     float GetMinDistanceInvariance();
@@ -156,7 +157,7 @@ protected:
      std::map<long unsigned int, int> mBackupObservationsId2;
 
      // Mean viewing direction
-     Eigen::Vector3f mNormalVector;
+     Eigen::Vector3f mNormalVector; // TOOD: re-evaluate its use for high alt 
 
      // Best descriptor to fast matching
      cv::Mat mDescriptor;

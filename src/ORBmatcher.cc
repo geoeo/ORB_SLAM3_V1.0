@@ -381,10 +381,10 @@ namespace ORB_SLAM3
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            // Eigen::Vector3f Pn = pMP->GetNormal();
 
-            if(PO.dot(Pn)<0.5*dist)
-                continue;
+            // if(PO.dot(Pn)<0.5*dist)
+            //     continue;
 
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
@@ -495,10 +495,10 @@ namespace ORB_SLAM3
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            // Eigen::Vector3f Pn = pMP->GetNormal();
 
-            if(PO.dot(Pn)<0.5*dist)
-                continue;
+            // if(PO.dot(Pn)<0.5*dist)
+            //     continue;
 
             int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
@@ -1126,13 +1126,13 @@ namespace ORB_SLAM3
             }
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            // Eigen::Vector3f Pn = pMP->GetNormal();
 
-            if(PO.dot(Pn)<0.5*dist3D)
-            {
-                count_normal++;
-                continue;
-            }
+            // if(PO.dot(Pn)<0.5*dist3D)
+            // {
+            //     count_normal++;
+            //     continue;
+            // }
 
             int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
@@ -1279,10 +1279,10 @@ namespace ORB_SLAM3
                 continue;
 
             // Viewing angle must be less than 60 deg
-            Eigen::Vector3f Pn = pMP->GetNormal();
+            // Eigen::Vector3f Pn = pMP->GetNormal();
 
-            if(PO.dot(Pn)<0.5*dist3D)
-                continue;
+            // if(PO.dot(Pn)<0.5*dist3D)
+            //     continue;
 
             // Compute predicted scale level
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF);

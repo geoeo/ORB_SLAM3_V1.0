@@ -318,7 +318,7 @@ void LocalMapping::ProcessNewKeyFrame()
                 if(!pMP->IsInKeyFrame(mpCurrentKeyFrame))
                 {
                     pMP->AddObservation(mpCurrentKeyFrame, i);
-                    pMP->UpdateNormalAndDepth();
+                    pMP->UpdateDepth();
                     pMP->ComputeDistinctiveDescriptors();
                 }
                 else // this can only happen for new stereo points inserted by the Tracking
@@ -697,7 +697,7 @@ void LocalMapping::CreateNewMapPoints()
 
             pMP->ComputeDistinctiveDescriptors();
 
-            pMP->UpdateNormalAndDepth();
+            pMP->UpdateDepth();
 
             mpAtlas->AddMapPoint(pMP);
             mlpRecentAddedMapPoints.push_back(pMP);
@@ -838,7 +838,7 @@ void LocalMapping::SearchInNeighbors()
             if(!pMP->isBad())
             {
                 pMP->ComputeDistinctiveDescriptors();
-                pMP->UpdateNormalAndDepth();
+                pMP->UpdateDepth();
             }
         }
     }

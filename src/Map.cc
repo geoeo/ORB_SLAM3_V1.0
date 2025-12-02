@@ -285,7 +285,7 @@ void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::S
     {
         MapPoint* pMP = *sit;
         pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
     }
 
     mfScale *=s;

@@ -355,7 +355,7 @@ void Optimizer::BundleAdjustment(Map* pMap, const vector<KeyFrame *> &vpKFs, con
         if(nLoopKF==pMap->GetOriginKF()->mnId)
         {
             pMP->SetWorldPos(vPoint->estimate().cast<float>());
-            pMP->UpdateNormalAndDepth();
+            pMP->UpdateDepth();
         }
         else
         {
@@ -747,7 +747,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
         if(nLoopId==0)
         {
             pMP->SetWorldPos(vPoint->estimate().cast<float>());
-            pMP->UpdateNormalAndDepth();
+            pMP->UpdateDepth();
         }
         else
         {
@@ -1349,7 +1349,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
     for_each(execution::seq,lLocalMapPoints.begin(), lLocalMapPoints.end(),[&optimizer, maxKFid](auto pMP) {
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
         pMP->mnBALocalForKF = 0;
     });
  
@@ -2127,7 +2127,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
         Eigen::Matrix<double,3,1> eigCorrectedP3Dw = correctedSwr.map(Srw.map(eigP3Dw));
         pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
 
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
     }
 
     // TODO Check this changeindex
@@ -2456,7 +2456,7 @@ void Optimizer::OptimizeEssentialGraph(KeyFrame* pCurKF, vector<KeyFrame*> &vpFi
             Eigen::Vector3f eigCorrectedP3Dw = Twr * TNonCorrectedwr.inverse() * pMPi->GetWorldPos();
             pMPi->SetWorldPos(eigCorrectedP3Dw);
 
-            pMPi->UpdateNormalAndDepth();
+            pMPi->UpdateDepth();
         }
         else
         {
@@ -3161,7 +3161,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     {
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+iniMPid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
         pMP->mnBALocalForKF = 0;
     });
 
@@ -4000,7 +4000,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdju
 
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMPi->mnId+maxKFid+1));
         pMPi->SetWorldPos(vPoint->estimate().cast<float>());
-        pMPi->UpdateNormalAndDepth();
+        pMPi->UpdateDepth();
     });
 }
 
@@ -4544,7 +4544,7 @@ void Optimizer::MergeInertialBA(KeyFrame* pCurrKF, KeyFrame* pMergeKF, bool *pbS
         MapPoint* pMP = *lit;
         g2o::VertexPointXYZ* vPoint = static_cast<g2o::VertexPointXYZ*>(optimizer.vertex(pMP->mnId+iniMPid+1));
         pMP->SetWorldPos(vPoint->estimate().cast<float>());
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
     }
 
     //pMap->IncreaseChangeIndex();
@@ -5675,7 +5675,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(Map* pMap, KeyFrame* pLoopKF, KeyFram
         Eigen::Matrix<double,3,1> eigCorrectedP3Dw = correctedSwr.map(Srw.map(eigP3Dw));
         pMP->SetWorldPos(eigCorrectedP3Dw.cast<float>());
 
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
     }
     //pMap->IncreaseChangeIndex();
 }

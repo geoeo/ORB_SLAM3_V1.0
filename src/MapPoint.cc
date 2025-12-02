@@ -431,10 +431,46 @@ tuple<int,int> MapPoint::GetIndexInKeyFrame(KeyFrame *pKF)
         return tuple<int,int>(-1,-1);
 }
 
-bool MapPoint::IsInKeyFrame(KeyFrame *pKF)
-{
+    bool MapPoint::IsInKeyFrame(KeyFrame *pKF)
+    {
     unique_lock<mutex> lock(mMutexFeatures);
     return (mObservations.count(pKF));
+}
+
+void MapPoint::UpdateDepth()
+{
+    map<KeyFrame*,tuple<int,int>> observations;
+    KeyFrame* pRefKF;
+    Eigen::Vector3f Pos;
+    {
+        unique_lock<mutex> lock1(mMutexFeatures);
+        unique_lock<mutex> lock2(mMutexPos);
+        if(mbBad)
+            return;
+        observations = mObservations;
+        pRefKF = mpRefKF;
+        Pos = mWorldPos;
+    }
+
+    if(observations.empty())
+        return;
+
+    Eigen::Vector3f PC = Pos - pRefKF->GetTranslationInverse();
+    const float dist = PC.norm();
+
+    tuple<int ,int> indexes = observations[pRefKF];
+    int leftIndex = get<0>(indexes);
+    int level = pRefKF->mvKeysUn->operator[](leftIndex).octave;
+
+    //const int level = pRefKF->mvKeysUn[observations[pRefKF]].octave;
+    const float levelScaleFactor =  pRefKF->mvScaleFactors[level];
+    const int nLevels = pRefKF->mnScaleLevels;
+
+    {
+        unique_lock<mutex> lock3(mMutexPos);
+        mfMaxDistance = dist*levelScaleFactor;
+        mfMinDistance = mfMaxDistance/pRefKF->mvScaleFactors[nLevels-1];
+    }
 }
 
 void MapPoint::UpdateNormalAndDepth()

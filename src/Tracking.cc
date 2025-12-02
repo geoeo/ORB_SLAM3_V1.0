@@ -965,7 +965,7 @@ void Tracking::CreateInitialMapMonocular()
         pMP->AddObservation(pKFcur,mvIniMatches[i]);
 
         pMP->ComputeDistinctiveDescriptors();
-        pMP->UpdateNormalAndDepth();
+        pMP->UpdateDepth();
 
         //Fill Current Frame structure
         mCurrentFrame->mvpMapPoints[mvIniMatches[i]] = pMP;
@@ -1014,7 +1014,7 @@ void Tracking::CreateInitialMapMonocular()
         {
             MapPoint* pMP = vpAllMapPoints[iMP];
             pMP->SetWorldPos(pMP->GetWorldPos()*invMedianDepth);
-            pMP->UpdateNormalAndDepth();
+            pMP->UpdateDepth();
         }
     }
 
