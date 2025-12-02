@@ -21,7 +21,6 @@
 
 #include <KeyFrame.h>
 #include <Atlas.h>
-#include <LoopClosing.h>
 #include <Tracking.h>
 #include <KeyFrameDatabase.h>
 #include <Settings.h>
@@ -163,7 +162,6 @@ protected:
     std::shared_ptr<std::mutex> mMutexPtrGlobalData;
 
     bool InitializeIMU(float priorG = 1e2, float priorA = 1e6, bool bFIBA = false, int itsFIBA = 200, float minTime = 5, size_t nMinKF = 10);
-    void ScaleRefinement();
 
     std::atomic_bool bInitializing;
 

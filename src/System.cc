@@ -278,7 +278,6 @@ void System::Shutdown()
     Verbose::PrintMess("Shutdown", Verbose::VERBOSITY_NORMAL);
 
     mpLocalMapper->RequestFinish();
-    mpLoopCloser->RequestFinish();
 
 }
 

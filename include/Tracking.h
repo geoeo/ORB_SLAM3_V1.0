@@ -26,7 +26,6 @@
 #include <FrameDrawer.h>
 #include <Atlas.h>
 #include <LocalMapping.h>
-#include <LoopClosing.h>
 #include <Frame.h>
 #include <ORBVocabulary.h>
 #include <KeyFrameDatabase.h>
@@ -78,7 +77,7 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
-    void UpdateFrameIMU(const float s, const Sophus::SE3f &T, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame, Map* pMap);
+    void UpdateFrameIMU(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b);
     KeyFrame* GetLastKeyFrame();
 
     void CreateMapInAtlas();
@@ -248,7 +247,6 @@ protected:
     int mMinFrames;
     int mMaxFrames;
 
-    int mnFirstImuFrameId;
     int mnFramesToResetIMU;
 
     // Threshold close/far points

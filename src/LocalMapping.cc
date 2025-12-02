@@ -18,7 +18,6 @@
 
 
 #include <LocalMapping.h>
-#include <LoopClosing.h>
 #include <ORBmatcher.h>
 #include <Optimizer.h>
 #include <Converter.h>
@@ -1220,9 +1219,14 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
-            Sophus::SE3f Tw_gravity(mRw_gravity.cast<float>().transpose(), Eigen::Vector3f::Zero());
-            mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tw_gravity, mScale, true);
-            mpTracker->UpdateFrameIMU(mScale, Tw_gravity, vpKF[0]->GetImuBias(), mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
+            //TODO: Use RxSO3d instead and rename functions
+            const auto Ryw = Sophus::SO3d::fitToSO3(mRw_gravity);
+            const Sophus::Sim3d Tw_gravity(mScale, Ryw.inverse().unit_quaternion(), Eigen::Vector3d::Zero());
+            const auto Tw_gravityf = Tw_gravity.cast<float>();
+            mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tw_gravityf);
+            mpTracker->UpdateFrameIMU(Tw_gravityf, vpKF[0]->GetImuBias());
+
+
         }
 
         // Check if initialization OK
@@ -1262,76 +1266,6 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     return true;
-}
-
-void LocalMapping::ScaleRefinement()
-{
-    // Minimum number of keyframes to compute a solution
-    // Minimum time (seconds) between first and last keyframe to compute a solution. Make the difference between monocular and stereo
-    // unique_lock<mutex> lock0(mMutexImuInit);
-    if (mbResetRequested)
-        return;
-
-    Verbose::PrintMess("scale refinement", Verbose::VERBOSITY_DEBUG);
-    // Retrieve all keyframes in temporal order
-    list<KeyFrame*> lpKF;
-    KeyFrame* pKF = mpCurrentKeyFrame;
-    while(pKF->mPrevKF)
-    {
-        lpKF.push_front(pKF);
-        pKF = pKF->mPrevKF;
-    }
-    lpKF.push_front(pKF);
-    vector<KeyFrame*> vpKF(lpKF.begin(),lpKF.end());
-
-    while(CheckNewKeyFrames())
-    {
-        ProcessNewKeyFrame();
-        vpKF.push_back(mpCurrentKeyFrame);
-        lpKF.push_back(mpCurrentKeyFrame);
-    }
-
-    const int N = vpKF.size();
-
-    mRw_gravity = Eigen::Matrix3d::Identity();
-    mScale=1.0;
-
-    chrono::steady_clock::time_point t0 = chrono::steady_clock::now();
-    Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRw_gravity, mScale);
-    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
-
-    if (mScale<1e-1) // 1e-1
-    {
-        Verbose::PrintMess("scale too small", Verbose::VERBOSITY_DEBUG);
-        bInitializing=false;
-        return;
-    }
-    
-    Sophus::SO3d so3wg(mRw_gravity);
-    // Before this line we are not changing the map
-    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
-    if ((fabs(mScale-1.f)>0.002)||!mbMonocular)
-    {
-        Sophus::SE3f Tgw(mRw_gravity.cast<float>().transpose(),Eigen::Vector3f::Zero());
-        mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tgw, mScale, true);
-        mpTracker->UpdateFrameIMU(mScale,Tgw, mpCurrentKeyFrame->GetImuBias(),mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
-    }
-    chrono::steady_clock::time_point t3 = chrono::steady_clock::now();
-
-    for(list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend=mlNewKeyFrames.end(); lit!=lend; lit++)
-    {
-        (*lit)->SetBadFlag();
-        delete *lit;
-    }
-    mlNewKeyFrames.clear();
-
-    double t_inertial_only = chrono::duration_cast<chrono::duration<double> >(t1 - t0).count();
-
-    // To perform pose-inertial opt w.r.t. last keyframe
-    //mpCurrentKeyFrame->GetMap()->IncreaseChangeIndex();
-
-    return;
 }
 
 bool LocalMapping::IsInitializing() const

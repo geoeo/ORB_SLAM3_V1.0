@@ -258,37 +258,34 @@ bool Map::IsBad()
 }
 
 
-void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::SE3f &T, const float s, const bool bScaledVel)
+void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw)
 {
     unique_lock<mutex> lock(mMutexMap);
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
-    Sophus::SE3f Tyw = T;
-    Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
-    Eigen::Vector3f tyw = Tyw.translation();
+    const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
+    const auto scale = Sim3_Tyw.scale();
 
     for(vector<KeyFrame*>::iterator sit=sortedKeyframes.begin(); sit!=sortedKeyframes.end(); sit++)
     {
         KeyFrame* pKF = *sit;
         Sophus::SE3f Twc = pKF->GetPoseInverse();
-        Twc.translation() *= s;
+        Twc.translation() *= scale;
         Sophus::SE3f Tyc = Tyw*Twc;
         Sophus::SE3f Tcy = Tyc.inverse();
         pKF->SetPose(Tcy);
         Eigen::Vector3f Vw = pKF->GetVelocity();
-        if(!bScaledVel)
-            pKF->SetVelocity(Ryw*Vw);
-        else
-            pKF->SetVelocity(Ryw*Vw*s);
+        pKF->SetVelocity(Tyw.unit_quaternion()*Vw*scale);
     }
     
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
     {
         MapPoint* pMP = *sit;
-        pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
+        const auto oldPos = pMP->GetWorldPos();
+        pMP->SetWorldPos(Sim3_Tyw*oldPos);
         pMP->UpdateDepth();
     }
 
-    mfScale *=s;
+    mfScale *=scale;
     mfScales.push_back(mfScale);
 
     mnMapChange++;

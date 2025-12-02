@@ -1835,35 +1835,52 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::UpdateFrameIMU(const float s, const Sophus::SE3f &T, const IMU::Bias &b, KeyFrame* pCurrentKeyFrame, Map* pMap)
+void Tracking::UpdateFrameIMU(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b)
 {
     mLastBias = b;
-    mpLastKeyFrame = pCurrentKeyFrame;
 
     mLastFrame->SetNewBias(mLastBias);
     mCurrentFrame->SetNewBias(mLastBias);
-    
-    if(mLastFrame->mnId == mLastFrame->mpLastKeyFrame->mnFrameId)
+
+    const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
+    const auto scale = Sim3_Tyw.scale();
+
+    Verbose::PrintMess("UpdateFrameIMU velocity norm: " + to_string(mLastFrame->mpLastKeyFrame->GetVelocity().norm()), Verbose::VERBOSITY_NORMAL);
+
+    // Important: The scale factor is implcicit in the last keyframe data! Therefore this function has to be called after Map::ApplyScaledRotation!
+
+    if(mLastFrame->imuIsPreintegrated())
     {
-        mLastFrame->SetImuPoseVelocity(mLastFrame->mpLastKeyFrame->GetImuRotation(),
-                                      mLastFrame->mpLastKeyFrame->GetImuPosition(),
-                                      mLastFrame->mpLastKeyFrame->GetVelocity());
+        if(mLastFrame->mnId == mLastFrame->mpLastKeyFrame->mnFrameId)
+        {
+            // dt is 0, therefore we can simplify
+            mLastFrame->SetImuPoseVelocity(mLastFrame->mpLastKeyFrame->GetImuRotation(),
+                                        mLastFrame->mpLastKeyFrame->GetImuPosition(),
+                                        mLastFrame->mpLastKeyFrame->GetVelocity());
+        }
+        else
+        {
+            const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+            const Eigen::Vector3f twb1 = mLastFrame->mpLastKeyFrame->GetImuPosition();
+            const Eigen::Matrix3f Rwb1 = mLastFrame->mpLastKeyFrame->GetImuRotation();
+            const Eigen::Vector3f Vwb1 = mLastFrame->mpLastKeyFrame->GetVelocity();
+            float t12 = mLastFrame->mpImuPreintegrated->dT;
+            mLastFrame->SetImuPoseVelocity(IMU::NormalizeRotation(Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaRotation()),
+                                        twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
+                                        Vwb1 + Gz*t12 + Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
+        }
     }
-    else
-    {
-        const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-        const Eigen::Vector3f twb1 = mLastFrame->mpLastKeyFrame->GetImuPosition();
-        const Eigen::Matrix3f Rwb1 = mLastFrame->mpLastKeyFrame->GetImuRotation();
-        const Eigen::Vector3f Vwb1 = mLastFrame->mpLastKeyFrame->GetVelocity();
-        float t12 = mLastFrame->mpImuPreintegrated->dT;
-        mLastFrame->SetImuPoseVelocity(IMU::NormalizeRotation(Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaRotation()),
-                                      twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
-                                      Vwb1 + Gz*t12 + Rwb1*mLastFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
+    else {
+        Sophus::SE3f Twc = mLastFrame->GetPoseInverse();
+        Twc.translation() *= scale;
+        Sophus::SE3f Tyc = Tyw*Twc;
+        Sophus::SE3f Tcy = Tyc.inverse();
+        mLastFrame->SetPose(Tcy);
     }
+
 
     if(mCurrentFrame->imuIsPreintegrated()){
         const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
-
         const Eigen::Vector3f twb1 = mCurrentFrame->mpLastKeyFrame->GetImuPosition();
         const Eigen::Matrix3f Rwb1 = mCurrentFrame->mpLastKeyFrame->GetImuRotation();
         const Eigen::Vector3f Vwb1 = mCurrentFrame->mpLastKeyFrame->GetVelocity();
@@ -1873,14 +1890,12 @@ void Tracking::UpdateFrameIMU(const float s, const Sophus::SE3f &T, const IMU::B
                                         twb1 + Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaPosition(),
                                         Vwb1 + Gz*t12 + Rwb1*mCurrentFrame->mpImuPreintegrated->GetUpdatedDeltaVelocity());
     } else {
-        Sophus::SE3f Tyw = T;
         Sophus::SE3f Twc = mCurrentFrame->GetPoseInverse();
-        Twc.translation() *= s;
+        Twc.translation() *= scale;
         Sophus::SE3f Tyc = Tyw*Twc;
         Sophus::SE3f Tcy = Tyc.inverse();
         mCurrentFrame->SetPose(Tcy);
     }
-    mnFirstImuFrameId = mCurrentFrame->mnId;
 }
 
 void Tracking::NewDataset()
