@@ -1377,7 +1377,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     std::set<long unsigned int> sFixedKfIds;
     std::set<long unsigned int> sAcceptedIds;
     const size_t startFixedKFCount = 1;
-    const size_t endFixedKFCount = 1;
+    const size_t endFixedKFCount = 0;
     const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
     const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
     sFixedKfIds.insert(maxKFId);
