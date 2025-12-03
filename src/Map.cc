@@ -268,12 +268,12 @@ void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::S
     for(vector<KeyFrame*>::iterator sit=sortedKeyframes.begin(); sit!=sortedKeyframes.end(); sit++)
     {
         KeyFrame* pKF = *sit;
-        Sophus::SE3f Twc = pKF->GetPoseInverse();
+        auto Twc = pKF->GetPoseInverse();
         Twc.translation() *= scale;
-        Sophus::SE3f Tyc = Tyw*Twc;
-        Sophus::SE3f Tcy = Tyc.inverse();
+        const auto Tyc = Tyw*Twc;
+        const auto Tcy = Tyc.inverse();
         pKF->SetPose(Tcy);
-        Eigen::Vector3f Vw = pKF->GetVelocity();
+        const auto Vw = pKF->GetVelocity();
         pKF->SetVelocity(Tyw.unit_quaternion()*Vw*scale);
     }
     

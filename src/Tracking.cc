@@ -1838,7 +1838,6 @@ void Tracking::InformOnlyTracking(const bool &flag)
 void Tracking::UpdateFrameIMU(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b)
 {
     mLastBias = b;
-
     mLastFrame->SetNewBias(mLastBias);
     mCurrentFrame->SetNewBias(mLastBias);
 
