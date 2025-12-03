@@ -377,8 +377,11 @@ namespace ORB_SLAM3
             Eigen::Vector3f PO = p3Dw-Ow;
             const float dist = PO.norm();
 
-            if(dist<minDistance || dist>maxDistance)
+            if(dist<minDistance || dist>maxDistance){
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 continue;
+            }
+
 
             // Viewing angle must be less than 60 deg
             // Eigen::Vector3f Pn = pMP->GetNormal();
@@ -491,8 +494,10 @@ namespace ORB_SLAM3
             Eigen::Vector3f PO = p3Dw-Ow;
             const float dist = PO.norm();
 
-            if(dist<minDistance || dist>maxDistance)
+            if(dist<minDistance || dist>maxDistance){
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 continue;
+            }
 
             // Viewing angle must be less than 60 deg
             // Eigen::Vector3f Pn = pMP->GetNormal();
@@ -1116,6 +1121,7 @@ namespace ORB_SLAM3
 
             // Depth must be inside the scale pyramid of the image
             if(dist3D<minDistance || dist3D>maxDistance) {
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 count_dist++;
                 continue;
             }
@@ -1270,8 +1276,10 @@ namespace ORB_SLAM3
             Eigen::Vector3f PO = p3Dw-Ow;
             const float dist3D = PO.norm();
 
-            if(dist3D<minDistance || dist3D>maxDistance)
+            if(dist3D<minDistance || dist3D>maxDistance){
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 continue;
+            }
 
             // Viewing angle must be less than 60 deg
             // Eigen::Vector3f Pn = pMP->GetNormal();
@@ -1410,8 +1418,10 @@ namespace ORB_SLAM3
             const float dist3D = p3Dc2.norm();
 
             // Depth must be inside the scale invariance region
-            if(dist3D<minDistance || dist3D>maxDistance )
+            if(dist3D<minDistance || dist3D>maxDistance){
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 continue;
+            }
 
             // Compute predicted octave
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF2);
@@ -1490,8 +1500,10 @@ namespace ORB_SLAM3
             const float dist3D = p3Dc1.norm();
 
             // Depth must be inside the scale pyramid of the image
-            if(dist3D<minDistance || dist3D>maxDistance)
+            if(dist3D<minDistance || dist3D>maxDistance){
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                 continue;
+            }
 
             // Compute predicted octave
             const int nPredictedLevel = pMP->PredictScale(dist3D,pKF1);
@@ -1738,8 +1750,10 @@ namespace ORB_SLAM3
                     const float minDistance = pMP->GetMinDistanceInvariance();
 
                     // Depth must be inside the scale pyramid of the image
-                    if(dist3D<minDistance || dist3D>maxDistance)
+                    if(dist3D<minDistance || dist3D>maxDistance){
+                        Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
                         continue;
+                    }
 
                     int nPredictedLevel = pMP->PredictScale(dist3D,CurrentFrame.get());
 

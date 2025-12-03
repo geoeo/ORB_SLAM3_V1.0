@@ -143,7 +143,7 @@ bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
     return !b_miss_params;
 }
 
-void MapDrawer::DrawMapPoints()
+void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
 {
     Map* pActiveMap = mpAtlas->GetCurrentMap();
     if(!pActiveMap)
@@ -151,6 +151,7 @@ void MapDrawer::DrawMapPoints()
 
     const vector<MapPoint*> &vpMPs = pActiveMap->GetAllMapPoints();
     const vector<MapPoint*> &vpRefMPs = pActiveMap->GetReferenceMapPoints();
+
 
     set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
@@ -166,7 +167,7 @@ void MapDrawer::DrawMapPoints()
         if(vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
             continue;
         Eigen::Matrix<float,3,1> pos = vpMPs[i]->GetWorldPos();
-        glVertex3f(pos(0),pos(1),pos(2));
+        glVertex3f(pos(0)-coordinate_offset(0),pos(1)-coordinate_offset(1),pos(2)-coordinate_offset(2));
     }
     glEnd();
 
@@ -178,14 +179,14 @@ void MapDrawer::DrawMapPoints()
         if((*sit)->isBad())
             continue;
         Eigen::Matrix<float,3,1> pos = (*sit)->GetWorldPos();
-        glVertex3f(pos(0),pos(1),pos(2));
+        glVertex3f(pos(0)-coordinate_offset(0),pos(1)-coordinate_offset(1),pos(2)-coordinate_offset(2));
 
     }
 
     glEnd();
 }
 
-void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba)
+void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba, const Eigen::Vector3f &coordinate_offset)
 {
 
 
@@ -210,6 +211,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         {
             KeyFrame* pKF = vpKFs[i];
             Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
+            Twc.block<3,1>(0,3) -= coordinate_offset;
             unsigned int index_color = pKF->mnOriginMapId;
 
             glPushMatrix();
@@ -286,14 +288,14 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         {
             // Covisibility Graph
             const vector<KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
-            Eigen::Vector3f twc = vpKFs[i]->GetTranslationInverse();
+            Eigen::Vector3f twc = vpKFs[i]->GetTranslationInverse() - coordinate_offset;
             if(!vCovKFs.empty())
             {
                 for(vector<KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
                 {
                     if((*vit)->mnId<vpKFs[i]->mnId)
                         continue;
-                    Eigen::Vector3f twc2 = (*vit)->GetTranslationInverse();
+                    Eigen::Vector3f twc2 = (*vit)->GetTranslationInverse() - coordinate_offset;
                     glVertex3f(twc(0),twc(1),twc(2));
                     glVertex3f(twc2(0),twc2(1),twc2(2));
                 }
@@ -303,7 +305,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             KeyFrame* pParent = vpKFs[i]->GetParent();
             if(pParent)
             {
-                Eigen::Vector3f twcParent = pParent->GetTranslationInverse();
+                Eigen::Vector3f twcParent = pParent->GetTranslationInverse() - coordinate_offset;
                 glVertex3f(twc(0),twc(1),twc(2));
                 glVertex3f(twcParent(0),twcParent(1),twcParent(2));
             }
@@ -314,7 +316,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             {
                 if((*sit)->mnId<vpKFs[i]->mnId)
                     continue;
-                Eigen::Vector3f twcLoop = (*sit)->GetTranslationInverse();
+                Eigen::Vector3f twcLoop = (*sit)->GetTranslationInverse() - coordinate_offset;
                 glVertex3f(twc(0),twc(1),twc(2));
                 glVertex3f(twcLoop(0),twcLoop(1),twcLoop(2));
             }
@@ -333,11 +335,11 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         for(size_t i=0; i<vpKFs.size(); i++)
         {
             KeyFrame* pKFi = vpKFs[i];
-            Eigen::Vector3f twc = pKFi->GetTranslationInverse();
+            Eigen::Vector3f twc = pKFi->GetTranslationInverse() - coordinate_offset;
             KeyFrame* pNext = pKFi->mNextKF;
             if(pNext)
             {
-                Eigen::Vector3f twcNext = pNext->GetTranslationInverse();
+                Eigen::Vector3f twcNext = pNext->GetTranslationInverse() - coordinate_offset;
                 glVertex3f(twc(0),twc(1),twc(2));
                 glVertex3f(twcNext(0),twcNext(1),twcNext(2));
             }
@@ -361,6 +363,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             {
                 KeyFrame* pKF = vpKFs[i];
                 Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
+                Twc.block<3,1>(0,3) -= coordinate_offset;
                 unsigned int index_color = pKF->mnOriginMapId;
 
                 glPushMatrix();

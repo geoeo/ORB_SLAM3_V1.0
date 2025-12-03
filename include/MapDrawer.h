@@ -24,6 +24,7 @@
 #include <KeyFrame.h>
 #include <Settings.h>
 #include <pangolin/pangolin.h>
+#include <Eigen/Core>
 
 #include <mutex>
 
@@ -43,8 +44,8 @@ public:
 
     Atlas* mpAtlas;
 
-    void DrawMapPoints();
-    void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba);
+    void DrawMapPoints(const Eigen::Vector3f &coordinate_offset);
+    void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba, const Eigen::Vector3f &coordinate_offset);
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
     void SetReferenceKeyFrame(KeyFrame *pKF);

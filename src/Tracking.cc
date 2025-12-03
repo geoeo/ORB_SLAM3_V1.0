@@ -672,6 +672,9 @@ void Tracking::MonocularInitialization()
             mInitialFrame = std::make_shared<Frame>(mCurrentFrame);
             mInitialFrame->SetPose(Sophus::SE3f());
 
+            if(mpViewer)
+                mpViewer->SetFixedTranslation(mInitialFrame->GetPoseInverse().translation().cast<float>());
+
             if (mSensor == System::IMU_MONOCULAR)
             {
                 if(mpImuPreintegratedFromLastKF)
@@ -1889,6 +1892,15 @@ void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const optional<I
         Sophus::SE3f Tcy = Tyc.inverse();
         mCurrentFrame->SetPose(Tcy);
     }
+
+    Sophus::SE3f Twc = mInitialFrame->GetPoseInverse();
+    Twc.translation() *= scale;
+    Sophus::SE3f Tyc = Tyw*Twc;
+    Sophus::SE3f Tcy = Tyc.inverse();
+    mInitialFrame->SetPose(Tcy);
+
+    if(mpViewer)
+        mpViewer->SetFixedTranslation(mInitialFrame->GetPoseInverse().translation().cast<float>());
 }
 
 void Tracking::NewDataset()

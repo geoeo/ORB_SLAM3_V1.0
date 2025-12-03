@@ -27,8 +27,9 @@ namespace ORB_SLAM3
 {
 
 Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings):
-    both(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking),
-    mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
+    both(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
+    mFixedTranslation(Eigen::Vector3f::Zero()), mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), 
+    mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
 {
     if(settings){
         newParameterLoader(settings);
@@ -308,10 +309,11 @@ void Viewer::Run()
         d_cam.Activate(s_cam);
         glClearColor(1.0f,1.0f,1.0f,1.0f);
         mpMapDrawer->DrawCurrentCamera(Twc);
+
         if(menuShowKeyFrames || menuShowGraph || menuShowInertialGraph || menuShowOptLba)
-            mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba);
+            mpMapDrawer->DrawKeyFrames(menuShowKeyFrames,menuShowGraph, menuShowInertialGraph, menuShowOptLba, mFixedTranslation);
         if(menuShowPoints)
-            mpMapDrawer->DrawMapPoints();
+            mpMapDrawer->DrawMapPoints(mFixedTranslation);
 
         pangolin::FinishFrame();
 
@@ -389,6 +391,11 @@ void Viewer::Run()
     }
 
     SetFinish();
+}
+
+void Viewer::SetFixedTranslation(const Eigen::Vector3f& fixedTranslation)
+{
+    mFixedTranslation = fixedTranslation;
 }
 
 void Viewer::RequestFinish()

@@ -24,6 +24,7 @@
 #include <Tracking.h>
 #include <System.h>
 #include <Settings.h>
+#include <Eigen/Core>
 
 #include <mutex>
 
@@ -60,7 +61,7 @@ public:
 
     void Release();
 
-    //void SetTrackingPause();
+    void SetFixedTranslation(const Eigen::Vector3f& fixedTranslation);
 
     bool both;
 private:
@@ -79,6 +80,7 @@ private:
     float mImageViewerScale;
 
     float mViewpointX, mViewpointY, mViewpointZ, mViewpointF;
+    Eigen::Vector3f mFixedTranslation;
 
     bool CheckFinish();
     void SetFinish();
