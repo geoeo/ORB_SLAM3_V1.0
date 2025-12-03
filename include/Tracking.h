@@ -77,7 +77,7 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
-    void UpdateFrameIMU(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b);
+    void UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b);
     KeyFrame* GetLastKeyFrame();
 
     void CreateMapInAtlas();
@@ -184,9 +184,6 @@ protected:
 
     // Imu calibration parameters
     IMU::Calib *mpImuCalib;
-
-    // Last Bias Estimation (at keyframe creation)
-    IMU::Bias mLastBias;
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.

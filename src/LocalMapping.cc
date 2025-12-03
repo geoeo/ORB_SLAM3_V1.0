@@ -1219,14 +1219,11 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
         //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
         if ((fabs(mScale - 1.f) > 0.00001) || !mbMonocular) {
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
-            //TODO: rename functions
             const auto Ryw = Sophus::SO3d::fitToSO3(mRw_gravity.transpose());
             const Sophus::Sim3d Tw_gravity(mScale, Ryw.unit_quaternion(), Eigen::Vector3d::Zero());
             const auto Tw_gravityf = Tw_gravity.cast<float>();
-            mpAtlas->GetCurrentMap()->ApplyScaledRotation(vpKF, Tw_gravityf);
-            mpTracker->UpdateFrameIMU(Tw_gravityf, vpKF[0]->GetImuBias());
-
-
+            mpAtlas->GetCurrentMap()->UpdateKFsAndMap(vpKF, Tw_gravityf);
+            mpTracker->UpdateLocalFrames(Tw_gravityf, vpKF.front()->GetImuBias());
         }
 
         // Check if initialization OK

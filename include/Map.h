@@ -85,7 +85,7 @@ public:
     void SetImuInitialized();
     bool isImuInitialized();
 
-    void ApplyScaledRotation(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw);
+    void UpdateKFsAndMap(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw);
     void ApplyGNSSTransformation(const Sophus::SE3f &T);
 
     void SetInertialSensor();

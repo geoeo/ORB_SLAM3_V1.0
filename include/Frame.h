@@ -236,8 +236,6 @@ public:
     static float mfGridElementHeightInv;
     std::vector<std::vector<std::size_t>> mGrid; // Represent a 2D grid [rows][cols] of vectors with 1D index
 
-    IMU::Bias mPredBias;
-
     // IMU bias
     IMU::Bias mImuBias;
 

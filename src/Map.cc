@@ -258,7 +258,7 @@ bool Map::IsBad()
 }
 
 
-void Map::ApplyScaledRotation(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw)
+void Map::UpdateKFsAndMap(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw)
 {
     unique_lock<mutex> lock(mMutexMap);
     // Body position (IMU) of first keyframe is fixed to (0,0,0)

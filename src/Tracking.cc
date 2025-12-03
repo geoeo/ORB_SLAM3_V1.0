@@ -320,7 +320,6 @@ bool Tracking::PredictStateIMU()
 
 
         mCurrentFrame->mImuBias = mpLastKeyFrame->GetImuBias();
-        mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
         return true;
     }
     else
@@ -342,9 +341,7 @@ bool Tracking::PredictStateIMU()
             Verbose::PrintMess("No Update branch: IMU Prediction crashed!" , Verbose::VERBOSITY_NORMAL);
             return false;
         }
-
         mCurrentFrame->mImuBias = mLastFrame->mImuBias;
-        mCurrentFrame->mPredBias = mCurrentFrame->mImuBias;
         return true;
     }
 
@@ -1835,18 +1832,17 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::UpdateFrameIMU(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b)
+void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b)
 {
-    mLastBias = b;
-    mLastFrame->SetNewBias(mLastBias);
-    mCurrentFrame->SetNewBias(mLastBias);
+    mLastFrame->SetNewBias(b);
+    mCurrentFrame->SetNewBias(b);
 
     const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
     const auto scale = Sim3_Tyw.scale();
 
-    Verbose::PrintMess("UpdateFrameIMU velocity norm: " + to_string(mLastFrame->mpLastKeyFrame->GetVelocity().norm()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("UpdateLocalFrames velocity norm: " + to_string(mLastFrame->mpLastKeyFrame->GetVelocity().norm()), Verbose::VERBOSITY_NORMAL);
 
-    // Important: The scale factor is implcicit in the last keyframe data! Therefore this function has to be called after Map::ApplyScaledRotation!
+    // Important: The sim3 transformation factor is implcicit in the last keyframe data! Therefore this function has to be called after Map::UpdateKFsAndMap!
 
     if(mLastFrame->imuIsPreintegrated())
     {
