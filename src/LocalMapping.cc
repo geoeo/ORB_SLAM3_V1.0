@@ -1212,8 +1212,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
             const auto Ryw = Sophus::SO3d::fitToSO3(mRw_gravity.transpose());
             const Sophus::Sim3d Tw_gravity(mScale, Ryw.unit_quaternion(), Eigen::Vector3d::Zero());
             const auto Tw_gravityf = Tw_gravity.cast<float>();
-            mpAtlas->GetCurrentMap()->UpdateKFsAndMap(vpKF, Tw_gravityf);
-            mpTracker->UpdateLocalFrames(Tw_gravityf, vpKF.front()->GetImuBias());
+            UpdateTrackerAndMapCoordianateFrames(vpKF, Tw_gravityf, vpKF.front()->GetImuBias());
         }
 
         // Check if initialization OK
@@ -1253,6 +1252,11 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     // mpAtlas->GetCurrentMap()->IncreaseChangeIndex();
 
     return true;
+}
+
+void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option){
+    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw);
+    mpTracker->UpdateCoordianteFrames(Sim3_Tyw, b_option);
 }
 
 bool LocalMapping::IsInitializing() const

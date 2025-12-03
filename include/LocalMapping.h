@@ -120,6 +120,7 @@ protected:
     void MapPointCulling();
     void SearchInNeighbors();
     void KeyFrameCulling();
+    void UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
 
     System *mpSystem;
 

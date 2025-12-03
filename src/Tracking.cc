@@ -1829,7 +1829,7 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const optional<IMU::Bias> &b_option)
+void Tracking::UpdateCoordianteFrames(const Sophus::Sim3f &Sim3_Tyw, const optional<IMU::Bias> &b_option)
 {
     if(b_option.has_value())
     {
@@ -1841,9 +1841,9 @@ void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const optional<I
     const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
     const auto scale = Sim3_Tyw.scale();
 
-    Verbose::PrintMess("UpdateLocalFrames velocity norm: " + to_string(mLastFrame->mpLastKeyFrame->GetVelocity().norm()), Verbose::VERBOSITY_NORMAL);
+    Verbose::PrintMess("UpdateCoordianteFrames velocity norm: " + to_string(mLastFrame->mpLastKeyFrame->GetVelocity().norm()), Verbose::VERBOSITY_NORMAL);
 
-    // Important: The sim3 transformation factor is implcicit in the last keyframe data! Therefore this function has to be called after Map::UpdateKFsAndMap!
+    // Important: The sim3 transformation factor is implcicit in the last keyframe data! Therefore this function has to be called after Map::UpdateKFsAndMapCoordianteFrames!
 
     if(mLastFrame->imuIsPreintegrated())
     {
