@@ -1670,12 +1670,6 @@ void Tracking::Reset(bool bLocMap)
         Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
     }
 
-
-    // Reset Loop Closing
-    Verbose::PrintMess("Reseting Loop Closing...", Verbose::VERBOSITY_NORMAL);
-    //mpLoopClosing->RequestReset();
-    Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
-
     // Clear BoW Database
     Verbose::PrintMess("Reseting Database...", Verbose::VERBOSITY_NORMAL);
     mpKeyFrameDB->clear();
@@ -1832,10 +1826,14 @@ void Tracking::InformOnlyTracking(const bool &flag)
     mbOnlyTracking = flag;
 }
 
-void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b)
+void Tracking::UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const optional<IMU::Bias> &b_option)
 {
-    mLastFrame->SetNewBias(b);
-    mCurrentFrame->SetNewBias(b);
+    if(b_option.has_value())
+    {
+        IMU::Bias b = b_option.value();
+        mLastFrame->SetNewBias(b);
+        mCurrentFrame->SetNewBias(b);
+    }
 
     const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
     const auto scale = Sim3_Tyw.scale();

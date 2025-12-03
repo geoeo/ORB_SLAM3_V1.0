@@ -1066,15 +1066,6 @@ void LocalMapping::RequestReset()
     
     Verbose::PrintMess("LM: Map reset requested", Verbose::VERBOSITY_NORMAL);
     mbResetRequested = true;
-    Verbose::PrintMess("LM: Map reset, waiting...", Verbose::VERBOSITY_DEBUG);
-
-    while(true)
-    {
-        if(!mbResetRequested)
-            break;
-        this_thread::sleep_for(chrono::microseconds(3000));
-    }
-    Verbose::PrintMess("LM: Map reset request, Done", Verbose::VERBOSITY_DEBUG);
 }
 
 void LocalMapping::ResetIfRequested()
@@ -1090,9 +1081,8 @@ void LocalMapping::ResetIfRequested()
         mbNotBA2 = true;
         mbNotBA1 = true;
         mbBadImu=false;
-
-        mbResetRequested = false;
         mGeometricReferencer.clear();
+        mbResetRequested = false;
 
         Verbose::PrintMess("LM: End reseting Local Mapping...", Verbose::VERBOSITY_NORMAL);
     }

@@ -77,7 +77,7 @@ public:
     // Use this function if you have deactivated local mapping and you only want to localize the camera.
     void InformOnlyTracking(const bool &flag);
 
-    void UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const IMU::Bias &b);
+    void UpdateLocalFrames(const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
     KeyFrame* GetLastKeyFrame();
 
     void CreateMapInAtlas();
