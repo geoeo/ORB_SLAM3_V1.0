@@ -1374,18 +1374,20 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // vAllKfs = newKfs;
     
     const auto maxKFId = vAllKfs.back()->mnId;
+    const auto minKFId = vAllKfs.front()->mnId;
+
     std::set<long unsigned int> sFixedKfIds;
     std::set<long unsigned int> sAcceptedIds;
-    const size_t startFixedKFCount = 1;
+    const size_t startFixedKFCount = 0;
     const size_t endFixedKFCount = 0;
     const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
     const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
-    sFixedKfIds.insert(maxKFId);
-    for(auto i = 0; i < minStartingFixedKds; i++) 
-        sFixedKfIds.insert(vAllKfs[i]->mnId);
+    //sFixedKfIds.insert(maxKFId);
+    // for(auto i = 0; i < minStartingFixedKds; i++) 
+    //     sFixedKfIds.insert(vAllKfs[i]->mnId);
 
-    for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
-        sFixedKfIds.insert(vAllKfs[i]->mnId);
+    // for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
+    //     sFixedKfIds.insert(vAllKfs[i]->mnId);
     
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
@@ -1514,7 +1516,6 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
                     obs << kpUn.pt.x, kpUn.pt.y;
 
                     auto e = new ORB_SLAM3::EdgeSE3ProjectXYZ();
-
                     e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
                     e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->mnId)));
                     e->setMeasurement(obs);
@@ -1544,7 +1545,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     optimizer.initializeOptimization();
     optimizer.setVerbose(false);
-    optimizer.optimize(100);
+    optimizer.optimize(800);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size());
