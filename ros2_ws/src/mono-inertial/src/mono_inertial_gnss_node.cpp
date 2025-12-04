@@ -165,8 +165,8 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
       local_mapper.resetTimeThresh = 500.0;
-      local_mapper.minTimeForImuInit = 40.0;
-      local_mapper.minTimeForVIBA1 = 50.0;
+      local_mapper.minTimeForImuInit = 5.0;
+      local_mapper.minTimeForVIBA1 = 8.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
       local_mapper.itsFIBAInit = 5;
@@ -175,8 +175,8 @@ class SlamNode : public rclcpp::Node
       local_mapper.useGNSS = true;
       local_mapper.useGNSSBA = true;
       local_mapper.writeGNSSData = true;
-      local_mapper.georefUpdate = true;
-      local_mapper.minGeorefFrames = 60;
+      local_mapper.georefUpdate = false;
+      local_mapper.minGeorefFrames = 30;
 
       
       // F6
@@ -189,7 +189,7 @@ class SlamNode : public rclcpp::Node
       tracker_settings.frameGridCols = 64;
       tracker_settings.frameGridRows = 48;
       tracker_settings.maxLocalKFCount = 15;
-      tracker_settings.featureThresholdForKF = 100;
+      tracker_settings.featureThresholdForKF = 400;
       tracker_settings.maxFrames = 10;
 
       const double clahe_clip_limit = 80.0;

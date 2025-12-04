@@ -291,7 +291,6 @@ protected:
     Sophus::Sim3d mTgc;
 
     // IMU position
-    Eigen::Vector3f mOwb;
     // Velocity (Only used for inertial SLAM)
     Eigen::Vector3f mVw;
     bool mbHasVelocity;

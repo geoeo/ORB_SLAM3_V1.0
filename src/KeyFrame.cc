@@ -98,11 +98,6 @@ void KeyFrame::SetPose(const Sophus::SE3f &Tcw)
 
     mTcw = Tcw;
     mTwc = mTcw.inverse();
-
-    if (mImuCalib.mbIsSet)
-    {
-        mOwb = mTwc.rotationMatrix() * mImuCalib.mTcb.translation() + mTwc.translation();
-    }
 }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw)
@@ -132,7 +127,7 @@ Eigen::Vector3f KeyFrame::GetTranslationInverse(){
 Eigen::Vector3f KeyFrame::GetImuPosition()
 {
     unique_lock<mutex> lock(mMutexPose);
-    return mOwb;
+    return mTwc.rotationMatrix() * mImuCalib.mTcb.translation() + mTwc.translation();
 }
 
 Eigen::Matrix3f KeyFrame::GetImuRotation()

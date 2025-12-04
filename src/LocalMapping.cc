@@ -113,9 +113,28 @@ void LocalMapping::Run()
                             Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
                         }
 
+                        //TODO: This is not the correct place for this, as the GeroefUpdate would apply the transformation twice
+                        //TODO: Check for submitted but to processed KFs
+                        const auto sortedKFs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);    
+                        const auto georef_transform = mGeometricReferencer.getCurrentTransform().cast<float>();
+                        //const Eigen::Quaternionf rotation(Eigen::AngleAxisf(0.5*EIGEN_PI,Eigen::Vector3f::UnitZ()));
+                        //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, Sophus::SO3f().unit_quaternion(), georef_transform.translation());
+                        //const Sophus::Sim3f Sim3_Tyw_noscale(1.5f, Sophus::SO3f(rotation).unit_quaternion(), Sophus::Vector3f::Zero());
+                        const Sophus::Sim3f Sim3_Tyw_noscale(georef_transform.scale(), georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
+                        //TODO: seems to be a problem with translation
+                        //const auto b_transformed = georef_transform.rxso3().quaternion()*sortedKFs.front()->GetImuBias();
+
+                        
+                        while(CheckNewKeyFrames())
+                            ProcessNewKeyFrame();
+                        UpdateTrackerAndMapCoordianateFrames(sortedKFs, Sim3_Tyw_noscale, {});
+                        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 20, false, 0, NULL, false, 0, 0);
                         writeKFAfterGBACount = 1;
                     }
                 }
+
+
+
             }
 
             mbAbortBA = false;
@@ -1211,6 +1230,8 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
             Verbose::PrintMess("InitializeIMU - Scale Update", Verbose::VERBOSITY_DEBUG);
             const auto Ryw = Sophus::SO3d::fitToSO3(mRw_gravity.transpose());
             const Sophus::Sim3d Tw_gravity(mScale, Ryw.unit_quaternion(), Eigen::Vector3d::Zero());
+            //const Sophus::Sim3d Tw_gravity(mScale, Ryw.unit_quaternion(), Eigen::Vector3d(1812328, 1812328, 1812328));
+            //const Sophus::Sim3d Tw_gravity(mScale, Ryw.unit_quaternion(), Eigen::Vector3d(18123, 18123, 18123));
             const auto Tw_gravityf = Tw_gravity.cast<float>();
             UpdateTrackerAndMapCoordianateFrames(vpKF, Tw_gravityf, vpKF.front()->GetImuBias());
         }
@@ -1254,9 +1275,14 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     return true;
 }
 
-void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option){
-    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw);
+void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias>& b_option){
+    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw, b_option);
+    for(auto kf : sortedKeyframes){
+        if (kf->mpImuPreintegrated)
+        kf->mpImuPreintegrated->Reintegrate();
+    }
     mpTracker->UpdateCoordianteFrames(Sim3_Tyw, b_option);
+
 }
 
 bool LocalMapping::IsInitializing() const

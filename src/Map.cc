@@ -258,7 +258,7 @@ bool Map::IsBad()
 }
 
 
-void Map::UpdateKFsAndMapCoordianteFrames(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw)
+void Map::UpdateKFsAndMapCoordianteFrames(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option)
 {
     unique_lock<mutex> lock(mMutexMap);
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
@@ -274,7 +274,11 @@ void Map::UpdateKFsAndMapCoordianteFrames(vector<KeyFrame*> sortedKeyframes, con
         const auto Tcy = Tyc.inverse();
         pKF->SetPose(Tcy);
         const auto Vw = pKF->GetVelocity();
-        pKF->SetVelocity(Tyw.unit_quaternion()*Vw*scale);
+        pKF->SetVelocity(Tyw.unit_quaternion()*Vw*scale);        
+        if (b_option.has_value()) {
+            pKF->SetNewBias(b_option.value());
+        }
+
     }
     
     for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)

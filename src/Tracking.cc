@@ -466,12 +466,25 @@ void Tracking::Track()
                     bOK = TrackWithMotionModel();
                     if(!bOK)
                     	bOK = TrackReferenceKeyFrame();
+                    //TODO: Try Gnss fallback here
+                    if(mpLocalMapper->isGeorefInitialized() && !bOK)
+                    {
+                        Verbose::PrintMess("TRACK: Track with GNSS fallback", Verbose::VERBOSITY_NORMAL);
+                        //const auto georef_translation = mpLocalMapper->getGeorefTransform().translation();
+                        // Coordiante Frames should be aligned, we only need to set the translation
+                        const auto gnssDeltaTranslation = mCurrentFrame->GetGNSS() - mInitialFrame->GetGNSS();
+                        auto currentFramePoseInverse = mCurrentFrame->GetPoseInverse();
+                        currentFramePoseInverse.translation() = gnssDeltaTranslation;
+                        mCurrentFrame->SetPose(currentFramePoseInverse.inverse());
+                        bOK = true;
+                    }
+
                 }
 
 
                 if (!bOK)
                 {
-
+                    Verbose::PrintMess("TRACK: Track with motion model failed", Verbose::VERBOSITY_NORMAL);
                     setTrackingState(RECENTLY_LOST);
                     mTimeStampLost = mCurrentFrame->mTimeStamp;
                 }
@@ -516,8 +529,27 @@ void Tracking::Track()
                 bOK = TrackLocalMap();
                 if(!bOK){
                     Verbose::PrintMess("Fail to track local map!", Verbose::VERBOSITY_NORMAL);
-                    setTrackingState(LOST);
-
+                    if(mpLocalMapper->isGeorefInitialized() && !bOK)
+                    {
+                        Verbose::PrintMess("TRACK: Track with GNSS fallback - 2", Verbose::VERBOSITY_NORMAL);
+                        //const auto georef_translation = mpLocalMapper->getGeorefTransform().translation();
+                        // Coordiante Frames should be aligned, we only need to set the translation
+                        const Eigen::Vector3f gnssDeltaTranslation = mCurrentFrame->GetGNSS() - mInitialFrame->GetGNSS();
+                        Verbose::PrintMess("TRACK: Current Pose Inverse\n ", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("X: " +  to_string(mCurrentFrame->GetPoseInverse().translation()(0)) + " Y: " + to_string(mCurrentFrame->GetPoseInverse().translation()(1)) + "Z: " + to_string(mCurrentFrame->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("New X: " +  to_string(gnssDeltaTranslation(0)) + " Y: " + to_string(gnssDeltaTranslation(1)) + " Z: " + to_string(gnssDeltaTranslation(2)), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Current GNSS X: " +  to_string(mCurrentFrame->GetGNSS()(0)) + " Y: " + to_string(mCurrentFrame->GetGNSS()(1)) + " Z: " + to_string(mCurrentFrame->GetGNSS()(2)), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Initial GNSS X: " +  to_string(mInitialFrame->GetGNSS()(0)) + " Y: " + to_string(mInitialFrame->GetGNSS()(1)) + " Z: " + to_string(mInitialFrame->GetGNSS()(2)), Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Latest KF GNSS X: " +  to_string(mpLastKeyFrame->GetPoseInverse().translation()(0)) + " Y: " + to_string(mpLastKeyFrame->GetPoseInverse().translation()(1)) + " Z: " + to_string(mpLastKeyFrame->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        //Try to estimate transform between vanilla GNSS and camera aligned GNSS
+                        
+                        auto currentFramePoseInverse = mCurrentFrame->GetPoseInverse();
+                        currentFramePoseInverse.translation() = gnssDeltaTranslation;
+                        mCurrentFrame->SetPose(currentFramePoseInverse.inverse());
+                        const auto inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame);
+                        bOK = true;
+                    }
+                    //setTrackingState(LOST);
                 }
 
             }
@@ -696,7 +728,7 @@ void Tracking::MonocularInitialization()
         // If time difference is too large, reset init try
         const auto timeDiff = mCurrentFrame->mTimeStamp-mInitialFrame->mTimeStamp;
         mvpInitFrames.push_back(mCurrentFrame);
-        if (timeDiff > 2.0f) // 2 seconds
+        if (timeDiff > 3.0f) // 3 seconds
         {
             mbReadyToInitializate = false;
             mvpInitFrames.clear();
