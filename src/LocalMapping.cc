@@ -120,16 +120,66 @@ void LocalMapping::Run()
                         //const Eigen::Quaternionf rotation(Eigen::AngleAxisf(0.5*EIGEN_PI,Eigen::Vector3f::UnitZ()));
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, Sophus::SO3f().unit_quaternion(), georef_transform.translation());
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.5f, Sophus::SO3f(rotation).unit_quaternion(), Sophus::Vector3f::Zero());
-                        const Sophus::Sim3f Sim3_Tyw_noscale(georef_transform.scale(), georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
+                        //const Sophus::Sim3f Sim3_Tyw_noscale(georef_transform.scale(), georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
+                        const Sophus::Sim3f Sim3_Tyw_noscale(1.0, georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
                         //TODO: seems to be a problem with translation
                         //const auto b_transformed = georef_transform.rxso3().quaternion()*sortedKFs.front()->GetImuBias();
 
                         
-                        while(CheckNewKeyFrames())
-                            ProcessNewKeyFrame();
-                        UpdateTrackerAndMapCoordianateFrames(sortedKFs, Sim3_Tyw_noscale, {});
-                        Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 20, false, 0, NULL, false, 0, 0);
+                        // while(CheckNewKeyFrames())
+                        //     ProcessNewKeyFrame();
+                        // UpdateTrackerAndMapCoordianateFrames(sortedKFs, Sim3_Tyw_noscale, {});
+                        //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 20, false, 0, NULL, false, 0, 0);
+
+
+
+                        // const auto georef_pose = getGeorefTransform();
+                        // // Coordiante Frames should be aligned, we only need to set the translation
+                        // const auto sortedKfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+                        // const auto currentFramePointer = mpTracker->GetCurrentFrame();
+                        // const auto initialFramePointer = mpTracker->GetInitialFrame();
+                        // const auto lastFramePointer = mpTracker->GetLastFrame();
+                        // const auto lastKFPointer = mpTracker->GetLastKeyFrame();
+                        // const auto firstKf = sortedKfs.front();
+                        // const auto lastKF = sortedKfs.back();
+
+
+                        // const auto deltaPose = initialFramePointer->GetPose()*lastKF->GetPoseInverse();
+                        // //const auto gnssDeltaGNSSPose = initialFramePointer->GetGNSSCameraPose().inverse()*lastKF->GetGNSSCameraPose();
+                        // const auto poseWorld = lastKF->GetPoseInverse();
+
+
+                        // const Eigen::Vector3f gnssDeltaTranslation = mpTracker->GetCurrentFrame()->GetGNSS() - mpTracker->GetInitialFrame()->GetGNSS();
+
+
+                        // Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(0,0)) + " " + to_string(georef_pose.rotationMatrix()(0,1)) + " " + to_string(georef_pose.rotationMatrix()(0,2)) + " " + to_string(georef_pose.translation()(0)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(1,0)) + " " + to_string(georef_pose.rotationMatrix()(1,1)) + " " + to_string(georef_pose.rotationMatrix()(1,2)) + " " + to_string(georef_pose.translation()(1)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(2,0)) + " " + to_string(georef_pose.rotationMatrix()(2,1)) + " " + to_string(georef_pose.rotationMatrix()(2,2)) + " " + to_string(georef_pose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Scale: " + to_string(georef_pose.scale()), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("\n", Verbose::VERBOSITY_NORMAL);
+
+
+                        // Verbose::PrintMess("TRACK: Current Poses\n ", Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("X: " +  to_string(currentFramePointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(currentFramePointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(currentFramePointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Latest KF X: " +  to_string(lastKFPointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(lastKFPointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(lastKFPointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Initial Frame X: " +  to_string(initialFramePointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(initialFramePointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(initialFramePointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Initial Frame Quat X: " +  to_string(initialFramePointer->GetPoseInverse().unit_quaternion().x()) + " Y: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().y()) + " Z: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().z()) + " W: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().w()), Verbose::VERBOSITY_NORMAL);
+
+                        // Verbose::PrintMess("Delta KF: " +  to_string(deltaPose.translation()(0)) + " Y: " + to_string(deltaPose.translation()(1)) + " Z: " + to_string(deltaPose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // //Verbose::PrintMess("Delta GNSS KF: " +  to_string(gnssDeltaGNSSPose.translation()(0)) + " Y: " + to_string(gnssDeltaGNSSPose.translation()(1)) + " Z: " + to_string(gnssDeltaGNSSPose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Pose KF: " +  to_string(poseWorld.translation()(0)) + " Y: " + to_string(poseWorld.translation()(1)) + " Z: " + to_string(poseWorld.translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("\n", Verbose::VERBOSITY_NORMAL);
+                        
+                        // Verbose::PrintMess("Delta 1 X: " +  to_string(gnssDeltaTranslation(0)) + " Y: " + to_string(gnssDeltaTranslation(1)) + " Z: " + to_string(gnssDeltaTranslation(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Current GNSS X: " +  to_string(currentFramePointer->GetGNSS()(0)) + " Y: " + to_string(currentFramePointer->GetGNSS()(1)) + " Z: " + to_string(currentFramePointer->GetGNSS()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Initial GNSS X: " +  to_string(initialFramePointer->GetGNSS()(0)) + " Y: " + to_string(initialFramePointer->GetGNSS()(1)) + " Z: " + to_string(initialFramePointer->GetGNSS()(2)), Verbose::VERBOSITY_NORMAL);
+
+                        // Verbose::PrintMess("Latest KF GNSS Cam X: " +  to_string(lastKFPointer->GetGNSSCameraPose().translation()(0)) + " Y: " + to_string(lastKFPointer->GetGNSSCameraPose().translation()(1)) + " Z: " + to_string(lastKFPointer->GetGNSSCameraPose().translation()(2)), Verbose::VERBOSITY_NORMAL);
+                        // Verbose::PrintMess("Latest KF GNSS X: " +  to_string(lastKFPointer->GetRawGNSSPosition()(0)) + " Y: " + to_string(lastKFPointer->GetRawGNSSPosition()(1)) + " Z: " + to_string(lastKFPointer->GetRawGNSSPosition()(2)), Verbose::VERBOSITY_NORMAL);
+
                         writeKFAfterGBACount = 1;
+                        //throw std::runtime_error("GNSS fallback not implemented yet");
                     }
                 }
 
@@ -1276,12 +1326,68 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 }
 
 void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias>& b_option){
-    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw, b_option);
-    for(auto kf : sortedKeyframes){
-        if (kf->mpImuPreintegrated)
-        kf->mpImuPreintegrated->Reintegrate();
+    //TODO IMU Frame is hardcoded in pipeline as const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE); -> this should be aligned to some rotation frame if we are to support a GNSS alignged system
+    mpTracker->UpdateInitialFrame(Sim3_Tyw);
+    // const auto Sim3_Tiy = Sophus::Sim3f(1.0, mpTracker->GetInitialFrame()->GetPoseInverse().unit_quaternion(), mpTracker->GetInitialFrame()->GetPoseInverse().translation());
+    // const auto Sim3_Tiw = Sim3_Tiy*Sim3_Tyw;
+    std::optional<IMU::Bias> b_temp = b_option;
+    if(b_option.has_value()){
+        //b_temp.value().rotateBias(Sim3_Tiy.quaternion().normalized());
+        for(auto kf : sortedKeyframes){
+            kf->SetNewBias(b_temp.value());
+            if (kf->mpImuPreintegrated)
+                kf->mpImuPreintegrated->Reintegrate();
+        }
     }
-    mpTracker->UpdateCoordianteFrames(Sim3_Tyw, b_option);
+
+
+    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw, b_temp);
+    // for(auto kf : sortedKeyframes){
+    //     if (kf->mpImuPreintegrated)
+    //         kf->mpImuPreintegrated->Reintegrate();
+    // }
+    mpTracker->UpdateCoordinateFrames(Sim3_Tyw, b_temp);
+
+
+    // const auto georef_pose = getGeorefTransform();
+    // // Coordiante Frames should be aligned, we only need to set the translation
+    // const auto sortedKfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+    // const auto currentFramePointer = mpTracker->GetCurrentFrame();
+    // const auto initialFramePointer = mpTracker->GetInitialFrame();
+    // const auto lastFramePointer = mpTracker->GetLastFrame();
+    // const auto lastKFPointer = mpTracker->GetLastKeyFrame();
+    // const auto firstKf = sortedKfs.front();
+    // const auto lastKF = sortedKfs.back();
+
+
+    // const auto deltaPose = initialFramePointer->GetPose()*lastKF->GetPoseInverse();
+    // //const auto gnssDeltaGNSSPose = initialFramePointer->GetGNSSCameraPose().inverse()*lastKF->GetGNSSCameraPose();
+    // const auto poseWorld = lastKF->GetPoseInverse();
+
+
+    // const Eigen::Vector3f gnssDeltaTranslation = mpTracker->GetCurrentFrame()->GetGNSS() - mpTracker->GetInitialFrame()->GetGNSS();
+
+
+    // Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(0,0)) + " " + to_string(georef_pose.rotationMatrix()(0,1)) + " " + to_string(georef_pose.rotationMatrix()(0,2)) + " " + to_string(georef_pose.translation()(0)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(1,0)) + " " + to_string(georef_pose.rotationMatrix()(1,1)) + " " + to_string(georef_pose.rotationMatrix()(1,2)) + " " + to_string(georef_pose.translation()(1)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess(to_string(georef_pose.rotationMatrix()(2,0)) + " " + to_string(georef_pose.rotationMatrix()(2,1)) + " " + to_string(georef_pose.rotationMatrix()(2,2)) + " " + to_string(georef_pose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("Scale: " + to_string(georef_pose.scale()), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("\n", Verbose::VERBOSITY_NORMAL);
+
+
+    // Verbose::PrintMess("TRACK: Current Poses\n ", Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("X: " +  to_string(currentFramePointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(currentFramePointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(currentFramePointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("Latest KF X: " +  to_string(lastKFPointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(lastKFPointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(lastKFPointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("Initial Frame X: " +  to_string(initialFramePointer->GetPoseInverse().translation()(0)) + " Y: " + to_string(initialFramePointer->GetPoseInverse().translation()(1)) + " Z: " + to_string(initialFramePointer->GetPoseInverse().translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("Initial Frame Quat X: " +  to_string(initialFramePointer->GetPoseInverse().unit_quaternion().x()) + " Y: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().y()) + " Z: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().z()) + " W: " + to_string(initialFramePointer->GetPoseInverse().unit_quaternion().w()), Verbose::VERBOSITY_NORMAL);
+
+    // Verbose::PrintMess("Delta KF: " +  to_string(deltaPose.translation()(0)) + " Y: " + to_string(deltaPose.translation()(1)) + " Z: " + to_string(deltaPose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // //Verbose::PrintMess("Delta GNSS KF: " +  to_string(gnssDeltaGNSSPose.translation()(0)) + " Y: " + to_string(gnssDeltaGNSSPose.translation()(1)) + " Z: " + to_string(gnssDeltaGNSSPose.translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("Pose KF: " +  to_string(poseWorld.translation()(0)) + " Y: " + to_string(poseWorld.translation()(1)) + " Z: " + to_string(poseWorld.translation()(2)), Verbose::VERBOSITY_NORMAL);
+    // Verbose::PrintMess("\n", Verbose::VERBOSITY_NORMAL);
+
+    //throw std::runtime_error("GNSS fallback not implemented yet");
 
 }
 

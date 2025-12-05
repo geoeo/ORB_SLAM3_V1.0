@@ -9,10 +9,10 @@ bag_start_offset = 120.0
 #bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-08_25_08_circle_110m'
 #bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-09_14_04_grid_80m'
 #bag_path = '/bags/2025_08_13-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_13-09_38_53_25fps'
-bag_path = '/bags/2025_08_14-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_14-08_30_32_15fps'
+#bag_path = '/bags/2025_08_14-Streitdorf-rec/seq0/bags/all/rosbag2_2025_08_14-08_30_32_15fps'
 #bag_path = '/bags/2025_09_22-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_09_22-09_19_35_10hz'
 
-#bag_path = '/bags/2025_10_15-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_10_15-09_49_48_eight' # 150
+bag_path = '/bags/2025_10_15-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_10_15-09_49_48_eight' # 150
 #bag_path = '/bags/2025_10_15-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_10_15-10_05_51_eight_long'
 #bag_path = '/bags/2025_10_15-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_10_15-10_53_50_ellipse_lang_gegen'
 #bag_path = '/bags/2025_10_15-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_10_15-11_39_27_ellipse_lang_im'

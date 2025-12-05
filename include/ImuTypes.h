@@ -62,6 +62,18 @@ public:
             bax(b_acc_x), bay(b_acc_y), baz(b_acc_z), bwx(b_ang_vel_x), bwy(b_ang_vel_y), bwz(b_ang_vel_z){}
     void CopyFrom(Bias &b);
     friend std::ostream& operator<< (std::ostream &out, const Bias &b);
+    void rotateBias(const Eigen::Quaternionf &R){
+        Eigen::Vector3f ba(bax, bay, baz);
+        Eigen::Vector3f bw(bwx, bwy, bwz);
+        ba = R*ba;
+        bw = R*bw;
+        bax = ba(0);
+        bay = ba(1);
+        baz = ba(2);
+        bwx = bw(0);
+        bwy = bw(1);
+        bwz = bw(2);
+    }
 
 public:
     float bax, bay, baz;

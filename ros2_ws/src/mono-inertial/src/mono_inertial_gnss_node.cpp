@@ -165,8 +165,8 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
       local_mapper.resetTimeThresh = 500.0;
-      local_mapper.minTimeForImuInit = 5.0;
-      local_mapper.minTimeForVIBA1 = 8.0;
+      local_mapper.minTimeForImuInit = 40.0;
+      local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
       local_mapper.itsFIBAInit = 5;
@@ -176,7 +176,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.useGNSSBA = true;
       local_mapper.writeGNSSData = true;
       local_mapper.georefUpdate = false;
-      local_mapper.minGeorefFrames = 30;
+      local_mapper.minGeorefFrames = 60;
 
       
       // F6
