@@ -1545,7 +1545,7 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
 
     optimizer.initializeOptimization();
     optimizer.setVerbose(false);
-    optimizer.optimize(800);
+    optimizer.optimize(200);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size());

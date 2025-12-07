@@ -275,9 +275,9 @@ void Map::UpdateKFsAndMapCoordianteFrames(vector<KeyFrame*> sortedKeyframes, con
         pKF->SetPose(Tcy);
         const auto Vw = pKF->GetVelocity();
         pKF->SetVelocity(Tyw.unit_quaternion()*Vw*scale);        
-        // if (b_option.has_value()) {
-        //     pKF->SetNewBias(b_option.value());
-        // }
+        if (b_option.has_value()) {
+            pKF->SetNewBias(b_option.value());
+        }
 
     }
     

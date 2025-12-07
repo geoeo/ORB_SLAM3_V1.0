@@ -1330,23 +1330,23 @@ void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> s
     mpTracker->UpdateInitialFrame(Sim3_Tyw);
     // const auto Sim3_Tiy = Sophus::Sim3f(1.0, mpTracker->GetInitialFrame()->GetPoseInverse().unit_quaternion(), mpTracker->GetInitialFrame()->GetPoseInverse().translation());
     // const auto Sim3_Tiw = Sim3_Tiy*Sim3_Tyw;
-    std::optional<IMU::Bias> b_temp = b_option;
-    if(b_option.has_value()){
-        //b_temp.value().rotateBias(Sim3_Tiy.quaternion().normalized());
-        for(auto kf : sortedKeyframes){
-            kf->SetNewBias(b_temp.value());
-            if (kf->mpImuPreintegrated)
-                kf->mpImuPreintegrated->Reintegrate();
-        }
-    }
-
-
-    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw, b_temp);
-    // for(auto kf : sortedKeyframes){
-    //     if (kf->mpImuPreintegrated)
-    //         kf->mpImuPreintegrated->Reintegrate();
+    // std::optional<IMU::Bias> b_temp = b_option;
+    // if(b_option.has_value()){
+    //     //b_temp.value().rotateBias(Sim3_Tiy.quaternion().normalized());
+    //     for(auto kf : sortedKeyframes){
+    //         kf->SetNewBias(b_temp.value());
+    //         if (kf->mpImuPreintegrated)
+    //             kf->mpImuPreintegrated->Reintegrate();
+    //     }
     // }
-    mpTracker->UpdateCoordinateFrames(Sim3_Tyw, b_temp);
+
+
+    mpAtlas->GetCurrentMap()->UpdateKFsAndMapCoordianteFrames(sortedKeyframes, Sim3_Tyw, b_option);
+    for(auto kf : sortedKeyframes){
+        if (kf->mpImuPreintegrated)
+            kf->mpImuPreintegrated->Reintegrate();
+    }
+    mpTracker->UpdateCoordinateFrames(Sim3_Tyw, b_option);
 
 
     // const auto georef_pose = getGeorefTransform();
