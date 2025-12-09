@@ -46,7 +46,7 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mFeatureThresholdForKF(tracker_settings.featureThresholdForKF),
     mMinFrames(0),mMaxFrames(tracker_settings.maxFrames),
     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
-    mbReadyToInitializate(false), mvpInitFrames(30), mpSystem(pSys), mpViewer(nullptr), bStepByStep(false),
+    mbReadyToInitializate(false), mpReferenceKF(nullptr), mvpInitFrames(30), mpSystem(pSys), mpViewer(nullptr), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
     mnInitialFrameId(0), mbCreatedMap(false),mLastFramePostDelta(Sophus::SE3f()), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
@@ -168,7 +168,7 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     Track();
 
     auto is_keyframe = mpReferenceKF ? mCurrentFrame->mnId == mpReferenceKF->mnFrameId : false;
-    return {mCurrentFrame->GetPose(),mCurrentFrame->mnId, false};
+    return {mCurrentFrame->GetPose(),mCurrentFrame->mnId, is_keyframe};
 }
 
 
