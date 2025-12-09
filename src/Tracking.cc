@@ -760,7 +760,7 @@ void Tracking::MonocularInitialization()
 
         // Find correspondences
         ORBmatcher matcher(0.9,true);
-        const auto windowSize = 30; // This parameter has to be large enough to ensure a good disparity but size will impact performance
+        const auto windowSize = 40; // This parameter has to be large enough to ensure a good disparity but size will impact performance
         auto [nmatches, vIniMatches] = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize);
 
         // Check if there are enough correspondences

@@ -80,7 +80,7 @@ namespace ORB_SLAM3 {
                                  Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
-            tvr = new TwoViewReconstruction(K);
+            tvr = new TwoViewReconstruction(K, 1.0, 200);
         }
         return tvr->Reconstruct(vKeys1,vKeys2,vMatches12,T21,vP3D,vbTriangulated);
     }
