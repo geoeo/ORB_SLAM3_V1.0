@@ -3,7 +3,7 @@ from launch import LaunchDescription
 import launch.actions
 import launch_ros.actions
 
-bag_start_offset = 120.0
+bag_start_offset = 160.0
 
 #bag_path = '/bags/2025_03_04-Steinalpl-rec/seq0/bags/all/rosbag2_2025_03_04-11_31_57/'
 #bag_path = '/bags/2025_05_15-Calvarina-rec/seq0/bags/all/rosbag2_2025_05_15-08_25_08_circle_110m'
