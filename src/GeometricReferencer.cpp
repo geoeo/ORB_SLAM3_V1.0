@@ -86,12 +86,12 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
 { 
   const auto pose = estimateGeorefTransform(spatials);
 
-  Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(1,0)) + " " + to_string(pose.rotationMatrix()(1,1)) + " " + to_string(pose.rotationMatrix()(1,2)) + " " + to_string(pose.translation()(1)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_NORMAL);
-  Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_NORMAL);
+  Verbose::PrintMess("FULL Georef function successful", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Transformation matrix:", Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(0,0)) + " " + to_string(pose.rotationMatrix()(0,1)) + " " + to_string(pose.rotationMatrix()(0,2)) + " " + to_string(pose.translation()(0)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(1,0)) + " " + to_string(pose.rotationMatrix()(1,1)) + " " + to_string(pose.rotationMatrix()(1,2)) + " " + to_string(pose.translation()(1)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess(to_string(pose.rotationMatrix()(2,0)) + " " + to_string(pose.rotationMatrix()(2,1)) + " " + to_string(pose.rotationMatrix()(2,2)) + " " + to_string(pose.translation()(2)), Verbose::VERBOSITY_DEBUG);
+  Verbose::PrintMess("Scale: " + to_string(pose.scale()), Verbose::VERBOSITY_DEBUG);
   
   // TODO: incremental updates dont seem to work
   unique_lock<mutex> lock(mMutexTransform);
