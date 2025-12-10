@@ -378,7 +378,7 @@ namespace ORB_SLAM3
             const float dist = PO.norm();
 
             if(dist<minDistance || dist>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 continue;
             }
 
@@ -495,7 +495,7 @@ namespace ORB_SLAM3
             const float dist = PO.norm();
 
             if(dist<minDistance || dist>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 continue;
             }
 
@@ -1121,7 +1121,7 @@ namespace ORB_SLAM3
 
             // Depth must be inside the scale pyramid of the image
             if(dist3D<minDistance || dist3D>maxDistance) {
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 count_dist++;
                 continue;
             }
@@ -1277,7 +1277,7 @@ namespace ORB_SLAM3
             const float dist3D = PO.norm();
 
             if(dist3D<minDistance || dist3D>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 continue;
             }
 
@@ -1419,7 +1419,7 @@ namespace ORB_SLAM3
 
             // Depth must be inside the scale invariance region
             if(dist3D<minDistance || dist3D>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 continue;
             }
 
@@ -1501,7 +1501,7 @@ namespace ORB_SLAM3
 
             // Depth must be inside the scale pyramid of the image
             if(dist3D<minDistance || dist3D>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                 continue;
             }
 
@@ -1751,7 +1751,7 @@ namespace ORB_SLAM3
 
                     // Depth must be inside the scale pyramid of the image
                     if(dist3D<minDistance || dist3D>maxDistance){
-                        Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_NORMAL);
+                        Verbose::PrintMess("Projection out of range: " + std::to_string(dist3D) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
                         continue;
                     }
 
