@@ -549,7 +549,7 @@ float MapPoint::GetMinDistanceInvariance()
 float MapPoint::GetMaxDistanceInvariance()
 {
     unique_lock<mutex> lock(mMutexPos);
-    return std::numeric_limits<float>::max();
+    return 1.6f* mfMaxDistance;
 }
 
 int MapPoint::PredictScale(const float &currentDist, KeyFrame* pKF)
