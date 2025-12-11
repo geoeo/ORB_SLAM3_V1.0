@@ -221,17 +221,30 @@ class SlamNode : public rclcpp::Node
       // F6
       ORB_SLAM3::CameraParameters cam{};
       cam.K = cv::Mat::zeros(3,3,CV_32F);
-      cam.K.at<float>(0,0) = 1340.8951163881811;
-      cam.K.at<float>(1,1) = 1339.4354628196174;
-      cam.K.at<float>(0,2) = 1007.6078987259765;
-      cam.K.at<float>(1,2) = 767.9508975018316;
+      // cam.K.at<float>(0,0) = 1340.8951163881811;
+      // cam.K.at<float>(1,1) = 1339.4354628196174;
+      // cam.K.at<float>(0,2) = 1007.6078987259765;
+      // cam.K.at<float>(1,2) = 767.9508975018316;
+      // cam.K.at<float>(2,2) = 1;
+
+      cam.K = cv::Mat::zeros(3,3,CV_32F);
+      cam.K.at<float>(0,0) = 1336.9226074186074;
+      cam.K.at<float>(1,1) = 1335.4255026142991;
+      cam.K.at<float>(0,2) = 1020.6417436861941;
+      cam.K.at<float>(1,2) = 787.2614408235355;
       cam.K.at<float>(2,2) = 1;
 
       cv::Mat distCoeffs  = cv::Mat:: zeros(4,1,CV_32F);
-      distCoeffs.at<float>(0,0) = -0.0032741297195706454;
-      distCoeffs.at<float>(1,0) = 0.044026087700189453;
-      distCoeffs.at<float>(2,0) = -0.048481762487143865;
-      distCoeffs.at<float>(3,0) = 0.0241218843283991;
+      // distCoeffs.at<float>(0,0) = -0.0032741297195706454;
+      // distCoeffs.at<float>(1,0) = 0.044026087700189453;
+      // distCoeffs.at<float>(2,0) = -0.048481762487143865;
+      // distCoeffs.at<float>(3,0) = 0.0241218843283991;
+
+
+      distCoeffs.at<float>(0,0) = -0.008025606047653894;
+      distCoeffs.at<float>(1,0) = 0.06147505062442819;
+      distCoeffs.at<float>(2,0) = -0.07203040867973515;
+      distCoeffs.at<float>(3,0) = 0.035581570054134905;
 
       cam.distCoeffs = cv::Mat:: zeros(1,1,CV_32F); // We dont want to undistort im ORBSLAM so we pass dummy matrix
 
@@ -270,9 +283,9 @@ class SlamNode : public rclcpp::Node
       cam.isRGB      = false; // BGR
 
       ORB_SLAM3::OrbParameters orb{};
-      orb.nFeatures   = 2000;
+      orb.nFeatures   = 4000;
       orb.nFastFeatures = 96000; // 24*4000
-      orb.nLevels     = 1;
+      orb.nLevels     = 6;
       orb.scaleFactor = 2.0;
       orb.minThFast   = 5;
       orb.iniThFast   = 15;
@@ -281,30 +294,55 @@ class SlamNode : public rclcpp::Node
 
       //F6
 
-      m_imu.accelWalk  = 0.0007579860836224204; //x200
-      m_imu.gyroWalk   = 0.00000352677789580351; //x2
-      m_imu.noiseAccel =  0.03138444640779682; //x200
-      m_imu.noiseGyro  = 0.0003278894143880944; // x2
+      // m_imu.accelWalk  = 0.0007579860836224204; //x200
+      // m_imu.gyroWalk   = 0.00000352677789580351; //x2
+      // m_imu.noiseAccel =  0.03138444640779682; //x200
+      // m_imu.noiseGyro  = 0.0003278894143880944; // x2
+
+      m_imu.accelWalk  = 0.0012862746370956302; //x1
+      m_imu.gyroWalk   = 0.0000374285409634467; // x1
+      m_imu.noiseAccel = 0.0311859138309955597; //x10
+      m_imu.noiseGyro  = 0.0034039118327200413; // x10
 
 
       m_imu.InsertKFsWhenLost = true;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
 
-      cv_Tbc.at<float>(0,0) =   0.0147249;
-      cv_Tbc.at<float>(0,1) =   0.00100526;
-      cv_Tbc.at<float>(0,2) =   0.99989108;
-      cv_Tbc.at<float>(0,3) =   0.0504444;
+      // cv_Tbc.at<float>(0,0) =   0.0147249;
+      // cv_Tbc.at<float>(0,1) =   0.00100526;
+      // cv_Tbc.at<float>(0,2) =   0.99989108;
+      // cv_Tbc.at<float>(0,3) =   0.0504444;
 
-      cv_Tbc.at<float>(1,0) =   -0.00472214;
-      cv_Tbc.at<float>(1,1) =   -0.99998827;
-      cv_Tbc.at<float>(1,2) =   0.0010749;
-      cv_Tbc.at<float>(1,3) =   -0.01192971;
+      // cv_Tbc.at<float>(1,0) =   -0.00472214;
+      // cv_Tbc.at<float>(1,1) =   -0.99998827;
+      // cv_Tbc.at<float>(1,2) =   0.0010749;
+      // cv_Tbc.at<float>(1,3) =   -0.01192971;
 
-      cv_Tbc.at<float>(2,0) =   0.99988043;
-      cv_Tbc.at<float>(2,1) =   -0.00473745;
-      cv_Tbc.at<float>(2,2) =   -0.01471998;
-      cv_Tbc.at<float>(2,3) =   -0.01500127;
+      // cv_Tbc.at<float>(2,0) =   0.99988043;
+      // cv_Tbc.at<float>(2,1) =   -0.00473745;
+      // cv_Tbc.at<float>(2,2) =   -0.01471998;
+      // cv_Tbc.at<float>(2,3) =   -0.01500127;
+
+      // cv_Tbc.at<float>(3,0) =   0.0;
+      // cv_Tbc.at<float>(3,1) =   0.0;
+      // cv_Tbc.at<float>(3,2) =   0.0;
+      // cv_Tbc.at<float>(3,3) =   1.0;
+
+      cv_Tbc.at<float>(0,0) =   0.01145462;
+      cv_Tbc.at<float>(0,1) =   0.00408801;
+      cv_Tbc.at<float>(0,2) =   0.99992604;
+      cv_Tbc.at<float>(0,3) =   0.05702731;
+
+      cv_Tbc.at<float>(1,0) =   0.00232179;
+      cv_Tbc.at<float>(1,1) =   -0.99998906;
+      cv_Tbc.at<float>(1,2) =   0.00406167;
+      cv_Tbc.at<float>(1,3) =   -0.00619829;
+
+      cv_Tbc.at<float>(2,0) =   0.9999317;
+      cv_Tbc.at<float>(2,1) =   0.00227509;
+      cv_Tbc.at<float>(2,2) =   -0.01146399;
+      cv_Tbc.at<float>(2,3) =   -0.01762376;
 
       cv_Tbc.at<float>(3,0) =   0.0;
       cv_Tbc.at<float>(3,1) =   0.0;
@@ -314,7 +352,9 @@ class SlamNode : public rclcpp::Node
       m_imu.Tbc = cv_Tbc;
       m_imu.freq = 400.0;
 
-      double timeshift_cam_imu = 0.008390335701785497; 
+      //double timeshift_cam_imu = 0.008390335701785497; 
+
+      double timeshift_cam_imu = 0.00851880502751802;
 
       const int frame_grid_cols = 64;
       const int frame_grid_rows = 48;
@@ -330,8 +370,8 @@ class SlamNode : public rclcpp::Node
       sub_imu_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),&imugb_,bEqual_, timeshift_cam_imu, resize_factor, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu);
-      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
-      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
+      sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F4/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, &imugb_, placeholders::_1),sub_imu_options);
+      sub_img0_ = this->create_subscription<sensor_msgs::msg::Image>("/AIT_Fighter4/down/image", rclcpp::SensorDataQoS().keep_last(1000), bind(&ImageGrabber::GrabImage, igb_.get(), placeholders::_1),sub_image_options);
       sync_thread_ = std::make_unique<std::thread>(&ImageGrabber::SyncWithImu,igb_.get());
     }
 
