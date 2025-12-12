@@ -244,7 +244,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
-                    auto success = InitializeIMU(1e1, 1e2, true, itsFIBAInit, minTimeForImuInit, 10);
+                    auto success = InitializeIMU(1e5, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
                     if(false){
                         mpAtlas->GetCurrentMap()->SetInertialBA1();
@@ -267,7 +267,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(0e0, 0e0, true, itsFIBA1, minTimeForVIBA1, 10);
+                                success = InitializeIMU(1e3, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
                             else
                                 success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 

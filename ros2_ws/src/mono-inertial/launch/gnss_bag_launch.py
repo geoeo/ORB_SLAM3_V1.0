@@ -37,7 +37,7 @@ bag_start_offset = 80.0
 bag_path = '/bags/2025_06_06-Guenselsdorf-rec/seq0/bags/all/rosbag2_2025_06_06-09_32_00_max_ts'
 
 air_id = 4
-rate = 0.1
+rate = 0.5
 image_topic = f'/AIT_Fighter{air_id}/down/image'
 gnss_topic = f'/AIT_Fighter{air_id}/mavros/global_position/global'
 read_ahead_queue_size = 5000

@@ -114,10 +114,10 @@ class SlamNode : public rclcpp::Node
       //imu.noiseAccel = 0.015592957173554883; //x10
       //imu.noiseGyro  = 0.0017019559710036963; // x10
 
-      imu.accelWalk  = 0.0012862746370956302; //x20
-      imu.gyroWalk   =  0.0000374285409634467; //x2
-      imu.noiseAccel = 0.0311859138309955597; //x20
-      imu.noiseGyro  = 0.0034039118327200413; // x20
+      imu.accelWalk  = 0.012862746370956302; //x200
+      imu.gyroWalk   =  0.00374285409634467; //x200
+      imu.noiseAccel = 0.311859138309955597; //x200
+      imu.noiseGyro  = 0.034039118327200413; // x200
 
       imu.InsertKFsWhenLost = false;
 
@@ -171,8 +171,8 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
       local_mapper.resetTimeThresh = 500.0;
-      local_mapper.minTimeForImuInit = 40.0;
-      local_mapper.minTimeForVIBA1 = 50.0;
+      local_mapper.minTimeForImuInit = 60.0;
+      local_mapper.minTimeForVIBA1 = 80.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
       local_mapper.itsFIBAInit = 200;
@@ -194,7 +194,7 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::TrackerParameters tracker_settings;
       tracker_settings.frameGridCols = 64;
       tracker_settings.frameGridRows = 48;
-      tracker_settings.maxLocalKFCount = 15;
+      tracker_settings.maxLocalKFCount = 60;
       tracker_settings.featureThresholdForKF = 200;
       tracker_settings.maxFrames = 10;
 
