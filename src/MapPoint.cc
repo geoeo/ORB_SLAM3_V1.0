@@ -543,13 +543,13 @@ void MapPoint::SetNormalVector(const Eigen::Vector3f& normal)
 float MapPoint::GetMinDistanceInvariance()
 {
     unique_lock<mutex> lock(mMutexPos);
-    return 0.0f * mfMinDistance;
+    return 0.8f * mfMinDistance;
 }
 
 float MapPoint::GetMaxDistanceInvariance()
 {
     unique_lock<mutex> lock(mMutexPos);
-    return 1.6f* mfMaxDistance;
+    return 1.2f* mfMaxDistance;
 }
 
 int MapPoint::PredictScale(const float &currentDist, KeyFrame* pKF)
