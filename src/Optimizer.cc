@@ -2454,7 +2454,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(KeyFrame
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
     // Full optimizable KFs
-    const int maxOpt=10;
+    const int maxOpt=7;
     const int opt_it=8;
     // Optimizable visual KFs
     const int maxCovisibleKF = 0;
