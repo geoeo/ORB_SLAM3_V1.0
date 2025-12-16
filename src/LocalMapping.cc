@@ -284,7 +284,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_DEBUG);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(0.f, 0e0, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
+                                success = InitializeIMU(0.f, 0.f, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
                             else
                                 success = InitializeIMU(0.f, 0.f, true, 200, minTimeForVIBA2, 10);
 
