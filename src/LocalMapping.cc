@@ -246,7 +246,7 @@ void LocalMapping::Run()
                 if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
                 {
                     Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
-                    auto success = InitializeIMU(1e5, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
+                    auto success = InitializeIMU(1e10, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
                     Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
                     if(false){
                         mpAtlas->GetCurrentMap()->SetInertialBA1();
@@ -269,7 +269,7 @@ void LocalMapping::Run()
                             Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
                             auto success = false;
                             if (mbMonocular)
-                                success = InitializeIMU(1e3, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
+                                success = InitializeIMU(1e10, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
                             else
                                 success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -829,9 +829,10 @@ void LocalMapping::SearchInNeighbors()
 
     // Add some covisible of covisible
     // Extend to some second neighbors if abort is not requested
+    const size_t coviseSize = 20;
     for(int i=0, imax=vpTargetKFs.size(); i<imax; i++)
     {
-        const vector<KeyFrame*> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(20);
+        const vector<KeyFrame*> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(coviseSize);
         for(vector<KeyFrame*>::const_iterator vit2=vpSecondNeighKFs.begin(), vend2=vpSecondNeighKFs.end(); vit2!=vend2; vit2++)
         {
             KeyFrame* pKFi2 = *vit2;
@@ -848,7 +849,7 @@ void LocalMapping::SearchInNeighbors()
     if(mbInertial)
     {
         KeyFrame* pKFi = mpCurrentKeyFrame->mPrevKF;
-        while(vpTargetKFs.size()<20 && pKFi)
+        while(vpTargetKFs.size()<coviseSize && pKFi)
         {
             if(pKFi->isBad() || pKFi->mnFuseTargetForKF==mpCurrentKeyFrame->mnId)
             {
@@ -868,8 +869,7 @@ void LocalMapping::SearchInNeighbors()
     {
         KeyFrame* pKFi = *vit;
 
-        matcher.Fuse(pKFi,vpMapPointMatches, 10.0);
-        //if(pKFi->NLeft != -1) matcher.Fuse(pKFi,vpMapPointMatches,true);
+        matcher.Fuse(pKFi,vpMapPointMatches, 30.0, false);
     }
 
 
