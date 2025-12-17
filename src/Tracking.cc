@@ -1514,7 +1514,7 @@ void Tracking::UpdateLocalKeyFrames()
 
     const auto nKFs = min(mMaxLocalKFCount,vPairs.size());
     mvpLocalKeyFrames.clear();
-    mvpLocalKeyFrames.reserve(nKFs);
+    mvpLocalKeyFrames.reserve(nKFs+3*mCovisibilityKeyFrameNd+mTemporalKeyFrameNd);
 
     // All keyframes that observe a map point are included in the local map. Also check which keyframe shares most points
     for(size_t i=0; i<nKFs; i++)
@@ -1536,7 +1536,6 @@ void Tracking::UpdateLocalKeyFrames()
     {
 
         KeyFrame* pKF = *itKF;
-
         const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(mCovisibilityKeyFrameNd);
 
 

@@ -206,7 +206,7 @@ void KeyFrame::AddConnection(KeyFrame *pKF, const int &weight)
 void KeyFrame::UpdateBestCovisibles()
 {
     unique_lock<mutex> lock(mMutexConnections);
-    vector<pair<int,KeyFrame*> > vPairs;
+    vector<pair<int,KeyFrame*>> vPairs;
     vPairs.reserve(mConnectedKeyFrameWeights.size());
     for(map<KeyFrame*,int>::iterator mit=mConnectedKeyFrameWeights.begin(), mend=mConnectedKeyFrameWeights.end(); mit!=mend; mit++)
        vPairs.push_back(make_pair(mit->second,mit->first));
@@ -461,7 +461,6 @@ void KeyFrame::UpdateConnections(bool upParent)
     map<KeyFrame*,int> KFcounter;
 
     vector<MapPoint*> vpMP;
-
     {
         unique_lock<mutex> lockMPs(mMutexFeatures);
         vpMP = mvpMapPoints;

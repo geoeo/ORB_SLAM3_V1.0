@@ -81,6 +81,8 @@ void LocalMapping::Run()
         {
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
+        
+
             // Check recent MapPoints
             MapPointCulling();
             // Triangulate new MapPoints
@@ -398,7 +400,11 @@ void LocalMapping::ProcessNewKeyFrame()
     }
 
     // Update links in the Covisibility Graph
-    mpCurrentKeyFrame->UpdateConnections();
+    {
+        unique_lock<mutex> lock(*getGlobalDataMutex());
+        mpCurrentKeyFrame->UpdateConnections();
+    }
+
 
     if(mpAtlas->isImuInitialized())
         mpCurrentKeyFrame->GetKeyFrameDatabase()->add(mpCurrentKeyFrame);
@@ -912,6 +918,7 @@ void LocalMapping::SearchInNeighbors()
     }
 
     // Update connections in covisibility graph
+    unique_lock<mutex> lock(*getGlobalDataMutex());
     mpCurrentKeyFrame->UpdateConnections();
 }
 
