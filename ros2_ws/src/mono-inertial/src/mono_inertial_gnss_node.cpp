@@ -24,9 +24,9 @@ class SlamNode : public rclcpp::Node
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
-      float resize_factor = 0.6;
+      float resize_factor = 0.3;
 
-      // F6
+      // // F6
       // ORB_SLAM3::CameraParameters cam{};
       // cam.K = cv::Mat::zeros(3,3,CV_32F);
       // cam.K.at<float>(0,0) = 1331.1713955614885;
@@ -94,7 +94,7 @@ class SlamNode : public rclcpp::Node
       ORB_SLAM3::OrbParameters orb{};
       orb.nFeatures   = 3000;
       orb.nFastFeatures = 16000;
-      orb.nLevels     = 6;
+      orb.nLevels     = 1;
       orb.scaleFactor = 2.0;
       orb.minThFast   = 80;
       orb.iniThFast   = 100;
@@ -171,18 +171,18 @@ class SlamNode : public rclcpp::Node
 
       ORB_SLAM3::LocalMapperParameters local_mapper;
       local_mapper.resetTimeThresh = 500.0;
-      local_mapper.minTimeForImuInit = 60.0;
-      local_mapper.minTimeForVIBA1 = 80.0;
+      local_mapper.minTimeForImuInit = 40.0;
+      local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
-      local_mapper.itsFIBAInit = 200;
-      local_mapper.itsFIBA1 = 200;
+      local_mapper.itsFIBAInit = 20;
+      local_mapper.itsFIBA1 = 20;
       local_mapper.thFarPoints = 0.0;
       local_mapper.useGNSS = true;
-      local_mapper.useGNSSBA = false;
-      local_mapper.writeGNSSData = false;
+      local_mapper.useGNSSBA = true;
+      local_mapper.writeGNSSData = true;
       local_mapper.georefUpdate = false;
-      local_mapper.minGeorefFrames = 60;
+      local_mapper.minGeorefFrames = 10;
 
       
       // F6
