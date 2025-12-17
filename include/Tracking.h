@@ -212,7 +212,9 @@ protected:
     //Frame
     int mFrameGridRows;
     int mFrameGridCols;
-    size_t mMaxLocalKFCount;
+    const size_t mMaxLocalKFCount;
+    const int mTemporalKeyFrameNd;
+    const int mCovisibilityKeyFrameNd;
     int mFeatureThresholdForKF;
 
     //ORB

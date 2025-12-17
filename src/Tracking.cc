@@ -43,7 +43,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()), mInitialFrame(make_shared<Frame>()), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
     mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), 
-    mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mFeatureThresholdForKF(tracker_settings.featureThresholdForKF),
+    mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mTemporalKeyFrameNd(10), mCovisibilityKeyFrameNd(5),
+    mFeatureThresholdForKF(tracker_settings.featureThresholdForKF),
     mMinFrames(0),mMaxFrames(tracker_settings.maxFrames),
     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
     mbReadyToInitializate(false), mpReferenceKF(nullptr), mvpInitFrames(30), mpSystem(pSys), mpViewer(nullptr), bStepByStep(false),
@@ -1447,8 +1448,7 @@ void Tracking::UpdateLocalKeyFrames()
     // Each map point vote for the keyframes in which it has been observed
     map<unsigned long int,int> keyframeCounter;
     map<unsigned long int,KeyFrame*> keyframePointerMap;
-    const int temporalKeyFrameNd = 20;
-    const int covisibilityKeyFrameNd = 10;
+    set<unsigned long int> sAlreadyAdded;
 
     if(!mpAtlas->isImuInitialized())
     {
@@ -1524,6 +1524,9 @@ void Tracking::UpdateLocalKeyFrames()
         if(pKF->isBad())
             continue;
 
+        if(sAlreadyAdded.find(pKF->mnId) != sAlreadyAdded.end())
+            continue;
+        sAlreadyAdded.insert(pKF->mnId);
         mvpLocalKeyFrames.push_back(pKF);
         pKF->mnTrackReferenceForFrame = mCurrentFrame->mnId;
     }
@@ -1534,7 +1537,7 @@ void Tracking::UpdateLocalKeyFrames()
 
         KeyFrame* pKF = *itKF;
 
-        const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(covisibilityKeyFrameNd);
+        const vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(mCovisibilityKeyFrameNd);
 
 
         for(vector<KeyFrame*>::const_iterator itNeighKF=vNeighs.begin(), itEndNeighKF=vNeighs.end(); itNeighKF!=itEndNeighKF; itNeighKF++)
@@ -1542,8 +1545,9 @@ void Tracking::UpdateLocalKeyFrames()
             KeyFrame* pNeighKF = *itNeighKF;
             if(!pNeighKF->isBad())
             {
-                if(pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame->mnId)
+                if((pNeighKF->mnTrackReferenceForFrame!=mCurrentFrame->mnId) && (sAlreadyAdded.find(pNeighKF->mnId) == sAlreadyAdded.end()))
                 {
+                    sAlreadyAdded.insert(pNeighKF->mnId);
                     mvpLocalKeyFrames.push_back(pNeighKF);
                     pNeighKF->mnTrackReferenceForFrame=mCurrentFrame->mnId;
                     break;
@@ -1557,8 +1561,9 @@ void Tracking::UpdateLocalKeyFrames()
             KeyFrame* pChildKF = *sit;
             if(!pChildKF->isBad())
             {
-                if(pChildKF->mnTrackReferenceForFrame!=mCurrentFrame->mnId)
+                if((pChildKF->mnTrackReferenceForFrame!=mCurrentFrame->mnId) && (sAlreadyAdded.find(pChildKF->mnId) == sAlreadyAdded.end()))
                 {
+                    sAlreadyAdded.insert(pChildKF->mnId);
                     mvpLocalKeyFrames.push_back(pChildKF);
                     pChildKF->mnTrackReferenceForFrame=mCurrentFrame->mnId;
                     break;
@@ -1569,8 +1574,9 @@ void Tracking::UpdateLocalKeyFrames()
         KeyFrame* pParent = pKF->GetParent();
         if(pParent)
         {
-            if(pParent->mnTrackReferenceForFrame!=mCurrentFrame->mnId)
+            if((pParent->mnTrackReferenceForFrame!=mCurrentFrame->mnId) && (sAlreadyAdded.find(pParent->mnId) == sAlreadyAdded.end()))
             {
+                sAlreadyAdded.insert(pParent->mnId);
                 mvpLocalKeyFrames.push_back(pParent);
                 pParent->mnTrackReferenceForFrame=mCurrentFrame->mnId;
                 break;
@@ -1578,17 +1584,18 @@ void Tracking::UpdateLocalKeyFrames()
         }
     }
 
-        // Add 10 last temporal KFs (mainly for IMU)
+    // Add 10 last temporal KFs (mainly for IMU)
     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))
     {
         KeyFrame* tempKeyFrame = mCurrentFrame->mpLastKeyFrame;
 
 
-        for(int i=0; i<temporalKeyFrameNd; i++){
+        for(int i=0; i<mTemporalKeyFrameNd; i++){
             if (!tempKeyFrame)
                 break;
-            if(tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame->mnId)
+            if((tempKeyFrame->mnTrackReferenceForFrame!=mCurrentFrame->mnId) && (sAlreadyAdded.find(tempKeyFrame->mnId) == sAlreadyAdded.end()))
             {
+                sAlreadyAdded.insert(tempKeyFrame->mnId);
                 mvpLocalKeyFrames.push_back(tempKeyFrame);
                 tempKeyFrame->mnTrackReferenceForFrame=mCurrentFrame->mnId;
                 tempKeyFrame=tempKeyFrame->mPrevKF;
