@@ -1577,12 +1577,12 @@ void Optimizer::LocalGNSSBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* 
     // Get Map Mutex
     //unique_lock<mutex> lock(pMap->mMutexMapUpdate);
 
-    for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
-        auto pKFi = eraseTuple.first;
-        auto pMPi = eraseTuple.second;
-        pKFi->EraseMapPointMatch(pMPi);
-        pMPi->EraseObservation(pKFi);
-    }); 
+    // for_each(execution::seq, vToErase.begin(), vToErase.end(), [](auto eraseTuple){
+    //     auto pKFi = eraseTuple.first;
+    //     auto pMPi = eraseTuple.second;
+    //     pKFi->EraseMapPointMatch(pMPi);
+    //     pMPi->EraseObservation(pKFi);
+    // }); 
 
     // Recover optimized data
     //Keyframes
