@@ -56,7 +56,7 @@ public:
     void SetViewer(Viewer* pViewer);
 
     // Method for change components in the current map
-    void AddKeyFrame(KeyFrame* pKF);
+    void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void AddMapPoint(MapPoint* pMP);
     //void EraseMapPoint(MapPoint* pMP);
     //void EraseKeyFrame(KeyFrame* pKF);
@@ -73,7 +73,7 @@ public:
     long unsigned KeyFramesInMap();
 
     // Method for get data in current map
-    std::vector<KeyFrame*> GetAllKeyFrames();
+    std::vector<std::shared_ptr<KeyFrame>> GetAllKeyFrames();
     std::vector<MapPoint*> GetAllMapPoints();
     std::vector<MapPoint*> GetReferenceMapPoints();
     bool isBACompleteForMap();
@@ -97,7 +97,7 @@ public:
     void SetImuInitialized();
     bool isImuInitialized();
 
-    std::map<long unsigned int, KeyFrame*> GetAtlasKeyframes();
+    std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
 
     void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
     std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();

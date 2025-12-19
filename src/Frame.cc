@@ -45,7 +45,7 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpImuPreintegratedFrame(NULL), 
-    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
+    mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
     mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false), mbHasVelocity(false),
     mFrameGridRows(0), mFrameGridCols(0)
 {
@@ -354,7 +354,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     //     return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist,this);
+    const int nPredictedLevel = pMP->PredictScale(dist,shared_from_this());
 
     // Data used by the tracking
     pMP->mbTrackInView = true;
@@ -630,7 +630,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
     //     return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist,this);
+    const int nPredictedLevel = pMP->PredictScale(dist,shared_from_this());
 
     if(bRight){
         pMP->mTrackProjXR = uv(0);

@@ -203,13 +203,13 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     if(!pActiveMap)
         return;
 
-    const vector<KeyFrame*> vpKFs = pActiveMap->GetAllKeyFrames(false);
+    const auto vpKFs = pActiveMap->GetAllKeyFrames(false);
 
     if(bDrawKF)
     {
         for(size_t i=0; i<vpKFs.size(); i++)
         {
-            KeyFrame* pKF = vpKFs[i];
+            auto pKF = vpKFs[i];
             Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
             Twc.block<3,1>(0,3) -= coordinate_offset;
             unsigned int index_color = pKF->mnOriginMapId;
@@ -287,11 +287,11 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         for(size_t i=0; i<vpKFs.size(); i++)
         {
             // Covisibility Graph
-            const vector<KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
+            const auto vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
             Eigen::Vector3f twc = vpKFs[i]->GetTranslationInverse() - coordinate_offset;
             if(!vCovKFs.empty())
             {
-                for(vector<KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
+                for(auto vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
                 {
                     if((*vit)->mnId<vpKFs[i]->mnId)
                         continue;
@@ -302,7 +302,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             }
 
             // Spanning tree
-            KeyFrame* pParent = vpKFs[i]->GetParent();
+            auto pParent = vpKFs[i]->GetParent();
             if(pParent)
             {
                 Eigen::Vector3f twcParent = pParent->GetTranslationInverse() - coordinate_offset;
@@ -311,8 +311,8 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             }
 
             // Loops
-            set<KeyFrame*> sLoopKFs = vpKFs[i]->GetLoopEdges();
-            for(set<KeyFrame*>::iterator sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
+            auto sLoopKFs = vpKFs[i]->GetLoopEdges();
+            for(auto sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
             {
                 if((*sit)->mnId<vpKFs[i]->mnId)
                     continue;
@@ -334,9 +334,9 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         //Draw inertial links
         for(size_t i=0; i<vpKFs.size(); i++)
         {
-            KeyFrame* pKFi = vpKFs[i];
+            auto pKFi = vpKFs[i];
             Eigen::Vector3f twc = pKFi->GetTranslationInverse() - coordinate_offset;
-            KeyFrame* pNext = pKFi->mNextKF;
+            auto pNext = pKFi->mNextKF;
             if(pNext)
             {
                 Eigen::Vector3f twcNext = pNext->GetTranslationInverse() - coordinate_offset;
@@ -357,11 +357,11 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             if(pMap == pActiveMap)
                 continue;
 
-            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
+            auto vpKFs = pMap->GetAllKeyFrames(false);
 
             for(size_t i=0; i<vpKFs.size(); i++)
             {
-                KeyFrame* pKF = vpKFs[i];
+                auto pKF = vpKFs[i];
                 Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
                 Twc.block<3,1>(0,3) -= coordinate_offset;
                 unsigned int index_color = pKF->mnOriginMapId;

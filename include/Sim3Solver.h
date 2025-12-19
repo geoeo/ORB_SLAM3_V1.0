@@ -17,11 +17,11 @@
 */
 
 
-#ifndef SIM3SOLVER_H
-#define SIM3SOLVER_H
+#pragma once
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <memory>
 
 #include "KeyFrame.h"
 
@@ -34,8 +34,8 @@ class Sim3Solver
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2, const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true,
-               const vector<KeyFrame*> vpKeyFrameMatchedMP = vector<KeyFrame*>());
+    Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true,
+               const vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = vector<std::shared_ptr<KeyFrame>>());
 
     void SetRansacParameters(double probability = 0.99, int minInliers = 6 , int maxIterations = 300);
 
@@ -64,8 +64,8 @@ protected:
 protected:
 
     // KeyFrames and matches
-    KeyFrame* mpKF1;
-    KeyFrame* mpKF2;
+    std::shared_ptr<KeyFrame> mpKF1;
+    std::shared_ptr<KeyFrame> mpKF2;
 
     std::vector<Eigen::Vector3f> mvX3Dc1;
     std::vector<Eigen::Vector3f> mvX3Dc2;
@@ -132,4 +132,3 @@ protected:
 
 } //namespace ORB_SLAM
 
-#endif // SIM3SOLVER_H

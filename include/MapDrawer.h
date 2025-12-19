@@ -27,6 +27,7 @@
 #include <Eigen/Core>
 
 #include <mutex>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -48,7 +49,7 @@ public:
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba, const Eigen::Vector3f &coordinate_offset);
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
-    void SetReferenceKeyFrame(KeyFrame *pKF);
+    void SetReferenceKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
 
 private:

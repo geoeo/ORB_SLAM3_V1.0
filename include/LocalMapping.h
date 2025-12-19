@@ -31,6 +31,7 @@
 #include <atomic>
 #include <vector>
 #include <utility>
+#include <memory>
 
 
 namespace ORB_SLAM3
@@ -53,7 +54,7 @@ public:
     // Main function
     void Run();
 
-    void InsertKeyFrame(KeyFrame* pKF);
+    void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void EmptyQueue();
 
     // Thread Synch
@@ -74,7 +75,7 @@ public:
 
     bool IsInitializing() const;
     double GetCurrKFTime();
-    KeyFrame* GetCurrKF();
+    std::shared_ptr<KeyFrame> GetCurrKF();
 
     std::shared_ptr<std::mutex> getKeyFrameChangeMutex();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
@@ -120,7 +121,7 @@ protected:
     void MapPointCulling();
     void SearchInNeighbors();
     void KeyFrameCulling();
-    void UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
+    void UpdateTrackerAndMapCoordianateFrames(std::vector<std::shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
 
     System *mpSystem;
 
@@ -143,9 +144,9 @@ protected:
     LoopClosing* mpLoopCloser;
     Tracking* mpTracker;
 
-    std::list<KeyFrame*> mlNewKeyFrames;
+    std::list<shared_ptr<KeyFrame>> mlNewKeyFrames;
 
-    KeyFrame* mpCurrentKeyFrame;
+    shared_ptr<KeyFrame> mpCurrentKeyFrame;
 
     std::list<MapPoint*> mlpRecentAddedMapPoints;
 

@@ -118,7 +118,7 @@ public:
     int GetTrackingState();
     std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
     std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
-    std::vector<KeyFrame*> GetAllKeyframes();
+    std::vector<std::shared_ptr<KeyFrame>> GetAllKeyframes();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
 
     // For debugging

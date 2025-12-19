@@ -25,7 +25,7 @@ namespace ORB_SLAM3
 
 long unsigned int Map::nNextId=0;
 
-Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
+Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(nullptr),
 mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), 
 mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mbIMU_FullBA(false), mfScale(1.0)
 {
@@ -34,7 +34,7 @@ mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mbIMU_FullBA(false), mf
 }
 
 Map::Map(int initKFid):mnInitKFid(initKFid), mnMaxKFid(initKFid),/*mnLastLoopKFid(initKFid),*/ mnBigChangeIdx(0), mIsInUse(false),
-                       mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(static_cast<KeyFrame*>(NULL)),
+                       mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(nullptr),
                        mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false),mbIMU_FullBA(false) ,mfScale(1.0)
 {
     mnId=nNextId++;
@@ -53,7 +53,7 @@ Map::~Map()
     mvpKeyFrameOrigins.clear();
 }
 
-void Map::AddKeyFrame(KeyFrame *pKF)
+void Map::AddKeyFrame(shared_ptr<KeyFrame> pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
     if(mspKeyFrames.empty()){
@@ -100,7 +100,7 @@ void Map::EraseMapPoint(MapPoint *pMP)
     // Delete the MapPoint
 }
 
-void Map::EraseKeyFrame(KeyFrame *pKF)
+void Map::EraseKeyFrame(shared_ptr<KeyFrame>pKF)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspKeyFrames.erase(pKF);
@@ -108,7 +108,7 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
     {
         if(pKF->mnId == mpKFlowerID->mnId)
         {
-            vector<KeyFrame*> vpKFs = vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
+            vector<shared_ptr<KeyFrame>> vpKFs = vector<shared_ptr<KeyFrame>>(mspKeyFrames.begin(),mspKeyFrames.end());
             sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
             mpKFlowerID = vpKFs[0];
         }
@@ -140,12 +140,12 @@ int Map::GetLastBigChangeIdx()
     return mnBigChangeIdx;
 }
 
-vector<KeyFrame*> Map::GetAllKeyFrames(bool sort)
+vector<shared_ptr<KeyFrame>> Map::GetAllKeyFrames(bool sort)
 {
     unique_lock<mutex> lock(mMutexMap);
-    auto vAllKfs = vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
+    auto vAllKfs = vector<shared_ptr<KeyFrame>>(mspKeyFrames.begin(),mspKeyFrames.end());
     if(sort)
-        std::sort(vAllKfs.begin(), vAllKfs.end(), [](KeyFrame* a, KeyFrame* b){return a->mnId < b->mnId;});
+        std::sort(vAllKfs.begin(), vAllKfs.end(), [](shared_ptr<KeyFrame> a, shared_ptr<KeyFrame> b){return a->mnId < b->mnId;});
     return vAllKfs;
 }
 
@@ -195,7 +195,7 @@ long unsigned int Map::GetMaxKFid()
     return mnMaxKFid;
 }
 
-KeyFrame* Map::GetOriginKF()
+shared_ptr<KeyFrame> Map::GetOriginKF()
 {
     return mpKFinitial;
 }
@@ -215,10 +215,10 @@ void Map::clear()
 //    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
 //        delete *sit;
 
-    for(set<KeyFrame*>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)
+    for(set<shared_ptr<KeyFrame>>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)
     {
-        KeyFrame* pKF = *sit;
-        pKF->UpdateMap(static_cast<Map*>(NULL));
+        shared_ptr<KeyFrame> pKF = *sit;
+        pKF->UpdateMap(nullptr);
 //        delete *sit;
     }
 
@@ -252,16 +252,16 @@ bool Map::IsBad()
 }
 
 
-void Map::UpdateKFsAndMapCoordianteFrames(vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option)
+void Map::UpdateKFsAndMapCoordianteFrames(vector<shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option)
 {
     unique_lock<mutex> lock(mMutexMap);
     // Body position (IMU) of first keyframe is fixed to (0,0,0)
     const auto Tyw = Sophus::SE3f(Sim3_Tyw.quaternion(), Sim3_Tyw.translation());
     const auto scale = Sim3_Tyw.scale();
 
-    for(vector<KeyFrame*>::iterator sit=sortedKeyframes.begin(); sit!=sortedKeyframes.end(); sit++)
+    for(vector<shared_ptr<KeyFrame>>::iterator sit=sortedKeyframes.begin(); sit!=sortedKeyframes.end(); sit++)
     {
-        KeyFrame* pKF = *sit;
+        shared_ptr<KeyFrame> pKF = *sit;
         auto Twc = pKF->GetPoseInverse();
         Twc.translation() *= scale;
         const auto Tyc = Tyw*Twc;
@@ -381,8 +381,8 @@ void Map::SetLastMapChange(int currentChangeId)
     mnMapChangeNotified = currentChangeId;
 }
 
-void Map::writeKeyframesCsv(const std::string& filename,
-                   const std::vector<KeyFrame*>& keyframes,
+void Map::writeKeyframesCsv(const string& filename,
+                   const vector<shared_ptr<KeyFrame>> keyframes,
                    char sep,
                    int precision) 
 {
@@ -432,8 +432,8 @@ void Map::writeKeyframesCsv(const std::string& filename,
     out_gnss_cam.close();
 }
 
-void Map::writeKeyframesReprojectionErrors(const std::string& filename,
-                   const std::vector<KeyFrame*>& keyframes,
+void Map::writeKeyframesReprojectionErrors(const string& filename,
+                   const vector<shared_ptr<KeyFrame>> keyframes,
                    char sep,
                    int precision) 
 {

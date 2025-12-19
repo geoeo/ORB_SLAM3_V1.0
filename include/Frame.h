@@ -47,7 +47,7 @@ class ConstraintPoseImu;
 class GeometricCamera;
 class ORBextractor;
 
-class Frame
+class Frame : public std::enable_shared_from_this<Frame>
 {
 public:
     Frame();
@@ -244,7 +244,7 @@ public:
 
     // Imu preintegration from last keyframe
     IMU::Preintegrated* mpImuPreintegrated;
-    KeyFrame* mpLastKeyFrame;
+    std::shared_ptr<KeyFrame> mpLastKeyFrame;
 
     // Pointer to previous frame
     std::shared_ptr<Frame> mpPrevFrame;
@@ -255,7 +255,7 @@ public:
     long unsigned int mnId;
 
     // Reference Keyframe.
-    KeyFrame* mpReferenceKF;
+    std::shared_ptr<KeyFrame> mpReferenceKF;
 
     // Scale pyramid info.
     int mnScaleLevels;

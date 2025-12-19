@@ -317,7 +317,7 @@ std::shared_ptr<std::vector<KeyPoint>> System::GetTrackedKeyPointsUn()
 }
 
 
-std::vector<KeyFrame*> System::GetAllKeyframes() {
+std::vector<shared_ptr<KeyFrame>> System::GetAllKeyframes() {
     return mpAtlas->GetAllKeyFrames();
 }
 

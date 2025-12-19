@@ -79,7 +79,7 @@ public:
     void InformOnlyTracking(const bool &flag);
 
     void UpdateCoordinateFrames(const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
-    KeyFrame* GetLastKeyFrame();
+    std::shared_ptr<KeyFrame> GetLastKeyFrame();
 
     void CreateMapInAtlas();
     std::mutex mTrackingState;
@@ -230,8 +230,8 @@ protected:
     bool mbSetInit;
 
     //Local Map
-    KeyFrame* mpReferenceKF;
-    std::vector<KeyFrame*> mvpLocalKeyFrames;
+    std::shared_ptr<KeyFrame> mpReferenceKF;
+    std::vector<std::shared_ptr<KeyFrame>> mvpLocalKeyFrames;
     std::vector<MapPoint*> mvpLocalMapPoints;
 
     std::vector<std::shared_ptr<Frame>> mvpInitFrames;
@@ -275,7 +275,7 @@ protected:
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
-    KeyFrame* mpLastKeyFrame;
+    std::shared_ptr<KeyFrame> mpLastKeyFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
     double mTimeStampLost;
