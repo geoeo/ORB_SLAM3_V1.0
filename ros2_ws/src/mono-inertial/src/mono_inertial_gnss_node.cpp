@@ -96,8 +96,8 @@ class SlamNode : public rclcpp::Node
       orb.nFastFeatures = 16000;
       orb.nLevels     = 1;
       orb.scaleFactor = 2.0;
-      orb.minThFast   = 80;
-      orb.iniThFast   = 100;
+      orb.minThFast   = 10;
+      orb.iniThFast   = 15;
 
       // F6
       ORB_SLAM3::ImuParameters imu;
@@ -192,8 +192,8 @@ class SlamNode : public rclcpp::Node
       //double timeshift_cam_imu = 0.00851880502751802;
 
       ORB_SLAM3::TrackerParameters tracker_settings;
-      tracker_settings.frameGridCols = 64;
-      tracker_settings.frameGridRows = 48;
+      tracker_settings.frameGridCols = 32;
+      tracker_settings.frameGridRows = 16;
       tracker_settings.maxLocalKFCount = 60;
       tracker_settings.featureThresholdForKF = 200;
       tracker_settings.maxFrames = 10;

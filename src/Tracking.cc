@@ -107,7 +107,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     float fScaleFactor = settings->scaleFactor();
     cv::Size newImSize = settings->newImSize();
 
-    mpORBextractorLeft = new ORBextractor(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
+    mpORBextractor = make_shared<ORBextractor>(nFeatures,nFastFeatures ,fScaleFactor,nLevels,fIniThFAST,fMinThFAST, newImSize.width, newImSize.height);
 
     //IMU parameters
     Sophus::SE3f Tbc = settings->Tbc();
@@ -154,7 +154,7 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
     assert(mSensor == System::IMU_MONOCULAR);
 
-    mCurrentFrame = std::make_shared<Frame>(im_managed,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols, hasGNSS, GNSSPosition, mLastFrame,*mpImuCalib);
+    mCurrentFrame = make_shared<Frame>(im_managed,timestamp,mpORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols, hasGNSS, GNSSPosition, mLastFrame,*mpImuCalib);
 
     if(mCurrentFrame->mNumKeypoints == 0)
         return {Sophus::SE3f(),0,false};

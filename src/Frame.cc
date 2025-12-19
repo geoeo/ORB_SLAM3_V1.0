@@ -54,7 +54,7 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpI
 
 //Copy Constructor
 Frame::Frame(const shared_ptr<Frame> frame)
-    :mpcpi(frame->mpcpi),mpORBvocabulary(frame->mpORBvocabulary), mpORBextractorLeft(frame->mpORBextractorLeft), mpORBextractorRight(frame->mpORBextractorRight),
+    :mpcpi(frame->mpcpi),mpORBvocabulary(frame->mpORBvocabulary), mpORBextractor(frame->mpORBextractor),
      mTimeStamp(frame->mTimeStamp), mK(frame->mK.clone()), mK_(Converter::toMatrix3f(frame->mK)), mDistCoef(frame->mDistCoef.clone()),
      mbf(frame->mbf), mb(frame->mb), mThDepth(frame->mThDepth), mNumKeypoints(frame->mNumKeypoints), mvKeys(frame->mvKeys),
      mvKeysRight(frame->mvKeysRight), mvKeysUn(frame->mvKeysUn), mvuRight(frame->mvuRight),
@@ -88,13 +88,13 @@ Frame::Frame(const shared_ptr<Frame> frame)
 }
 
 
-Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor, shared_ptr<ORBVocabulary> voc, 
+Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, shared_ptr<ORBextractor> extractor, shared_ptr<ORBVocabulary> voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+    :mpcpi(nullptr),mpORBvocabulary(voc),mpORBextractor(extractor),
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
      mThDepth(thDepth),mNumKeypoints(0),mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
-     mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
+     mpImuPreintegrated(nullptr),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(nullptr), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false)
 {
     ZoneNamedN(Frame, "Frame", true); 
@@ -105,13 +105,13 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     mnId=nNextId++;
 
     // Scale Level Info
-    mnScaleLevels = mpORBextractorLeft->GetLevels();
-    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels = mpORBextractor->GetLevels();
+    mfScaleFactor = mpORBextractor->GetScaleFactor();
     mfLogScaleFactor = log(mfScaleFactor);
-    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors = mpORBextractor->GetScaleFactors();
+    mvInvScaleFactors = mpORBextractor->GetInverseScaleFactors();
+    mvLevelSigma2 = mpORBextractor->GetScaleSigmaSquares();
+    mvInvLevelSigma2 = mpORBextractor->GetInverseScaleSigmaSquares();
 
     // ORB extraction
     ExtractORB(0,im_managed_gray);
@@ -212,7 +212,7 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
-    auto key_desc_optional = mpORBextractorLeft->extractFeatures(im_managed);
+    auto key_desc_optional = mpORBextractor->extractFeatures(im_managed);
 
     if(key_desc_optional.has_value()){
         auto [keys,descriptors] = key_desc_optional.value();

@@ -56,7 +56,7 @@ public:
     Frame(const std::shared_ptr<Frame> frame);
 
     // Constructor for Monocular cameras.
-    Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor, std::shared_ptr<ORBVocabulary> voc, 
+    Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, std::shared_ptr<ORBextractor> extractor, std::shared_ptr<ORBVocabulary> voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
 
@@ -177,8 +177,8 @@ public:
     // Vocabulary used for relocalization.
     std::shared_ptr<ORBVocabulary> mpORBvocabulary;
 
-    // Feature extractor. The right is used only in the stereo case.
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    // Feature extractor.
+    std::shared_ptr<ORBextractor> mpORBextractor;
 
     // Frame timestamp.
     double mTimeStamp; //TODO: change to chrono

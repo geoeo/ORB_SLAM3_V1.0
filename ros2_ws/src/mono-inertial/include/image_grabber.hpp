@@ -101,8 +101,8 @@ namespace ros2_orbslam3 {
         cv::cuda::resize(m_undistorted_image_gpu, m_resized_img_gpu.createGpuMatHeader(), new_im_size, 0, 0, cv::INTER_LINEAR, m_stream);
         m_stream.waitForCompletion();
         cv::cuda::cvtColor(m_resized_img_gpu.createGpuMatHeader(),m_cuda_managed_memory_image_grey.createGpuMatHeader(),cv::COLOR_BGR2GRAY);
-        mClahe->apply(m_cuda_managed_memory_image_grey.createGpuMatHeader(), m_cuda_managed_memory_image_grey_eq.createGpuMatHeader());
-        return m_cuda_managed_memory_image_grey_eq;
+        //mClahe->apply(m_cuda_managed_memory_image_grey.createGpuMatHeader(), m_cuda_managed_memory_image_grey_eq.createGpuMatHeader());
+        return m_cuda_managed_memory_image_grey;
     }
 
 

@@ -219,7 +219,7 @@ protected:
     int mFeatureThresholdForKF;
 
     //ORB
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    std::shared_ptr<ORBextractor> mpORBextractor;
 
     //BoW
     std::shared_ptr<ORBVocabulary> mpORBVocabulary;
