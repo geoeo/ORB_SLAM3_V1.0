@@ -306,7 +306,7 @@ int System::GetTrackingState()
 
 vector<shared_ptr<MapPoint>> System::GetActiveReferenceMapPoints()
 {
-    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    auto pActiveMap = mpAtlas->GetCurrentMap();
     return pActiveMap->GetReferenceMapPoints();
 }
 

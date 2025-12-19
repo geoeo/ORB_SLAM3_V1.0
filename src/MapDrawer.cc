@@ -145,7 +145,7 @@ bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
 
 void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
 {
-    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    auto pActiveMap = mpAtlas->GetCurrentMap();
     if(!pActiveMap)
         return;
 
@@ -190,7 +190,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
 {
 
 
-    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    auto pActiveMap = mpAtlas->GetCurrentMap();
     // DEBUG LBA
     std::set<long unsigned int> sOptKFs = pActiveMap->msOptKFs;
     std::set<long unsigned int> sFixedKFs = pActiveMap->msFixedKFs;
@@ -348,13 +348,13 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         glEnd();
     }
 
-    vector<Map*> vpMaps = mpAtlas->GetAllMaps();
+    auto vpMaps = mpAtlas->GetAllMaps();
 
     if(bDrawKF)
     {
-        for(Map* pMap : vpMaps)
+        for(auto pMap : vpMaps)
         {
-            if(pMap == pActiveMap)
+            if(pMap->GetId() == pActiveMap->GetId())
                 continue;
 
             auto vpKFs = pMap->GetAllKeyFrames(false);

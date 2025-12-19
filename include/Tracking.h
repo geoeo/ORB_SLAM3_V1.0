@@ -91,7 +91,7 @@ public:
 
     //DEBUG
     void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder="");
-    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, Map* pMap);
+    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::shared_ptr<Map> pMap);
 
 
     bool isBACompleteForMap(); 

@@ -57,7 +57,7 @@ bool sortByVal(const pair<shared_ptr<MapPoint>, int> &a, const pair<shared_ptr<M
     return (a.second < b.second);
 }
 
-void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+void Optimizer::GlobalBundleAdjustemnt(shared_ptr<Map> pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
     auto vpKFs = pMap->GetAllKeyFrames(false);
     auto vpMP = pMap->GetAllMapPoints();
@@ -65,7 +65,7 @@ void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopF
 }
 
 
-void Optimizer::BundleAdjustment(Map* pMap, const vector<shared_ptr<KeyFrame>> &vpKFs, const vector<shared_ptr<MapPoint>> &vpMP,
+void Optimizer::BundleAdjustment(shared_ptr<Map> pMap, const vector<shared_ptr<KeyFrame>> &vpKFs, const vector<shared_ptr<MapPoint>> &vpMP,
                                  int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
 {
     vector<bool> vbNotIncludedMP;
@@ -368,7 +368,7 @@ void Optimizer::BundleAdjustment(Map* pMap, const vector<shared_ptr<KeyFrame>> &
     pMap->IncreaseChangeIndex();
 }
 
-void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool *pbStopFlag, bool bInit, float priorG, float priorA, Eigen::VectorXd *vSingVal, bool *bHess)
+void Optimizer::FullInertialBA(shared_ptr<Map> pMap, int its, const bool bFixLocal, const long unsigned int nLoopId, bool *pbStopFlag, bool bInit, float priorG, float priorA, Eigen::VectorXd *vSingVal, bool *bHess)
 {
     long unsigned int maxKFid = pMap->GetMaxKFid();
     const auto vpKFs = pMap->GetAllKeyFrames(false);
@@ -1066,7 +1066,7 @@ int Optimizer::PoseOptimization(shared_ptr<Frame> pFrame)
     return nInitialCorrespondences-nBad;
 }
 
-void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, Map* pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges)
+void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges)
 {
 
     ZoneNamedN(LocalBundleAdjustment, "LocalBundleAdjustment", true); 
@@ -1359,7 +1359,7 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag
 }
 
 
-void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, Map* pMap, GeometricReferencer& geoReferencer)
+void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
 {
     ZoneNamedN(LocalGNSSBundleAdjustment, "LocalGNSSBundleAdjustment", true); 
 
@@ -1392,7 +1392,7 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStop
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap){
+        if(!pKFi->isBad() && pKFi->GetMap()->GetId() == pMap->GetId()){
             lLocalKeyFrames.push_back(pKFi);
             sAcceptedIds.insert(pKFi->mnId);
         }
@@ -1604,7 +1604,7 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStop
     pMap->IncreaseChangeIndex();
 }
 
-void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, Map* pMap, GeometricReferencer& geoReferencer)
+void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
 {
     ZoneNamedN(LocalGNSSBundleAdjustment, "LocalGNSSBundleAdjustment", true); 
 
@@ -1636,7 +1636,7 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pb
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
         pKFi->ClearReprojectionErrors();
-        if(!pKFi->isBad() && pKFi->GetMap() == pMap){
+        if(!pKFi->isBad() && pKFi->GetMap()->GetId() == pMap->GetId()){
             lLocalKeyFrames.push_back(pKFi);
             sAcceptedIds.insert(pKFi->mnId);
         }
@@ -1869,7 +1869,7 @@ void Optimizer::OptimizeEssentialGraph(shared_ptr<KeyFrame> pCurKF, vector<share
     solver->setUserLambdaInit(1e-16);
     optimizer.setAlgorithm(solver);
 
-    Map* pMap = pCurKF->GetMap();
+    auto pMap = pCurKF->GetMap();
     const unsigned int nMaxKFid = pMap->GetMaxKFid();
 
     vector<g2o::Sim3,Eigen::aligned_allocator<g2o::Sim3> > vScw(nMaxKFid+1);
@@ -2449,7 +2449,7 @@ int Optimizer::OptimizeSim3(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2
     return nIn;
 }
 
-vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_ptr<KeyFrame> pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
+vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_ptr<KeyFrame> pKF, bool *pbStopFlag, shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit)
 {
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
@@ -2965,7 +2965,7 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &star
     return res;
 }
 
-void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
+void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
 {
     Verbose::PrintMess("Inertial Optimization", Verbose::VERBOSITY_DEBUG);
     int its = 200;
@@ -3158,7 +3158,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
 }
 
 
-void Optimizer::InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG, float priorA)
+void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG, float priorA)
 {
     int its = 200; // Check number of iterations
     long unsigned int maxKFid = pMap->GetMaxKFid();
@@ -3320,7 +3320,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vect
     }
 }
 
-void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale)
+void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale)
 {
     int its = 10;
     long unsigned int maxKFid = pMap->GetMaxKFid();
@@ -3453,13 +3453,13 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pMainKF,vector<shared
     long unsigned int maxKFid = 0;
     set<shared_ptr<KeyFrame>> spKeyFrameBA;
 
-    Map* pCurrentMap = pMainKF->GetMap();
+    auto pCurrentMap = pMainKF->GetMap();
 
     // Set fixed KeyFrame vertices
     int numInsertedPoints = 0;
     for(auto pKFi : vpFixedKF)
     {
-        if(pKFi->isBad() || pKFi->GetMap() != pCurrentMap)
+        if(pKFi->isBad() || pKFi->GetMap()->GetId() != pCurrentMap->GetId())
         {
             Verbose::PrintMess("ERROR LBA: KF is bad or is not in the current map", Verbose::VERBOSITY_NORMAL);
             continue;
@@ -3480,7 +3480,7 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pMainKF,vector<shared
         for(auto pMPi : spViewMPs)
         {
             if(pMPi)
-                if(!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
+                if(!pMPi->isBad() && pMPi->GetMap()->GetId() == pCurrentMap->GetId())
 
                     if(pMPi->mnBALocalForMerge!=pMainKF->mnId)
                     {
@@ -3516,7 +3516,8 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pMainKF,vector<shared
         {
             if(pMPi)
             {
-                if(!pMPi->isBad() && pMPi->GetMap() == pCurrentMap)
+                //TODO: Use Ids as comparison
+                if(!pMPi->isBad() && pMPi->GetMap()->GetId() == pCurrentMap->GetId())
                 {
                     if(pMPi->mnBALocalForMerge != pMainKF->mnId)
                     {
@@ -4549,7 +4550,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
     return validPoints;
 }
 
- void Optimizer::ComputeAndFillLocalMapPoints(const vector<shared_ptr<KeyFrame>> &vpKFs, Map *pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId,  list<shared_ptr<MapPoint>> &spLocalMapPoints_mut){
+ void Optimizer::ComputeAndFillLocalMapPoints(const vector<shared_ptr<KeyFrame>> &vpKFs, shared_ptr<Map> pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId,  list<shared_ptr<MapPoint>> &spLocalMapPoints_mut){
     for(auto pKFi : vpKFs)
     {
         vector<shared_ptr<MapPoint>> vpMPs = pKFi->GetMapPointMatches();

@@ -212,14 +212,11 @@ void Map::SetStoredMap()
 
 void Map::clear()
 {
-//    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
-//        delete *sit;
 
     for(set<shared_ptr<KeyFrame>>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)
     {
-        shared_ptr<KeyFrame> pKF = *sit;
+        auto pKF = *sit;
         pKF->UpdateMap(nullptr);
-//        delete *sit;
     }
 
     mspMapPoints.clear();

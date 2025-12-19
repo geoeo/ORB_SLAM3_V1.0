@@ -34,7 +34,7 @@ MapPoint::MapPoint():
     mpReplaced = nullptr;
 }
 
-MapPoint::MapPoint(const Eigen::Vector3f &Pos, shared_ptr<KeyFrame>pRefKF, Map* pMap):
+MapPoint::MapPoint(const Eigen::Vector3f &Pos, shared_ptr<KeyFrame>pRefKF, shared_ptr<Map> pMap):
     mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
@@ -53,7 +53,7 @@ MapPoint::MapPoint(const Eigen::Vector3f &Pos, shared_ptr<KeyFrame>pRefKF, Map* 
     mnId=nNextId++;
 }
 
-MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, shared_ptr<KeyFrame> pRefKF, shared_ptr<KeyFrame> pHostKF, Map* pMap):
+MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, shared_ptr<KeyFrame> pRefKF, shared_ptr<KeyFrame> pHostKF, shared_ptr<Map> pMap):
     mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
@@ -73,7 +73,7 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, shared_ptr<KeyFra
     mnId=nNextId++;
 }
 
-MapPoint::MapPoint(const Eigen::Vector3f &Pos, Map* pMap, std::shared_ptr<Frame> pFrame, const int &idxF):
+MapPoint::MapPoint(const Eigen::Vector3f &Pos, shared_ptr<Map> pMap, std::shared_ptr<Frame> pFrame, const int &idxF):
     mnFirstKFid(-1), mnFirstFrame(pFrame->mnId), nObs(0), mnTrackReferenceForFrame(0), mnLastFrameSeen(0),
     mnBALocalForKF(0), mnFuseCandidateForKF(0),mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(nullptr), mnVisible(1),
@@ -589,7 +589,7 @@ int MapPoint::PredictScale(const float &currentDist, shared_ptr<Frame> pF)
 void MapPoint::PrintObservations()
 {
     cout << "MP_OBS: MP " << mnId << endl;
-    for(map<shared_ptr<KeyFrame>,tuple<int,int>>::iterator mit=mObservations.begin(), mend=mObservations.end(); mit!=mend; mit++)
+    for(auto mit=mObservations.begin(), mend=mObservations.end(); mit!=mend; mit++)
     {
         shared_ptr<KeyFrame> pKFi = mit->first;
         tuple<int,int> indexes = mit->second;
@@ -598,13 +598,13 @@ void MapPoint::PrintObservations()
     }
 }
 
-Map* MapPoint::GetMap()
+shared_ptr<Map> MapPoint::GetMap()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void MapPoint::UpdateMap(Map* pMap)
+void MapPoint::UpdateMap(shared_ptr<Map> pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;

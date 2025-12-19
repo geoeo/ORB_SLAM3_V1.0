@@ -102,8 +102,8 @@ class SlamNode : public rclcpp::Node
       // F6
       ORB_SLAM3::ImuParameters imu;
       imu.accelWalk  = 0.03789930418112102; //x100
-      imu.gyroWalk   = 0.00017633889479017548; //x10
-      imu.noiseAccel = 0.015692223203898409; //x10
+      imu.gyroWalk   = 0.0017633889479017548; //x100
+      imu.noiseAccel = 0.15692223203898409; //x100
       imu.noiseGyro  = 0.01639447071940472; // x100
       imu.InsertKFsWhenLost = false;
 

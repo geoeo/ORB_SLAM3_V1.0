@@ -47,7 +47,7 @@ class KeyFrame : public std::enable_shared_from_this<KeyFrame>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     KeyFrame();
-    KeyFrame(std::shared_ptr<Frame> F, Map* pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
+    KeyFrame(std::shared_ptr<Frame> F, std::shared_ptr<Map> pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
 
     // Pose functions
     void SetPose(const Sophus::SE3f &Tcw);
@@ -142,8 +142,8 @@ public:
         return pKF1->mnId<pKF2->mnId;
     }
 
-    Map* GetMap();
-    void UpdateMap(Map* pMap);
+    std::shared_ptr<Map> GetMap();
+    void UpdateMap(std::shared_ptr<Map> pMap);
 
     void SetNewBias(const IMU::Bias &b);
     Eigen::Vector3f GetGyroBias();
@@ -336,7 +336,7 @@ protected:
 
     float mHalfBaseline; // Only for visualization
 
-    Map* mpMap;
+    std::shared_ptr<Map> mpMap;
 
     // Backup variables for inertial
     long long int mBackupPrevKFId;

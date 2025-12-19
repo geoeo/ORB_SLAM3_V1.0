@@ -1859,7 +1859,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     // Clear BoW Database
     Verbose::PrintMess("Reseting Database", Verbose::VERBOSITY_NORMAL);
-    Map* pMap = mpAtlas->GetCurrentMap();
+    auto pMap = mpAtlas->GetCurrentMap();
     mpKeyFrameDB->clearMap(pMap); // Only clear the active map references
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
@@ -1879,7 +1879,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     list<bool> lbLost;
     // lbLost.reserve(mlbLost.size());
     unsigned int index = numeric_limits<unsigned int>::max();
-    for(Map* pMap : mpAtlas->GetAllMaps())
+    for(auto pMap : mpAtlas->GetAllMaps())
     {
         if(pMap->GetAllKeyFrames(false).size() > 0)
         {

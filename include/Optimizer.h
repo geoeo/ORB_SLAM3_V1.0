@@ -48,18 +48,17 @@ class Optimizer
 {
 public:
 
-    void static BundleAdjustment(Map* pMap, const std::vector<std::shared_ptr<KeyFrame>> &vpKF, const std::vector<std::shared_ptr<MapPoint>> &vpMP,
+    void static BundleAdjustment(std::shared_ptr<Map> pMap, const std::vector<std::shared_ptr<KeyFrame>> &vpKF, const std::vector<std::shared_ptr<MapPoint>> &vpMP,
                                  int nIterations = 5, bool *pbStopFlag=NULL, const unsigned long nLoopKF=0,
                                  const bool bRobust = true);
-    void static GlobalBundleAdjustemnt(Map* pMap, int nIterations=5, bool *pbStopFlag=NULL,
+    void static GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations=5, bool *pbStopFlag=NULL,
                                        const unsigned long nLoopKF=0, const bool bRobust = true);
-    void static FullInertialBA(Map *pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
+    void static FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
 
-    void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
+    void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
     
-    void static LocalGNSSBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
-
-    void static LocalGNSSBundleAdjustmentSim3(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, Map *pMap, GeometricReferencer& geoReferencer);
+    void static LocalGNSSBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
+    void static LocalGNSSBundleAdjustmentSim3(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
     int static PoseOptimization(std::shared_ptr<Frame> pFrame);
     int static PoseInertialOptimizationLastKeyFrame(std::shared_ptr<Frame> pFrame, bool bRecInit = false);
     int static PoseInertialOptimizationLastFrame(std::shared_ptr<Frame> pFrame, int inlierThreshold, bool bRecInit = false);
@@ -75,7 +74,7 @@ public:
 
     // For inertial systems
 
-    std::vector<std::pair<long unsigned int,Sophus::SE3f>> static LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit = false);
+    std::vector<std::pair<long unsigned int,Sophus::SE3f>> static LocalInertialBA(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bRecInit = false);
 
     // Local BA in welding area when two maps are merged
     void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pMainKF,std::vector<std::shared_ptr<KeyFrame>> vpAdjustKF, std::vector<std::shared_ptr<KeyFrame>> vpFixedKF, bool *pbStopFlag);
@@ -85,11 +84,11 @@ public:
     static Eigen::MatrixXd Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end);
 
     // Inertial pose-graph
-    void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel=false, bool bGauss=false, float priorG = 1e2, float priorA = 1e6);
-    void static InertialOptimization(Map *pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
-    void static InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale);
+    void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel=false, bool bGauss=false, float priorG = 1e2, float priorA = 1e6);
+    void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
+    void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale);
 
-    void static ComputeAndFillLocalMapPoints(const std::vector<std::shared_ptr<KeyFrame>> &vpKFs, Map *pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId, std::list<std::shared_ptr<MapPoint>> &spLocalMapPoints_mut);
+    void static ComputeAndFillLocalMapPoints(const std::vector<std::shared_ptr<KeyFrame>> &vpKFs, std::shared_ptr<Map> pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId, std::list<std::shared_ptr<MapPoint>> &spLocalMapPoints_mut);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };

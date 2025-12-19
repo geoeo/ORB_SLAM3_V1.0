@@ -49,7 +49,7 @@ public:
     ~Atlas();
 
     void CreateNewMap();
-    void ChangeMap(Map* pMap);
+    void ChangeMap(std::shared_ptr<Map> pMap);
 
     unsigned long int GetLastInitKFid();
 
@@ -79,17 +79,16 @@ public:
     bool isBACompleteForMap();
     std::vector<float> getMapScales();
 
-    std::vector<Map*> GetAllMaps();
-
+    std::vector<std::shared_ptr<Map>> GetAllMaps();
     int CountMaps();
 
     void clearMap();
 
     void clearAtlas();
 
-    Map* GetCurrentMap();
+    std::shared_ptr<Map> GetCurrentMap();
 
-    void SetMapBad(Map* pMap);
+    void SetMapBad(std::shared_ptr<Map> pMap);
     void RemoveBadMaps();
 
     bool isInertial();
@@ -109,12 +108,12 @@ public:
 
 protected:
 
-    std::set<Map*> mspMaps;
-    std::set<Map*> mspBadMaps;
+    std::set<std::shared_ptr<Map>> mspMaps;
+    std::set<std::shared_ptr<Map>> mspBadMaps;
     // Its necessary change the container from set to vector because libboost 1.58 and Ubuntu 16.04 have an error with this cointainer
-    std::vector<Map*> mvpBackupMaps;
+    std::vector<std::shared_ptr<Map>> mvpBackupMaps;
 
-    Map* mpCurrentMap;
+    std::shared_ptr<Map> mpCurrentMap;
 
     std::vector<GeometricCamera*> mvpCameras;
 

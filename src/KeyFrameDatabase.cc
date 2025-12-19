@@ -70,7 +70,7 @@ void KeyFrameDatabase::clear()
     mvInvertedFile.resize(mpVoc->size());
 }
 
-void KeyFrameDatabase::clearMap(Map* pMap)
+void KeyFrameDatabase::clearMap(shared_ptr<Map> pMap)
 {
     unique_lock<mutex> lock(mMutex);
 
@@ -728,7 +728,7 @@ void KeyFrameDatabase::DetectNBestCandidates(shared_ptr<KeyFrame> pKF, vector<sh
 }
 
 
-vector<shared_ptr<KeyFrame>> KeyFrameDatabase::DetectRelocalizationCandidates(shared_ptr<Frame> F, Map* pMap)
+vector<shared_ptr<KeyFrame>> KeyFrameDatabase::DetectRelocalizationCandidates(shared_ptr<Frame> F, shared_ptr<Map> pMap)
 {
     list<shared_ptr<KeyFrame>> lKFsSharingWords;
 
@@ -832,7 +832,7 @@ vector<shared_ptr<KeyFrame>> KeyFrameDatabase::DetectRelocalizationCandidates(sh
         if(si>minScoreToRetain)
         {
             shared_ptr<KeyFrame> pKFi = it->second;
-            if (pKFi->GetMap() != pMap)
+            if (pKFi->GetMap()->GetId() != pMap->GetId())
                 continue;
             if(!spAlreadyAddedKF.count(pKFi))
             {

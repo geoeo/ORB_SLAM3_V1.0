@@ -41,7 +41,7 @@ KeyFrame::KeyFrame():
 {
 }
 
-KeyFrame::KeyFrame(shared_ptr<Frame> F, Map *pMap, shared_ptr<KeyFrameDatabase> pKFDB):
+KeyFrame::KeyFrame(shared_ptr<Frame> F, shared_ptr<Map> pMap, shared_ptr<KeyFrameDatabase> pKFDB):
     bImu(pMap->isImuInitialized()), mnFrameId(F->mnId),  mTimeStamp(F->mTimeStamp), mnGridCols(F->getFrameGridCols()), mnGridRows(F->getFrameGridRows()),
     mfGridElementWidthInv(F->mfGridElementWidthInv), mfGridElementHeightInv(F->mfGridElementHeightInv),
     mnTrackReferenceForFrame(0), mnFuseTargetForKF(0), mnBALocalForKF(0), mnBAFixedForKF(0), mnBALocalForMerge(0), mfScale(1.0),
@@ -917,13 +917,13 @@ IMU::Bias KeyFrame::GetImuBias()
     return mImuBias;
 }
 
-Map* KeyFrame::GetMap()
+shared_ptr<Map> KeyFrame::GetMap()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mpMap;
 }
 
-void KeyFrame::UpdateMap(Map* pMap)
+void KeyFrame::UpdateMap(shared_ptr<Map> pMap)
 {
     unique_lock<mutex> lock(mMutexMap);
     mpMap = pMap;

@@ -52,7 +52,7 @@ public:
     void erase(std::shared_ptr<KeyFrame> pKF);
 
     void clear();
-    void clearMap(Map* pMap);
+    void clearMap(std::shared_ptr<Map> pMap);
 
     // Loop Detection(DEPRECATED)
     std::vector<std::shared_ptr<KeyFrame>> DetectLoopCandidates(std::shared_ptr<KeyFrame> pKF, float minScore);
@@ -63,7 +63,7 @@ public:
     void DetectNBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>> &vpLoopCand, std::vector<std::shared_ptr<KeyFrame>> &vpMergeCand, int nNumCandidates);
 
     // Relocalization
-    std::vector<std::shared_ptr<KeyFrame>> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, Map* pMap);
+    std::vector<std::shared_ptr<KeyFrame>> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, std::shared_ptr<Map> pMap);
 
 protected:
 
