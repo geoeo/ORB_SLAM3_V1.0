@@ -29,16 +29,16 @@ MapPoint::MapPoint():
     mnFirstKFid(0), mnFirstFrame(0), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mnVisible(1), mnFound(1), mbBad(false),
-    mpReplaced(static_cast<MapPoint*>(NULL)), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(std::nullopt)
+    mpReplaced(nullptr), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(std::nullopt)
 {
-    mpReplaced = static_cast<MapPoint*>(NULL);
+    mpReplaced = nullptr;
 }
 
 MapPoint::MapPoint(const Eigen::Vector3f &Pos, shared_ptr<KeyFrame>pRefKF, Map* pMap):
     mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
-    mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
+    mpReplaced(nullptr), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
     mnOriginMapId(pMap->GetId()), mGNSSPos(std::nullopt)
 {
     SetWorldPos(Pos);
@@ -57,7 +57,7 @@ MapPoint::MapPoint(const double invDepth, cv::Point2f uv_init, shared_ptr<KeyFra
     mnFirstKFid(pRefKF->mnId), mnFirstFrame(pRefKF->mnFrameId), nObs(0), mnTrackReferenceForFrame(0),
     mnLastFrameSeen(0), mnBALocalForKF(0), mnFuseCandidateForKF(0), mnLoopPointForKF(0), mnCorrectedByKF(0),
     mnCorrectedReference(0), mnBAGlobalForKF(0), mpRefKF(pRefKF), mnVisible(1), mnFound(1), mbBad(false),
-    mpReplaced(static_cast<MapPoint*>(NULL)), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
+    mpReplaced(nullptr), mfMinDistance(0), mfMaxDistance(0), mpMap(pMap),
     mnOriginMapId(pMap->GetId()), mWorldPos(Eigen::Vector3f::Zero()), mGNSSPos(std::nullopt)
 {
     mInvDepth=invDepth;
@@ -249,17 +249,17 @@ void MapPoint::SetBadFlag()
         }
     }
 
-    mpMap->EraseMapPoint(this);
+    mpMap->EraseMapPoint(shared_from_this());
 }
 
-MapPoint* MapPoint::GetReplaced()
+shared_ptr<MapPoint> MapPoint::GetReplaced()
 {
     unique_lock<mutex> lock1(mMutexFeatures);
     unique_lock<mutex> lock2(mMutexPos);
     return mpReplaced;
 }
 
-void MapPoint::Replace(MapPoint* pMP)
+void MapPoint::Replace(shared_ptr<MapPoint> pMP)
 {
     if(pMP->mnId==this->mnId)
         return;
@@ -310,7 +310,7 @@ void MapPoint::Replace(MapPoint* pMP)
     pMP->IncreaseVisible(nvisible);
     pMP->ComputeDistinctiveDescriptors();
 
-    mpMap->EraseMapPoint(this);
+    mpMap->EraseMapPoint(shared_from_this());
 }
 
 bool MapPoint::isBad()

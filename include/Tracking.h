@@ -148,7 +148,7 @@ public:
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);
 
-    std::vector<MapPoint*> GetLocalMapMPS();
+    std::vector<std::shared_ptr<MapPoint>> GetLocalMapMPS();
     void setTrackingState(eTrackingState newState);
     eTrackingState getTrackingState();
 protected:
@@ -232,7 +232,7 @@ protected:
     //Local Map
     std::shared_ptr<KeyFrame> mpReferenceKF;
     std::vector<std::shared_ptr<KeyFrame>> mvpLocalKeyFrames;
-    std::vector<MapPoint*> mvpLocalMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpLocalMapPoints;
 
     std::vector<std::shared_ptr<Frame>> mvpInitFrames;
     
@@ -296,7 +296,7 @@ protected:
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
 
-    std::list<MapPoint*> mlpTemporalPoints;
+    std::list<std::shared_ptr<MapPoint>> mlpTemporalPoints;
 
     int mnNumDataset;
 

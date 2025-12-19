@@ -125,7 +125,7 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     mvDepth = vector<float>(mNumKeypoints,-1);
     mnCloseMPs = 0;
 
-    mvpMapPoints = vector<MapPoint*>(mNumKeypoints,static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<std::shared_ptr<MapPoint>>(mNumKeypoints,nullptr);
 
     mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
     mmMatchedInImage.clear();
@@ -306,7 +306,7 @@ Eigen::Vector3f Frame::GetRelativePoseTlr_translation() {
 }
 
 
-bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
+bool Frame::isInFrustum(shared_ptr<MapPoint> pMP, float viewingCosLimit)
 {
     pMP->mbTrackInView = false;
     pMP->mTrackProjX = -1;
@@ -369,7 +369,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     return true;
 }
 
-bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
+bool Frame::ProjectPointDistort(shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v)
 {
 
     // 3D in absolute coordinates
@@ -573,7 +573,7 @@ void Frame::setIntegrated()
     mbImuPreintegrated = true;
 }
 
-bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {
+bool Frame::isInFrustumChecks(shared_ptr<MapPoint>pMP, float viewingCosLimit, bool bRight) {
     // 3D in absolute coordinates
     Eigen::Vector3f P = pMP->GetWorldPos();
 

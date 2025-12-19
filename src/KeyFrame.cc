@@ -296,7 +296,7 @@ int KeyFrame::GetNumberMPs()
     return numberMPs;
 }
 
-void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
+void KeyFrame::AddMapPoint(shared_ptr<MapPoint> pMP, const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     mvpMapPoints[idx]=pMP;
@@ -305,10 +305,10 @@ void KeyFrame::AddMapPoint(MapPoint *pMP, const size_t &idx)
 void KeyFrame::EraseMapPointMatch(const int &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
-    mvpMapPoints[idx]=static_cast<MapPoint*>(NULL);
+    mvpMapPoints[idx]=nullptr;
 }
 
-void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
+void KeyFrame::EraseMapPointMatch(shared_ptr<MapPoint> pMP)
 {
     auto indexes = pMP->GetIndexInKeyFrame(shared_from_this());
     auto leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
@@ -319,20 +319,20 @@ void KeyFrame::EraseMapPointMatch(MapPoint* pMP)
 }
 
 
-void KeyFrame::ReplaceMapPointMatch(const int &idx, MapPoint* pMP)
+void KeyFrame::ReplaceMapPointMatch(const int &idx, shared_ptr<MapPoint> pMP)
 {
     mvpMapPoints[idx]=pMP;
 }
 
-set<MapPoint*> KeyFrame::GetMapPoints()
+set<shared_ptr<MapPoint>> KeyFrame::GetMapPoints()
 {
     unique_lock<mutex> lock(mMutexFeatures);
-    set<MapPoint*> s;
+    set<shared_ptr<MapPoint>> s;
     for(size_t i=0, iend=mvpMapPoints.size(); i<iend; i++)
     {
         if(!mvpMapPoints[i])
             continue;
-        MapPoint* pMP = mvpMapPoints[i];
+        auto pMP = mvpMapPoints[i];
         if(!pMP->isBad())
             s.insert(pMP);
     }
@@ -347,7 +347,7 @@ int KeyFrame::TrackedMapPoints(const int &minObs)
     const bool bCheckObs = minObs>0;
     for(int i=0; i<N; i++)
     {
-        MapPoint* pMP = mvpMapPoints[i];
+        auto pMP = mvpMapPoints[i];
         if(pMP)
         {
             if(!pMP->isBad())
@@ -366,7 +366,7 @@ int KeyFrame::TrackedMapPoints(const int &minObs)
     return nPoints;
 }
 
-vector<MapPoint*> KeyFrame::GetMapPointMatches()
+vector<shared_ptr<MapPoint>> KeyFrame::GetMapPointMatches()
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mvpMapPoints;
@@ -421,7 +421,7 @@ void KeyFrame::ComputeReprojectionErrors(bool useGNSSFrame) {
     }
 }
 
-vector<std::pair<size_t, double>> KeyFrame::GetSortedReprojectionErrorIndices(const vector<MapPoint*> &vpMPs, shared_ptr<KeyFrame> pKF){
+vector<std::pair<size_t, double>> KeyFrame::GetSortedReprojectionErrorIndices(const vector<shared_ptr<MapPoint>> &vpMPs, shared_ptr<KeyFrame> pKF){
         vector<std::pair<size_t, double>> vObsReprojErrors;
         vObsReprojErrors.reserve(vpMPs.size());
 
@@ -450,7 +450,7 @@ vector<std::pair<size_t, double>> KeyFrame::GetSortedReprojectionErrorIndices(co
     return vObsReprojErrors;
 }
 
-MapPoint* KeyFrame::GetMapPoint(const size_t &idx)
+shared_ptr<MapPoint> KeyFrame::GetMapPoint(const size_t &idx)
 {
     unique_lock<mutex> lock(mMutexFeatures);
     return mvpMapPoints[idx];
@@ -460,7 +460,7 @@ void KeyFrame::UpdateConnections(bool upParent)
 {
     map<shared_ptr<KeyFrame>,int> KFcounter;
 
-    vector<MapPoint*> vpMP;
+    vector<shared_ptr<MapPoint>> vpMP;
     {
         unique_lock<mutex> lockMPs(mMutexFeatures);
         vpMP = mvpMapPoints;
@@ -468,9 +468,9 @@ void KeyFrame::UpdateConnections(bool upParent)
 
     //For all map points in keyframe check in which other keyframes are they seen
     //Increase counter for those keyframes
-    for(vector<MapPoint*>::iterator vit=vpMP.begin(), vend=vpMP.end(); vit!=vend; vit++)
+    for(auto vit=vpMP.begin(), vend=vpMP.end(); vit!=vend; vit++)
     {
-        MapPoint* pMP = *vit;
+        auto pMP = *vit;
 
         if(!pMP)
             continue;
@@ -861,7 +861,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     if(N==0)
         return -1.0;
 
-    vector<MapPoint*> vpMapPoints;
+    vector<shared_ptr<MapPoint>> vpMapPoints;
     Eigen::Matrix3f Rcw;
     Eigen::Vector3f tcw;
     {
@@ -879,7 +879,7 @@ float KeyFrame::ComputeSceneMedianDepth(const int q)
     for(int i=0; i<N; i++) {
         if(mvpMapPoints[i])
         {
-            MapPoint* pMP = mvpMapPoints[i];
+            auto pMP = mvpMapPoints[i];
             Eigen::Vector3f x3Dw = pMP->GetWorldPos();
             float z = Rcw2.dot(x3Dw) + zcw;
             vDepths.push_back(z);

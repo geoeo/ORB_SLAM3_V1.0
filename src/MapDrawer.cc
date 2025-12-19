@@ -149,11 +149,11 @@ void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
     if(!pActiveMap)
         return;
 
-    const vector<MapPoint*> &vpMPs = pActiveMap->GetAllMapPoints();
-    const vector<MapPoint*> &vpRefMPs = pActiveMap->GetReferenceMapPoints();
+    const auto vpMPs = pActiveMap->GetAllMapPoints();
+    const auto vpRefMPs = pActiveMap->GetReferenceMapPoints();
 
 
-    set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
+    set<shared_ptr<MapPoint>> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
     if(vpMPs.empty())
         return;
@@ -174,7 +174,7 @@ void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
     glColor3f(1.0,0.0,0.0);
-    for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
+    for(auto sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
     {
         if((*sit)->isBad())
             continue;

@@ -26,7 +26,7 @@ namespace ORB_SLAM3
 long unsigned int Map::nNextId=0;
 
 Map::Map():mnMaxKFid(0),mnBigChangeIdx(0), mbImuInitialized(false), mnMapChange(0), mpFirstRegionKF(nullptr),
-mbFail(false), mIsInUse(false), mHasTumbnail(false), mbBad(false), mnMapChangeNotified(0), 
+mbFail(false), mIsInUse(false), mbBad(false), mnMapChangeNotified(0), 
 mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mbIMU_FullBA(false), mfScale(1.0)
 {
     mnId=nNextId++;
@@ -34,7 +34,7 @@ mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false), mbIMU_FullBA(false), mf
 }
 
 Map::Map(int initKFid):mnInitKFid(initKFid), mnMaxKFid(initKFid),/*mnLastLoopKFid(initKFid),*/ mnBigChangeIdx(0), mIsInUse(false),
-                       mHasTumbnail(false), mbBad(false), mbImuInitialized(false), mpFirstRegionKF(nullptr),
+                       mbBad(false), mbImuInitialized(false), mpFirstRegionKF(nullptr),
                        mnMapChange(0), mbFail(false), mnMapChangeNotified(0), mbIsInertial(false), mbIMU_BA1(false), mbIMU_BA2(false),mbIMU_FullBA(false) ,mfScale(1.0)
 {
     mnId=nNextId++;
@@ -73,7 +73,7 @@ void Map::AddKeyFrame(shared_ptr<KeyFrame> pKF)
     }
 }
 
-void Map::AddMapPoint(MapPoint *pMP)
+void Map::AddMapPoint(shared_ptr<MapPoint> pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.insert(pMP);
@@ -91,7 +91,7 @@ bool Map::isImuInitialized()
     return mbImuInitialized;
 }
 
-void Map::EraseMapPoint(MapPoint *pMP)
+void Map::EraseMapPoint(shared_ptr<MapPoint> pMP)
 {
     unique_lock<mutex> lock(mMutexMap);
     mspMapPoints.erase(pMP);
@@ -122,7 +122,7 @@ void Map::EraseKeyFrame(shared_ptr<KeyFrame>pKF)
     // Delete the MapPoint
 }
 
-void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
+void Map::SetReferenceMapPoints(const vector<shared_ptr<MapPoint>> &vpMPs)
 {
     unique_lock<mutex> lock(mMutexMap);
     mvpReferenceMapPoints = vpMPs;
@@ -149,10 +149,10 @@ vector<shared_ptr<KeyFrame>> Map::GetAllKeyFrames(bool sort)
     return vAllKfs;
 }
 
-vector<MapPoint*> Map::GetAllMapPoints()
+vector<shared_ptr<MapPoint>> Map::GetAllMapPoints()
 {
     unique_lock<mutex> lock(mMutexMap);
-    return vector<MapPoint*>(mspMapPoints.begin(),mspMapPoints.end());
+    return vector<shared_ptr<MapPoint>>(mspMapPoints.begin(),mspMapPoints.end());
 }
 
 long unsigned int Map::MapPointsInMap()
@@ -167,7 +167,7 @@ long unsigned int Map::KeyFramesInMap()
     return mspKeyFrames.size();
 }
 
-vector<MapPoint*> Map::GetReferenceMapPoints()
+vector<shared_ptr<MapPoint>> Map::GetReferenceMapPoints()
 {
     unique_lock<mutex> lock(mMutexMap);
     return mvpReferenceMapPoints;
@@ -275,9 +275,9 @@ void Map::UpdateKFsAndMapCoordianteFrames(vector<shared_ptr<KeyFrame>> sortedKey
 
     }
     
-    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
+    for(auto sit=mspMapPoints.begin(); sit!=mspMapPoints.end(); sit++)
     {
-        MapPoint* pMP = *sit;
+        auto pMP = *sit;
         const auto oldPos = pMP->GetWorldPos();
         pMP->SetWorldPos(Sim3_Tyw*oldPos);
         pMP->UpdateDepth();

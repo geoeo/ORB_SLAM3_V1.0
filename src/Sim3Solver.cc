@@ -32,7 +32,7 @@ namespace ORB_SLAM3
 {
 
 
-Sim3Solver::Sim3Solver(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale,
+Sim3Solver::Sim3Solver(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, const vector<shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale,
                        vector<shared_ptr<KeyFrame>> vpKeyFrameMatchedMP):
     mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale),
     pCamera1(pKF1->mpCamera), pCamera2(pKF2->mpCamera)
@@ -47,7 +47,7 @@ Sim3Solver::Sim3Solver(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, con
     mpKF1 = pKF1;
     mpKF2 = pKF2;
 
-    vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+    auto vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
     mN1 = vpMatched12.size();
 
@@ -72,8 +72,8 @@ Sim3Solver::Sim3Solver(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, con
     {
         if(vpMatched12[i1])
         {
-            MapPoint* pMP1 = vpKeyFrameMP1[i1];
-            MapPoint* pMP2 = vpMatched12[i1];
+            auto pMP1 = vpKeyFrameMP1[i1];
+            auto pMP2 = vpMatched12[i1];
 
             if(!pMP1)
                 continue;

@@ -116,7 +116,7 @@ public:
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
-    std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
+    std::vector<std::shared_ptr<MapPoint>> GetActiveReferenceMapPoints(); 
     std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
     std::vector<std::shared_ptr<KeyFrame>> GetAllKeyframes();
     std::shared_ptr<std::mutex> getGlobalDataMutex();

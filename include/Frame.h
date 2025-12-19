@@ -91,9 +91,9 @@ public:
 
     // Check if a MapPoint is in the frustum of the camera
     // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+    bool isInFrustum(std::shared_ptr<MapPoint> pMP, float viewingCosLimit);
 
-    bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+    bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v);
 
     Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
 
@@ -214,7 +214,7 @@ public:
     std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
-    std::vector<MapPoint*> mvpMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;
     // "Monocular" keypoints have a negative value.
     std::vector<float> mvuRight;
     std::vector<float> mvDepth;
@@ -325,7 +325,7 @@ public:
     
     int getFrameGridCols() const;
 
-    bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
+    bool isInFrustumChecks(std::shared_ptr<MapPoint> pMP, float viewingCosLimit, bool bRight = false);
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
 

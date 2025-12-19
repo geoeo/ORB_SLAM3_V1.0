@@ -148,7 +148,7 @@ protected:
 
     shared_ptr<KeyFrame> mpCurrentKeyFrame;
 
-    std::list<MapPoint*> mlpRecentAddedMapPoints;
+    std::list<std::shared_ptr<MapPoint>> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
     std::mutex mMutexImuInit;

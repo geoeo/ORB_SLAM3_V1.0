@@ -374,11 +374,11 @@ void LocalMapping::ProcessNewKeyFrame()
     mpCurrentKeyFrame->ComputeBoW();
 
     // Associate MapPoints to the new keyframe and update normal and descriptor
-    const vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+    const auto vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
 
     for(size_t i=0; i<vpMapPointMatches.size(); i++)
     {
-        MapPoint* pMP = vpMapPointMatches[i];
+        auto pMP = vpMapPointMatches[i];
         if(pMP)
         {
             if(!pMP->isBad())
@@ -421,7 +421,7 @@ void LocalMapping::EmptyQueue()
 void LocalMapping::MapPointCulling()
 {
     // Check Recent Added MapPoints
-    list<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
+    auto lit = mlpRecentAddedMapPoints.begin();
     const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
 
     int nThObs;
@@ -435,7 +435,7 @@ void LocalMapping::MapPointCulling()
 
     while(lit!=mlpRecentAddedMapPoints.end())
     {
-        MapPoint* pMP = *lit;
+        auto pMP = *lit;
 
         if(pMP->isBad())
             lit = mlpRecentAddedMapPoints.erase(lit);
@@ -757,7 +757,7 @@ void LocalMapping::CreateNewMapPoints()
                 continue;
 
             // Triangulation is succesfull
-            MapPoint* pMP = new MapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
+            auto pMP = make_shared<MapPoint>(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
             if (bPointStereo)
                 countStereo++;
             
@@ -794,7 +794,7 @@ bool LocalMapping::GeoreferenceKeyframes(){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
             pKF->SetGNSSCameraPose(Tgc);
-            vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
+            auto vpMPs = pKF->GetMapPointMatches();
             for_each(execution::par, vpMPs.begin(), vpMPs.end(), [&](auto pMP)
             {
                 if(pMP){
@@ -862,7 +862,7 @@ void LocalMapping::SearchInNeighbors()
 
     // Search matches by projection from current KF in target KFs
     ORBmatcher matcher;
-    vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+    auto vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for(vector<shared_ptr<KeyFrame>>::iterator vit=vpTargetKFs.begin(), vend=vpTargetKFs.end(); vit!=vend; vit++)
     {
         auto pKFi = *vit;
@@ -874,18 +874,18 @@ void LocalMapping::SearchInNeighbors()
         return;
 
     // Search matches by projection from target KFs in current KF
-    vector<MapPoint*> vpFuseCandidates;
+    vector<shared_ptr<MapPoint>> vpFuseCandidates;
     vpFuseCandidates.reserve(vpTargetKFs.size()*vpMapPointMatches.size());
 
     for(vector<shared_ptr<KeyFrame>>::iterator vitKF=vpTargetKFs.begin(), vendKF=vpTargetKFs.end(); vitKF!=vendKF; vitKF++)
     {
         auto pKFi = *vitKF;
 
-        vector<MapPoint*> vpMapPointsKFi = pKFi->GetMapPointMatches();
+        auto vpMapPointsKFi = pKFi->GetMapPointMatches();
 
-        for(vector<MapPoint*>::iterator vitMP=vpMapPointsKFi.begin(), vendMP=vpMapPointsKFi.end(); vitMP!=vendMP; vitMP++)
+        for(auto vitMP=vpMapPointsKFi.begin(), vendMP=vpMapPointsKFi.end(); vitMP!=vendMP; vitMP++)
         {
-            MapPoint* pMP = *vitMP;
+            auto pMP = *vitMP;
             if(!pMP)
                 continue;
             if(pMP->isBad() || pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId)
@@ -903,7 +903,7 @@ void LocalMapping::SearchInNeighbors()
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for(size_t i=0; i<vpMapPointMatches.size(); i++)
     {
-        MapPoint* pMP=vpMapPointMatches[i];
+        auto pMP = vpMapPointMatches[i];
         if(pMP)
         {
             if(!pMP->isBad())
@@ -1038,7 +1038,7 @@ void LocalMapping::KeyFrameCulling()
 
         if((pKF->mnId==pKF->GetMap()->GetInitKFid()) || pKF->isBad())
             continue;
-        const vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
+        const auto vpMapPoints = pKF->GetMapPointMatches();
 
         int nObs = 3;
         const int thObs=nObs;
@@ -1046,7 +1046,7 @@ void LocalMapping::KeyFrameCulling()
         int nMPs=0;
         for(size_t i=0; i<vpMapPoints.size(); i++)
         {
-            MapPoint* pMP = vpMapPoints[i];
+            auto pMP = vpMapPoints[i];
             if(pMP)
             {
                 if(!pMP->isBad())

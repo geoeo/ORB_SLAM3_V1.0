@@ -43,17 +43,17 @@ public:
     Map(int initKFid);
     ~Map();
 
-    void AddKeyFrame(shared_ptr<KeyFrame> pKF);
-    void AddMapPoint(MapPoint* pMP);
-    void EraseMapPoint(MapPoint* pMP);
+    void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
+    void AddMapPoint(std::shared_ptr<MapPoint> pMP);
+    void EraseMapPoint(std::shared_ptr<MapPoint> pMP);
     void EraseKeyFrame(shared_ptr<KeyFrame> pKF);
-    void SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs);
+    void SetReferenceMapPoints(const std::vector<std::shared_ptr<MapPoint>> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
 
-    std::vector<shared_ptr<KeyFrame>> GetAllKeyFrames(bool sort);
-    std::vector<MapPoint*> GetAllMapPoints();
-    std::vector<MapPoint*> GetReferenceMapPoints();
+    std::vector<std::shared_ptr<KeyFrame>> GetAllKeyFrames(bool sort);
+    std::vector<std::shared_ptr<MapPoint>> GetAllMapPoints();
+    std::vector<std::shared_ptr<MapPoint>> GetReferenceMapPoints();
 
     long unsigned int MapPointsInMap();
     long unsigned  KeyFramesInMap();
@@ -128,11 +128,11 @@ protected:
 
     long unsigned int mnId;
 
-    std::set<MapPoint*> mspMapPoints;
+    std::set<std::shared_ptr<MapPoint>> mspMapPoints;
     std::set<std::shared_ptr<KeyFrame>> mspKeyFrames;
 
     // Save/load, the set structure is broken in libboost 1.58 for ubuntu 16.04, a vector is serializated
-    std::vector<MapPoint*> mvpBackupMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpBackupMapPoints;
     std::vector<std::shared_ptr<KeyFrame>> mvpBackupKeyFrames;
 
     std::shared_ptr<KeyFrame> mpKFinitial;
@@ -141,7 +141,7 @@ protected:
     unsigned long int mnBackupKFinitialID;
     unsigned long int mnBackupKFlowerID;
 
-    std::vector<MapPoint*> mvpReferenceMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpReferenceMapPoints;
 
     bool mbImuInitialized;
 
@@ -156,7 +156,6 @@ protected:
     int mnBigChangeIdx;
 
     bool mIsInUse;
-    bool mHasTumbnail;
     bool mbBad = false;
 
     bool mbIsInertial;

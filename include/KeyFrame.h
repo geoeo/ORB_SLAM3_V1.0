@@ -101,20 +101,20 @@ public:
     std::set<std::shared_ptr<KeyFrame>> GetMergeEdges();
     // MapPoint observation functions
     int GetNumberMPs();
-    void AddMapPoint(MapPoint* pMP, const size_t &idx);
+    void AddMapPoint(std::shared_ptr<MapPoint> pMP, const size_t &idx);
     void EraseMapPointMatch(const int &idx);
-    void EraseMapPointMatch(MapPoint* pMP);
-    void ReplaceMapPointMatch(const int &idx, MapPoint* pMP);
-    std::set<MapPoint*> GetMapPoints();
-    std::vector<MapPoint*> GetMapPointMatches();
+    void EraseMapPointMatch(std::shared_ptr<MapPoint> pMP);
+    void ReplaceMapPointMatch(const int &idx, std::shared_ptr<MapPoint> pMP);
+    std::set<std::shared_ptr<MapPoint>> GetMapPoints();
+    std::vector<std::shared_ptr<MapPoint>> GetMapPointMatches();
     int TrackedMapPoints(const int &minObs);
-    MapPoint* GetMapPoint(const size_t &idx);
+    std::shared_ptr<MapPoint> GetMapPoint(const size_t &idx);
 
     void ClearReprojectionErrors();
     void AddReprojectionError(const Eigen::Vector2d &error);
     void ComputeReprojectionErrors(bool useGNSSFrame);
     std::list<Eigen::Vector2d> GetReprojectionErrors();
-    static std::vector<std::pair<size_t, double>> GetSortedReprojectionErrorIndices(const std::vector<MapPoint*> &vpMPs, std::shared_ptr<KeyFrame> pKF);
+    static std::vector<std::pair<size_t, double>> GetSortedReprojectionErrorIndices(const std::vector<std::shared_ptr<MapPoint>> &vpMPs, std::shared_ptr<KeyFrame> pKF);
 
     // KeyPoint functions
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const bool bRight = false) const;
@@ -299,7 +299,7 @@ protected:
     IMU::Bias mImuBias;
 
     // MapPoints associated to keypoints
-    std::vector<MapPoint*> mvpMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;
     std::list<Eigen::Vector2d> mReprojectionErrors;
     // For save relation without pointer, this is necessary for save/load function
     std::vector<long long int> mvBackupMapPointsId;

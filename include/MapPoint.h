@@ -34,7 +34,7 @@
 namespace ORB_SLAM3
 {
 
-class MapPoint
+class MapPoint : public std::enable_shared_from_this<MapPoint>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -67,8 +67,8 @@ public:
     void SetBadFlag();
     bool isBad();
 
-    void Replace(MapPoint* pMP);    
-    MapPoint* GetReplaced();
+    void Replace(std::shared_ptr<MapPoint> pMP);    
+    std::shared_ptr<MapPoint> GetReplaced();
 
     void IncreaseVisible(int n=1);
     void IncreaseFound(int n=1);
@@ -169,7 +169,7 @@ protected:
 
      // Bad flag (we do not currently erase MapPoint from memory)
      bool mbBad;
-     MapPoint* mpReplaced;
+     std::shared_ptr<MapPoint> mpReplaced;
      // For save relation without pointer, this is necessary for save/load function
      long long int mBackupReplacedId;
 
