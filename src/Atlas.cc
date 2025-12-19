@@ -322,75 +322,17 @@ bool Atlas::isImuInitialized()
     return !mpCurrentMap ? false : mpCurrentMap->isImuInitialized();
 }
 
-void Atlas::PreSave()
-{
-    if(mpCurrentMap){
-        if(!mspMaps.empty() && mnLastInitKFidMap < mpCurrentMap->GetMaxKFid())
-            mnLastInitKFidMap = mpCurrentMap->GetMaxKFid()+1; //The init KF is the next of current maximum
-    }
-
-    struct compFunctor
-    {
-        inline bool operator()(Map* elem1 ,Map* elem2)
-        {
-            return elem1->GetId() < elem2->GetId();
-        }
-    };
-    std::copy(mspMaps.begin(), mspMaps.end(), std::back_inserter(mvpBackupMaps));
-    sort(mvpBackupMaps.begin(), mvpBackupMaps.end(), compFunctor());
-
-    std::set<GeometricCamera*> spCams(mvpCameras.begin(), mvpCameras.end());
-    for(Map* pMi : mvpBackupMaps)
-    {
-        if(!pMi || pMi->IsBad())
-            continue;
-
-        if(pMi->GetAllKeyFrames(false).size() == 0) {
-            // Empty map, erase before of save it.
-            SetMapBad(pMi);
-            continue;
-        }
-        pMi->PreSave(spCams);
-    }
-    RemoveBadMaps();
-}
-
-void Atlas::PostLoad()
-{
-    map<unsigned int,GeometricCamera*> mpCams;
-    for(GeometricCamera* pCam : mvpCameras)
-    {
-        mpCams[pCam->GetId()] = pCam;
-    }
-
-    mspMaps.clear();
-    unsigned long int numKF = 0, numMP = 0;
-    for(Map* pMi : mvpBackupMaps)
-    {
-        mspMaps.insert(pMi);
-        pMi->PostLoad(mpKeyFrameDB, mpORBVocabulary, mpCams);
-        numKF += pMi->GetAllKeyFrames(false).size();
-        numMP += pMi->GetAllMapPoints().size();
-    }
-    mvpBackupMaps.clear();
-}
-
-void Atlas::SetKeyFrameDababase(KeyFrameDatabase* pKFDB)
+void Atlas::SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB)
 {
     mpKeyFrameDB = pKFDB;
 }
 
-KeyFrameDatabase* Atlas::GetKeyFrameDatabase()
+std::shared_ptr<KeyFrameDatabase> Atlas::GetKeyFrameDatabase()
 {
     return mpKeyFrameDB;
 }
 
-void Atlas::SetORBVocabulary(ORBVocabulary* pORBVoc)
-{
-    mpORBVocabulary = pORBVoc;
-}
-
-ORBVocabulary* Atlas::GetORBVocabulary()
+std::shared_ptr<ORBVocabulary> Atlas::GetORBVocabulary()
 {
     return mpORBVocabulary;
 }

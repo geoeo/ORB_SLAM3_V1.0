@@ -88,7 +88,7 @@ Frame::Frame(const shared_ptr<Frame> frame)
 }
 
 
-Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
+Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor, shared_ptr<ORBVocabulary> voc, 
     GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),

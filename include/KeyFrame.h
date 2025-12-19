@@ -47,7 +47,7 @@ class KeyFrame
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     KeyFrame();
-    KeyFrame(std::shared_ptr<Frame> F, Map* pMap, KeyFrameDatabase* pKFDB);
+    KeyFrame(std::shared_ptr<Frame> F, Map* pMap, std::shared_ptr<KeyFrameDatabase> pKFDB);
 
     // Pose functions
     void SetPose(const Sophus::SE3f &Tcw);
@@ -155,13 +155,9 @@ public:
 
     std::optional<Eigen::Vector2d> ProjectPointUnDistort(const Eigen::Vector3d& P,const Sophus::Sim3d& Tcw);
 
-    void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP, std::set<GeometricCamera*>& spCam);
-    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid, std::map<unsigned int, GeometricCamera*>& mpCamId);
 
-
-    void SetORBVocabulary(ORBVocabulary* pORBVoc);
-    void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
-    KeyFrameDatabase* GetKeyFrameDatabase();
+    void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
+    std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();
     long unsigned int GetFrameId() const;
 
     bool bImu;
@@ -311,8 +307,8 @@ protected:
     std::vector<long long int> mvBackupMapPointsId;
 
     // BoW
-    KeyFrameDatabase* mpKeyFrameDB;
-    ORBVocabulary* mpORBvocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBvocabulary;
 
     // Grid over the image to speed up feature matching
     std::vector<std::vector<std::size_t>> mGrid;

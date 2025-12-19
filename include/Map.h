@@ -104,9 +104,6 @@ public:
 
     unsigned int GetLowerKFID();
 
-    void PreSave(std::set<GeometricCamera*> &spCams);
-    void PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long unsigned int, KeyFrame*>& mpKeyFrameId*/, std::map<unsigned int, GeometricCamera*> &mpCams);
-
     void printReprojectionError(std::list<KeyFrame*> &lpLocalWindowKFs, KeyFrame* mpCurrentKF, std::string &name, std::string &name_folder);
     static void writeKeyframesCsv(const std::string& path, const std::vector<KeyFrame*>& keyframes, char sep = ',', int precision = 17);
     static void writeKeyframesReprojectionErrors(const std::string& filename, const std::vector<KeyFrame*>& keyframes, char sep = ',', int precision = 17);
@@ -161,10 +158,6 @@ protected:
 
     // Index related to a big change in the map (loop closure, global BA)
     int mnBigChangeIdx;
-
-
-    // View of the map in aerial sight (for the AtlasViewer)
-    GLubyte* mThumbnail;
 
     bool mIsInUse;
     bool mHasTumbnail;

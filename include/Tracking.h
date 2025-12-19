@@ -42,6 +42,7 @@
 #include <mutex>
 #include <unordered_set>
 #include <atomic>
+#include <memory>
 #include <tuple>
 
 namespace ORB_SLAM3
@@ -55,8 +56,8 @@ class Tracking
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings);
+    Tracking(System* pSys, std::shared_ptr<ORBVocabulary> pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
+             std::shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings);
 
     ~Tracking();
 
@@ -221,8 +222,8 @@ protected:
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
 
     //BoW
-    ORBVocabulary* mpORBVocabulary;
-    KeyFrameDatabase* mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
 
     // Initalization (only for monocular)
     bool mbReadyToInitializate;

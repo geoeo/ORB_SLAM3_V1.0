@@ -94,9 +94,6 @@ public:
 
     void PrintObservations();
 
-    void PreSave(std::set<KeyFrame*>& spKF,std::set<MapPoint*>& spMP);
-    void PostLoad(std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid);
-
 public:
     long unsigned int mnId;
     static long unsigned int nNextId;

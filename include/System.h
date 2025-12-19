@@ -28,6 +28,7 @@
 #include <vector>
 #include <utility>
 #include <tuple>
+#include <memory>
 #include <opencv2/core/core.hpp>
 
 #include <Tracking.h>
@@ -140,10 +141,10 @@ private:
     eSensor mSensor;
 
     // ORB vocabulary used for place recognition and feature matching.
-    ORBVocabulary* mpVocabulary;
+    std::shared_ptr<ORBVocabulary> mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
-    KeyFrameDatabase* mpKeyFrameDatabase;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     //Map* mpMap;

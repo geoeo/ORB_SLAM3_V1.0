@@ -73,7 +73,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
   //Load ORB Vocabulary
   Verbose::PrintMess("Loading ORB Vocabulary from " + strVocFile, Verbose::VERBOSITY_NORMAL);
 
-  mpVocabulary = new ORB_SLAM3::ORBVocabulary();
+  mpVocabulary = std::make_shared<ORB_SLAM3::ORBVocabulary>();
   bool bVocLoad = false;
   // chose loading method based on file extension
   if (has_suffix(strVocFile, ".txt"))
@@ -90,7 +90,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
   cout << "Vocabulary loaded!" << endl << endl;
 
   //Create KeyFrame Database
-  mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
+  mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   //Create the Atlas
     mpAtlas = new Atlas(0);
@@ -139,8 +139,6 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
 }
 
 System::~System(){
-    delete mpVocabulary;
-    delete mpKeyFrameDatabase;
     delete mpAtlas;
     delete settings_;
     delete mpTracker;

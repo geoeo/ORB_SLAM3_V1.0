@@ -39,7 +39,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
+Tracking::Tracking(System *pSys, shared_ptr<ORBVocabulary> pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
     mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()), mInitialFrame(make_shared<Frame>()), mbStep(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
     mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), 

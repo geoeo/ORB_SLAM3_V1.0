@@ -45,7 +45,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     KeyFrameDatabase(){}
-    KeyFrameDatabase(const ORBVocabulary &voc);
+    KeyFrameDatabase(const std::shared_ptr<ORBVocabulary> voc);
 
     void add(KeyFrame* pKF);
 
@@ -65,14 +65,10 @@ public:
     // Relocalization
     std::vector<KeyFrame*> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, Map* pMap);
 
-    void PreSave();
-    void PostLoad(std::map<long unsigned int, KeyFrame*> mpKFid);
-    void SetORBVocabulary(ORBVocabulary* pORBVoc);
-
 protected:
 
    // Associated vocabulary
-   const ORBVocabulary* mpVoc;
+   const std::shared_ptr<ORBVocabulary> mpVoc;
 
    // Inverted file
    std::vector<std::list<KeyFrame*> > mvInvertedFile;

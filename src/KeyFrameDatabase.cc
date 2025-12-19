@@ -28,10 +28,10 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-KeyFrameDatabase::KeyFrameDatabase (const ORBVocabulary &voc):
-    mpVoc(&voc)
+KeyFrameDatabase::KeyFrameDatabase (const shared_ptr<ORBVocabulary> voc):
+    mpVoc(voc)
 {
-    mvInvertedFile.resize(voc.size());
+    mvInvertedFile.resize(voc->size());
 }
 
 
@@ -847,14 +847,6 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(shared_ptr<Fr
     return vpRelocCandidates;
 }
 
-void KeyFrameDatabase::SetORBVocabulary(ORBVocabulary* pORBVoc)
-{
-    ORBVocabulary** ptr;
-    ptr = (ORBVocabulary**)( &mpVoc );
-    *ptr = pORBVoc;
 
-    mvInvertedFile.clear();
-    mvInvertedFile.resize(mpVoc->size());
-}
 
 } //namespace ORB_SLAM
