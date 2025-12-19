@@ -188,7 +188,7 @@ protected:
     bool mbMapUpdated;
 
     // Imu preintegration from last frame
-    IMU::Preintegrated *mpImuPreintegratedFromLastKF;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
     // Queue of IMU measurements between frames
     std::list<IMU::Point> mlQueueImuData;
@@ -198,7 +198,7 @@ protected:
     std::mutex mMutexImuQueue;
 
     // Imu calibration parameters
-    IMU::Calib *mpImuCalib;
+    IMU::Calib mpImuCalib;
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.

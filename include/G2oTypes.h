@@ -16,8 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef G2OTYPES_H
-#define G2OTYPES_H
+#pragma once
 
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/base_binary_edge.h>
@@ -36,6 +35,7 @@
 
 #include"Converter.h"
 #include <math.h>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -497,7 +497,7 @@ class EdgeInertial : public g2o::BaseMultiEdge<9,Vector9d>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeInertial(IMU::Preintegrated* pInt);
+    EdgeInertial(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -538,7 +538,7 @@ public:
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated* mpInt;
+    std::shared_ptr<IMU::Preintegrated> mpInt;
     const double dt;
     Eigen::Vector3d g;
 };
@@ -550,8 +550,7 @@ class EdgeInertialGS : public g2o::BaseMultiEdge<9,Vector9d>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    // EdgeInertialGS(IMU::Preintegrated* pInt);
-    EdgeInertialGS(IMU::Preintegrated* pInt);
+    EdgeInertialGS(std::shared_ptr<IMU::Preintegrated> pInt);
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
@@ -561,7 +560,7 @@ public:
 
     const Eigen::Matrix3d JRg, JVg, JPg;
     const Eigen::Matrix3d JVa, JPa;
-    IMU::Preintegrated* mpInt;
+    std::shared_ptr<IMU::Preintegrated> mpInt;
     const double dt;
     Eigen::Vector3d g, gI;
 
@@ -843,5 +842,3 @@ public:
 };
 
 } //namespace ORB_SLAM2
-
-#endif // G2OTYPES_H

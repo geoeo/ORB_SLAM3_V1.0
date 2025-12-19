@@ -114,7 +114,7 @@ Preintegrated::Preintegrated(const Bias &b_, const Calib &calib)
 }
 
 // Copy constructor
-Preintegrated::Preintegrated(Preintegrated* pImuPre): dT(pImuPre->dT),C(pImuPre->C), Info(pImuPre->Info),
+Preintegrated::Preintegrated(shared_ptr<Preintegrated> pImuPre): dT(pImuPre->dT),C(pImuPre->C), Info(pImuPre->Info),
      Nga(pImuPre->Nga), NgaWalk(pImuPre->NgaWalk), b(pImuPre->b), dR(pImuPre->dR), dV(pImuPre->dV),
     dP(pImuPre->dP), JRg(pImuPre->JRg), JVg(pImuPre->JVg), JVa(pImuPre->JVa), JPg(pImuPre->JPg), JPa(pImuPre->JPa),
     avgA(pImuPre->avgA), avgW(pImuPre->avgW), bu(pImuPre->bu), db(pImuPre->db), mvMeasurements(pImuPre->mvMeasurements)
@@ -122,7 +122,7 @@ Preintegrated::Preintegrated(Preintegrated* pImuPre): dT(pImuPre->dT),C(pImuPre-
 
 }
 
-void Preintegrated::CopyFrom(Preintegrated* pImuPre)
+void Preintegrated::CopyFrom(shared_ptr<Preintegrated> pImuPre)
 {
     dT = pImuPre->dT;
     C = pImuPre->C;
@@ -236,9 +236,10 @@ void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration,
     dT += dt;
 }
 
-void Preintegrated::MergePrevious(Preintegrated* pPrev)
+void Preintegrated::MergePrevious(shared_ptr<Preintegrated> pPrev)
 {
-    if (pPrev==this)
+    //TODO: Fix with with ID not ptr comparison
+    if (pPrev.get() == this)
         return;
 
     std::unique_lock<std::mutex> lock1(mMutex);

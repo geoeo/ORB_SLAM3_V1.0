@@ -119,9 +119,8 @@ void Tracking::newParameterLoader(Settings *settings) {
     float Naw = settings->accWalk();
 
     const float sf = sqrt(mImuFreq);
-    mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
-
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
+    mpImuCalib = IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+    mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
 }
 
 void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
@@ -154,7 +153,7 @@ tuple<Sophus::SE3f,unsigned long int, bool> Tracking::GrabImageMonocular(const c
     ZoneNamedN(GrabImageMonocular, "GrabImageMonocular", true); 
     assert(mSensor == System::IMU_MONOCULAR);
 
-    mCurrentFrame = make_shared<Frame>(im_managed,timestamp,mpORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols, hasGNSS, GNSSPosition, mLastFrame,*mpImuCalib);
+    mCurrentFrame = make_shared<Frame>(im_managed,timestamp,mpORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,mFrameGridRows, mFrameGridCols, hasGNSS, GNSSPosition, mLastFrame,mpImuCalib);
 
     if(mCurrentFrame->mNumKeypoints == 0)
         return {Sophus::SE3f(),0,false};
@@ -237,7 +236,7 @@ void Tracking::PreintegrateIMU()
         return;
     }
 
-    IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame->mImuBias,mCurrentFrame->mImuCalib);
+    auto pImuPreintegratedFromLastFrame = make_shared<IMU::Preintegrated>(mLastFrame->mImuBias,mCurrentFrame->mImuCalib);
 
     for(int i=0; i<n; i++)
     {
@@ -730,13 +729,8 @@ void Tracking::MonocularInitialization()
 
             if (mSensor == System::IMU_MONOCULAR)
             {
-                if(mpImuPreintegratedFromLastKF)
-                {
-                    delete mpImuPreintegratedFromLastKF;
-                }
-                mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
+                mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
                 mCurrentFrame->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
-
             }
 
             Verbose::PrintMess("Ready to initialize", Verbose::VERBOSITY_DEBUG);
@@ -801,7 +795,7 @@ void Tracking::CreateInitialMapMonocular(const vector<int> &vIniMatches, const v
     auto pKFcur = make_shared<KeyFrame>(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
     if(mSensor == System::IMU_MONOCULAR)
-        pKFini->mpImuPreintegrated = (IMU::Preintegrated*)(NULL);
+        pKFini->mpImuPreintegrated = nullptr;
 
 
     pKFini->ComputeBoW();
@@ -889,7 +883,7 @@ void Tracking::CreateInitialMapMonocular(const vector<int> &vIniMatches, const v
         pKFini->mNextKF = pKFcur;
         pKFcur->mpImuPreintegrated = mpImuPreintegratedFromLastKF;
 
-        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKFcur->mpImuPreintegrated->GetUpdatedBias(),pKFcur->mImuCalib);
+        mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(pKFcur->mpImuPreintegrated->GetUpdatedBias(),pKFcur->mImuCalib);
     }
 
 
@@ -948,10 +942,8 @@ void Tracking::CreateMapInAtlas()
     }
 
     if((mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpImuPreintegratedFromLastKF)
-    {
-        delete mpImuPreintegratedFromLastKF;
-        mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
-    }
+        mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
+    
 
     if(mpLastKeyFrame)
         mpLastKeyFrame = nullptr;
@@ -1320,7 +1312,7 @@ void Tracking::CreateNewKeyFrame()
     else
         Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
 
-    mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(),pKF->mImuCalib);
+    mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(pKF->GetImuBias(),pKF->mImuCalib);
 
     mpLocalMapper->InsertKeyFrame(pKF);
     mpLocalMapper->SetNotStop(false);

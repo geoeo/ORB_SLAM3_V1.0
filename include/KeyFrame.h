@@ -264,7 +264,7 @@ public:
     std::shared_ptr<KeyFrame> mPrevKF;
     std::shared_ptr<KeyFrame> mNextKF;
 
-    IMU::Preintegrated* mpImuPreintegrated;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     IMU::Calib mImuCalib;
 
     unsigned int mnOriginMapId;

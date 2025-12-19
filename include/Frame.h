@@ -58,7 +58,7 @@ public:
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, std::shared_ptr<ORBextractor> extractor, std::shared_ptr<ORBVocabulary> voc, 
         GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
-        bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
+        bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib);
 
     
     // Extract ORB on the image. 0 for left image and 1 for right image.
@@ -243,12 +243,12 @@ public:
     IMU::Calib mImuCalib;
 
     // Imu preintegration from last keyframe
-    IMU::Preintegrated* mpImuPreintegrated;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
     std::shared_ptr<KeyFrame> mpLastKeyFrame;
 
     // Pointer to previous frame
     std::shared_ptr<Frame> mpPrevFrame;
-    IMU::Preintegrated* mpImuPreintegratedFrame;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
 
     // Current and Next Frame id.
     static long unsigned int nNextId;
