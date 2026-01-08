@@ -226,6 +226,10 @@ bool System::isShutDown() {
     return mbShutDown;
 }
 
+void System::RequestReset(){
+    mbResetActiveMap = true;
+}
+
 //This is not really correct -> remove in future use bool value from tracking
 unsigned int System::GetLastKeyFrameId()
 {
