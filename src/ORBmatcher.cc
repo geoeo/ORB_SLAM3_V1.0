@@ -825,7 +825,8 @@ namespace ORB_SLAM3
         Eigen::Matrix3f R12; // for fastest computation
         Eigen::Vector3f t12; // for fastest computation
 
-        GeometricCamera* pCamera1 = pKF1->mpCamera, *pCamera2 = pKF2->mpCamera;
+        auto pCamera1 = pKF1->mpCamera;
+        auto pCamera2 = pKF2->mpCamera;
 
         if(!pKF1->mpCamera2 && !pKF2->mpCamera2){
             T12 = T1w * Tw2;
@@ -1043,7 +1044,7 @@ namespace ORB_SLAM3
 
     int ORBmatcher::Fuse(shared_ptr<KeyFrame> pKF, const vector<shared_ptr<MapPoint>> &vpMapPoints, const float th, const bool bRight)
     {
-        GeometricCamera* pCamera;
+        shared_ptr<GeometricCamera> pCamera;
         Sophus::SE3f Tcw;
         Eigen::Vector3f Twc;
 

@@ -51,13 +51,13 @@ namespace ORB_SLAM3
 class Viewer;
 class FrameDrawer;
 
-class Tracking
+class Tracking : public std::enable_shared_from_this<Tracking>
 {  
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(System* pSys, std::shared_ptr<ORBVocabulary> pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             std::shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings);
+    Tracking(std::shared_ptr<ORBVocabulary> pVoc, std::shared_ptr<FrameDrawer> pFrameDrawer, std::shared_ptr<MapDrawer> pMapDrawer, std::shared_ptr<Atlas> pAtlas,
+             std::shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, std::shared_ptr<Settings> settings, const TrackerParameters& tracker_settings);
 
     ~Tracking();
 
@@ -65,9 +65,9 @@ public:
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
-    void SetLoopClosing(LoopClosing* pLoopClosing);
-    void SetViewer(Viewer* pViewer);
+    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
+    void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
+    void SetViewer(std::shared_ptr<Viewer> pViewer);
     void SetStepByStep(bool bSet);
     bool GetStepByStep();
 
@@ -90,7 +90,7 @@ public:
     int GetMatchesInliers();
 
     //DEBUG
-    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder="");
+    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder=std::string());
     void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::shared_ptr<Map> pMap);
 
 
@@ -141,10 +141,12 @@ public:
 
     // frames with estimated pose
     bool mbStep;
+    bool mbReset;
 
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
 
+    bool ShouldReset();
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);
 
@@ -207,8 +209,8 @@ protected:
     bool mbVO;
 
     //Other Thread Pointers
-    LocalMapping* mpLocalMapper;
-    LoopClosing* mpLoopClosing;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
+    std::shared_ptr<LoopClosing> mpLoopClosing;
 
     //Frame
     int mFrameGridRows;
@@ -237,16 +239,16 @@ protected:
     std::vector<std::shared_ptr<Frame>> mvpInitFrames;
     
     // System
-    System* mpSystem;
+    std::shared_ptr<System> mpSystem;
     
     //Drawers
-    Viewer* mpViewer;
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    std::shared_ptr<Viewer> mpViewer;
+    std::shared_ptr<FrameDrawer> mpFrameDrawer;
+    std::shared_ptr<MapDrawer> mpMapDrawer;
     bool bStepByStep;
 
     //Atlas
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     //Calibration matrix
     cv::Mat mK;
@@ -308,13 +310,13 @@ protected:
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
 
-    GeometricCamera* mpCamera, *mpCamera2;
+    std::shared_ptr<GeometricCamera> mpCamera, mpCamera2;
 
     int initID, lastID;
 
     Sophus::SE3f mTlr;
 
-    void newParameterLoader(Settings* settings);
+    void newParameterLoader(std::shared_ptr<Settings> settings);
 
 public:
     cv::Mat mImRight;

@@ -246,7 +246,7 @@ namespace ORB_SLAM3{
         // Max square error associated with scale level. Max error = th*th*sigma(level)*sigma(level)
         vector<float> mvMaxError;
 
-        GeometricCamera* mpCamera;
+        std::shared_ptr<GeometricCamera> mpCamera;
     };
 
 }

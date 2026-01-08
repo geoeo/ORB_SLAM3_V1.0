@@ -57,7 +57,7 @@ public:
 
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, std::shared_ptr<ORBextractor> extractor, std::shared_ptr<ORBVocabulary> voc, 
-        GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
+        std::shared_ptr<GeometricCamera> pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
         bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib);
 
     
@@ -280,12 +280,6 @@ public:
     std::string mNameFile;
 
     int mnDataset;
-
-#ifdef REGISTER_TIMES
-    double mTimeORB_Ext;
-    double mTimeStereoMatch;
-#endif
-
 private:
     // Computes image bounds for the undistorted image (called in the constructor).
     void ComputeImageBounds(const cv::cuda::HostMem &imLeft);
@@ -301,7 +295,8 @@ private:
     int mFrameGridCols; 
 
 public:
-    GeometricCamera* mpCamera, *mpCamera2;
+    std::shared_ptr<GeometricCamera> mpCamera; 
+    std::shared_ptr<GeometricCamera> mpCamera2;
 
     //Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;

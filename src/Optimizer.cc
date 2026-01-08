@@ -401,7 +401,7 @@ void Optimizer::FullInertialBA(shared_ptr<Map> pMap, int its, const bool bFixLoc
         auto pKFi = vpKFs[i];
         if(pKFi->mnId>maxKFid)
             continue;
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         pIncKF=pKFi;
         bool bFixed = false;
@@ -416,17 +416,17 @@ void Optimizer::FullInertialBA(shared_ptr<Map> pMap, int its, const bool bFixLoc
 
         if(pKFi->bImu)
         {
-            VertexVelocity* VV = new VertexVelocity(pKFi.get());
+            VertexVelocity* VV = new VertexVelocity(pKFi);
             VV->setId(maxKFid+3*(pKFi->mnId)+1);
             VV->setFixed(bFixed);
             optimizer.addVertex(VV);
             if (!bInit)
             {
-                VertexGyroBias* VG = new VertexGyroBias(pKFi.get());
+                VertexGyroBias* VG = new VertexGyroBias(pKFi);
                 VG->setId(maxKFid+3*(pKFi->mnId)+2);
                 VG->setFixed(bFixed);
                 optimizer.addVertex(VG);
-                VertexAccBias* VA = new VertexAccBias(pKFi.get());
+                VertexAccBias* VA = new VertexAccBias(pKFi);
                 VA->setId(maxKFid+3*(pKFi->mnId)+3);
                 VA->setFixed(bFixed);
                 optimizer.addVertex(VA);
@@ -436,11 +436,11 @@ void Optimizer::FullInertialBA(shared_ptr<Map> pMap, int its, const bool bFixLoc
 
     if (bInit)
     {
-        VertexGyroBias* VG = new VertexGyroBias(pIncKF.get());
+        VertexGyroBias* VG = new VertexGyroBias(pIncKF);
         VG->setId(4*maxKFid+2);
         VG->setFixed(false);
         optimizer.addVertex(VG);
-        VertexAccBias* VA = new VertexAccBias(pIncKF.get());
+        VertexAccBias* VA = new VertexAccBias(pIncKF);
         VA->setId(4*maxKFid+3);
         VA->setFixed(false);
         optimizer.addVertex(VA);
@@ -2555,22 +2555,22 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_p
     
     // Set Local temporal KeyFrame vertices
     for_each(execution::seq, vpOptimizableKFs.begin(), vpOptimizableKFs.end(), [&optimizer, maxKFid](auto pKFi) {
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(false);
         optimizer.addVertex(VP);
 
         if(pKFi->bImu)
         {
-            VertexVelocity* VV = new VertexVelocity(pKFi.get());
+            VertexVelocity* VV = new VertexVelocity(pKFi);
             VV->setId(maxKFid+3*(pKFi->mnId)+1);
             VV->setFixed(false);
             optimizer.addVertex(VV);
-            VertexGyroBias* VG = new VertexGyroBias(pKFi.get());
+            VertexGyroBias* VG = new VertexGyroBias(pKFi);
             VG->setId(maxKFid+3*(pKFi->mnId)+2);
             VG->setFixed(false);
             optimizer.addVertex(VG);
-            VertexAccBias* VA = new VertexAccBias(pKFi.get());
+            VertexAccBias* VA = new VertexAccBias(pKFi);
             VA->setId(maxKFid+3*(pKFi->mnId)+3);
             VA->setFixed(false);
             optimizer.addVertex(VA);
@@ -2579,7 +2579,7 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_p
 
     // Set Local visual KeyFrame vertices
     for_each(execution::seq, lpOptVisKFs.begin(), lpOptVisKFs.end(), [&optimizer](auto pKFi) {
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(false);
         optimizer.addVertex(VP);
@@ -2587,22 +2587,22 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_p
 
     // Set Fixed KeyFrame vertices
     for_each(execution::seq, lFixedKeyFrames.begin(), lFixedKeyFrames.end(), [&optimizer, maxKFid](auto pKFi) {
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(true);
         optimizer.addVertex(VP);
 
         if(pKFi->bImu) // This should be done only for keyframe just before temporal window
         {
-            VertexVelocity* VV = new VertexVelocity(pKFi.get());
+            VertexVelocity* VV = new VertexVelocity(pKFi);
             VV->setId(maxKFid+3*(pKFi->mnId)+1);
             VV->setFixed(true);
             optimizer.addVertex(VV);
-            VertexGyroBias* VG = new VertexGyroBias(pKFi.get());
+            VertexGyroBias* VG = new VertexGyroBias(pKFi);
             VG->setId(maxKFid+3*(pKFi->mnId)+2);
             VG->setFixed(true);
             optimizer.addVertex(VG);
-            VertexAccBias* VA = new VertexAccBias(pKFi.get());
+            VertexAccBias* VA = new VertexAccBias(pKFi);
             VA->setId(maxKFid+3*(pKFi->mnId)+3);
             VA->setFixed(true);
             optimizer.addVertex(VA);
@@ -2993,12 +2993,12 @@ void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg,
         auto pKFi = vpKFs[i];
         if(pKFi->mnId>maxKFid)
             continue;
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(true);
         optimizer.addVertex(VP);
 
-        VertexVelocity* VV = new VertexVelocity(pKFi.get());
+        VertexVelocity* VV = new VertexVelocity(pKFi);
         VV->setId(maxKFid+(pKFi->mnId)+1);
         if (bFixedVel)
             VV->setFixed(true);
@@ -3009,14 +3009,14 @@ void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg,
     }
 
     // Biases
-    VertexGyroBias* VG = new VertexGyroBias(vpKFs.front().get());
+    VertexGyroBias* VG = new VertexGyroBias(vpKFs.front());
     VG->setId(maxKFid*2+2);
     if (bFixedVel)
         VG->setFixed(true);
     else
         VG->setFixed(false);
     optimizer.addVertex(VG);
-    VertexAccBias* VA = new VertexAccBias(vpKFs.front().get());
+    VertexAccBias* VA = new VertexAccBias(vpKFs.front());
     VA->setId(maxKFid*2+3);
     if (bFixedVel)
         VA->setFixed(true);
@@ -3183,12 +3183,12 @@ void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Vector3d &bg, 
         auto pKFi = vpKFs[i];
         if(pKFi->mnId>maxKFid)
             continue;
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(true);
         optimizer.addVertex(VP);
 
-        VertexVelocity* VV = new VertexVelocity(pKFi.get());
+        VertexVelocity* VV = new VertexVelocity(pKFi);
         VV->setId(maxKFid+(pKFi->mnId)+1);
         VV->setFixed(false);
 
@@ -3196,12 +3196,12 @@ void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Vector3d &bg, 
     }
 
     // Biases
-    VertexGyroBias* VG = new VertexGyroBias(vpKFs.front().get());
+    VertexGyroBias* VG = new VertexGyroBias(vpKFs.front());
     VG->setId(maxKFid*2+2);
     VG->setFixed(false);
     optimizer.addVertex(VG);
 
-    VertexAccBias* VA = new VertexAccBias(vpKFs.front().get());
+    VertexAccBias* VA = new VertexAccBias(vpKFs.front());
     VA->setId(maxKFid*2+3);
     VA->setFixed(false);
 
@@ -3343,22 +3343,22 @@ void Optimizer::InertialOptimization(shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg,
         auto pKFi = vpKFs[i];
         if(pKFi->mnId>maxKFid)
             continue;
-        VertexPose * VP = new VertexPose(pKFi.get());
+        VertexPose * VP = new VertexPose(pKFi);
         VP->setId(pKFi->mnId);
         VP->setFixed(true);
         optimizer.addVertex(VP);
 
-        VertexVelocity* VV = new VertexVelocity(pKFi.get());
+        VertexVelocity* VV = new VertexVelocity(pKFi);
         VV->setId(maxKFid+1+(pKFi->mnId));
         VV->setFixed(true);
         optimizer.addVertex(VV);
 
         // Vertex of fixed biases
-        VertexGyroBias* VG = new VertexGyroBias(vpKFs.front().get());
+        VertexGyroBias* VG = new VertexGyroBias(vpKFs.front());
         VG->setId(2*(maxKFid+1)+(pKFi->mnId));
         VG->setFixed(true);
         optimizer.addVertex(VG);
-        VertexAccBias* VA = new VertexAccBias(vpKFs.front().get());
+        VertexAccBias* VA = new VertexAccBias(vpKFs.front());
         VA->setId(3*(maxKFid+1)+(pKFi->mnId));
         VA->setFixed(true);
         optimizer.addVertex(VA);
@@ -3740,19 +3740,19 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
     int nInitialCorrespondences=0;
 
     // Set Frame vertex
-    VertexPose* VP = new VertexPose(pFrame.get());
+    VertexPose* VP = new VertexPose(pFrame);
     VP->setId(0);
     VP->setFixed(false);
     optimizer.addVertex(VP);
-    VertexVelocity* VV = new VertexVelocity(pFrame.get());
+    VertexVelocity* VV = new VertexVelocity(pFrame);
     VV->setId(1);
     VV->setFixed(false);
     optimizer.addVertex(VV);
-    VertexGyroBias* VG = new VertexGyroBias(pFrame.get());
+    VertexGyroBias* VG = new VertexGyroBias(pFrame);
     VG->setId(2);
     VG->setFixed(false);
     optimizer.addVertex(VG);
-    VertexAccBias* VA = new VertexAccBias(pFrame.get());
+    VertexAccBias* VA = new VertexAccBias(pFrame);
     VA->setId(3);
     VA->setFixed(false);
     optimizer.addVertex(VA);
@@ -3888,19 +3888,19 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
     Verbose::PrintMess("KEY init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_DEBUG);
 
     auto pKF = pFrame->mpLastKeyFrame;
-    VertexPose* VPk = new VertexPose(pKF.get());
+    VertexPose* VPk = new VertexPose(pKF);
     VPk->setId(4);
     VPk->setFixed(true);
     optimizer.addVertex(VPk);
-    VertexVelocity* VVk = new VertexVelocity(pKF.get());
+    VertexVelocity* VVk = new VertexVelocity(pKF);
     VVk->setId(5);
     VVk->setFixed(true);
     optimizer.addVertex(VVk);
-    VertexGyroBias* VGk = new VertexGyroBias(pKF.get());
+    VertexGyroBias* VGk = new VertexGyroBias(pKF);
     VGk->setId(6);
     VGk->setFixed(true);
     optimizer.addVertex(VGk);
-    VertexAccBias* VAk = new VertexAccBias(pKF.get());
+    VertexAccBias* VAk = new VertexAccBias(pKF);
     VAk->setId(7);
     VAk->setFixed(true);
     optimizer.addVertex(VAk);
@@ -4139,19 +4139,19 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
     int nInitialCorrespondences=0;
 
     // Set Current Frame vertex
-    VertexPose* VP = new VertexPose(pFrame.get());
+    VertexPose* VP = new VertexPose(pFrame);
     VP->setId(0);
     VP->setFixed(false);
     optimizer.addVertex(VP);
-    VertexVelocity* VV = new VertexVelocity(pFrame.get());
+    VertexVelocity* VV = new VertexVelocity(pFrame);
     VV->setId(1);
     VV->setFixed(false);
     optimizer.addVertex(VV);
-    VertexGyroBias* VG = new VertexGyroBias(pFrame.get());
+    VertexGyroBias* VG = new VertexGyroBias(pFrame);
     VG->setId(2);
     VG->setFixed(false);
     optimizer.addVertex(VG);
-    VertexAccBias* VA = new VertexAccBias(pFrame.get());
+    VertexAccBias* VA = new VertexAccBias(pFrame);
     VA->setId(3);
     VA->setFixed(false);
     optimizer.addVertex(VA);
@@ -4287,7 +4287,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
     Verbose::PrintMess("Frame init: mono " + std::to_string(nInitialMonoCorrespondences) + " s: " + std::to_string(nInitialStereoCorrespondences), Verbose::VERBOSITY_DEBUG);
 
     // Set Previous Frame Vertex
-    Frame* pFp = pFrame->mpPrevFrame.get();
+    auto pFp = pFrame->mpPrevFrame;
 
     VertexPose* VPk = new VertexPose(pFp);
     VPk->setId(4);

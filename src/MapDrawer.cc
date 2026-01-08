@@ -25,7 +25,7 @@ namespace ORB_SLAM3
 {
 
 
-MapDrawer::MapDrawer(Atlas* pAtlas):
+MapDrawer::MapDrawer(std::shared_ptr<Atlas> pAtlas):
     mpAtlas(pAtlas),
     mKeyFrameSize(0.05),
     mKeyFrameLineWidth(1.0),
@@ -36,7 +36,7 @@ MapDrawer::MapDrawer(Atlas* pAtlas):
 {
 }
 
-MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings):
+MapDrawer::MapDrawer(std::shared_ptr<Atlas> pAtlas, const string &strSettingPath, shared_ptr<Settings> settings):
     mpAtlas(pAtlas)
 {
     if(settings){
@@ -61,7 +61,7 @@ MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* sett
     }
 }
 
-void MapDrawer::newParameterLoader(Settings *settings) {
+void MapDrawer::newParameterLoader(shared_ptr<Settings> settings) {
     mKeyFrameSize = settings->keyFrameSize();
     mKeyFrameLineWidth = settings->keyFrameLineWidth();
     mGraphLineWidth = settings->graphLineWidth();

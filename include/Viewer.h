@@ -27,6 +27,7 @@
 #include <Eigen/Core>
 
 #include <mutex>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -41,9 +42,9 @@ class Viewer
 {
 public:
     //EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Viewer(System* pSystem, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Tracking *pTracking, const std::string &strSettingPath, Settings* settings);
+    Viewer(std::shared_ptr<System> pSystem, std::shared_ptr<FrameDrawer> pFrameDrawer, std::shared_ptr<MapDrawer> pMapDrawer, std::shared_ptr<Tracking> pTracking, const std::string &strSettingPath, std::shared_ptr<Settings> settings);
 
-    void newParameterLoader(Settings* settings);
+    void newParameterLoader(std::shared_ptr<Settings> settings);
 
     // Main thread function. Draw points, keyframes, the current camera pose and the last processed
     // frame. Drawing is refreshed according to the camera fps. We use Pangolin.
@@ -69,10 +70,10 @@ private:
     bool ParseViewerParamFile(cv::FileStorage &fSettings);
     bool Stop();
 
-    System* mpSystem;
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
-    Tracking* mpTracker;
+    std::shared_ptr<System> mpSystem;
+    std::shared_ptr<FrameDrawer> mpFrameDrawer;
+    std::shared_ptr<MapDrawer> mpMapDrawer;
+    std::shared_ptr<Tracking> mpTracker;
 
     // 1/fps in ms
     double mT;

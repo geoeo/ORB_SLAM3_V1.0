@@ -53,16 +53,14 @@ public:
 
     unsigned long int GetLastInitKFid();
 
-    void SetViewer(Viewer* pViewer);
-
     // Method for change components in the current map
     void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void AddMapPoint(std::shared_ptr<MapPoint> pMP);
     //void EraseMapPoint(MapPoint* pMP);
     //void EraseKeyFrame(KeyFrame* pKF);
 
-    GeometricCamera* AddCamera(GeometricCamera* pCam);
-    std::vector<GeometricCamera*> GetAllCameras();
+    std::shared_ptr<GeometricCamera> AddCamera(std::shared_ptr<GeometricCamera> pCam);
+    std::vector<std::shared_ptr<GeometricCamera>> GetAllCameras();
 
     /* All methods without Map pointer work on current map */
     void SetReferenceMapPoints(const std::vector<std::shared_ptr<MapPoint>> &vpMPs);
@@ -115,12 +113,9 @@ protected:
 
     std::shared_ptr<Map> mpCurrentMap;
 
-    std::vector<GeometricCamera*> mvpCameras;
+    std::vector<std::shared_ptr<GeometricCamera>> mvpCameras;
 
     unsigned long int mnLastInitKFidMap;
-
-    Viewer* mpViewer;
-    bool mHasViewer;
 
     // Class references for the map reconstruction from the save file
     std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;

@@ -29,7 +29,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
+FrameDrawer::FrameDrawer(shared_ptr<Atlas> pAtlas):both(false),mpAtlas(pAtlas)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC1, cv::Scalar(0));
@@ -406,7 +406,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 
 }
 
-void FrameDrawer::Update(Tracking *pTracker)
+void FrameDrawer::Update(shared_ptr<Tracking> pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     //Variables for the new visualization

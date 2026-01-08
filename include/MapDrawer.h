@@ -38,12 +38,12 @@ class MapDrawer
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    MapDrawer(Atlas* pAtlas);
-    MapDrawer(Atlas* pAtlas, const std::string &strSettingPath, Settings* settings);
+    MapDrawer(std::shared_ptr<Atlas> pAtlas);
+    MapDrawer(std::shared_ptr<Atlas> pAtlas, const std::string &strSettingPath, std::shared_ptr<Settings> settings);
 
-    void newParameterLoader(Settings* settings);
+    void newParameterLoader(std::shared_ptr<Settings> settings);
 
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     void DrawMapPoints(const Eigen::Vector3f &coordinate_offset);
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba, const Eigen::Vector3f &coordinate_offset);

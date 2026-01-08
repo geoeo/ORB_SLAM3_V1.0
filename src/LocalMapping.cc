@@ -35,8 +35,8 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
-    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mpSystem(pSys), mbMonocular(bMonocular), 
+LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
+    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mbMonocular(bMonocular), 
     mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mMutexPtrGlobalData(make_shared<mutex>()), 
@@ -49,12 +49,12 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
 {
 }
 
-void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
+void LocalMapping::SetLoopCloser(shared_ptr<LoopClosing> pLoopCloser)
 {
     mpLoopCloser = pLoopCloser;
 }
 
-void LocalMapping::SetTracker(Tracking *pTracker)
+void LocalMapping::SetTracker(shared_ptr<Tracking> pTracker)
 {
     mpTracker=pTracker;
 }
@@ -81,8 +81,6 @@ void LocalMapping::Run()
         {
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
-        
-
             // Check recent MapPoints
             MapPointCulling();
             // Triangulate new MapPoints
@@ -90,7 +88,7 @@ void LocalMapping::Run()
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
                 //TODO: This lock leads to deadlock(?) investigate why this happens
-                //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                 const auto georef_succcess = GeoreferenceKeyframes();
                 if(georef_succcess && writeKFAfterGeorefCount == 0){
                     if(mbWriteGNSSData){
@@ -507,7 +505,8 @@ void LocalMapping::CreateNewMapPoints()
 
         auto pKF2 = vpNeighKFs[i];
 
-        GeometricCamera* pCamera1 = mpCurrentKeyFrame->mpCamera, *pCamera2 = pKF2->mpCamera;
+        auto pCamera1 = mpCurrentKeyFrame->mpCamera;
+        auto pCamera2 = pKF2->mpCamera;
 
         // Check first that baseline is not too short
         Eigen::Vector3f twc2 = pKF2->GetTranslationInverse();

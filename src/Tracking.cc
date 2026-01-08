@@ -39,15 +39,16 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-Tracking::Tracking(System *pSys, shared_ptr<ORBVocabulary> pVoc, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Atlas *pAtlas, shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings):
-    mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()), mInitialFrame(make_shared<Frame>()), mbStep(false),
+Tracking::Tracking(shared_ptr<ORBVocabulary> pVoc, shared_ptr<FrameDrawer> pFrameDrawer, shared_ptr<MapDrawer> pMapDrawer, shared_ptr<Atlas> pAtlas, shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, shared_ptr<Settings> settings, const TrackerParameters& tracker_settings):
+    mState(NO_IMAGES_YET), mSensor(sensor), mCurrentFrame(make_shared<Frame>()),mLastFrame(make_shared<Frame>()), mInitialFrame(make_shared<Frame>()), 
+    mbStep(false), mbReset(false),
     mbOnlyTracking(false), mbMapUpdated(false), mbVO(false), 
     mFrameGridRows(tracker_settings.frameGridRows), mFrameGridCols(tracker_settings.frameGridCols), 
     mMaxLocalKFCount(tracker_settings.maxLocalKFCount), mTemporalKeyFrameNd(10), mCovisibilityKeyFrameNd(5),
     mFeatureThresholdForKF(tracker_settings.featureThresholdForKF),
     mMinFrames(0),mMaxFrames(tracker_settings.maxFrames),
     mpORBVocabulary(pVoc), mpKeyFrameDB(pKFDB),
-    mbReadyToInitializate(false), mpReferenceKF(nullptr), mvpInitFrames(30), mpSystem(pSys), mpViewer(nullptr), bStepByStep(false),
+    mbReadyToInitializate(false), mpReferenceKF(nullptr), mvpInitFrames(30), mpViewer(nullptr), bStepByStep(false),
     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), 
     mnFramesToResetIMU(0), mnLastRelocFrameId(0), time_recently_lost(5.0), mImageTimeout(3.0), mRelocCount(0), mRelocThresh(10),
     mnInitialFrameId(0), mbCreatedMap(false),mLastFramePostDelta(Sophus::SE3f()), mpCamera2(nullptr), mpLastKeyFrame(nullptr)
@@ -58,9 +59,9 @@ Tracking::Tracking(System *pSys, shared_ptr<ORBVocabulary> pVoc, FrameDrawer *pF
     initID = 0; lastID = 0;
     mnNumDataset = 0;
 
-    vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
+    auto vpCams = mpAtlas->GetAllCameras();
     Verbose::PrintMess("There are " + to_string(vpCams.size()) +" cameras in the atlas", Verbose::VERBOSITY_NORMAL);
-    for(GeometricCamera* pCam : vpCams)
+    for(auto pCam : vpCams)
     {
         Verbose::PrintMess("Camera " + to_string(pCam->GetId()), Verbose::VERBOSITY_NORMAL);
     }
@@ -73,7 +74,7 @@ Tracking::~Tracking()
 
 }
 
-void Tracking::newParameterLoader(Settings *settings) {
+void Tracking::newParameterLoader(std::shared_ptr<Settings> settings) {
     mpCamera = settings->camera1();
     mpCamera = mpAtlas->AddCamera(mpCamera);
 
@@ -123,17 +124,17 @@ void Tracking::newParameterLoader(Settings *settings) {
     mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
 }
 
-void Tracking::SetLocalMapper(LocalMapping *pLocalMapper)
+void Tracking::SetLocalMapper(shared_ptr<LocalMapping> pLocalMapper)
 {
     mpLocalMapper=pLocalMapper;
 }
 
-void Tracking::SetLoopClosing(LoopClosing *pLoopClosing)
+void Tracking::SetLoopClosing(shared_ptr<LoopClosing> pLoopClosing)
 {
     mpLoopClosing=pLoopClosing;
 }
 
-void Tracking::SetViewer(Viewer *pViewer)
+void Tracking::SetViewer(shared_ptr<Viewer> pViewer)
 {
     mpViewer=pViewer;
 }
@@ -367,7 +368,7 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         Verbose::PrintMess("TRACK: Reset map because local mapper set the bad imu flag", Verbose::VERBOSITY_NORMAL);
-        mpSystem->Reset();
+        mbReset = true;
         return;
     }
 
@@ -639,7 +640,7 @@ void Tracking::Track()
 
         // Update drawer
         if(mpViewer)
-            mpFrameDrawer->Update(this);
+            mpFrameDrawer->Update(shared_from_this());
 
         if(mCurrentFrame->isSet())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->GetPose());
@@ -694,9 +695,7 @@ void Tracking::Track()
 
         // Reset if the camera get lost soon after initialization
         if(getTrackingState()==LOST)
-        {
-            mpSystem->Reset();
-        }
+            mbReset=true;
 
         if(!mCurrentFrame->mpReferenceKF)
             mCurrentFrame->mpReferenceKF = mpReferenceKF;
@@ -856,7 +855,7 @@ void Tracking::CreateInitialMapMonocular(const vector<int> &vIniMatches, const v
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_NORMAL);
-        mpSystem->Reset();
+        mbReset = true;
         return;
     }
 
@@ -1482,7 +1481,7 @@ void Tracking::UpdateLocalKeyFrames()
                 else
                 {
                     // MODIFICATION
-                    mLastFrame->mvpMapPoints[i]=NULL;
+                    mLastFrame->mvpMapPoints[i]=nullptr;
                 }
             }
         }
@@ -1778,6 +1777,10 @@ bool Tracking::Relocalization()
         return true;
     }
 
+}
+
+bool Tracking::ShouldReset(){
+    return mbReset;
 }
 
 void Tracking::Reset(bool bLocMap)

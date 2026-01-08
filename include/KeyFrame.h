@@ -356,7 +356,8 @@ protected:
     std::mutex mMutexMap;
 
 public:
-    GeometricCamera* mpCamera, *mpCamera2;
+    std::shared_ptr<GeometricCamera> mpCamera;
+    std::shared_ptr<GeometricCamera> mpCamera2;
 
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;

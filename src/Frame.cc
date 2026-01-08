@@ -89,10 +89,10 @@ Frame::Frame(const shared_ptr<Frame> frame)
 
 
 Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, shared_ptr<ORBextractor> extractor, shared_ptr<ORBVocabulary> voc, 
-    GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
+    shared_ptr<GeometricCamera> pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(nullptr),mpORBvocabulary(voc),mpORBextractor(extractor),
-     mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
+     mTimeStamp(timeStamp), mK(static_pointer_cast<Pinhole>(pCamera)->toK()), mK_(static_pointer_cast<Pinhole>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
      mThDepth(thDepth),mNumKeypoints(0),mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
      mpImuPreintegrated(nullptr),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(nullptr), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false)
@@ -140,10 +140,10 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
         mfGridElementWidthInv=static_cast<float>(mFrameGridCols)/static_cast<float>(mnMaxX-mnMinX);
         mfGridElementHeightInv=static_cast<float>(mFrameGridRows)/static_cast<float>(mnMaxY-mnMinY);
 
-        fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
-        fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
-        cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
-        cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
+        fx = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(0,0);
+        fy = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(1,1);
+        cx = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(0,2);
+        cy = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(1,2);
         invfx = 1.0f/fx;
         invfy = 1.0f/fy;
 
@@ -545,7 +545,7 @@ void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)
         mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
 
         mat=mat.reshape(2);
-        cv::undistortPoints(mat,mat,static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+        cv::undistortPoints(mat,mat,static_pointer_cast<Pinhole>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
         mat=mat.reshape(1);
 
         // Undistort corners

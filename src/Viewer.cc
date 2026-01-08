@@ -26,7 +26,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings):
+Viewer::Viewer(shared_ptr<System> pSystem, shared_ptr<FrameDrawer> pFrameDrawer, shared_ptr<MapDrawer> pMapDrawer, shared_ptr<Tracking> pTracking, const string &strSettingPath, std::shared_ptr<Settings> settings):
     both(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
     mFixedTranslation(Eigen::Vector3f::Zero()), mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), 
     mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
@@ -57,7 +57,7 @@ Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer
     mbStopTrack = false;
 }
 
-void Viewer::newParameterLoader(Settings *settings) {
+void Viewer::newParameterLoader(shared_ptr<Settings> settings) {
     mImageViewerScale = 1.f;
 
     float fps = 30;

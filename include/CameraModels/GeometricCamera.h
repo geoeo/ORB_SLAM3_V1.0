@@ -19,6 +19,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -56,14 +57,14 @@ namespace ORB_SLAM3 {
         virtual cv::Mat toK() = 0;
         virtual Eigen::Matrix3f toK_() = 0;
 
-        virtual bool epipolarConstrain(GeometricCamera* otherCamera, const KeyPoint& kp1, const KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) = 0;
+        virtual bool epipolarConstrain(std::shared_ptr<GeometricCamera> otherCamera, const KeyPoint& kp1, const KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) = 0;
 
         float getParameter(const int i){return mvParameters[i];}
         void setParameter(const float p, const size_t i){mvParameters[i] = p;}
 
         size_t size(){return mvParameters.size();}
 
-        virtual bool matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, GeometricCamera* pOther,
+        virtual bool matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, std::shared_ptr<GeometricCamera> pOther,
                                  Sophus::SE3f& Tcw1, Sophus::SE3f& Tcw2,
                                  const float sigmaLevel1, const float sigmaLevel2,
                                  Eigen::Vector3f& x3Dtriangulated) = 0;
@@ -81,7 +82,6 @@ namespace ORB_SLAM3 {
         std::vector<float> mvParameters;
 
         unsigned int mnId;
-
         unsigned int mnType;
     };
 }

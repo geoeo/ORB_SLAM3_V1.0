@@ -19,6 +19,7 @@
 #pragma once
 
 #include <assert.h>
+#include <memory>
 #include <CameraModels/GeometricCamera.h>
 #include <TwoViewReconstruction.h>
 #include <KeyPoint.h>
@@ -43,11 +44,6 @@ namespace ORB_SLAM3 {
             mnType = CAM_PINHOLE;
         }
 
-
-        ~Pinhole(){
-            if(tvr) delete tvr;
-        }
-
         cv::Point2f project(const cv::Point3f &p3D);
         Eigen::Vector2d project(const Eigen::Vector3d & v3D);
         Eigen::Vector2f project(const Eigen::Vector3f & v3D);
@@ -67,20 +63,20 @@ namespace ORB_SLAM3 {
         cv::Mat toK();
         Eigen::Matrix3f toK_();
 
-        bool epipolarConstrain(GeometricCamera* pCamera2, const KeyPoint& kp1, const KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc);
+        bool epipolarConstrain(std::shared_ptr<GeometricCamera> pCamera2, const KeyPoint& kp1, const KeyPoint& kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc);
 
-        bool matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, GeometricCamera* pOther,
+        bool matchAndtriangulate(const KeyPoint& kp1, const KeyPoint& kp2, std::shared_ptr<GeometricCamera> pOther,
                                  Sophus::SE3f& Tcw1, Sophus::SE3f& Tcw2,
                                  const float sigmaLevel1, const float sigmaLevel2,
-                                 Eigen::Vector3f& x3Dtriangulated) { return false;}
+                                 Eigen::Vector3f& x3Dtriangulated) {return false;}
 
         friend std::ostream& operator<<(std::ostream& os, const Pinhole& ph);
         friend std::istream& operator>>(std::istream& os, Pinhole& ph);
 
-        bool IsEqual(GeometricCamera* pCam);
+        bool IsEqual(std::shared_ptr<GeometricCamera> pCam);
     private:
         //Parameters vector corresponds to
         //      [fx, fy, cx, cy]
-        TwoViewReconstruction* tvr;
+        std::shared_ptr<TwoViewReconstruction> tvr; //TODO: Check if this can be a unque_ptr
     };
 }

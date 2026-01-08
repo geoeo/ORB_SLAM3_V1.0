@@ -19,6 +19,8 @@
 #include <CameraModels/Pinhole.h>
 #include <Verbose.h>
 
+using namespace std;
+
 namespace ORB_SLAM3 {
 
     long unsigned int GeometricCamera::nNextId=0;
@@ -76,11 +78,11 @@ namespace ORB_SLAM3 {
         return Jac;
     }
 
-    bool Pinhole::ReconstructWithTwoViews(const std::shared_ptr<std::vector<KeyPoint>> vKeys1, const std::shared_ptr<std::vector<KeyPoint>> vKeys2, const std::vector<int> &vMatches12,
-                                 Sophus::SE3f &T21, std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated){
+    bool Pinhole::ReconstructWithTwoViews(const shared_ptr<vector<KeyPoint>> vKeys1, const shared_ptr<vector<KeyPoint>> vKeys2, const vector<int> &vMatches12,
+                                 Sophus::SE3f &T21, vector<cv::Point3f> &vP3D, vector<bool> &vbTriangulated){
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
-            tvr = new TwoViewReconstruction(K, 1.0, 200);
+            tvr = make_shared<TwoViewReconstruction>(K, 1.0, 200);
         }
         return tvr->Reconstruct(vKeys1,vKeys2,vMatches12,T21,vP3D,vbTriangulated);
     }
@@ -99,7 +101,7 @@ namespace ORB_SLAM3 {
     }
 
 
-    bool Pinhole::epipolarConstrain(GeometricCamera* pCamera2,  const KeyPoint &kp1, const KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
+    bool Pinhole::epipolarConstrain(shared_ptr<GeometricCamera> pCamera2,  const KeyPoint &kp1, const KeyPoint &kp2, const Eigen::Matrix3f& R12, const Eigen::Vector3f& t12, const float sigmaLevel, const float unc) {
         //Compute Fundamental Matrix
         Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
         Eigen::Matrix3f K1 = this->toK_();
@@ -122,18 +124,18 @@ namespace ORB_SLAM3 {
         const float error_threshold = 3.84*unc;
         const bool success = dsqr<error_threshold;
         if(!success) 
-            Verbose::PrintMess("Epipolar constrain failed: " + std::to_string(dsqr) + " >= " + std::to_string(error_threshold), Verbose::VERBOSITY_DEBUG);
+            Verbose::PrintMess("Epipolar constrain failed: " + to_string(dsqr) + " >= " + to_string(error_threshold), Verbose::VERBOSITY_DEBUG);
         
 
         return success;
     }
 
-    std::ostream & operator<<(std::ostream &os, const Pinhole &ph) {
+    ostream & operator<<(ostream &os, const Pinhole &ph) {
         os << ph.mvParameters[0] << " " << ph.mvParameters[1] << " " << ph.mvParameters[2] << " " << ph.mvParameters[3];
         return os;
     }
 
-    std::istream & operator>>(std::istream &is, Pinhole &ph) {
+    istream & operator>>(istream &is, Pinhole &ph) {
         float nextParam;
         for(size_t i = 0; i < 4; i++){
             assert(is.good());  //Make sure the input stream is good
@@ -144,12 +146,12 @@ namespace ORB_SLAM3 {
         return is;
     }
 
-    bool Pinhole::IsEqual(GeometricCamera* pCam)
+    bool Pinhole::IsEqual(shared_ptr<GeometricCamera> pCam)
     {
         if(pCam->GetType() != GeometricCamera::CAM_PINHOLE)
             return false;
 
-        Pinhole* pPinholeCam = (Pinhole*) pCam;
+        auto pPinholeCam = static_pointer_cast<Pinhole>(pCam);
 
         if(size() != pPinholeCam->size())
             return false;

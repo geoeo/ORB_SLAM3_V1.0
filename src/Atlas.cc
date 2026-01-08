@@ -33,7 +33,7 @@ Atlas::Atlas(){
     mpCurrentMap = nullptr;
 }
 
-Atlas::Atlas(int initKFid): mnLastInitKFidMap(initKFid), mHasViewer(false)
+Atlas::Atlas(int initKFid): mnLastInitKFidMap(initKFid)
 {
     mpCurrentMap = nullptr;
     CreateNewMap();
@@ -80,12 +80,6 @@ unsigned long int Atlas::GetLastInitKFid()
     return mnLastInitKFidMap;
 }
 
-void Atlas::SetViewer(Viewer* pViewer)
-{
-    mpViewer = pViewer;
-    mHasViewer = true;
-}
-
 void Atlas::AddKeyFrame(shared_ptr<KeyFrame> pKF)
 {
     auto pMapKF = pKF->GetMap();
@@ -98,14 +92,14 @@ void Atlas::AddMapPoint(std::shared_ptr<MapPoint> pMP)
     pMapMP->AddMapPoint(pMP);
 }
 
-GeometricCamera* Atlas::AddCamera(GeometricCamera* pCam)
+shared_ptr<GeometricCamera> Atlas::AddCamera(shared_ptr<GeometricCamera> pCam)
 {
     //Check if the camera already exists
     bool bAlreadyInMap = false;
     int index_cam = -1;
     for(size_t i=0; i < mvpCameras.size(); ++i)
     {
-        GeometricCamera* pCam_i = mvpCameras[i];
+        auto pCam_i = mvpCameras[i];
         if(!pCam) Verbose::PrintMess("Not pCam", Verbose::VERBOSITY_DEBUG);
         if(!pCam_i) Verbose::PrintMess("Not pCam_i", Verbose::VERBOSITY_DEBUG);
         if(pCam->GetType() != pCam_i->GetType())
@@ -113,7 +107,7 @@ GeometricCamera* Atlas::AddCamera(GeometricCamera* pCam)
 
         if(pCam->GetType() == GeometricCamera::CAM_PINHOLE)
         {
-            if(((Pinhole*)pCam_i)->IsEqual(pCam))
+            if((static_pointer_cast<Pinhole>(pCam_i))->IsEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam = i;
@@ -121,7 +115,7 @@ GeometricCamera* Atlas::AddCamera(GeometricCamera* pCam)
         }
         else if(pCam->GetType() == GeometricCamera::CAM_FISHEYE)
         {
-            if(((KannalaBrandt8*)pCam_i)->IsEqual(pCam))
+            if((static_pointer_cast<KannalaBrandt8>(pCam_i))->IsEqual(pCam))
             {
                 bAlreadyInMap = true;
                 index_cam = i;
@@ -139,7 +133,7 @@ GeometricCamera* Atlas::AddCamera(GeometricCamera* pCam)
     }
 }
 
-std::vector<GeometricCamera*> Atlas::GetAllCameras()
+std::vector<shared_ptr<GeometricCamera>> Atlas::GetAllCameras()
 {
     return mvpCameras;
 }

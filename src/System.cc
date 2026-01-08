@@ -46,7 +46,7 @@ bool System::has_suffix(const std::string &str, const std::string &suffix) {
 
 System::System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
     const TrackerParameters& tracker_settings, const eSensor sensor, bool activeLC, bool bUseViewer):
-    mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
+    mSensor(sensor), mpViewer(nullptr), mbResetActiveMap(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
 
@@ -87,23 +87,24 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     Verbose::PrintMess("Failed to open at: " + strVocFile, Verbose::VERBOSITY_NORMAL);
     exit(-1);
   }
-  cout << "Vocabulary loaded!" << endl << endl;
+
+  Verbose::PrintMess("Vocabulary loaded!", Verbose::VERBOSITY_NORMAL);
 
   //Create KeyFrame Database
   mpKeyFrameDatabase = std::make_shared<KeyFrameDatabase>(mpVocabulary);
 
   //Create the Atlas
-    mpAtlas = new Atlas(0);
+    mpAtlas = make_shared<Atlas>(0);
 
     if (mSensor==IMU_STEREO || mSensor==IMU_MONOCULAR)
         mpAtlas->SetInertialSensor();
 
-    settings_ = new Settings(cam_settings, imu_settings, orb_settings, mSensor);
+    settings_ = std::make_shared<Settings>(cam_settings, imu_settings, orb_settings, mSensor);
 
     cout << (*settings_) << endl;
 
-    mpFrameDrawer = new FrameDrawer(mpAtlas);
-    mpMapDrawer = new MapDrawer(mpAtlas, std::string(), settings_);
+    mpFrameDrawer = std::make_shared<FrameDrawer>(mpAtlas);
+    mpMapDrawer = std::make_shared<MapDrawer>(mpAtlas, std::string(), settings_);
     
 
     //Initialize the Tracking thread
@@ -111,16 +112,16 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
 
 
     //Initialize the Local Mapping thread and launch
-    mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
+    mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, local_mapper_settings);
-    mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
+    mptLocalMapping = std::make_shared<std::thread>(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = 0; // seems to be ununsed
     if(mpLocalMapper->mbFarPoints)
         Verbose::PrintMess("Discard points further than " +to_string(mpLocalMapper->mThFarPoints) + " m from current camera", Verbose::VERBOSITY_NORMAL);
     
 
 
-    mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, mSensor, settings_, tracker_settings);
+    mpTracker = std::make_shared<Tracking>(mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, mSensor, settings_, tracker_settings);
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpLocalMapper->SetTracker(mpTracker);
@@ -128,8 +129,8 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     //Initialize the Viewer thread and launch
     if(bUseViewer)
     {
-        mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,std::string(),settings_);
-        mptViewer = new thread(&Viewer::Run, mpViewer);
+        mpViewer = std::make_shared<Viewer>(shared_from_this(), mpFrameDrawer,mpMapDrawer,mpTracker,std::string(),settings_);
+        mptViewer = std::make_shared<std::thread>(&Viewer::Run, mpViewer.get());
         mpTracker->SetViewer(mpViewer);
         mpViewer->both = mpFrameDrawer->both;
     }
@@ -139,24 +140,12 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
 }
 
 System::~System(){
-    delete mpAtlas;
-    delete settings_;
-    delete mpTracker;
-    delete mpLocalMapper;
-
-    mptLocalMapping->join();
-    delete mpLocalMapper;
-
-    if(mptLoopClosing){
+    if(mptLoopClosing)
         mptLocalMapping->join();
-        delete mptLoopClosing;
-    }
-
-
-    if(mpViewer){
+    
+    if(mpViewer)
         mptViewer->join();
-        delete mpViewer;
-    }
+    
 }
 
 tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMonocular(const cv::cuda::HostMem &im_managed, const double &timestamp, const vector<IMU::Point>& vImuMeas, bool hasGNSS, Eigen::Vector3f GNSSPosition, string filename)
@@ -204,10 +193,9 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     // Check reset
     {
         auto lock = scoped_mutex_lock( mMutexReset );
-        if(mbReset)
+        if(mpTracker->ShouldReset())
         {
             mpTracker->Reset();
-            mbReset = false;
         }
         else if(mbResetActiveMap)
         {
@@ -252,12 +240,6 @@ bool System::MapChanged()
     }
     else
         return false;
-}
-
-void System::Reset()
-{
-    auto lock = scoped_mutex_lock( mMutexReset );
-    mbReset = true;
 }
 
 void System::ResetActiveMap()

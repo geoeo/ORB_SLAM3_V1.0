@@ -45,11 +45,10 @@ class LocalMapping
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
+    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
 
-    void SetLoopCloser(LoopClosing* pLoopCloser);
-
-    void SetTracker(Tracking* pTracker);
+    void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
+    void SetTracker(std::shared_ptr<Tracking> pTracker);
 
     // Main function
     void Run();
@@ -123,8 +122,6 @@ protected:
     void KeyFrameCulling();
     void UpdateTrackerAndMapCoordianateFrames(std::vector<std::shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
 
-    System *mpSystem;
-
     const bool mbMonocular;
     bool mbFixScale;
     bool mbInertial;
@@ -139,10 +136,9 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
-
-    LoopClosing* mpLoopCloser;
-    Tracking* mpTracker;
+    std::shared_ptr<Atlas> mpAtlas;
+    std::shared_ptr<LoopClosing> mpLoopCloser;
+    std::shared_ptr<Tracking> mpTracker;
 
     std::list<shared_ptr<KeyFrame>> mlNewKeyFrames;
 
