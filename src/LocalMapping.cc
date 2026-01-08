@@ -87,7 +87,6 @@ void LocalMapping::Run()
             CreateNewMapPoints();
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
-                //TODO: This lock leads to deadlock(?) investigate why this happens
                 {
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                     const auto georef_succcess = GeoreferenceKeyframes();
