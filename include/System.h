@@ -101,8 +101,9 @@ public:
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
-    void Shutdown();
+    void Shutdown();    
     bool isShutDown();
+    void RequestReset();
 
     unsigned int GetLastKeyFrameId();
 
@@ -168,7 +169,7 @@ private:
 
     // Reset flag
     std::mutex mMutexReset;
-    bool mbResetActiveMap;
+    std::atomic<bool> mbResetActiveMap;
 
     // Shutdown flag
     bool mbShutDown;
