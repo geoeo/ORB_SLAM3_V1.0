@@ -202,7 +202,7 @@ class SlamNode : public rclcpp::Node
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, false);
+      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();
