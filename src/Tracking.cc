@@ -1252,11 +1252,6 @@ bool Tracking::NeedNewKeyFrame()
     if(mbOnlyTracking)
         return false;
 
-    // If Local Mapping is freezed by a Loop Closure do not insert keyframes
-    if(mpLocalMapper->isStopped() || mpLocalMapper->stopRequested()) {
-        return false;
-    }
-
     const int nKFs = mpAtlas->KeyFramesInMap();
 
     // Do not insert keyframes if not enough frames have passed from last relocalisation
@@ -1291,9 +1286,6 @@ void Tracking::CreateNewKeyFrame()
     if(mpLocalMapper->IsInitializing() && !mpAtlas->isImuInitialized())
         return;
 
-    if(!mpLocalMapper->SetNotStop(true))
-        return;
-
     auto pKF = make_shared<KeyFrame>(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
@@ -1314,7 +1306,6 @@ void Tracking::CreateNewKeyFrame()
     mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(pKF->GetImuBias(),pKF->mImuCalib);
 
     mpLocalMapper->InsertKeyFrame(pKF);
-    mpLocalMapper->SetNotStop(false);
 
     mnLastKeyFrameId = mCurrentFrame->mnId;
     mpLastKeyFrame = pKF;

@@ -28,7 +28,7 @@ namespace ORB_SLAM3
 
 Viewer::Viewer(shared_ptr<FrameDrawer> pFrameDrawer, shared_ptr<MapDrawer> pMapDrawer, shared_ptr<Tracking> pTracking, const string &strSettingPath, std::shared_ptr<Settings> settings):
     both(false), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
-    mFixedTranslation(Eigen::Vector3f::Zero()), mbStopRequested(false), mbResetRequested(false), mbIsWaiting(false),
+    mFixedTranslation(Eigen::Vector3f::Zero()), mbStopRequested(false), mbResetRequested(false),
     mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
 {
     if(settings){
@@ -344,9 +344,6 @@ void Viewer::Run()
             menuReset = false;
             mbResetRequested = true;
         }
-
-        while(mbIsWaiting)
-            this_thread::sleep_for(chrono::microseconds(3000));
 
         if(menuStop)
         {

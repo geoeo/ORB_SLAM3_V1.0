@@ -57,13 +57,8 @@ public:
     void EmptyQueue();
 
     // Thread Synch
-    void RequestStop();
     void RequestReset();
-    bool Stop();
     void Release();
-    bool isStopped();
-    bool stopRequested();
-    bool SetNotStop(bool flag);
 
     void InterruptBA();
 
@@ -131,7 +126,6 @@ protected:
     std::mutex mMutexReset;
 
     bool CheckFinish();
-    void SetFinish();
     bool mbFinishRequested;
     bool mbFinished;
     std::mutex mMutexFinish;

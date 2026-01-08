@@ -79,7 +79,6 @@ private:
 
     std::atomic<bool> mbResetRequested;
     std::atomic<bool> mbStopRequested;
-    std::atomic<bool> mbIsWaiting;
 
     bool mbStopTrack;
     bool mbWrittenInitTrajectory;

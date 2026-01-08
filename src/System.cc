@@ -150,7 +150,7 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     
     if(mpViewer){
-        if(mpViewer->isStopped()){
+        if(mpViewer->isStopped() && !isShutDown()){
             Shutdown();
             return {Sophus::SE3f(),false,false,0, {}};
         }
@@ -216,10 +216,9 @@ void System::Shutdown()
         mbShutDown = true;
     }
 
-    Verbose::PrintMess("Shutdown", Verbose::VERBOSITY_NORMAL);
-
     mpLocalMapper->RequestFinish();
 
+    Verbose::PrintMess("Shutdown", Verbose::VERBOSITY_NORMAL);
 }
 
 bool System::isShutDown() {

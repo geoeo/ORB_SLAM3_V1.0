@@ -202,7 +202,7 @@ class SlamNode : public rclcpp::Node
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
+      SLAM_ = std::make_shared<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();
@@ -215,7 +215,7 @@ class SlamNode : public rclcpp::Node
       sub_gnss_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       imugb_ = std::make_shared<ImuGrabber>(this->get_logger());
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
+      igb_ = std::make_unique<ImageGrabber>(SLAM_,imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
 
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, imugb_.get(), placeholders::_1),sub_imu_options);
       sub_image_filter.subscribe(this, "/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000).get_rmw_qos_profile(), sub_image_options);
@@ -231,7 +231,8 @@ class SlamNode : public rclcpp::Node
 
     ~SlamNode(){
       cout << "Trigger Shutdown" << endl;
-      SLAM_->Shutdown();
+      if(!SLAM_->isShutDown())
+        SLAM_->Shutdown();
       sync_thread_->join();
     }
 
@@ -248,7 +249,7 @@ class SlamNode : public rclcpp::Node
     std::shared_ptr<ImuGrabber> imugb_;
     std::unique_ptr<ImageGrabber> igb_;
     std::unique_ptr<std::thread> sync_thread_;
-    std::unique_ptr<ORB_SLAM3::System> SLAM_;
+    std::shared_ptr<ORB_SLAM3::System> SLAM_;
 };
 
 

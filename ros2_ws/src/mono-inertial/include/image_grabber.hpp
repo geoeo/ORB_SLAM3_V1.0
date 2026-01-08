@@ -3,6 +3,7 @@
 #include<vector>
 #include<queue>
 #include<mutex>
+#include <memory>
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/cudaimgproc.hpp>
@@ -32,7 +33,7 @@ namespace ros2_orbslam3 {
     class ImageGrabber
     {
     public:
-        ImageGrabber(ORB_SLAM3::System* pSLAM, std::shared_ptr<ImuGrabber> pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
+        ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, std::shared_ptr<ImuGrabber> pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
         const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, rclcpp::Logger logger)
         : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor), m_width(width), m_height(height), logger_(logger),
             m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream())
@@ -52,7 +53,7 @@ namespace ros2_orbslam3 {
         std::queue<std::pair<sensor_msgs::msg::Image::ConstSharedPtr,std::optional<sensor_msgs::msg::NavSatFix::ConstSharedPtr>>> img_gnss_buf;
         std::mutex mBufMutex;
     
-        ORB_SLAM3::System* mpSLAM;
+        std::shared_ptr<ORB_SLAM3::System> mpSLAM;
         std::shared_ptr<ImuGrabber> mpImuGb;
 
         const bool mbClahe;
@@ -109,7 +110,7 @@ namespace ros2_orbslam3 {
     void ImageGrabber::SyncWithImu()
     {
         double init_ts = 0;
-        while(true)
+        while(!mpSLAM->isShutDown())
         {
             cv::cuda::HostMem im_managed;
             std::optional<Eigen::Vector3f> gnss_pos_opt = std::nullopt;
@@ -205,5 +206,7 @@ namespace ros2_orbslam3 {
                 }
             }
         }
+
+        RCLCPP_INFO_STREAM(logger_,"Exit Node");
     }
 }
