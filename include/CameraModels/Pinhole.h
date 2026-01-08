@@ -77,6 +77,6 @@ namespace ORB_SLAM3 {
     private:
         //Parameters vector corresponds to
         //      [fx, fy, cx, cy]
-        std::shared_ptr<TwoViewReconstruction> tvr; //TODO: Check if this can be a unque_ptr
+        std::unique_ptr<TwoViewReconstruction> tvr; //TODO: Check if this can be a unque_ptr
     };
 }

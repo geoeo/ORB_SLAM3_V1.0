@@ -1787,13 +1787,6 @@ void Tracking::Reset(bool bLocMap)
 {
     Verbose::PrintMess("System Reseting", Verbose::VERBOSITY_NORMAL);
 
-    if(mpViewer)
-    {
-        mpViewer->RequestStop();
-        while(!mpViewer->isStopped())
-           this_thread::sleep_for(chrono::microseconds(3000));
-    }
-
     // Reset Local Mapping
     if (!bLocMap)
     {
@@ -1829,9 +1822,7 @@ void Tracking::Reset(bool bLocMap)
     mpReferenceKF = nullptr;
     mpLastKeyFrame = nullptr;
 
-    if(mpViewer)
-        mpViewer->Release();
-
+    mbReset = false;
     Verbose::PrintMess("End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
 
@@ -1839,15 +1830,7 @@ void Tracking::Reset(bool bLocMap)
 // Unsued, since we only have one map. Only difference to Reset() is the mAtlas, mpKeyFrameDB call -> Merge with Reset() function
 void Tracking::ResetActiveMap(bool bLocMap)
 {
-    Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
-    if(mpViewer)
-    {
-        mpViewer->RequestStop();
-        while(!mpViewer->isStopped())
-            this_thread::sleep_for(chrono::microseconds(3000));
-    }
-
-    
+    Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);    
     if (!bLocMap)
     {
         Verbose::PrintMess("Reseting Local Mapper...", Verbose::VERBOSITY_NORMAL);
@@ -1902,9 +1885,6 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mRelocCount = 0;
 
     mLastFramePostDelta = Sophus::SE3f();
-
-    if(mpViewer)
-        mpViewer->Release();
 
     Verbose::PrintMess("End reseting! ", Verbose::VERBOSITY_NORMAL);
 }

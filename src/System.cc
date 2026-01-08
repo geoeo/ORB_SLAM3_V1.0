@@ -46,8 +46,7 @@ bool System::has_suffix(const std::string &str, const std::string &suffix) {
 
 System::System(const std::string &strVocFile, const CameraParameters &cam_settings, const ImuParameters &imu_settings, const OrbParameters &orb_settings, const LocalMapperParameters &local_mapper_settings,
     const TrackerParameters& tracker_settings, const eSensor sensor, bool activeLC, bool bUseViewer):
-    mSensor(sensor), mpViewer(nullptr), mbResetActiveMap(false),
-    mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
+    mSensor(sensor), mpViewer(nullptr), mbResetActiveMap(false), mbShutDown(false)
 {
 
 
@@ -107,9 +106,6 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     mpMapDrawer = std::make_shared<MapDrawer>(mpAtlas, std::string(), settings_);
     
 
-    //Initialize the Tracking thread
-    //(it will live in the main thread of execution, the one that called this constructor)
-
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
@@ -120,7 +116,6 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
         Verbose::PrintMess("Discard points further than " +to_string(mpLocalMapper->mThFarPoints) + " m from current camera", Verbose::VERBOSITY_NORMAL);
     
 
-
     mpTracker = std::make_shared<Tracking>(mpVocabulary, mpFrameDrawer, mpMapDrawer, mpAtlas, mpKeyFrameDatabase, mSensor, settings_, tracker_settings);
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
@@ -129,7 +124,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
     //Initialize the Viewer thread and launch
     if(bUseViewer)
     {
-        mpViewer = std::make_shared<Viewer>(shared_from_this(), mpFrameDrawer,mpMapDrawer,mpTracker,std::string(),settings_);
+        mpViewer = std::make_shared<Viewer>(mpFrameDrawer,mpMapDrawer,mpTracker,std::string(),settings_);
         mptViewer = std::make_shared<std::thread>(&Viewer::Run, mpViewer.get());
         mpTracker->SetViewer(mpViewer);
         mpViewer->both = mpFrameDrawer->both;
@@ -153,41 +148,23 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
 
     ZoneNamedN(TrackMonocular, "TrackMonocular", true);  // NOLINT: Profiler
 
-    {
-        auto lock = scoped_mutex_lock( mMutexReset );
-        if(mbShutDown)
+    
+    if(mpViewer){
+        if(mpViewer->isStopped()){
+            Shutdown();
             return {Sophus::SE3f(),false,false,0, {}};
+        }
+
+        if(mpViewer->ShouldReset()){
+            mbResetActiveMap = true;
+        }
     }
 
+    
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
     {
         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << endl;
         exit(-1);
-    }
-
-
-    // Check mode change
-    {
-        auto lock = scoped_mutex_lock( mMutexMode );
-        if(mbActivateLocalizationMode)
-        {
-            mpLocalMapper->RequestStop();
-
-            // Wait until Local Mapping has effectively stopped
-            while(!mpLocalMapper->isStopped())
-            {
-                this_thread::sleep_for(chrono::microseconds(1000));
-            }
-
-            mpTracker->InformOnlyTracking(true);
-            mbActivateLocalizationMode = false;
-        }
-        if(mbDeactivateLocalizationMode)
-        {
-            mpTracker->InformOnlyTracking(false);
-            mpLocalMapper->Release();
-            mbDeactivateLocalizationMode = false;
-        }
     }
 
     // Check reset
@@ -202,6 +179,8 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
             Verbose::PrintMess("SYSTEM-> Reseting active map in monocular case", Verbose::VERBOSITY_NORMAL);
             mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
+            if(mpViewer)
+                mpViewer->SetReset(false);
         }
     }
 
@@ -217,18 +196,6 @@ tuple<Sophus::SE3f, bool,bool, unsigned long int, vector<float>> System::TrackMo
     return {Tcw,isBAComplete,isKeyframe,id, computedScales};
 }
 
-void System::ActivateLocalizationMode()
-{
-    auto lock = scoped_mutex_lock( mMutexMode );
-    mbActivateLocalizationMode = true;
-}
-
-void System::DeactivateLocalizationMode()
-{
-    auto lock = scoped_mutex_lock( mMutexMode );
-    mbDeactivateLocalizationMode = true;
-}
-
 bool System::MapChanged()
 {
     static int n=0;
@@ -240,12 +207,6 @@ bool System::MapChanged()
     }
     else
         return false;
-}
-
-void System::ResetActiveMap()
-{
-    auto lock = scoped_mutex_lock( mMutexReset );
-    mbResetActiveMap = true;
 }
 
 void System::Shutdown()

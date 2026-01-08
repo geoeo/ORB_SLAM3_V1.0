@@ -98,9 +98,6 @@ public:
     // since last call to this function
     bool MapChanged();
 
-    // Reset the system (clear Atlas or the active map)
-    void ResetActiveMap();
-
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
@@ -172,11 +169,6 @@ private:
     // Reset flag
     std::mutex mMutexReset;
     bool mbResetActiveMap;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool mbActivateLocalizationMode;
-    bool mbDeactivateLocalizationMode;
 
     // Shutdown flag
     bool mbShutDown;

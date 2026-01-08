@@ -178,7 +178,7 @@ namespace ORB_SLAM3 {
         ZoneNamedN(ReconstructWithTwoViews, "ReconstructWithTwoViews", true); 
         if(!tvr){
             Eigen::Matrix3f K = this->toK_();
-            tvr = make_shared<TwoViewReconstruction>(K,1.0,200);
+            tvr = make_unique<TwoViewReconstruction>(K,1.0,200);
         }
 
         //Correct FishEye distortion

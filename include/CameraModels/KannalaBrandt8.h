@@ -93,7 +93,7 @@ namespace ORB_SLAM3 {
         //Parameters vector corresponds to
         //[fx, fy, cx, cy, k0, k1, k2, k3]
 
-        std::shared_ptr<TwoViewReconstruction> tvr; //TODO: Check if this can be a unque_ptr
+        std::unique_ptr<TwoViewReconstruction> tvr;
 
         void Triangulate(const cv::Point2f &p1, const cv::Point2f &p2, const Eigen::Matrix<float,3,4> &Tcw1,
                          const Eigen::Matrix<float,3,4> &Tcw2, Eigen::Vector3f &x3D);
