@@ -117,13 +117,13 @@ void LocalMapping::Run()
 
                         //TODO: This is not the correct place for this, as the GeroefUpdate would apply the transformation twice
                         //TODO: Check for submitted but to processed KFs
-                        const auto sortedKFs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);    
-                        const auto georef_transform = mGeometricReferencer.getCurrentTransform().cast<float>();
+                        //const auto sortedKFs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);    
+                        //const auto georef_transform = mGeometricReferencer.getCurrentTransform().cast<float>();
                         //const Eigen::Quaternionf rotation(Eigen::AngleAxisf(0.5*EIGEN_PI,Eigen::Vector3f::UnitZ()));
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, Sophus::SO3f().unit_quaternion(), georef_transform.translation());
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.5f, Sophus::SO3f(rotation).unit_quaternion(), Sophus::Vector3f::Zero());
                         //const Sophus::Sim3f Sim3_Tyw_noscale(georef_transform.scale(), georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
-                        const Sophus::Sim3f Sim3_Tyw_noscale(1.0, georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
+                        //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
                         //TODO: seems to be a problem with translation
                         //const auto b_transformed = georef_transform.rxso3().quaternion()*sortedKFs.front()->GetImuBias();
 
@@ -217,7 +217,7 @@ void LocalMapping::Run()
 
                     Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
                     {
-                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                         setLatestOptimizedKFPoses(optimizedKFPoses);
@@ -230,7 +230,7 @@ void LocalMapping::Run()
                 {
                     Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
                     {
-                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                         Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
@@ -1132,10 +1132,11 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     bInitializing = true;
 
     // We lock here so that no new kfs can be generated
-    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+
     while(CheckNewKeyFrames())
         ProcessNewKeyFrame();
 
+    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
