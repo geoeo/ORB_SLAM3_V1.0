@@ -1813,7 +1813,7 @@ void Tracking::Reset(bool bLocMap)
     mpReferenceKF = nullptr;
     mpLastKeyFrame = nullptr;
 
-    mpImuPreintegratedFromLastKF = nullptr;
+    mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
     mlQueueImuData.clear();
     mvImuFromLastFrame.clear();
 
@@ -1879,7 +1879,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mpLastKeyFrame = nullptr;
     mRelocCount = 0;
 
-    mpImuPreintegratedFromLastKF = nullptr;
+    mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
     mlQueueImuData.clear();
     mvImuFromLastFrame.clear();
 
