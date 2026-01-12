@@ -1813,6 +1813,10 @@ void Tracking::Reset(bool bLocMap)
     mpReferenceKF = nullptr;
     mpLastKeyFrame = nullptr;
 
+    mpImuPreintegratedFromLastKF = nullptr;
+    mlQueueImuData.clear();
+    mvImuFromLastFrame.clear();
+
     mbReset = false;
     Verbose::PrintMess("End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
@@ -1874,6 +1878,10 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mpReferenceKF = nullptr;
     mpLastKeyFrame = nullptr;
     mRelocCount = 0;
+
+    mpImuPreintegratedFromLastKF = nullptr;
+    mlQueueImuData.clear();
+    mvImuFromLastFrame.clear();
 
     mLastFramePostDelta = Sophus::SE3f();
 
