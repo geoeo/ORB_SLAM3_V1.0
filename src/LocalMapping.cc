@@ -1136,7 +1136,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     while(CheckNewKeyFrames())
         ProcessNewKeyFrame();
 
-    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+    //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
