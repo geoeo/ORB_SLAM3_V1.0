@@ -217,7 +217,7 @@ void LocalMapping::Run()
 
                     Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
                     {
-                        unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
                         setLatestOptimizedKFPoses(optimizedKFPoses);
@@ -230,7 +230,7 @@ void LocalMapping::Run()
                 {
                     Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
                     {
-                        unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                         Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
