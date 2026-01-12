@@ -88,7 +88,7 @@ void LocalMapping::Run()
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
                 {
-                    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     const auto georef_succcess = GeoreferenceKeyframes();
                     if(georef_succcess && writeKFAfterGeorefCount == 0){
                         if(mbWriteGNSSData){
