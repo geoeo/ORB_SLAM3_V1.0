@@ -194,6 +194,7 @@ void LocalMapping::Run()
             if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
+                unique_lock<mutex> lock(*getGlobalDataMutex());
                 SearchInNeighbors();
             }
 
@@ -387,7 +388,7 @@ void LocalMapping::ProcessNewKeyFrame()
 
     // Update links in the Covisibility Graph
     {
-        unique_lock<mutex> lock(*getGlobalDataMutex());
+        //unique_lock<mutex> lock(*getGlobalDataMutex());
         mpCurrentKeyFrame->UpdateConnections();
     }
 
@@ -451,7 +452,7 @@ void LocalMapping::MapPointCulling()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    size_t nn = 15;
+    size_t nn = 30;
     // For stereo inertial case
     // if(mbMonocular)
     //     nn=30;
@@ -904,7 +905,7 @@ void LocalMapping::SearchInNeighbors()
     }
 
     // Update connections in covisibility graph
-    unique_lock<mutex> lock(*getGlobalDataMutex());
+    //unique_lock<mutex> lock(*getGlobalDataMutex());
     mpCurrentKeyFrame->UpdateConnections();
 }
 
@@ -1132,7 +1133,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     bInitializing = true;
 
     // We lock here so that no new kfs can be generated
-
+    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     while(CheckNewKeyFrames())
         ProcessNewKeyFrame();
 
