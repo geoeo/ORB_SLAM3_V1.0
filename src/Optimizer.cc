@@ -1601,7 +1601,7 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStop
 
     const auto Tgw = geoReferencer.update(deque<shared_ptr<KeyFrame>>(lLocalKeyFrames.begin(), lLocalKeyFrames.end()));
  
-    pMap->IncreaseChangeIndex();
+    // pMap->IncreaseChangeIndex();
 }
 
 void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
