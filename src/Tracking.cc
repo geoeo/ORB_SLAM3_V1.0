@@ -466,7 +466,7 @@ void Tracking::Track()
                     Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackWithMotionModel();
                     if(!bOK)
-                    	bOK = TrackReferenceKeyFrame();
+                        bOK = TrackReferenceKeyFrame();
                     //TODO: Try Gnss fallback here
                     if(mpLocalMapper->isGeorefInitialized() && !bOK)
                     {
@@ -1039,7 +1039,7 @@ bool Tracking::TrackReferenceKeyFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.95,true);
+    ORBmatcher matcher(0.85,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1051,77 +1051,79 @@ bool Tracking::TrackWithMotionModel()
         pred_success = PredictStateIMU();
     }
 
-    if(pred_success)
-         return true;
-    else 
-        mCurrentFrame->SetPose(mLastFramePostDelta * mLastFrame->GetPose()); // Linear continuation of last frame motion
+    return pred_success;
+
+    // if(pred_success)
+    //      return true;
+    // else 
+    //     mCurrentFrame->SetPose(mLastFramePostDelta * mLastFrame->GetPose()); // Linear continuation of last frame motion - this is wrong!
     
 
 
-    fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
-    // Project points seen in previous frame
-    int th;
+    // fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
+    // // Project points seen in previous frame
+    // int th;
 
-    if(mSensor==System::STEREO)
-        th=7;
-    else
-        th=10;
+    // if(mSensor==System::STEREO)
+    //     th=7;
+    // else
+    //     th=10;
 
-    int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+    // int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
 
-    // If few matches, uses a wider window search
-    if(nmatches<20)
-    {
-        Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_DEBUG);
-        fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
+    // // If few matches, uses a wider window search
+    // if(nmatches<20)
+    // {
+    //     Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_DEBUG);
+    //     fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
 
-        nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-        Verbose::PrintMess("TrackWithMotionModel: Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
+    //     nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
+    //     Verbose::PrintMess("TrackWithMotionModel: Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
-    }
+    // }
 
-    if(nmatches<20)
-    {
-        return false;
-    }
+    // if(nmatches<20)
+    // {
+    //     return false;
+    // }
 
-    // Optimize frame pose with all matches
-    Optimizer::PoseOptimization(mCurrentFrame);
+    // // Optimize frame pose with all matches
+    // Optimizer::PoseOptimization(mCurrentFrame);
 
-    // Discard outliers
-    int nmatchesMap = 0;
-    for(int i =0; i<mCurrentFrame->mNumKeypoints; i++)
-    {
-        if(mCurrentFrame->mvpMapPoints[i])
-        {
-            if(mCurrentFrame->mvbOutlier[i])
-            {
-                auto pMP = mCurrentFrame->mvpMapPoints[i];
+    // // Discard outliers
+    // int nmatchesMap = 0;
+    // for(int i =0; i<mCurrentFrame->mNumKeypoints; i++)
+    // {
+    //     if(mCurrentFrame->mvpMapPoints[i])
+    //     {
+    //         if(mCurrentFrame->mvbOutlier[i])
+    //         {
+    //             auto pMP = mCurrentFrame->mvpMapPoints[i];
 
-                mCurrentFrame->mvpMapPoints[i]=nullptr;
-                mCurrentFrame->mvbOutlier[i]=false;
-                if(i < mCurrentFrame->Nleft){
-                    pMP->mbTrackInView = false;
-                }
-                else{
-                    pMP->mbTrackInViewR = false;
-                }
-                pMP->mnLastFrameSeen = mCurrentFrame->mnId;
-                nmatches--;
-            }
-            else if(mCurrentFrame->mvpMapPoints[i]->Observations()>0)
-                nmatchesMap++;
-        }
-    }
+    //             mCurrentFrame->mvpMapPoints[i]=nullptr;
+    //             mCurrentFrame->mvbOutlier[i]=false;
+    //             if(i < mCurrentFrame->Nleft){
+    //                 pMP->mbTrackInView = false;
+    //             }
+    //             else{
+    //                 pMP->mbTrackInViewR = false;
+    //             }
+    //             pMP->mnLastFrameSeen = mCurrentFrame->mnId;
+    //             nmatches--;
+    //         }
+    //         else if(mCurrentFrame->mvpMapPoints[i]->Observations()>0)
+    //             nmatchesMap++;
+    //     }
+    // }
 
-    Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_DEBUG);
-    if(mbOnlyTracking)
-    {
-        mbVO = nmatchesMap<10;
-        return nmatches>20;
-    } else{
-        return nmatchesMap>=10;
-    }
+    // Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_DEBUG);
+    // if(mbOnlyTracking)
+    // {
+    //     mbVO = nmatchesMap<10;
+    //     return nmatches>20;
+    // } else{
+    //     return nmatchesMap>=10;
+    // }
 }
 
 bool Tracking::TrackLocalMap()
@@ -1788,7 +1790,9 @@ void Tracking::Reset(bool bLocMap)
 
     // Clear BoW Database
     Verbose::PrintMess("Reseting Database...", Verbose::VERBOSITY_NORMAL);
-    mpKeyFrameDB->clear();
+    //mpKeyFrameDB->clear(); // causes crash
+    const auto pMap = mpAtlas->GetCurrentMap();
+    mpKeyFrameDB->clearMap(pMap); // Only clear the active map references
     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
     // Clear Map (this erase MapPoints and KeyFrames)
@@ -1812,6 +1816,8 @@ void Tracking::Reset(bool bLocMap)
     mLastFrame = std::make_shared<Frame>();
     mpReferenceKF = nullptr;
     mpLastKeyFrame = nullptr;
+
+    mLastFramePostDelta = Sophus::SE3f();
 
     mpImuPreintegratedFromLastKF = make_shared<IMU::Preintegrated>(IMU::Bias(),mpImuCalib);
     mlQueueImuData.clear();
@@ -1854,6 +1860,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
     mnLastRelocFrameId = mnLastInitFrameId;
     setTrackingState(NO_IMAGES_YET); //NOT_INITIALIZED;
 
+    mLastFramePostDelta = Sophus::SE3f();
     mvpInitFrames.clear();
     mbReadyToInitializate = false;
 
