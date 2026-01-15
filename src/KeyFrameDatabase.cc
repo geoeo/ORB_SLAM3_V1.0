@@ -31,7 +31,7 @@ namespace ORB_SLAM3
 KeyFrameDatabase::KeyFrameDatabase (const shared_ptr<ORBVocabulary> voc):
     mpVoc(voc)
 {
-    mvInvertedFile.resize(voc->size());
+    mvInvertedFile.resize(mpVoc->size());
 }
 
 
