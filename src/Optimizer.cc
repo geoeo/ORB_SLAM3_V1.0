@@ -3818,68 +3818,6 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
                     vpEdgesMono.push_back(e);
                     vnIndexEdgeMono.push_back(i);
                 }
-                // Stereo observation
-                // else if(!bRight)
-                // {
-                //     nInitialStereoCorrespondences++;
-                //     pFrame->mvbOutlier[i] = false;
-
-                //     kpUn = pFrame->mvKeysUn->operator[](i);
-                //     const float kp_ur = pFrame->mvuRight[i];
-                //     Eigen::Matrix<double,3,1> obs;
-                //     obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
-
-                //     EdgeStereoOnlyPose* e = new EdgeStereoOnlyPose(pMP->GetWorldPos());
-
-                //     e->setVertex(0, VP);
-                //     e->setMeasurement(obs);
-
-                //     // Add here uncerteinty
-                //     const float unc2 = pFrame->mpCamera->uncertainty2(obs.head(2));
-
-                //     const float &invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                //     e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
-
-                //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                //     e->setRobustKernel(rk);
-                //     rk->setDelta(thHuberStereo);
-
-                //     optimizer.addEdge(e);
-
-                //     vpEdgesStereo.push_back(e);
-                //     vnIndexEdgeStereo.push_back(i);
-                // }
-
-                // Right monocular observation
-                // if(bRight && i >= Nleft)
-                // {
-                //     nInitialMonoCorrespondences++;
-                //     pFrame->mvbOutlier[i] = false;
-
-                //     kpUn = pFrame->mvKeysRight->operator[](i - Nleft);
-                //     Eigen::Matrix<double,2,1> obs;
-                //     obs << kpUn.pt.x, kpUn.pt.y;
-
-                //     EdgeMonoOnlyPose* e = new EdgeMonoOnlyPose(pMP->GetWorldPos(),1);
-
-                //     e->setVertex(0,VP);
-                //     e->setMeasurement(obs);
-
-                //     // Add here uncerteinty
-                //     const float unc2 = pFrame->mpCamera->uncertainty2(obs);
-
-                //     const float invSigma2 = pFrame->mvInvLevelSigma2[kpUn.octave]/unc2;
-                //     e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
-
-                //     g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
-                //     e->setRobustKernel(rk);
-                //     rk->setDelta(thHuberMono);
-
-                //     optimizer.addEdge(e);
-
-                //     vpEdgesMono.push_back(e);
-                //     vnIndexEdgeMono.push_back(i);
-                // }
             }
         }
     }
@@ -3931,10 +3869,10 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    float chi2Mono[4]={12,7.5,5.991,5.991};
-    float chi2Stereo[4]={15.6,9.8,7.815,7.815};
+    float chi2Mono[8]={5.991,5.991,5.991,5.991, 5.991,5.991,5.991,5.991};
+    //float chi2Stereo[4]={15.6,9.8,7.815,7.815};
 
-    int its[4]={15,15,15,15};
+    int its[8]={5,5,5,5,5,5,5,5};
 
     int nBad = 0;
     int nBadMono = 0;
@@ -3942,7 +3880,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
     int nInliersMono = 0;
     int nInliersStereo = 0;
     int nInliers = 0;
-    for(size_t it=0; it<4; it++)
+    for(size_t it=0; it<8; it++)
     {
         optimizer.initializeOptimization(0);
 
@@ -3996,39 +3934,8 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
 
         // Verbose::PrintMess("KEY after first: " + std::to_string(nInliersMono), Verbose::VERBOSITY_NORMAL);
 
-        // For stereo observations
-        // for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-        // {
-        //     EdgeStereoOnlyPose* e = vpEdgesStereo[i];
-
-        //     const size_t idx = vnIndexEdgeStereo[i];
-
-        //     if(pFrame->mvbOutlier[idx])
-        //     {
-        //         e->computeError();
-        //     }
-
-        //     const float chi2 = e->chi2();
-
-        //     if(chi2>chi2Stereo[it])
-        //     {
-        //         pFrame->mvbOutlier[idx]=true;
-        //         e->setLevel(1); // not included in next optimization
-        //         nBadStereo++;
-        //     }
-        //     else
-        //     {
-        //         pFrame->mvbOutlier[idx]=false;
-        //         e->setLevel(0);
-        //         nInliersStereo++;
-        //     }
-
-        //     if(it==2)
-        //         e->setRobustKernel(0);
-        // }
-
-        nInliers = nInliersMono + nInliersStereo;
-        nBad = nBadMono + nBadStereo;
+        nInliers = nInliersMono;
+        nBad = nBadMono;
 
         if(optimizer.edges().size()<10)
         {
@@ -4051,16 +3958,6 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
             e1 = vpEdgesMono[i];
             e1->computeError();
             if (e1->chi2()<chi2MonoOut)
-                pFrame->mvbOutlier[idx]=false;
-            else
-                nBad++;
-        }
-        for(size_t i=0, iend=vnIndexEdgeStereo.size(); i<iend; i++)
-        {
-            const size_t idx = vnIndexEdgeStereo[i];
-            e2 = vpEdgesStereo[i];
-            e2->computeError();
-            if (e2->chi2()<chi2StereoOut)
                 pFrame->mvbOutlier[idx]=false;
             else
                 nBad++;
@@ -4112,7 +4009,7 @@ int Optimizer::PoseInertialOptimizationLastKeyFrame(shared_ptr<Frame> pFrame, bo
             tot_out++;
     }
 
-    pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H);
+    pFrame->mpcpi = make_shared<ConstraintPoseImu>(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H);
 
     Verbose::PrintMess("KEY final: " + std::to_string(nInitialCorrespondences) + " Bad: " + std::to_string(nBad), Verbose::VERBOSITY_DEBUG);
 
@@ -4348,9 +4245,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
 
     // We perform 4 optimizations, after each optimization we classify observation as inlier/outlier
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
-    const float chi2Mono[4]={5.991,5.991,5.991,5.991};
-    const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
-    const int its[4]={15,15,15,15};
+    const float chi2Mono[8]={5.991, 5.991, 5.991, 5.991, 5.991, 5.991, 5.991, 5.991};
+    //const float chi2Stereo[4]={15.6f,9.8f,7.815f,7.815f};
+    const int its[8]={5,5,5,5,5,5,5,5};
 
     int nBad=0;
     int nBadMono = 0;
@@ -4358,7 +4255,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
     int nInliersMono = 0;
     int nInliersStereo = 0;
     int nInliers=0;
-    for(size_t it=0; it<4; it++)
+    for(size_t it=0; it<8; it++)
     {
         optimizer.initializeOptimization(0);
 
@@ -4408,38 +4305,8 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
 
         }
 
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-        {
-            EdgeStereoOnlyPose* e = vpEdgesStereo[i];
-
-            const size_t idx = vnIndexEdgeStereo[i];
-
-            if(pFrame->mvbOutlier[idx])
-            {
-                e->computeError();
-            }
-
-            const float chi2 = e->chi2();
-
-            if(chi2>chi2Stereo[it])
-            {
-                pFrame->mvbOutlier[idx]=true;
-                e->setLevel(1);
-                nBadStereo++;
-            }
-            else
-            {
-                pFrame->mvbOutlier[idx]=false;
-                e->setLevel(0);
-                nInliersStereo++;
-            }
-
-            if(it==2)
-                e->setRobustKernel(0);
-        }
-
-        nInliers = nInliersMono + nInliersStereo;
-        nBad = nBadMono + nBadStereo;
+        nInliers = nInliersMono;
+        nBad = nBadMono;
 
         if(optimizer.edges().size()<10)
         {
@@ -4466,19 +4333,9 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
                 nBad++;
 
         }
-        for(size_t i=0, iend=vnIndexEdgeStereo.size(); i<iend; i++)
-        {
-            const size_t idx = vnIndexEdgeStereo[i];
-            e2 = vpEdgesStereo[i];
-            e2->computeError();
-            if (e2->chi2()<chi2StereoOut)
-                pFrame->mvbOutlier[idx]=false;
-            else
-                nBad++;
-        }
     }
 
-    nInliers = nInliersMono + nInliersStereo;
+    nInliers = nInliersMono;
     const auto validPoints = nInitialCorrespondences-nBad;
 
     if(validPoints >= inlierThreshold){
@@ -4524,26 +4381,10 @@ int Optimizer::PoseInertialOptimizationLastFrame(shared_ptr<Frame> pFrame, int i
                 tot_out++;
         }
 
-        for(size_t i=0, iend=vpEdgesStereo.size(); i<iend; i++)
-        {
-            EdgeStereoOnlyPose* e = vpEdgesStereo[i];
-
-            const size_t idx = vnIndexEdgeStereo[i];
-
-            if(!pFrame->mvbOutlier[idx])
-            {
-                H.block<6,6>(15,15) += e->GetHessian();
-                tot_in++;
-            }
-            else
-                tot_out++;
-        }
-
         H = Marginalize(H,0,14);
 
-        pFrame->mpcpi = new ConstraintPoseImu(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H.block<15,15>(15,15));
-        delete pFp->mpcpi;
-        pFp->mpcpi = NULL;
+        pFrame->mpcpi = make_shared<ConstraintPoseImu>(VP->estimate().Rwb,VP->estimate().twb,VV->estimate(),VG->estimate(),VA->estimate(),H.block<15,15>(15,15));
+        pFp->mpcpi = nullptr;
     }
 
 

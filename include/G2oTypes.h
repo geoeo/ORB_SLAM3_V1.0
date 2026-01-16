@@ -732,7 +732,7 @@ class EdgePriorPoseImu : public g2o::BaseMultiEdge<15,Vector15d>
 {
 public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        EdgePriorPoseImu(ConstraintPoseImu* c);
+        EdgePriorPoseImu(std::shared_ptr<ConstraintPoseImu> c);
 
         virtual bool read(std::istream& is){return false;}
         virtual bool write(std::ostream& os) const{return false;}

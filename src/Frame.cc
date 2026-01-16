@@ -44,7 +44,7 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 //For stereo fisheye matching
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
-Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpImuPreintegratedFrame(NULL), 
+Frame::Frame(): mpcpi(nullptr), mpImuPreintegrated(nullptr), mpPrevFrame(nullptr), mpImuPreintegratedFrame(nullptr), 
     mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
     mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false), mbHasVelocity(false),
     mFrameGridRows(0), mFrameGridCols(0)

@@ -102,7 +102,7 @@ public:
 
     std::vector<size_t> GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel=-1, const int maxLevel=-1, const bool bRight = false) const;
 
-    ConstraintPoseImu* mpcpi;
+    std::shared_ptr<ConstraintPoseImu> mpcpi;
 
     bool imuIsPreintegrated();
     void setIntegrated();
