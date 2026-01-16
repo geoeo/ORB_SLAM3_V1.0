@@ -1039,7 +1039,7 @@ bool Tracking::TrackReferenceKeyFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.85,true);
+
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1059,7 +1059,7 @@ bool Tracking::TrackWithMotionModel()
     //     mCurrentFrame->SetPose(mLastFramePostDelta * mLastFrame->GetPose()); // Linear continuation of last frame motion - this is wrong!
     
 
-
+    // ORBmatcher matcher(0.85,true);
     // fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
     // // Project points seen in previous frame
     // int th;
