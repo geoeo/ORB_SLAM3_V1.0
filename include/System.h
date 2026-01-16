@@ -28,6 +28,7 @@
 #include <vector>
 #include <utility>
 #include <tuple>
+#include <memory>
 #include <opencv2/core/core.hpp>
 
 #include <Tracking.h>
@@ -53,7 +54,7 @@ class Tracking;
 class LocalMapping;
 class LoopClosing;
 
-class System
+class System : public std::enable_shared_from_this<System>
 {
 public:
     // Input sensor
@@ -97,15 +98,12 @@ public:
     // since last call to this function
     bool MapChanged();
 
-    // Reset the system (clear Atlas or the active map)
-    void Reset();
-    void ResetActiveMap();
-
     // All threads will be requested to finish.
     // It waits until all threads have finished.
     // This function must be called before saving the trajectory.
-    void Shutdown();
+    void Shutdown();    
     bool isShutDown();
+    void RequestReset();
 
     unsigned int GetLastKeyFrameId();
 
@@ -115,9 +113,9 @@ public:
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
     int GetTrackingState();
-    std::vector<MapPoint*> GetActiveReferenceMapPoints(); 
+    std::vector<std::shared_ptr<MapPoint>> GetActiveReferenceMapPoints(); 
     std::shared_ptr<std::vector<KeyPoint>> GetTrackedKeyPointsUn();
-    std::vector<KeyFrame*> GetAllKeyframes();
+    std::vector<std::shared_ptr<KeyFrame>> GetAllKeyframes();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
 
     // For debugging
@@ -140,44 +138,38 @@ private:
     eSensor mSensor;
 
     // ORB vocabulary used for place recognition and feature matching.
-    ORBVocabulary* mpVocabulary;
+    std::shared_ptr<ORBVocabulary> mpVocabulary;
 
     // KeyFrame database for place recognition (relocalization and loop detection).
-    KeyFrameDatabase* mpKeyFrameDatabase;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDatabase;
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     //Map* mpMap;
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
-    Tracking* mpTracker;
+    std::shared_ptr<Tracking> mpTracker;
 
     // Local Mapper. It manages the local map and performs local bundle adjustment.
-    LocalMapping* mpLocalMapper;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
 
     // The viewer draws the map and the current camera pose. It uses Pangolin.
-    Viewer* mpViewer;
+    std::shared_ptr<Viewer> mpViewer;
 
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    std::shared_ptr<FrameDrawer> mpFrameDrawer;
+    std::shared_ptr<MapDrawer> mpMapDrawer;
 
     // System threads: Local Mapping, Loop Closing, Viewer.
     // The Tracking thread "lives" in the main execution thread that creates the System object.
-    std::thread* mptLocalMapping;
-    std::thread* mptLoopClosing;
-    std::thread* mptViewer;
+    std::shared_ptr<std::thread> mptLocalMapping;
+    std::shared_ptr<std::thread> mptLoopClosing;
+    std::shared_ptr<std::thread> mptViewer;
 
     // Reset flag
     std::mutex mMutexReset;
-    bool mbReset;
-    bool mbResetActiveMap;
-
-    // Change mode flags
-    std::mutex mMutexMode;
-    bool mbActivateLocalizationMode;
-    bool mbDeactivateLocalizationMode;
+    std::atomic<bool> mbResetActiveMap;
 
     // Shutdown flag
     bool mbShutDown;
@@ -193,7 +185,7 @@ private:
 
     std::string mStrVocabularyFilePath;
 
-    Settings* settings_;
+    std::shared_ptr<Settings> settings_;
 };
 
 }// namespace ORB_SLAM

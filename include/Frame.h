@@ -47,7 +47,7 @@ class ConstraintPoseImu;
 class GeometricCamera;
 class ORBextractor;
 
-class Frame
+class Frame : public std::enable_shared_from_this<Frame>
 {
 public:
     Frame();
@@ -56,9 +56,9 @@ public:
     Frame(const std::shared_ptr<Frame> frame);
 
     // Constructor for Monocular cameras.
-    Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
-        GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
-        bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib = IMU::Calib());
+    Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, std::shared_ptr<ORBextractor> extractor, std::shared_ptr<ORBVocabulary> voc, 
+        std::shared_ptr<GeometricCamera> pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
+        bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib);
 
     
     // Extract ORB on the image. 0 for left image and 1 for right image.
@@ -91,9 +91,9 @@ public:
 
     // Check if a MapPoint is in the frustum of the camera
     // and fill variables of the MapPoint to be used by the tracking
-    bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+    bool isInFrustum(std::shared_ptr<MapPoint> pMP, float viewingCosLimit);
 
-    bool ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v);
+    bool ProjectPointDistort(std::shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v);
 
     Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
 
@@ -175,10 +175,10 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Vocabulary used for relocalization.
-    ORBVocabulary* mpORBvocabulary;
+    std::shared_ptr<ORBVocabulary> mpORBvocabulary;
 
-    // Feature extractor. The right is used only in the stereo case.
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    // Feature extractor.
+    std::shared_ptr<ORBextractor> mpORBextractor;
 
     // Frame timestamp.
     double mTimeStamp; //TODO: change to chrono
@@ -214,7 +214,7 @@ public:
     std::shared_ptr<std::vector<KeyPoint>> mvKeysUn;
 
     // Corresponding stereo coordinate and depth for each keypoint.
-    std::vector<MapPoint*> mvpMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpMapPoints;
     // "Monocular" keypoints have a negative value.
     std::vector<float> mvuRight;
     std::vector<float> mvDepth;
@@ -243,19 +243,19 @@ public:
     IMU::Calib mImuCalib;
 
     // Imu preintegration from last keyframe
-    IMU::Preintegrated* mpImuPreintegrated;
-    KeyFrame* mpLastKeyFrame;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegrated;
+    std::shared_ptr<KeyFrame> mpLastKeyFrame;
 
     // Pointer to previous frame
     std::shared_ptr<Frame> mpPrevFrame;
-    IMU::Preintegrated* mpImuPreintegratedFrame;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFrame;
 
     // Current and Next Frame id.
     static long unsigned int nNextId;
     long unsigned int mnId;
 
     // Reference Keyframe.
-    KeyFrame* mpReferenceKF;
+    std::shared_ptr<KeyFrame> mpReferenceKF;
 
     // Scale pyramid info.
     int mnScaleLevels;
@@ -280,12 +280,6 @@ public:
     std::string mNameFile;
 
     int mnDataset;
-
-#ifdef REGISTER_TIMES
-    double mTimeORB_Ext;
-    double mTimeStereoMatch;
-#endif
-
 private:
     // Computes image bounds for the undistorted image (called in the constructor).
     void ComputeImageBounds(const cv::cuda::HostMem &imLeft);
@@ -301,7 +295,8 @@ private:
     int mFrameGridCols; 
 
 public:
-    GeometricCamera* mpCamera, *mpCamera2;
+    std::shared_ptr<GeometricCamera> mpCamera; 
+    std::shared_ptr<GeometricCamera> mpCamera2;
 
     //Number of KeyPoints extracted in the left and right images
     int Nleft, Nright;
@@ -325,7 +320,7 @@ public:
     
     int getFrameGridCols() const;
 
-    bool isInFrustumChecks(MapPoint* pMP, float viewingCosLimit, bool bRight = false);
+    bool isInFrustumChecks(std::shared_ptr<MapPoint> pMP, float viewingCosLimit, bool bRight = false);
 
     Eigen::Vector3f UnprojectStereoFishEye(const int &i);
 

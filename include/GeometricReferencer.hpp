@@ -18,11 +18,11 @@ namespace ORB_SLAM3
   public:
     explicit GeometricReferencer(int min_nrof_frames);
 
-    void addKeyFrame(KeyFrame* kf);
-    std::deque<KeyFrame*> getFramesForGeorefEstimation();
-    std::vector<KeyFrame*> getFramesWithoutGeoref();
-    std::optional<Sophus::Sim3d> apply(const std::deque<KeyFrame*> &frames, bool do_update);
-    Sophus::Sim3d update(const std::deque<KeyFrame *> &spatials);
+    void addKeyFrame(std::shared_ptr<KeyFrame> kf);
+    std::deque<std::shared_ptr<KeyFrame>> getFramesForGeorefEstimation();
+    std::vector<std::shared_ptr<KeyFrame>> getFramesWithoutGeoref();
+    std::optional<Sophus::Sim3d> apply(const std::deque<std::shared_ptr<KeyFrame>> &frames, bool do_update);
+    Sophus::Sim3d update(const std::deque<std::shared_ptr<KeyFrame>> &spatials);
     Sophus::Sim3d getCurrentTransform();
 
     bool isInitialized() const;
@@ -34,11 +34,11 @@ namespace ORB_SLAM3
     int m_min_nrof_frames;
     size_t m_georefed_kfs_count;
     Sophus::Sim3d mTgw_current;
-    std::deque<KeyFrame*> m_latest_frames_to_georef;
+    std::deque<std::shared_ptr<KeyFrame>> m_latest_frames_to_georef;
     std::mutex mMutexFrames;
     std::mutex mMutexTransform;
 
-    Sophus::Sim3d estimateGeorefTransform(const std::deque<KeyFrame *> &spatials);
+    Sophus::Sim3d estimateGeorefTransform(const std::deque<std::shared_ptr<KeyFrame>> &spatials);
   };
 
 } // namespace ORB_SLAM3

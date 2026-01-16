@@ -96,28 +96,28 @@ class SlamNode : public rclcpp::Node
       orb.nFastFeatures = 16000;
       orb.nLevels     = 6;
       orb.scaleFactor = 2.0;
-      orb.minThFast   = 80;
-      orb.iniThFast   = 100;
+      orb.minThFast   = 10;
+      orb.iniThFast   = 15;
 
       // F6
-      // ORB_SLAM3::ImuParameters imu;
-      // imu.accelWalk  = 0.0003789930418112102; //x1
-      // imu.gyroWalk   = 0.000017633889479017548; //x1
-      // imu.noiseAccel = 0.015692223203898409; //x10
-      // imu.noiseGyro  = 0.001639447071940472; // x10
-      // imu.InsertKFsWhenLost = false;
+      ORB_SLAM3::ImuParameters imu;
+      imu.accelWalk  = 0.03789930418112102; //x100
+      imu.gyroWalk   = 0.0017633889479017548; //x100
+      imu.noiseAccel = 0.15692223203898409; //x100
+      imu.noiseGyro  = 0.01639447071940472; // x100
+      imu.InsertKFsWhenLost = false;
 
       // F4
-      ORB_SLAM3::ImuParameters imu;
+      // ORB_SLAM3::ImuParameters imu;
       //imu.accelWalk  = 0.0006431373218006597; //x1
       //imu.gyroWalk   = 0.000018714270991865037; //x1
       //imu.noiseAccel = 0.015592957173554883; //x10
       //imu.noiseGyro  = 0.0017019559710036963; // x10
 
-      imu.accelWalk  = 0.0012862746370956302; //x20
-      imu.gyroWalk   =  0.0000374285409634467; //x2
-      imu.noiseAccel = 0.0311859138309955597; //x20
-      imu.noiseGyro  = 0.0034039118327200413; // x20
+      // imu.accelWalk  = 0.012862746370956302; //x200
+      // imu.gyroWalk   =  0.00374285409634467; //x200
+      // imu.noiseAccel = 0.311859138309955597; //x200
+      // imu.noiseGyro  = 0.034039118327200413; // x200
 
       imu.InsertKFsWhenLost = false;
 
@@ -175,14 +175,14 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
-      local_mapper.itsFIBAInit = 200;
-      local_mapper.itsFIBA1 = 200;
+      local_mapper.itsFIBAInit = 20;
+      local_mapper.itsFIBA1 = 20;
       local_mapper.thFarPoints = 0.0;
       local_mapper.useGNSS = true;
       local_mapper.useGNSSBA = false;
       local_mapper.writeGNSSData = false;
       local_mapper.georefUpdate = false;
-      local_mapper.minGeorefFrames = 60;
+      local_mapper.minGeorefFrames = 10;
 
       
       // F6
@@ -192,9 +192,9 @@ class SlamNode : public rclcpp::Node
       double timeshift_cam_imu = 0.00851880502751802;
 
       ORB_SLAM3::TrackerParameters tracker_settings;
-      tracker_settings.frameGridCols = 64;
-      tracker_settings.frameGridRows = 48;
-      tracker_settings.maxLocalKFCount = 15;
+      tracker_settings.frameGridCols = 32;
+      tracker_settings.frameGridRows = 16;
+      tracker_settings.maxLocalKFCount = 60;
       tracker_settings.featureThresholdForKF = 200;
       tracker_settings.maxFrames = 10;
 
@@ -202,7 +202,7 @@ class SlamNode : public rclcpp::Node
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
-      SLAM_ = std::make_unique<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
+      SLAM_ = std::make_shared<ORB_SLAM3::System>(path_to_vocab_,cam, imu, orb, local_mapper,  tracker_settings, ORB_SLAM3::System::IMU_MONOCULAR,false, true);
       cout << "SLAM Init" << endl;
 
       auto sub_image_options = rclcpp::SubscriptionOptions();
@@ -215,7 +215,7 @@ class SlamNode : public rclcpp::Node
       sub_gnss_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       imugb_ = std::make_shared<ImuGrabber>(this->get_logger());
-      igb_ = std::make_unique<ImageGrabber>(SLAM_.get(),imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
+      igb_ = std::make_unique<ImageGrabber>(SLAM_,imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
 
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F4/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, imugb_.get(), placeholders::_1),sub_imu_options);
       sub_image_filter.subscribe(this, "/AIT_Fighter4/down/image", rclcpp::SensorDataQoS().keep_last(1000).get_rmw_qos_profile(), sub_image_options);
@@ -231,7 +231,8 @@ class SlamNode : public rclcpp::Node
 
     ~SlamNode(){
       cout << "Trigger Shutdown" << endl;
-      SLAM_->Shutdown();
+      if(!SLAM_->isShutDown())
+        SLAM_->Shutdown();
       sync_thread_->join();
     }
 
@@ -248,7 +249,7 @@ class SlamNode : public rclcpp::Node
     std::shared_ptr<ImuGrabber> imugb_;
     std::unique_ptr<ImageGrabber> igb_;
     std::unique_ptr<std::thread> sync_thread_;
-    std::unique_ptr<ORB_SLAM3::System> SLAM_;
+    std::shared_ptr<ORB_SLAM3::System> SLAM_;
 };
 
 

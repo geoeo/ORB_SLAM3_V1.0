@@ -42,10 +42,10 @@ class FrameDrawer
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    FrameDrawer(Atlas* pAtlas);
+    FrameDrawer(std::shared_ptr<Atlas> pAtlas);
 
     // Update info from the last processed frame.
-    void Update(Tracking *pTracker);
+    void Update(std::shared_ptr<Tracking> pTracker);
 
     // Draw last processed frame.
     cv::Mat DrawFrame(float imageScale=1.f);
@@ -68,17 +68,17 @@ protected:
     std::vector<int> mvIniMatches;
     int mState;
 
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     std::mutex mMutex;
     std::vector<std::pair<cv::Point2f, cv::Point2f> > mvTracks;
 
-    std::vector<MapPoint*> mvpLocalMap;
+    std::vector<std::shared_ptr<MapPoint>> mvpLocalMap;
     std::vector<KeyPoint> mvMatchedKeys;
-    std::vector<MapPoint*> mvpMatchedMPs;
+    std::vector<std::shared_ptr<MapPoint>> mvpMatchedMPs;
     std::vector<KeyPoint> mvOutlierKeys;
-    std::vector<MapPoint*> mvpOutlierMPs;
-    std::vector<MapPoint*> mvCurrentTrackedMapPoints;
+    std::vector<std::shared_ptr<MapPoint>> mvpOutlierMPs;
+    std::vector<std::shared_ptr<MapPoint>> mvCurrentTrackedMapPoints;
 
     std::map<long unsigned int, cv::Point2f> mmProjectPoints;
     std::map<long unsigned int, cv::Point2f> mmMatchedInImage;

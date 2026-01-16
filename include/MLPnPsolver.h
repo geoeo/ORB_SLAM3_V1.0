@@ -60,7 +60,7 @@ namespace ORB_SLAM3{
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        MLPnPsolver(const std::shared_ptr<Frame> F, const vector<MapPoint*> &vpMapPointMatches);
+        MLPnPsolver(const std::shared_ptr<Frame> F, const vector<std::shared_ptr<MapPoint>> &vpMapPointMatches);
 
         ~MLPnPsolver();
 
@@ -185,7 +185,7 @@ namespace ORB_SLAM3{
         //----------------------------------------------------
         //Fields of the solver
         //----------------------------------------------------
-        vector<MapPoint*> mvpMapPointMatches;
+        vector<std::shared_ptr<MapPoint>> mvpMapPointMatches;
 
         // 2D Points
         vector<cv::Point2f> mvP2D;
@@ -246,7 +246,7 @@ namespace ORB_SLAM3{
         // Max square error associated with scale level. Max error = th*th*sigma(level)*sigma(level)
         vector<float> mvMaxError;
 
-        GeometricCamera* mpCamera;
+        std::shared_ptr<GeometricCamera> mpCamera;
     };
 
 }

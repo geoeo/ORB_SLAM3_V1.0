@@ -4,7 +4,7 @@
             "name": "Orbslam3 Node",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/mono-inertial/lib/mono-inertial/mono_inertial_node",
+            "program": "/workspaces/ORB_SLAM3_V1.0/ros2_ws/install/mono-inertial/lib/mono-inertial/mono_inertial_gnss_node",
             "preLaunchTask": "source_orb3_ws",
             "envFile": "/workspaces/ORB_SLAM3_V1.0/ros2_ws/build/temp_launch.env",
             "args": [

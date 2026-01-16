@@ -27,6 +27,7 @@
 #include <sophus/se3.hpp>
 #include <mutex>
 #include <iostream>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -125,14 +126,14 @@ class Preintegrated
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Preintegrated(const Bias &b_, const Calib &calib);
-    Preintegrated(Preintegrated* pImuPre);
+    Preintegrated(std::shared_ptr<Preintegrated> pImuPre);
     Preintegrated() {}
     ~Preintegrated() {}
-    void CopyFrom(Preintegrated* pImuPre);
+    void CopyFrom(std::shared_ptr<Preintegrated> pImuPre);
     void Initialize(const Bias &b_);
     void IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt);
     void Reintegrate();
-    void MergePrevious(Preintegrated* pPrev);
+    void MergePrevious(std::shared_ptr<Preintegrated> pPrev);
     void SetNewBias(const Bias &bu_);
     IMU::Bias GetDeltaBias(const Bias &b_);
 

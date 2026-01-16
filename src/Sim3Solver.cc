@@ -32,8 +32,8 @@ namespace ORB_SLAM3
 {
 
 
-Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale,
-                       vector<KeyFrame*> vpKeyFrameMatchedMP):
+Sim3Solver::Sim3Solver(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, const vector<shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale,
+                       vector<shared_ptr<KeyFrame>> vpKeyFrameMatchedMP):
     mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale),
     pCamera1(pKF1->mpCamera), pCamera2(pKF2->mpCamera)
 {
@@ -41,13 +41,13 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> 
     if(vpKeyFrameMatchedMP.empty())
     {
         bDifferentKFs = true;
-        vpKeyFrameMatchedMP = vector<KeyFrame*>(vpMatched12.size(), pKF2);
+        vpKeyFrameMatchedMP = vector<shared_ptr<KeyFrame>>(vpMatched12.size(), pKF2);
     }
 
     mpKF1 = pKF1;
     mpKF2 = pKF2;
 
-    vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+    auto vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
     mN1 = vpMatched12.size();
 
@@ -67,13 +67,13 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> 
 
     size_t idx=0;
 
-    KeyFrame* pKFm = pKF2; //Default variable
+    shared_ptr<KeyFrame> pKFm = pKF2; //Default variable
     for(int i1=0; i1<mN1; i1++)
     {
         if(vpMatched12[i1])
         {
-            MapPoint* pMP1 = vpKeyFrameMP1[i1];
-            MapPoint* pMP2 = vpMatched12[i1];
+            auto pMP1 = vpKeyFrameMP1[i1];
+            auto pMP2 = vpMatched12[i1];
 
             if(!pMP1)
                 continue;
@@ -461,7 +461,7 @@ float Sim3Solver::GetEstimatedScale()
     return mBestScale;
 }
 
-void Sim3Solver::Project(const vector<Eigen::Vector3f> &vP3Dw, vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, GeometricCamera* pCamera)
+void Sim3Solver::Project(const vector<Eigen::Vector3f> &vP3Dw, vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, std::shared_ptr<GeometricCamera> pCamera)
 {
     Eigen::Matrix3f Rcw = Tcw.block<3,3>(0,0);
     Eigen::Vector3f tcw = Tcw.block<3,1>(0,3);
@@ -477,7 +477,7 @@ void Sim3Solver::Project(const vector<Eigen::Vector3f> &vP3Dw, vector<Eigen::Vec
     }
 }
 
-void Sim3Solver::FromCameraToImage(const vector<Eigen::Vector3f> &vP3Dc, vector<Eigen::Vector2f> &vP2D, GeometricCamera* pCamera)
+void Sim3Solver::FromCameraToImage(const vector<Eigen::Vector3f> &vP3Dc, vector<Eigen::Vector2f> &vP2D, std::shared_ptr<GeometricCamera> pCamera)
 {
     vP2D.clear();
     vP2D.reserve(vP3Dc.size());

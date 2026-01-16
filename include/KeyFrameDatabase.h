@@ -45,37 +45,33 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     KeyFrameDatabase(){}
-    KeyFrameDatabase(const ORBVocabulary &voc);
+    KeyFrameDatabase(const std::shared_ptr<ORBVocabulary> voc);
 
-    void add(KeyFrame* pKF);
+    void add(std::shared_ptr<KeyFrame> pKF);
 
-    void erase(KeyFrame* pKF);
+    void erase(std::shared_ptr<KeyFrame> pKF);
 
     void clear();
-    void clearMap(Map* pMap);
+    void clearMap(std::shared_ptr<Map> pMap);
 
     // Loop Detection(DEPRECATED)
-    std::vector<KeyFrame *> DetectLoopCandidates(KeyFrame* pKF, float minScore);
+    std::vector<std::shared_ptr<KeyFrame>> DetectLoopCandidates(std::shared_ptr<KeyFrame> pKF, float minScore);
 
     // Loop and Merge Detection
-    void DetectCandidates(KeyFrame* pKF, float minScore,std::vector<KeyFrame*>& vpLoopCand, std::vector<KeyFrame*>& vpMergeCand);
-    void DetectBestCandidates(KeyFrame *pKF, std::vector<KeyFrame*> &vpLoopCand, std::vector<KeyFrame*> &vpMergeCand, int nMinWords);
-    void DetectNBestCandidates(KeyFrame *pKF, std::vector<KeyFrame*> &vpLoopCand, std::vector<KeyFrame*> &vpMergeCand, int nNumCandidates);
+    void DetectCandidates(std::shared_ptr<KeyFrame> pKF, float minScore,std::vector<std::shared_ptr<KeyFrame>>& vpLoopCand, std::vector<std::shared_ptr<KeyFrame>>& vpMergeCand);
+    void DetectBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>> &vpLoopCand, std::vector<std::shared_ptr<KeyFrame>> &vpMergeCand, int nMinWords);
+    void DetectNBestCandidates(std::shared_ptr<KeyFrame> pKF, std::vector<std::shared_ptr<KeyFrame>> &vpLoopCand, std::vector<std::shared_ptr<KeyFrame>> &vpMergeCand, int nNumCandidates);
 
     // Relocalization
-    std::vector<KeyFrame*> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, Map* pMap);
-
-    void PreSave();
-    void PostLoad(std::map<long unsigned int, KeyFrame*> mpKFid);
-    void SetORBVocabulary(ORBVocabulary* pORBVoc);
+    std::vector<std::shared_ptr<KeyFrame>> DetectRelocalizationCandidates(std::shared_ptr<Frame> F, std::shared_ptr<Map> pMap);
 
 protected:
 
    // Associated vocabulary
-   const ORBVocabulary* mpVoc;
+   const std::shared_ptr<ORBVocabulary> mpVoc;
 
    // Inverted file
-   std::vector<std::list<KeyFrame*> > mvInvertedFile;
+   std::vector<std::list<std::shared_ptr<KeyFrame>> > mvInvertedFile;
 
    // For save relation without pointer, this is necessary for save/load function
    std::vector<std::list<long unsigned int> > mvBackupInvertedFileId;

@@ -195,8 +195,8 @@ namespace ORB_SLAM3 {
 
             vector<float> vCalibration = {fx, fy, cx, cy};
 
-            calibration1_ = new Pinhole(vCalibration);
-            originalCalib1_ = new Pinhole(vCalibration);
+            calibration1_ = make_shared<Pinhole>(vCalibration);
+            originalCalib1_ = make_shared<Pinhole>(vCalibration);
 
 
             if(cam.distCoeffs.rows==5){
@@ -284,8 +284,8 @@ namespace ORB_SLAM3 {
 
             vCalibration = {fx, fy, cx, cy};
 
-            calibration1_ = new Pinhole(vCalibration);
-            originalCalib1_ = new Pinhole(vCalibration);
+            calibration1_ = make_shared<Pinhole>(vCalibration);
+            originalCalib1_ = make_shared<Pinhole>(vCalibration);
 
             //Check if it is a distorted PinHole
             readParameter<float>(fSettings,"Camera1.k1",found,false);
@@ -320,8 +320,8 @@ namespace ORB_SLAM3 {
 
             vCalibration = {fx, fy, cx, cy};
 
-            calibration1_ = new Pinhole(vCalibration);
-            originalCalib1_ = new Pinhole(vCalibration);
+            calibration1_ = make_shared<Pinhole>(vCalibration);
+            originalCalib1_ = make_shared<Pinhole>(vCalibration);
 
             //Rectified images are assumed to be ideal PinHole images (no distortion)
         }
@@ -341,15 +341,15 @@ namespace ORB_SLAM3 {
 
             vCalibration = {fx,fy,cx,cy,k0,k1,k2,k3};
 
-            calibration1_ = new KannalaBrandt8(vCalibration);
-            originalCalib1_ = new KannalaBrandt8(vCalibration);
+            calibration1_ = make_shared<KannalaBrandt8>(vCalibration);
+            originalCalib1_ = make_shared<KannalaBrandt8>(vCalibration);
 
             if(sensor_ == System::STEREO || sensor_ == System::IMU_STEREO){
                 int colBegin = readParameter<int>(fSettings,"Camera1.overlappingBegin",found);
                 int colEnd = readParameter<int>(fSettings,"Camera1.overlappingEnd",found);
                 vector<int> vOverlapping = {colBegin, colEnd};
 
-                static_cast<KannalaBrandt8*>(calibration1_)->mvLappingArea = vOverlapping;
+                static_pointer_cast<KannalaBrandt8>(calibration1_)->mvLappingArea = vOverlapping;
             }
         }
         else{
@@ -373,8 +373,8 @@ namespace ORB_SLAM3 {
 
             vCalibration = {fx, fy, cx, cy};
 
-            calibration2_ = new Pinhole(vCalibration);
-            originalCalib2_ = new Pinhole(vCalibration);
+            calibration2_ = make_shared<Pinhole>(vCalibration);
+            originalCalib2_ = make_shared<Pinhole>(vCalibration);
 
             //Check if it is a distorted PinHole
             readParameter<float>(fSettings,"Camera2.k1",found,false);
@@ -408,14 +408,14 @@ namespace ORB_SLAM3 {
 
             vCalibration = {fx,fy,cx,cy,k0,k1,k2,k3};
 
-            calibration2_ = new KannalaBrandt8(vCalibration);
-            originalCalib2_ = new KannalaBrandt8(vCalibration);
+            calibration2_ = make_shared<KannalaBrandt8>(vCalibration);
+            originalCalib2_ = make_shared<KannalaBrandt8>(vCalibration);
 
             int colBegin = readParameter<int>(fSettings,"Camera2.overlappingBegin",found);
             int colEnd = readParameter<int>(fSettings,"Camera2.overlappingEnd",found);
             vector<int> vOverlapping = {colBegin, colEnd};
 
-            static_cast<KannalaBrandt8*>(calibration2_)->mvLappingArea = vOverlapping;
+            static_pointer_cast<KannalaBrandt8>(calibration2_)->mvLappingArea = vOverlapping;
         }
 
         //Load stereo extrinsic calibration
@@ -482,11 +482,11 @@ namespace ORB_SLAM3 {
                     calibration2_->setParameter(calibration2_->getParameter(2) * scaleColFactor, 2);
 
                     if(cameraType_ == KannalaBrandt){
-                        static_cast<KannalaBrandt8*>(calibration1_)->mvLappingArea[0] *= scaleColFactor;
-                        static_cast<KannalaBrandt8*>(calibration1_)->mvLappingArea[1] *= scaleColFactor;
+                        static_pointer_cast<KannalaBrandt8>(calibration1_)->mvLappingArea[0] *= scaleColFactor;
+                        static_pointer_cast<KannalaBrandt8>(calibration1_)->mvLappingArea[1] *= scaleColFactor;
 
-                        static_cast<KannalaBrandt8*>(calibration2_)->mvLappingArea[0] *= scaleColFactor;
-                        static_cast<KannalaBrandt8*>(calibration2_)->mvLappingArea[1] *= scaleColFactor;
+                        static_pointer_cast<KannalaBrandt8>(calibration2_)->mvLappingArea[0] *= scaleColFactor;
+                        static_pointer_cast<KannalaBrandt8>(calibration2_)->mvLappingArea[1] *= scaleColFactor;
                     }
                 }
             }
@@ -563,9 +563,9 @@ namespace ORB_SLAM3 {
 
     void Settings::precomputeRectificationMaps() {
         //Precompute rectification maps, new calibrations, ...
-        cv::Mat K1 = static_cast<Pinhole*>(calibration1_)->toK();
+        cv::Mat K1 = calibration1_->toK();
         K1.convertTo(K1,CV_64F);
-        cv::Mat K2 = static_cast<Pinhole*>(calibration2_)->toK();
+        cv::Mat K2 = calibration2_->toK();
         K2.convertTo(K2,CV_64F);
 
         cv::Mat cvTlr;
@@ -685,8 +685,8 @@ namespace ORB_SLAM3 {
             output << "\t-Stereo depth threshold : " << settings.thDepth_ << endl;
 
             if(settings.cameraType_ == Settings::KannalaBrandt){
-                auto vOverlapping1 = static_cast<KannalaBrandt8*>(settings.calibration1_)->mvLappingArea;
-                auto vOverlapping2 = static_cast<KannalaBrandt8*>(settings.calibration2_)->mvLappingArea;
+                auto vOverlapping1 = static_pointer_cast<KannalaBrandt8>(settings.calibration1_)->mvLappingArea;
+                auto vOverlapping2 = static_pointer_cast<KannalaBrandt8>(settings.calibration2_)->mvLappingArea;
                 output << "\t-Camera 1 overlapping area: [ " << vOverlapping1[0] << " , " << vOverlapping1[1] << " ]" << endl;
                 output << "\t-Camera 2 overlapping area: [ " << vOverlapping2[0] << " , " << vOverlapping2[1] << " ]" << endl;
             }

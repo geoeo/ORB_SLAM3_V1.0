@@ -27,6 +27,7 @@
 
 #include <set>
 #include <mutex>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -48,23 +49,21 @@ public:
     ~Atlas();
 
     void CreateNewMap();
-    void ChangeMap(Map* pMap);
+    void ChangeMap(std::shared_ptr<Map> pMap);
 
     unsigned long int GetLastInitKFid();
 
-    void SetViewer(Viewer* pViewer);
-
     // Method for change components in the current map
-    void AddKeyFrame(KeyFrame* pKF);
-    void AddMapPoint(MapPoint* pMP);
+    void AddKeyFrame(std::shared_ptr<KeyFrame> pKF);
+    void AddMapPoint(std::shared_ptr<MapPoint> pMP);
     //void EraseMapPoint(MapPoint* pMP);
     //void EraseKeyFrame(KeyFrame* pKF);
 
-    GeometricCamera* AddCamera(GeometricCamera* pCam);
-    std::vector<GeometricCamera*> GetAllCameras();
+    std::shared_ptr<GeometricCamera> AddCamera(std::shared_ptr<GeometricCamera> pCam);
+    std::vector<std::shared_ptr<GeometricCamera>> GetAllCameras();
 
     /* All methods without Map pointer work on current map */
-    void SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs);
+    void SetReferenceMapPoints(const std::vector<std::shared_ptr<MapPoint>> &vpMPs);
     void InformNewBigChange();
     int GetLastBigChangeIdx();
 
@@ -72,23 +71,22 @@ public:
     long unsigned KeyFramesInMap();
 
     // Method for get data in current map
-    std::vector<KeyFrame*> GetAllKeyFrames();
-    std::vector<MapPoint*> GetAllMapPoints();
-    std::vector<MapPoint*> GetReferenceMapPoints();
+    std::vector<std::shared_ptr<KeyFrame>> GetAllKeyFrames();
+    std::vector<std::shared_ptr<MapPoint>> GetAllMapPoints();
+    std::vector<std::shared_ptr<MapPoint>> GetReferenceMapPoints();
     bool isBACompleteForMap();
     std::vector<float> getMapScales();
 
-    std::vector<Map*> GetAllMaps();
-
+    std::vector<std::shared_ptr<Map>> GetAllMaps();
     int CountMaps();
 
     void clearMap();
 
     void clearAtlas();
 
-    Map* GetCurrentMap();
+    std::shared_ptr<Map> GetCurrentMap();
 
-    void SetMapBad(Map* pMap);
+    void SetMapBad(std::shared_ptr<Map> pMap);
     void RemoveBadMaps();
 
     bool isInertial();
@@ -96,41 +94,32 @@ public:
     void SetImuInitialized();
     bool isImuInitialized();
 
-    // Function for garantee the correction of serialization of this object
-    void PreSave();
-    void PostLoad();
+    std::map<long unsigned int, std::shared_ptr<KeyFrame>> GetAtlasKeyframes();
 
-    std::map<long unsigned int, KeyFrame*> GetAtlasKeyframes();
+    void SetKeyFrameDatabase(std::shared_ptr<KeyFrameDatabase> pKFDB);
+    std::shared_ptr<KeyFrameDatabase> GetKeyFrameDatabase();
 
-    void SetKeyFrameDababase(KeyFrameDatabase* pKFDB);
-    KeyFrameDatabase* GetKeyFrameDatabase();
-
-    void SetORBVocabulary(ORBVocabulary* pORBVoc);
-    ORBVocabulary* GetORBVocabulary();
+    std::shared_ptr<ORBVocabulary> GetORBVocabulary();
 
     long unsigned int GetNumLivedKF();
-
     long unsigned int GetNumLivedMP();
 
 protected:
 
-    std::set<Map*> mspMaps;
-    std::set<Map*> mspBadMaps;
+    std::set<std::shared_ptr<Map>> mspMaps;
+    std::set<std::shared_ptr<Map>> mspBadMaps;
     // Its necessary change the container from set to vector because libboost 1.58 and Ubuntu 16.04 have an error with this cointainer
-    std::vector<Map*> mvpBackupMaps;
+    std::vector<std::shared_ptr<Map>> mvpBackupMaps;
 
-    Map* mpCurrentMap;
+    std::shared_ptr<Map> mpCurrentMap;
 
-    std::vector<GeometricCamera*> mvpCameras;
+    std::vector<std::shared_ptr<GeometricCamera>> mvpCameras;
 
     unsigned long int mnLastInitKFidMap;
 
-    Viewer* mpViewer;
-    bool mHasViewer;
-
     // Class references for the map reconstruction from the save file
-    KeyFrameDatabase* mpKeyFrameDB;
-    ORBVocabulary* mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
 
     // Mutex
     std::mutex mMutexAtlas;

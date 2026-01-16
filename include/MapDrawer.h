@@ -27,6 +27,7 @@
 #include <Eigen/Core>
 
 #include <mutex>
+#include <memory>
 
 namespace ORB_SLAM3
 {
@@ -37,18 +38,18 @@ class MapDrawer
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    MapDrawer(Atlas* pAtlas);
-    MapDrawer(Atlas* pAtlas, const std::string &strSettingPath, Settings* settings);
+    MapDrawer(std::shared_ptr<Atlas> pAtlas);
+    MapDrawer(std::shared_ptr<Atlas> pAtlas, const std::string &strSettingPath, std::shared_ptr<Settings> settings);
 
-    void newParameterLoader(Settings* settings);
+    void newParameterLoader(std::shared_ptr<Settings> settings);
 
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     void DrawMapPoints(const Eigen::Vector3f &coordinate_offset);
     void DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const bool bDrawInertialGraph, const bool bDrawOptLba, const Eigen::Vector3f &coordinate_offset);
     void DrawCurrentCamera(pangolin::OpenGlMatrix &Twc);
     void SetCurrentCameraPose(const Sophus::SE3f &Tcw);
-    void SetReferenceKeyFrame(KeyFrame *pKF);
+    void SetReferenceKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void GetCurrentOpenGLCameraMatrix(pangolin::OpenGlMatrix &M, pangolin::OpenGlMatrix &MOw);
 
 private:

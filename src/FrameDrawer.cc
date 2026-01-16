@@ -29,7 +29,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
+FrameDrawer::FrameDrawer(shared_ptr<Atlas> pAtlas):both(false),mpAtlas(pAtlas)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC1, cv::Scalar(0));
@@ -47,11 +47,11 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
     int state; // Tracking state
     vector<float> vCurrentDepth;
 
-    vector<MapPoint*> vpLocalMap;
+    vector<shared_ptr<MapPoint>> vpLocalMap;
     vector<KeyPoint> vMatchesKeys;
-    vector<MapPoint*> vpMatchedMPs;
+    vector<shared_ptr<MapPoint>> vpMatchedMPs;
     vector<KeyPoint> vOutlierKeys;
-    vector<MapPoint*> vpOutlierMPs;
+    vector<shared_ptr<MapPoint>> vpOutlierMPs;
     map<long unsigned int, cv::Point2f> mProjectPoints;
     map<long unsigned int, cv::Point2f> mMatchedInImage;
 
@@ -406,7 +406,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 
 }
 
-void FrameDrawer::Update(Tracking *pTracker)
+void FrameDrawer::Update(shared_ptr<Tracking> pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     //Variables for the new visualization
@@ -449,7 +449,7 @@ void FrameDrawer::Update(Tracking *pTracker)
     {
         for(int i=0;i<N;i++)
         {
-            MapPoint* pMP = mvCurrentTrackedMapPoints[i];
+            auto pMP = mvCurrentTrackedMapPoints[i];
             if(pMP)
             {
                 if(!mvCurrentOutliers[i])

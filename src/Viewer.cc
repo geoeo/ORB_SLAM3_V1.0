@@ -26,9 +26,9 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer, Tracking *pTracking, const string &strSettingPath, Settings* settings):
-    both(false), mpSystem(pSystem), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
-    mFixedTranslation(Eigen::Vector3f::Zero()), mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false), 
+Viewer::Viewer(shared_ptr<FrameDrawer> pFrameDrawer, shared_ptr<MapDrawer> pMapDrawer, shared_ptr<Tracking> pTracking, const string &strSettingPath, std::shared_ptr<Settings> settings):
+    both(false), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
+    mFixedTranslation(Eigen::Vector3f::Zero()), mbStopRequested(false), mbResetRequested(false),
     mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
 {
     if(settings){
@@ -57,7 +57,7 @@ Viewer::Viewer(System* pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer
     mbStopTrack = false;
 }
 
-void Viewer::newParameterLoader(Settings *settings) {
+void Viewer::newParameterLoader(shared_ptr<Settings> settings) {
     mImageViewerScale = 1.f;
 
     float fps = 30;
@@ -159,9 +159,6 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
 
 void Viewer::Run()
 {
-    mbFinished = false;
-    mbStopped = false;
-
     pangolin::CreateWindowAndBind("ORB-SLAM3: Map Viewer",1024,768);
 
     // 3D Mouse handler requires depth testing to be enabled
@@ -206,15 +203,8 @@ void Viewer::Run()
     cv::namedWindow("ORB-SLAM3: Current Frame");
 
     bool bFollow = true;
-    bool bLocalizationMode = false;
     bool bStepByStep = false;
     bool bCameraView = true;
-
-    if(mpTracker->mSensor == mpSystem->MONOCULAR || mpTracker->mSensor == mpSystem->STEREO || mpTracker->mSensor == mpSystem->RGBD)
-    {
-        menuShowGraph = true;
-    }
-
     const float trackedImageScale = 1.0f;
 
     cout << "Starting the Viewer" << endl;
@@ -276,17 +266,6 @@ void Viewer::Run()
             s_cam.Follow(Ow);
         }
 
-        if(menuLocalizationMode && !bLocalizationMode)
-        {
-            mpSystem->ActivateLocalizationMode();
-            bLocalizationMode = true;
-        }
-        else if(!menuLocalizationMode && bLocalizationMode)
-        {
-            mpSystem->DeactivateLocalizationMode();
-            bLocalizationMode = false;
-        }
-
         if(menuStepByStep && !bStepByStep)
         {
             //cout << "Viewer: step by step" << endl;
@@ -318,7 +297,7 @@ void Viewer::Run()
         pangolin::FinishFrame();
 
         if((mpTracker->isBACompleteForMap() && !mbWrittenInitTrajectory && mbSaveInitTrajectory) || menuSaveTrajectory){
-            const vector<KeyFrame*> vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
+            const auto vpKFs = mpMapDrawer->mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
             unique_lock<mutex> lock(mpMapDrawer->mpAtlas->GetCurrentMap()->mMutexMapUpdate);
             try {
                 Map::writeKeyframesCsv("keyframes", vpKFs);
@@ -360,37 +339,20 @@ void Viewer::Run()
             menuShowKeyFrames = true;
             menuShowPoints = true;
             menuLocalizationMode = false;
-            if(bLocalizationMode)
-                mpSystem->DeactivateLocalizationMode();
-            bLocalizationMode = false;
             bFollow = true;
             menuFollowCamera = true;
-            mpSystem->ResetActiveMap();
             menuReset = false;
+            mbResetRequested = true;
         }
 
         if(menuStop)
         {
-            if(bLocalizationMode)
-                mpSystem->DeactivateLocalizationMode();
-
-            // Stop all threads
-            mpSystem->Shutdown();
-            menuStop = false;
-        }
-
-        if(Stop())
-        {
-            while(isStopped())
-                this_thread::sleep_for(chrono::microseconds(3000));
-            
-        }
-
-        if(CheckFinish())
+            mbStopRequested = true;
             break;
+        }
+
     }
 
-    SetFinish();
 }
 
 void Viewer::SetFixedTranslation(const Eigen::Vector3f& fixedTranslation)
@@ -398,66 +360,21 @@ void Viewer::SetFixedTranslation(const Eigen::Vector3f& fixedTranslation)
     mFixedTranslation = fixedTranslation;
 }
 
-void Viewer::RequestFinish()
+void Viewer::SetReset(bool bReset)
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    mbFinishRequested = true;
+    mbResetRequested = bReset;
 }
 
-bool Viewer::CheckFinish()
+bool Viewer::ShouldReset()
 {
-    unique_lock<mutex> lock(mMutexFinish);
-    return mbFinishRequested;
-}
-
-void Viewer::SetFinish()
-{
-    unique_lock<mutex> lock(mMutexFinish);
-    mbFinished = true;
-}
-
-bool Viewer::isFinished()
-{
-    unique_lock<mutex> lock(mMutexFinish);
-    return mbFinished;
-}
-
-void Viewer::RequestStop()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    if(!mbStopped)
-        mbStopRequested = true;
+    return mbResetRequested;
 }
 
 bool Viewer::isStopped()
 {
-    unique_lock<mutex> lock(mMutexStop);
-    return mbStopped;
+    return mbStopRequested;
 }
 
-bool Viewer::Stop()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    unique_lock<mutex> lock2(mMutexFinish);
-
-    if(mbFinishRequested)
-        return false;
-    else if(mbStopRequested)
-    {
-        mbStopped = true;
-        mbStopRequested = false;
-        return true;
-    }
-
-    return false;
-
-}
-
-void Viewer::Release()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    mbStopped = false;
-}
 
 /*void Viewer::SetTrackingPause()
 {

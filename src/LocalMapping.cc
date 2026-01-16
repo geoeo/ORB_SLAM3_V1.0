@@ -35,8 +35,8 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
-    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mpSystem(pSys), mbMonocular(bMonocular), 
+LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
+    mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mbMonocular(bMonocular), 
     mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mMutexPtrGlobalData(make_shared<mutex>()), 
@@ -49,12 +49,12 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
 {
 }
 
-void LocalMapping::SetLoopCloser(LoopClosing* pLoopCloser)
+void LocalMapping::SetLoopCloser(shared_ptr<LoopClosing> pLoopCloser)
 {
     mpLoopCloser = pLoopCloser;
 }
 
-void LocalMapping::SetTracker(Tracking *pTracker)
+void LocalMapping::SetTracker(shared_ptr<Tracking> pTracker)
 {
     mpTracker=pTracker;
 }
@@ -63,7 +63,7 @@ void LocalMapping::Run()
 {
     mbFinished = false;
 
-    while(true)
+    while(!CheckFinish())
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
 
@@ -87,20 +87,22 @@ void LocalMapping::Run()
             CreateNewMapPoints();
             
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
-                //TODO: This lock leads to deadlock(?) investigate why this happens
-                //unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                const auto georef_succcess = GeoreferenceKeyframes();
-                if(georef_succcess && writeKFAfterGeorefCount == 0){
-                    if(mbWriteGNSSData){
-                        const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
-                        for(const auto kf : kfs)
-                            kf->ComputeReprojectionErrors(true);
-                        Map::writeKeyframesCsv("keyframes_after_georef", kfs);
-                        Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
-                    }
+                {
+                    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                    const auto georef_succcess = GeoreferenceKeyframes();
+                    if(georef_succcess && writeKFAfterGeorefCount == 0){
+                        if(mbWriteGNSSData){
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
+                            for(const auto kf : kfs)
+                                kf->ComputeReprojectionErrors(true);
+                            Map::writeKeyframesCsv("keyframes_after_georef", kfs);
+                            Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
+                        }
 
-                    writeKFAfterGeorefCount = 1;
+                        writeKFAfterGeorefCount = 1;
+                    }
                 }
+
                 if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
                     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
@@ -115,13 +117,13 @@ void LocalMapping::Run()
 
                         //TODO: This is not the correct place for this, as the GeroefUpdate would apply the transformation twice
                         //TODO: Check for submitted but to processed KFs
-                        const auto sortedKFs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);    
-                        const auto georef_transform = mGeometricReferencer.getCurrentTransform().cast<float>();
+                        //const auto sortedKFs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);    
+                        //const auto georef_transform = mGeometricReferencer.getCurrentTransform().cast<float>();
                         //const Eigen::Quaternionf rotation(Eigen::AngleAxisf(0.5*EIGEN_PI,Eigen::Vector3f::UnitZ()));
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, Sophus::SO3f().unit_quaternion(), georef_transform.translation());
                         //const Sophus::Sim3f Sim3_Tyw_noscale(1.5f, Sophus::SO3f(rotation).unit_quaternion(), Sophus::Vector3f::Zero());
                         //const Sophus::Sim3f Sim3_Tyw_noscale(georef_transform.scale(), georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
-                        const Sophus::Sim3f Sim3_Tyw_noscale(1.0, georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
+                        //const Sophus::Sim3f Sim3_Tyw_noscale(1.0, georef_transform.rxso3().quaternion().normalized(), Sophus::Vector3f::Zero());
                         //TODO: seems to be a problem with translation
                         //const auto b_transformed = georef_transform.rxso3().quaternion()*sortedKFs.front()->GetImuBias();
 
@@ -192,6 +194,7 @@ void LocalMapping::Run()
             if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
+                unique_lock<mutex> lock(*getGlobalDataMutex());
                 SearchInNeighbors();
             }
 
@@ -201,136 +204,124 @@ void LocalMapping::Run()
             int num_MPs_BA = 0;
             int num_edges_BA = 0;
 
-            if(!stopRequested())
+
+            if(mpAtlas->KeyFramesInMap()>2)
             {
-                if(mpAtlas->KeyFramesInMap()>2)
+
+                if(mbInertial && mpAtlas->GetCurrentMap()->isImuInitialized())
                 {
-
-                    if(mbInertial && mpAtlas->GetCurrentMap()->isImuInitialized())
+                    if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTElapsedTime>resetTimeThresh))
                     {
-                        if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && (mTElapsedTime>resetTimeThresh))
-                        {
-                            Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_DEBUG);
-                            mbBadImu = true;
-                        }
-
-                        Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
-                        {
-                            //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
-                            unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                            auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
-                            setLatestOptimizedKFPoses(optimizedKFPoses);
-                            Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
-                        }
-
-                        b_doneLBA = true;
-                    }
-                    else
-                    {
-                        Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
-                        {
-                            //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
-                            unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                            Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
-                            Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
-                        }
-
-                        b_doneLBA = true;
+                        Verbose::PrintMess("Not enough motion for initializing. Reseting...", Verbose::VERBOSITY_DEBUG);
+                        mbBadImu = true;
                     }
 
+                    Verbose::PrintMess("LocalMapper - LocalInertialBA", Verbose::VERBOSITY_DEBUG);
+                    {
+                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                        auto optimizedKFPoses = Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, !mpCurrentKeyFrame->GetMap()->GetInertialBA2());
+                        setLatestOptimizedKFPoses(optimizedKFPoses);
+                        Verbose::PrintMess("LocalMapper - LocalInertialBA - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
+                    }
+
+                    b_doneLBA = true;
+                }
+                else
+                {
+                    Verbose::PrintMess("LocalMapper - LocalBundleAdjustment", Verbose::VERBOSITY_DEBUG);
+                    {
+                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                        Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
+                        Verbose::PrintMess("LocalMapper - LocalBundleAdjustment - Abort: " + to_string(mbAbortBA), Verbose::VERBOSITY_DEBUG);
+                    }
+
+                    b_doneLBA = true;
                 }
 
-                // Initialize IMU here
-                if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
+            }
+
+            // Initialize IMU here
+            if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
+            {
+                Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
+                auto success = InitializeIMU(1e10, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
+                Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
+                if(false){
+                    mpAtlas->GetCurrentMap()->SetInertialBA1();
+                    mpAtlas->GetCurrentMap()->SetInertialBA2();
+                    if(minTimeForFullBA < 0)
+                        mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                }
+            }
+
+
+            // Check redundant local Keyframes -  Disabled for now since it may causes Segfaults: TODO: Fix
+            //KeyFrameCulling();
+
+            if (mbInertial)
+            {
+                if(mpAtlas->GetCurrentMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
                 {
-                    Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
-                    auto success = InitializeIMU(1e1, 1e2, true, itsFIBAInit, minTimeForImuInit, 10);
-                    Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
-                    if(false){
-                        mpAtlas->GetCurrentMap()->SetInertialBA1();
-                        mpAtlas->GetCurrentMap()->SetInertialBA2();
-                        if(minTimeForFullBA < 0)
+                    Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_DEBUG);
+                    if(!mpAtlas->GetCurrentMap()->GetInertialBA1()){
+                        Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
+                        auto success = false;
+                        if (mbMonocular)
+                            success = InitializeIMU(1e10, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
+                        else
+                            success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
+
+                        if(success){
+                            mpAtlas->GetCurrentMap()->SetInertialBA1();
+                            mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
+                            if(minTimeForFullBA < 0)
+                                mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                        }
+                        
+                        Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_DEBUG);
+                    }
+                    if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
+                        Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_DEBUG);
+                        auto success = false;
+                        if (mbMonocular)
+                            success = InitializeIMU(0.f, 0.f, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
+                        else
+                            success = InitializeIMU(0.f, 0.f, true, 200, minTimeForVIBA2, 10);
+
+                        if(success){
+                            mpAtlas->GetCurrentMap()->SetInertialBA2();
+                            if(minTimeForFullBA < 0)
+                                mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                        }
+                        Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_DEBUG);
+                    }
+
+                    if(!mbResetRequested && !mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
+                        unique_lock<mutex> lock(*getGlobalDataMutex());
+                        Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_DEBUG);
+                        //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
+                        auto success = InitializeIMU(0.f, 1e2, true, 200,3, 15);
+                        if(success)
                             mpAtlas->GetCurrentMap()->SetInertialFullBA();
                     }
                 }
-
-
-                // Check redundant local Keyframes -  Disabled for now since it may causes Segfaults: TODO: Fix
-                //KeyFrameCulling();
-
-                if (mbInertial)
-                {
-                    if(mpAtlas->GetCurrentMap()->isImuInitialized() && mpTracker->mState==Tracking::OK) // Enter here everytime local-mapping is called
-                    {
-                        Verbose::PrintMess("check VIBA", Verbose::VERBOSITY_DEBUG);
-                        if(!mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
-                            auto success = false;
-                            if (mbMonocular)
-                                success = InitializeIMU(0e0, 0e0, true, itsFIBA1, minTimeForVIBA1, 10);
-                            else
-                                success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
-
-                            if(success){
-                                mpAtlas->GetCurrentMap()->SetInertialBA1();
-                                mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
-                                if(minTimeForFullBA < 0)
-                                    mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                            }
-                            
-                            Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_DEBUG);
-                        }
-                        if(!mpAtlas->GetCurrentMap()->GetInertialBA2() && mpAtlas->GetCurrentMap()->GetInertialBA1()){
-                            Verbose::PrintMess("start VIBA 2", Verbose::VERBOSITY_DEBUG);
-                            auto success = false;
-                            if (mbMonocular)
-                                success = InitializeIMU(0.f, 0e0, false, 200, minTimeForVIBA2, 15); // TODO: priorA is small causes reloc issues. Investigate
-                            else
-                                success = InitializeIMU(0.f, 0.f, true, 200, minTimeForVIBA2, 10);
-
-                            if(success){
-                                mpAtlas->GetCurrentMap()->SetInertialBA2();
-                                if(minTimeForFullBA < 0)
-                                    mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                            }
-                            Verbose::PrintMess("end VIBA 2 " + to_string(success), Verbose::VERBOSITY_DEBUG);
-                        }
-
-                        if(!mbResetRequested && !mpAtlas->GetCurrentMap()->GetInertialBA2() && mTElapsedTime>minTimeForFullBA && minTimeForFullBA >= 0 && !mpAtlas->GetCurrentMap()->GetInertialFullBA()){
-                            unique_lock<mutex> lock(*getGlobalDataMutex());
-                            Verbose::PrintMess("Full BA Start", Verbose::VERBOSITY_DEBUG);
-                            //Optimizer::FullInertialBA(mpAtlas->GetCurrentMap(), 100, false, 0, NULL, false, 0.0, 1e2);
-                            auto success = InitializeIMU(0.f, 1e2, true, 200,3, 15);
-                            if(success)
-                                mpAtlas->GetCurrentMap()->SetInertialFullBA();
-                        }
-                    }
-                }
             }
+            
 
             //mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
             Verbose::PrintMess("LocalMapper - Elapsed Time: " + to_string(mTElapsedTime) + " KF size:" + to_string(mpAtlas->GetCurrentMap()->GetAllKeyFrames(false).size()), Verbose::VERBOSITY_NORMAL);
 
-        }
-        else if(Stop() && !mbBadImu)
-        {
-            // Safe area to stop
-            while(isStopped() && !CheckFinish())
-            {
-                this_thread::sleep_for(chrono::microseconds(3000));
-            }
-            if(CheckFinish())
-                break;
         }
 
         if(CheckFinish())
             break;
     }
 
-    SetFinish();
 }
 
-void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
+void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
@@ -347,8 +338,6 @@ bool LocalMapping::CheckNewKeyFrames()
 void LocalMapping::ResetNewKeyFrames() 
 {
     unique_lock<mutex> lock(mMutexNewKFs);
-    for(list<KeyFrame*>::iterator lit = mlNewKeyFrames.begin(), lend=mlNewKeyFrames.end(); lit!=lend; lit++)
-        delete *lit;
     mlNewKeyFrames.clear();
 }
 
@@ -374,11 +363,11 @@ void LocalMapping::ProcessNewKeyFrame()
     mpCurrentKeyFrame->ComputeBoW();
 
     // Associate MapPoints to the new keyframe and update normal and descriptor
-    const vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+    const auto vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
 
     for(size_t i=0; i<vpMapPointMatches.size(); i++)
     {
-        MapPoint* pMP = vpMapPointMatches[i];
+        auto pMP = vpMapPointMatches[i];
         if(pMP)
         {
             if(!pMP->isBad())
@@ -398,7 +387,11 @@ void LocalMapping::ProcessNewKeyFrame()
     }
 
     // Update links in the Covisibility Graph
-    mpCurrentKeyFrame->UpdateConnections();
+    {
+        //unique_lock<mutex> lock(*getGlobalDataMutex());
+        mpCurrentKeyFrame->UpdateConnections();
+    }
+
 
     if(mpAtlas->isImuInitialized())
         mpCurrentKeyFrame->GetKeyFrameDatabase()->add(mpCurrentKeyFrame);
@@ -417,7 +410,7 @@ void LocalMapping::EmptyQueue()
 void LocalMapping::MapPointCulling()
 {
     // Check Recent Added MapPoints
-    list<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
+    auto lit = mlpRecentAddedMapPoints.begin();
     const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
 
     int nThObs;
@@ -431,7 +424,7 @@ void LocalMapping::MapPointCulling()
 
     while(lit!=mlpRecentAddedMapPoints.end())
     {
-        MapPoint* pMP = *lit;
+        auto pMP = *lit;
 
         if(pMP->isBad())
             lit = mlpRecentAddedMapPoints.erase(lit);
@@ -459,19 +452,19 @@ void LocalMapping::MapPointCulling()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    size_t nn = 15;
+    size_t nn = 30;
     // For stereo inertial case
     // if(mbMonocular)
     //     nn=30;
-    vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
+    vector<shared_ptr<KeyFrame>> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
     if (mbInertial)
     {
-        KeyFrame* pKF = mpCurrentKeyFrame;
+        shared_ptr<KeyFrame> pKF = mpCurrentKeyFrame;
         size_t count=0;
         while((vpNeighKFs.size()<=nn)&&(pKF->mPrevKF)&&(count++<nn))
         {
-            vector<KeyFrame*>::iterator it = find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->mPrevKF);
+            vector<shared_ptr<KeyFrame>>::iterator it = find(vpNeighKFs.begin(), vpNeighKFs.end(), pKF->mPrevKF);
             if(it==vpNeighKFs.end())
                 vpNeighKFs.push_back(pKF->mPrevKF);
             pKF = pKF->mPrevKF;
@@ -501,9 +494,10 @@ void LocalMapping::CreateNewMapPoints()
         if(i>0 && CheckNewKeyFrames())
             return;
 
-        KeyFrame* pKF2 = vpNeighKFs[i];
+        auto pKF2 = vpNeighKFs[i];
 
-        GeometricCamera* pCamera1 = mpCurrentKeyFrame->mpCamera, *pCamera2 = pKF2->mpCamera;
+        auto pCamera1 = mpCurrentKeyFrame->mpCamera;
+        auto pCamera2 = pKF2->mpCamera;
 
         // Check first that baseline is not too short
         Eigen::Vector3f twc2 = pKF2->GetTranslationInverse();
@@ -753,7 +747,7 @@ void LocalMapping::CreateNewMapPoints()
                 continue;
 
             // Triangulation is succesfull
-            MapPoint* pMP = new MapPoint(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
+            auto pMP = make_shared<MapPoint>(x3D, mpCurrentKeyFrame, mpAtlas->GetCurrentMap());
             if (bPointStereo)
                 countStereo++;
             
@@ -790,7 +784,7 @@ bool LocalMapping::GeoreferenceKeyframes(){
             const auto Twc = pKF->GetPoseInverse();
             const auto Tgc = mGeometricReferencer.getCurrentTransform()*Sophus::Sim3d(1.0,Twc.unit_quaternion().cast<double>(),Twc.translation().cast<double>());
             pKF->SetGNSSCameraPose(Tgc);
-            vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
+            auto vpMPs = pKF->GetMapPointMatches();
             for_each(execution::par, vpMPs.begin(), vpMPs.end(), [&](auto pMP)
             {
                 if(pMP){
@@ -810,11 +804,11 @@ void LocalMapping::SearchInNeighbors()
     int nn = 10;
     if(mbMonocular)
         nn=30;
-    const vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
-    vector<KeyFrame*> vpTargetKFs;
-    for(vector<KeyFrame*>::const_iterator vit=vpNeighKFs.begin(), vend=vpNeighKFs.end(); vit!=vend; vit++)
+    const vector<shared_ptr<KeyFrame>> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
+    vector<shared_ptr<KeyFrame>> vpTargetKFs;
+    for(vector<shared_ptr<KeyFrame>>::const_iterator vit=vpNeighKFs.begin(), vend=vpNeighKFs.end(); vit!=vend; vit++)
     {
-        KeyFrame* pKFi = *vit;
+        auto pKFi = *vit;
         if(pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId)
             continue;
         vpTargetKFs.push_back(pKFi);
@@ -823,12 +817,13 @@ void LocalMapping::SearchInNeighbors()
 
     // Add some covisible of covisible
     // Extend to some second neighbors if abort is not requested
+    const size_t coviseSize = 20;
     for(int i=0, imax=vpTargetKFs.size(); i<imax; i++)
     {
-        const vector<KeyFrame*> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(20);
-        for(vector<KeyFrame*>::const_iterator vit2=vpSecondNeighKFs.begin(), vend2=vpSecondNeighKFs.end(); vit2!=vend2; vit2++)
+        const vector<shared_ptr<KeyFrame>> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(coviseSize);
+        for(vector<shared_ptr<KeyFrame>>::const_iterator vit2=vpSecondNeighKFs.begin(), vend2=vpSecondNeighKFs.end(); vit2!=vend2; vit2++)
         {
-            KeyFrame* pKFi2 = *vit2;
+            auto pKFi2 = *vit2;
             if(pKFi2->isBad() || pKFi2->mnFuseTargetForKF==mpCurrentKeyFrame->mnId || pKFi2->mnId==mpCurrentKeyFrame->mnId)
                 continue;
             vpTargetKFs.push_back(pKFi2);
@@ -841,8 +836,8 @@ void LocalMapping::SearchInNeighbors()
     // Extend to temporal neighbors
     if(mbInertial)
     {
-        KeyFrame* pKFi = mpCurrentKeyFrame->mPrevKF;
-        while(vpTargetKFs.size()<20 && pKFi)
+        auto pKFi = mpCurrentKeyFrame->mPrevKF;
+        while(vpTargetKFs.size()<coviseSize && pKFi)
         {
             if(pKFi->isBad() || pKFi->mnFuseTargetForKF==mpCurrentKeyFrame->mnId)
             {
@@ -857,13 +852,11 @@ void LocalMapping::SearchInNeighbors()
 
     // Search matches by projection from current KF in target KFs
     ORBmatcher matcher;
-    vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-    for(vector<KeyFrame*>::iterator vit=vpTargetKFs.begin(), vend=vpTargetKFs.end(); vit!=vend; vit++)
+    auto vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+    for(vector<shared_ptr<KeyFrame>>::iterator vit=vpTargetKFs.begin(), vend=vpTargetKFs.end(); vit!=vend; vit++)
     {
-        KeyFrame* pKFi = *vit;
-
-        matcher.Fuse(pKFi,vpMapPointMatches, 10.0);
-        //if(pKFi->NLeft != -1) matcher.Fuse(pKFi,vpMapPointMatches,true);
+        auto pKFi = *vit;
+        matcher.Fuse(pKFi,vpMapPointMatches, 30.0, false);
     }
 
 
@@ -871,18 +864,18 @@ void LocalMapping::SearchInNeighbors()
         return;
 
     // Search matches by projection from target KFs in current KF
-    vector<MapPoint*> vpFuseCandidates;
+    vector<shared_ptr<MapPoint>> vpFuseCandidates;
     vpFuseCandidates.reserve(vpTargetKFs.size()*vpMapPointMatches.size());
 
-    for(vector<KeyFrame*>::iterator vitKF=vpTargetKFs.begin(), vendKF=vpTargetKFs.end(); vitKF!=vendKF; vitKF++)
+    for(vector<shared_ptr<KeyFrame>>::iterator vitKF=vpTargetKFs.begin(), vendKF=vpTargetKFs.end(); vitKF!=vendKF; vitKF++)
     {
-        KeyFrame* pKFi = *vitKF;
+        auto pKFi = *vitKF;
 
-        vector<MapPoint*> vpMapPointsKFi = pKFi->GetMapPointMatches();
+        auto vpMapPointsKFi = pKFi->GetMapPointMatches();
 
-        for(vector<MapPoint*>::iterator vitMP=vpMapPointsKFi.begin(), vendMP=vpMapPointsKFi.end(); vitMP!=vendMP; vitMP++)
+        for(auto vitMP=vpMapPointsKFi.begin(), vendMP=vpMapPointsKFi.end(); vitMP!=vendMP; vitMP++)
         {
-            MapPoint* pMP = *vitMP;
+            auto pMP = *vitMP;
             if(!pMP)
                 continue;
             if(pMP->isBad() || pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId)
@@ -900,7 +893,7 @@ void LocalMapping::SearchInNeighbors()
     vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
     for(size_t i=0; i<vpMapPointMatches.size(); i++)
     {
-        MapPoint* pMP=vpMapPointMatches[i];
+        auto pMP = vpMapPointMatches[i];
         if(pMP)
         {
             if(!pMP->isBad())
@@ -912,46 +905,8 @@ void LocalMapping::SearchInNeighbors()
     }
 
     // Update connections in covisibility graph
+    //unique_lock<mutex> lock(*getGlobalDataMutex());
     mpCurrentKeyFrame->UpdateConnections();
-}
-
-void LocalMapping::RequestStop()
-{
-    {
-        unique_lock<mutex> lock(mMutexStop);
-        mbStopRequested = true;
-    }
-
-    {
-        unique_lock<mutex> lock2(mMutexNewKFs);
-        mbAbortBA = true;
-    }
-
-}
-
-bool LocalMapping::Stop()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    if(mbStopRequested && !mbNotStop)
-    {
-        mbStopped = true;
-        Verbose::PrintMess("Local Mapping STOP", Verbose::VERBOSITY_NORMAL);
-        return true;
-    }
-
-    return false;
-}
-
-bool LocalMapping::isStopped()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    return mbStopped;
-}
-
-bool LocalMapping::stopRequested()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    return mbStopRequested;
 }
 
 void LocalMapping::Release()
@@ -975,18 +930,6 @@ void LocalMapping::Release()
     Verbose::PrintMess("Local Mapping Release", Verbose::VERBOSITY_NORMAL);
 }
 
-bool LocalMapping::SetNotStop(bool flag)
-{
-    unique_lock<mutex> lock(mMutexStop);
-
-    if(flag && mbStopped)
-        return false;
-
-    mbNotStop = flag;
-
-    return true;
-}
-
 void LocalMapping::InterruptBA()
 {
     mbAbortBA = true;
@@ -1000,7 +943,7 @@ void LocalMapping::KeyFrameCulling()
     // We only consider close stereo points
     const int Nd = 21;
     mpCurrentKeyFrame->UpdateBestCovisibles();
-    vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
+    vector<shared_ptr<KeyFrame>> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
     float redundant_th;
     if(!mbInertial)
@@ -1018,7 +961,7 @@ void LocalMapping::KeyFrameCulling()
     if (mbInertial)
     {
         int count = 0;
-        KeyFrame* aux_KF = mpCurrentKeyFrame;
+        auto aux_KF = mpCurrentKeyFrame;
         while(count<Nd && aux_KF->mPrevKF)
         {
             aux_KF = aux_KF->mPrevKF;
@@ -1027,14 +970,14 @@ void LocalMapping::KeyFrameCulling()
         last_ID = aux_KF->mnId;
     }
 
-    for(vector<KeyFrame*>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
+    for(vector<shared_ptr<KeyFrame>>::iterator vit=vpLocalKeyFrames.begin(), vend=vpLocalKeyFrames.end(); vit!=vend; vit++)
     {
         count++;
-        KeyFrame* pKF = *vit;
+        auto pKF = *vit;
 
         if((pKF->mnId==pKF->GetMap()->GetInitKFid()) || pKF->isBad())
             continue;
-        const vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
+        const auto vpMapPoints = pKF->GetMapPointMatches();
 
         int nObs = 3;
         const int thObs=nObs;
@@ -1042,7 +985,7 @@ void LocalMapping::KeyFrameCulling()
         int nMPs=0;
         for(size_t i=0; i<vpMapPoints.size(); i++)
         {
-            MapPoint* pMP = vpMapPoints[i];
+            auto pMP = vpMapPoints[i];
             if(pMP)
             {
                 if(!pMP->isBad())
@@ -1057,12 +1000,12 @@ void LocalMapping::KeyFrameCulling()
                     if(pMP->Observations()>thObs)
                     {
                         const int &scaleLevel =  pKF->mvKeysUn->operator[](i).octave;
-                        const map<KeyFrame*, tuple<int,int>> observations = pMP->GetObservations();
+                        const map<shared_ptr<KeyFrame>, tuple<int,int>> observations = pMP->GetObservations();
                         int nObs=0;
-                        for(map<KeyFrame*, tuple<int,int>>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
+                        for(map<shared_ptr<KeyFrame>, tuple<int,int>>::const_iterator mit=observations.begin(), mend=observations.end(); mit!=mend; mit++)
                         {
-                            KeyFrame* pKFi = mit->first;
-                            if(pKFi==pKF)
+                            auto pKFi = mit->first;
+                            if(pKFi->mnId==pKF->mnId)
                                 continue;
                             tuple<int,int> indexes = mit->second;
                             int leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
@@ -1169,24 +1112,6 @@ bool LocalMapping::CheckFinish()
     return mbFinishRequested;
 }
 
-void LocalMapping::SetFinish()
-{
-    {
-        unique_lock<mutex> lock(mMutexFinish);
-        mbFinished = true;  
-    }
-
-    {
-        unique_lock<mutex> lock2(mMutexStop);
-        mbStopped = true;
-    }
-}
-
-bool LocalMapping::isFinished()
-{
-    unique_lock<mutex> lock(mMutexFinish);
-    return mbFinished;
-}
 
 bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int itsFIBA, float minTime, size_t nMinKF)
 {
@@ -1212,6 +1137,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     while(CheckNewKeyFrames())
         ProcessNewKeyFrame();
 
+    //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
     const int N = vpKF.size();
     IMU::Bias b(0,0,0,0,0,0);
@@ -1224,7 +1150,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     {
         Eigen::Vector3f dirG;
         dirG.setZero();
-        for(vector<KeyFrame*>::iterator itKF = vpKF.begin(); itKF!=vpKF.end(); itKF++)
+        for(vector<shared_ptr<KeyFrame>>::iterator itKF = vpKF.begin(); itKF!=vpKF.end(); itKF++)
         {
             if (!(*itKF)->mpImuPreintegrated)
                 continue;
@@ -1325,7 +1251,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     return true;
 }
 
-void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias>& b_option){
+void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias>& b_option){
     //TODO IMU Frame is hardcoded in pipeline as const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE); -> this should be aligned to some rotation frame if we are to support a GNSS alignged system
     mpTracker->UpdateInitialFrame(Sim3_Tyw);
     // const auto Sim3_Tiy = Sophus::Sim3f(1.0, mpTracker->GetInitialFrame()->GetPoseInverse().unit_quaternion(), mpTracker->GetInitialFrame()->GetPoseInverse().translation());
@@ -1407,7 +1333,7 @@ double LocalMapping::GetCurrKFTime()
         return 0.0;
 }
 
-KeyFrame* LocalMapping::GetCurrKF()
+shared_ptr<KeyFrame> LocalMapping::GetCurrKF()
 {
     return mpCurrentKeyFrame;
 }

@@ -25,7 +25,7 @@ namespace ORB_SLAM3
 {
 
 
-MapDrawer::MapDrawer(Atlas* pAtlas):
+MapDrawer::MapDrawer(std::shared_ptr<Atlas> pAtlas):
     mpAtlas(pAtlas),
     mKeyFrameSize(0.05),
     mKeyFrameLineWidth(1.0),
@@ -36,7 +36,7 @@ MapDrawer::MapDrawer(Atlas* pAtlas):
 {
 }
 
-MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* settings):
+MapDrawer::MapDrawer(std::shared_ptr<Atlas> pAtlas, const string &strSettingPath, shared_ptr<Settings> settings):
     mpAtlas(pAtlas)
 {
     if(settings){
@@ -61,7 +61,7 @@ MapDrawer::MapDrawer(Atlas* pAtlas, const string &strSettingPath, Settings* sett
     }
 }
 
-void MapDrawer::newParameterLoader(Settings *settings) {
+void MapDrawer::newParameterLoader(shared_ptr<Settings> settings) {
     mKeyFrameSize = settings->keyFrameSize();
     mKeyFrameLineWidth = settings->keyFrameLineWidth();
     mGraphLineWidth = settings->graphLineWidth();
@@ -145,15 +145,15 @@ bool MapDrawer::ParseViewerParamFile(cv::FileStorage &fSettings)
 
 void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
 {
-    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    auto pActiveMap = mpAtlas->GetCurrentMap();
     if(!pActiveMap)
         return;
 
-    const vector<MapPoint*> &vpMPs = pActiveMap->GetAllMapPoints();
-    const vector<MapPoint*> &vpRefMPs = pActiveMap->GetReferenceMapPoints();
+    const auto vpMPs = pActiveMap->GetAllMapPoints();
+    const auto vpRefMPs = pActiveMap->GetReferenceMapPoints();
 
 
-    set<MapPoint*> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
+    set<shared_ptr<MapPoint>> spRefMPs(vpRefMPs.begin(), vpRefMPs.end());
 
     if(vpMPs.empty())
         return;
@@ -174,7 +174,7 @@ void MapDrawer::DrawMapPoints(const Eigen::Vector3f &coordinate_offset)
     glPointSize(mPointSize);
     glBegin(GL_POINTS);
     glColor3f(1.0,0.0,0.0);
-    for(set<MapPoint*>::iterator sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
+    for(auto sit=spRefMPs.begin(), send=spRefMPs.end(); sit!=send; sit++)
     {
         if((*sit)->isBad())
             continue;
@@ -190,7 +190,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
 {
 
 
-    Map* pActiveMap = mpAtlas->GetCurrentMap();
+    auto pActiveMap = mpAtlas->GetCurrentMap();
     // DEBUG LBA
     std::set<long unsigned int> sOptKFs = pActiveMap->msOptKFs;
     std::set<long unsigned int> sFixedKFs = pActiveMap->msFixedKFs;
@@ -203,13 +203,13 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
     if(!pActiveMap)
         return;
 
-    const vector<KeyFrame*> vpKFs = pActiveMap->GetAllKeyFrames(false);
+    const auto vpKFs = pActiveMap->GetAllKeyFrames(false);
 
     if(bDrawKF)
     {
         for(size_t i=0; i<vpKFs.size(); i++)
         {
-            KeyFrame* pKF = vpKFs[i];
+            auto pKF = vpKFs[i];
             Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
             Twc.block<3,1>(0,3) -= coordinate_offset;
             unsigned int index_color = pKF->mnOriginMapId;
@@ -287,11 +287,11 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         for(size_t i=0; i<vpKFs.size(); i++)
         {
             // Covisibility Graph
-            const vector<KeyFrame*> vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
+            const auto vCovKFs = vpKFs[i]->GetCovisiblesByWeight(100);
             Eigen::Vector3f twc = vpKFs[i]->GetTranslationInverse() - coordinate_offset;
             if(!vCovKFs.empty())
             {
-                for(vector<KeyFrame*>::const_iterator vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
+                for(auto vit=vCovKFs.begin(), vend=vCovKFs.end(); vit!=vend; vit++)
                 {
                     if((*vit)->mnId<vpKFs[i]->mnId)
                         continue;
@@ -302,7 +302,7 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             }
 
             // Spanning tree
-            KeyFrame* pParent = vpKFs[i]->GetParent();
+            auto pParent = vpKFs[i]->GetParent();
             if(pParent)
             {
                 Eigen::Vector3f twcParent = pParent->GetTranslationInverse() - coordinate_offset;
@@ -311,8 +311,8 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
             }
 
             // Loops
-            set<KeyFrame*> sLoopKFs = vpKFs[i]->GetLoopEdges();
-            for(set<KeyFrame*>::iterator sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
+            auto sLoopKFs = vpKFs[i]->GetLoopEdges();
+            for(auto sit=sLoopKFs.begin(), send=sLoopKFs.end(); sit!=send; sit++)
             {
                 if((*sit)->mnId<vpKFs[i]->mnId)
                     continue;
@@ -334,9 +334,9 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         //Draw inertial links
         for(size_t i=0; i<vpKFs.size(); i++)
         {
-            KeyFrame* pKFi = vpKFs[i];
+            auto pKFi = vpKFs[i];
             Eigen::Vector3f twc = pKFi->GetTranslationInverse() - coordinate_offset;
-            KeyFrame* pNext = pKFi->mNextKF;
+            auto pNext = pKFi->mNextKF;
             if(pNext)
             {
                 Eigen::Vector3f twcNext = pNext->GetTranslationInverse() - coordinate_offset;
@@ -348,20 +348,20 @@ void MapDrawer::DrawKeyFrames(const bool bDrawKF, const bool bDrawGraph, const b
         glEnd();
     }
 
-    vector<Map*> vpMaps = mpAtlas->GetAllMaps();
+    auto vpMaps = mpAtlas->GetAllMaps();
 
     if(bDrawKF)
     {
-        for(Map* pMap : vpMaps)
+        for(auto pMap : vpMaps)
         {
-            if(pMap == pActiveMap)
+            if(pMap->GetId() == pActiveMap->GetId())
                 continue;
 
-            vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames(false);
+            auto vpKFs = pMap->GetAllKeyFrames(false);
 
             for(size_t i=0; i<vpKFs.size(); i++)
             {
-                KeyFrame* pKF = vpKFs[i];
+                auto pKF = vpKFs[i];
                 Eigen::Matrix4f Twc = pKF->GetPoseInverse().matrix();
                 Twc.block<3,1>(0,3) -= coordinate_offset;
                 unsigned int index_color = pKF->mnOriginMapId;

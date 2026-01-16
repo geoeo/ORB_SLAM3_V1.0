@@ -31,6 +31,7 @@
 #include <atomic>
 #include <vector>
 #include <utility>
+#include <memory>
 
 
 namespace ORB_SLAM3
@@ -44,26 +45,20 @@ class LocalMapping
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(System* pSys, Atlas* pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
+    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
 
-    void SetLoopCloser(LoopClosing* pLoopCloser);
-
-    void SetTracker(Tracking* pTracker);
+    void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
+    void SetTracker(std::shared_ptr<Tracking> pTracker);
 
     // Main function
     void Run();
 
-    void InsertKeyFrame(KeyFrame* pKF);
+    void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
     void EmptyQueue();
 
     // Thread Synch
-    void RequestStop();
     void RequestReset();
-    bool Stop();
     void Release();
-    bool isStopped();
-    bool stopRequested();
-    bool SetNotStop(bool flag);
 
     void InterruptBA();
 
@@ -74,7 +69,7 @@ public:
 
     bool IsInitializing() const;
     double GetCurrKFTime();
-    KeyFrame* GetCurrKF();
+    std::shared_ptr<KeyFrame> GetCurrKF();
 
     std::shared_ptr<std::mutex> getKeyFrameChangeMutex();
     std::shared_ptr<std::mutex> getGlobalDataMutex();
@@ -120,9 +115,7 @@ protected:
     void MapPointCulling();
     void SearchInNeighbors();
     void KeyFrameCulling();
-    void UpdateTrackerAndMapCoordianateFrames(std::vector<KeyFrame*> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
-
-    System *mpSystem;
+    void UpdateTrackerAndMapCoordianateFrames(std::vector<std::shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
 
     const bool mbMonocular;
     bool mbFixScale;
@@ -133,21 +126,19 @@ protected:
     std::mutex mMutexReset;
 
     bool CheckFinish();
-    void SetFinish();
     bool mbFinishRequested;
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
+    std::shared_ptr<LoopClosing> mpLoopCloser;
+    std::shared_ptr<Tracking> mpTracker;
 
-    LoopClosing* mpLoopCloser;
-    Tracking* mpTracker;
+    std::list<shared_ptr<KeyFrame>> mlNewKeyFrames;
 
-    std::list<KeyFrame*> mlNewKeyFrames;
+    shared_ptr<KeyFrame> mpCurrentKeyFrame;
 
-    KeyFrame* mpCurrentKeyFrame;
-
-    std::list<MapPoint*> mlpRecentAddedMapPoints;
+    std::list<std::shared_ptr<MapPoint>> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
     std::mutex mMutexImuInit;

@@ -46,7 +46,7 @@ Sophus::Sim3d GeometricReferencer::getCurrentTransform()
   return mTgw_current; 
 }
 
-void GeometricReferencer::addKeyFrame(KeyFrame* kf){
+void GeometricReferencer::addKeyFrame(shared_ptr<KeyFrame> kf){
   unique_lock<mutex> lock(mMutexFrames);
     if(m_latest_frames_to_georef.size() >= m_min_nrof_frames)
       m_latest_frames_to_georef.pop_front();
@@ -55,17 +55,17 @@ void GeometricReferencer::addKeyFrame(KeyFrame* kf){
       --m_georefed_kfs_count;
 }
 
-deque<KeyFrame*> GeometricReferencer::getFramesForGeorefEstimation() {
+deque<shared_ptr<KeyFrame>> GeometricReferencer::getFramesForGeorefEstimation() {
   unique_lock<mutex> lock(mMutexFrames);
   return m_latest_frames_to_georef;
 }
 
-vector<KeyFrame*> GeometricReferencer::getFramesWithoutGeoref() {
+vector<shared_ptr<KeyFrame>> GeometricReferencer::getFramesWithoutGeoref() {
   unique_lock<mutex> lock(mMutexFrames);
-  return m_georefed_kfs_count < m_latest_frames_to_georef.size() ? vector<KeyFrame*>(m_latest_frames_to_georef.cbegin()+m_georefed_kfs_count, m_latest_frames_to_georef.cend()) : vector<KeyFrame*>();
+  return m_georefed_kfs_count < m_latest_frames_to_georef.size() ? vector<shared_ptr<KeyFrame>>(m_latest_frames_to_georef.cbegin()+m_georefed_kfs_count, m_latest_frames_to_georef.cend()) : vector<std::shared_ptr<KeyFrame>>();
 }
 
-optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &frames, bool do_update)
+optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<shared_ptr<KeyFrame>> &frames, bool do_update)
 {
 
   if (frames.size() < m_min_nrof_frames)
@@ -82,7 +82,7 @@ optional<Sophus::Sim3d> GeometricReferencer::apply(const std::deque<KeyFrame*> &
   return pose;
 }
 
-Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials)
+Sophus::Sim3d GeometricReferencer::update(const std::deque<shared_ptr<KeyFrame>> &spatials)
 { 
   const auto pose = estimateGeorefTransform(spatials);
 
@@ -99,7 +99,7 @@ Sophus::Sim3d GeometricReferencer::update(const std::deque<KeyFrame *> &spatials
   return mTgw_current;
 }
 
-Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<KeyFrame *> &spatials)
+Sophus::Sim3d GeometricReferencer::estimateGeorefTransform(const std::deque<shared_ptr<KeyFrame>> &spatials)
 {
   // First define basic eigen variables
   const auto measurements = 4;

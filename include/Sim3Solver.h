@@ -17,11 +17,11 @@
 */
 
 
-#ifndef SIM3SOLVER_H
-#define SIM3SOLVER_H
+#pragma once
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <memory>
 
 #include "KeyFrame.h"
 
@@ -34,8 +34,8 @@ class Sim3Solver
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Sim3Solver(KeyFrame* pKF1, KeyFrame* pKF2, const std::vector<MapPoint*> &vpMatched12, const bool bFixScale = true,
-               const vector<KeyFrame*> vpKeyFrameMatchedMP = vector<KeyFrame*>());
+    Sim3Solver(std::shared_ptr<KeyFrame> pKF1, std::shared_ptr<KeyFrame> pKF2, const std::vector<std::shared_ptr<MapPoint>> &vpMatched12, const bool bFixScale = true,
+               const vector<std::shared_ptr<KeyFrame>> vpKeyFrameMatchedMP = vector<std::shared_ptr<KeyFrame>>());
 
     void SetRansacParameters(double probability = 0.99, int minInliers = 6 , int maxIterations = 300);
 
@@ -57,21 +57,21 @@ protected:
 
     void CheckInliers();
 
-    void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, GeometricCamera* pCamera);
-    void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, GeometricCamera* pCamera);
+    void Project(const std::vector<Eigen::Vector3f> &vP3Dw, std::vector<Eigen::Vector2f> &vP2D, Eigen::Matrix4f Tcw, std::shared_ptr<GeometricCamera> pCamera);
+    void FromCameraToImage(const std::vector<Eigen::Vector3f> &vP3Dc, std::vector<Eigen::Vector2f> &vP2D, std::shared_ptr<GeometricCamera> pCamera);
 
 
 protected:
 
     // KeyFrames and matches
-    KeyFrame* mpKF1;
-    KeyFrame* mpKF2;
+    std::shared_ptr<KeyFrame> mpKF1;
+    std::shared_ptr<KeyFrame> mpKF2;
 
     std::vector<Eigen::Vector3f> mvX3Dc1;
     std::vector<Eigen::Vector3f> mvX3Dc2;
-    std::vector<MapPoint*> mvpMapPoints1;
-    std::vector<MapPoint*> mvpMapPoints2;
-    std::vector<MapPoint*> mvpMatches12;
+    std::vector<std::shared_ptr<MapPoint>> mvpMapPoints1;
+    std::vector<std::shared_ptr<MapPoint>> mvpMapPoints2;
+    std::vector<std::shared_ptr<MapPoint>> mvpMatches12;
     std::vector<size_t> mvnIndices1;
     std::vector<size_t> mvSigmaSquare1;
     std::vector<size_t> mvSigmaSquare2;
@@ -126,10 +126,10 @@ protected:
     //cv::Mat mK1;
     //cv::Mat mK2;
 
-    GeometricCamera* pCamera1, *pCamera2;
+    std::shared_ptr<GeometricCamera> pCamera1;
+    std::shared_ptr<GeometricCamera> pCamera2;
 
 };
 
 } //namespace ORB_SLAM
 
-#endif // SIM3SOLVER_H

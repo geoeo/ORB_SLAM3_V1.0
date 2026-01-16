@@ -45,7 +45,7 @@ float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 cv::BFMatcher Frame::BFmatcher = cv::BFMatcher(cv::NORM_HAMMING);
 
 Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpImuPreintegratedFrame(NULL), 
-    mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
+    mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mbHasPose(false),
     mGNSSPosition(Eigen::Vector3f::Zero()), mbHasGNSS(false), mbHasVelocity(false),
     mFrameGridRows(0), mFrameGridCols(0)
 {
@@ -54,7 +54,7 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(nullptr), mpI
 
 //Copy Constructor
 Frame::Frame(const shared_ptr<Frame> frame)
-    :mpcpi(frame->mpcpi),mpORBvocabulary(frame->mpORBvocabulary), mpORBextractorLeft(frame->mpORBextractorLeft), mpORBextractorRight(frame->mpORBextractorRight),
+    :mpcpi(frame->mpcpi),mpORBvocabulary(frame->mpORBvocabulary), mpORBextractor(frame->mpORBextractor),
      mTimeStamp(frame->mTimeStamp), mK(frame->mK.clone()), mK_(Converter::toMatrix3f(frame->mK)), mDistCoef(frame->mDistCoef.clone()),
      mbf(frame->mbf), mb(frame->mb), mThDepth(frame->mThDepth), mNumKeypoints(frame->mNumKeypoints), mvKeys(frame->mvKeys),
      mvKeysRight(frame->mvKeysRight), mvKeysUn(frame->mvKeysUn), mvuRight(frame->mvuRight),
@@ -88,13 +88,13 @@ Frame::Frame(const shared_ptr<Frame> frame)
 }
 
 
-Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, 
-    GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
+Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, shared_ptr<ORBextractor> extractor, shared_ptr<ORBVocabulary> voc, 
+    shared_ptr<GeometricCamera> pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth,  int frameGridRows, int frameGridCols,
     bool hasGNSS, Eigen::Vector3f GNSSPosition, std::shared_ptr<Frame> pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
-     mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mK_(static_cast<Pinhole*>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
+    :mpcpi(nullptr),mpORBvocabulary(voc),mpORBextractor(extractor),
+     mTimeStamp(timeStamp), mK(static_pointer_cast<Pinhole>(pCamera)->toK()), mK_(static_pointer_cast<Pinhole>(pCamera)->toK_()), mDistCoef(distCoef.clone()), mbf(bf), 
      mThDepth(thDepth),mNumKeypoints(0),mFrameGridRows(frameGridRows), mFrameGridCols(frameGridCols), mImuCalib(ImuCalib), 
-     mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
+     mpImuPreintegrated(nullptr),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(nullptr), mpReferenceKF(nullptr), mbIsSet(false), mbImuPreintegrated(false), mpCamera(pCamera),
      mpCamera2(nullptr), mbHasPose(false), mGNSSPosition(GNSSPosition), mbHasGNSS(hasGNSS), mbHasVelocity(false)
 {
     ZoneNamedN(Frame, "Frame", true); 
@@ -105,13 +105,13 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     mnId=nNextId++;
 
     // Scale Level Info
-    mnScaleLevels = mpORBextractorLeft->GetLevels();
-    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    mnScaleLevels = mpORBextractor->GetLevels();
+    mfScaleFactor = mpORBextractor->GetScaleFactor();
     mfLogScaleFactor = log(mfScaleFactor);
-    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    mvScaleFactors = mpORBextractor->GetScaleFactors();
+    mvInvScaleFactors = mpORBextractor->GetInverseScaleFactors();
+    mvLevelSigma2 = mpORBextractor->GetScaleSigmaSquares();
+    mvInvLevelSigma2 = mpORBextractor->GetInverseScaleSigmaSquares();
 
     // ORB extraction
     ExtractORB(0,im_managed_gray);
@@ -125,7 +125,7 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
     mvDepth = vector<float>(mNumKeypoints,-1);
     mnCloseMPs = 0;
 
-    mvpMapPoints = vector<MapPoint*>(mNumKeypoints,static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<std::shared_ptr<MapPoint>>(mNumKeypoints,nullptr);
 
     mmProjectPoints.clear();// = map<long unsigned int, cv::Point2f>(N, static_cast<cv::Point2f>(NULL));
     mmMatchedInImage.clear();
@@ -140,10 +140,10 @@ Frame::Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, 
         mfGridElementWidthInv=static_cast<float>(mFrameGridCols)/static_cast<float>(mnMaxX-mnMinX);
         mfGridElementHeightInv=static_cast<float>(mFrameGridRows)/static_cast<float>(mnMaxY-mnMinY);
 
-        fx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,0);
-        fy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,1);
-        cx = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0,2);
-        cy = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1,2);
+        fx = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(0,0);
+        fy = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(1,1);
+        cx = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(0,2);
+        cy = static_pointer_cast<Pinhole>(mpCamera)->toK().at<float>(1,2);
         invfx = 1.0f/fx;
         invfy = 1.0f/fy;
 
@@ -212,7 +212,7 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
 {
-    auto key_desc_optional = mpORBextractorLeft->extractFeatures(im_managed);
+    auto key_desc_optional = mpORBextractor->extractFeatures(im_managed);
 
     if(key_desc_optional.has_value()){
         auto [keys,descriptors] = key_desc_optional.value();
@@ -306,7 +306,7 @@ Eigen::Vector3f Frame::GetRelativePoseTlr_translation() {
 }
 
 
-bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
+bool Frame::isInFrustum(shared_ptr<MapPoint> pMP, float viewingCosLimit)
 {
     pMP->mbTrackInView = false;
     pMP->mTrackProjX = -1;
@@ -354,7 +354,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     //     return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist,this);
+    const int nPredictedLevel = pMP->PredictScale(dist,shared_from_this());
 
     // Data used by the tracking
     pMP->mbTrackInView = true;
@@ -369,7 +369,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     return true;
 }
 
-bool Frame::ProjectPointDistort(MapPoint* pMP, cv::Point2f &kp, float &u, float &v)
+bool Frame::ProjectPointDistort(shared_ptr<MapPoint> pMP, cv::Point2f &kp, float &u, float &v)
 {
 
     // 3D in absolute coordinates
@@ -545,7 +545,7 @@ void Frame::ComputeImageBounds(const cv::cuda::HostMem &imLeftManaged)
         mat.at<float>(3,0)=imLeft.cols; mat.at<float>(3,1)=imLeft.rows;
 
         mat=mat.reshape(2);
-        cv::undistortPoints(mat,mat,static_cast<Pinhole*>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
+        cv::undistortPoints(mat,mat,static_pointer_cast<Pinhole>(mpCamera)->toK(),mDistCoef,cv::Mat(),mK);
         mat=mat.reshape(1);
 
         // Undistort corners
@@ -573,7 +573,7 @@ void Frame::setIntegrated()
     mbImuPreintegrated = true;
 }
 
-bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight) {
+bool Frame::isInFrustumChecks(shared_ptr<MapPoint>pMP, float viewingCosLimit, bool bRight) {
     // 3D in absolute coordinates
     Eigen::Vector3f P = pMP->GetWorldPos();
 
@@ -630,7 +630,7 @@ bool Frame::isInFrustumChecks(MapPoint *pMP, float viewingCosLimit, bool bRight)
     //     return false;
 
     // Predict scale in the image
-    const int nPredictedLevel = pMP->PredictScale(dist,this);
+    const int nPredictedLevel = pMP->PredictScale(dist,shared_from_this());
 
     if(bRight){
         pMP->mTrackProjXR = uv(0);

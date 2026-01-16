@@ -42,6 +42,7 @@
 #include <mutex>
 #include <unordered_set>
 #include <atomic>
+#include <memory>
 #include <tuple>
 
 namespace ORB_SLAM3
@@ -50,13 +51,13 @@ namespace ORB_SLAM3
 class Viewer;
 class FrameDrawer;
 
-class Tracking
+class Tracking : public std::enable_shared_from_this<Tracking>
 {  
 
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Tracking(System* pSys, ORBVocabulary* pVoc, FrameDrawer* pFrameDrawer, MapDrawer* pMapDrawer, Atlas* pAtlas,
-             KeyFrameDatabase* pKFDB, const int sensor, Settings* settings, const TrackerParameters& tracker_settings);
+    Tracking(std::shared_ptr<ORBVocabulary> pVoc, std::shared_ptr<FrameDrawer> pFrameDrawer, std::shared_ptr<MapDrawer> pMapDrawer, std::shared_ptr<Atlas> pAtlas,
+             std::shared_ptr<KeyFrameDatabase> pKFDB, const int sensor, std::shared_ptr<Settings> settings, const TrackerParameters& tracker_settings);
 
     ~Tracking();
 
@@ -64,9 +65,9 @@ public:
 
     void GrabImuData(const IMU::Point &imuMeasurement);
 
-    void SetLocalMapper(LocalMapping* pLocalMapper);
-    void SetLoopClosing(LoopClosing* pLoopClosing);
-    void SetViewer(Viewer* pViewer);
+    void SetLocalMapper(std::shared_ptr<LocalMapping> pLocalMapper);
+    void SetLoopClosing(std::shared_ptr<LoopClosing> pLoopClosing);
+    void SetViewer(std::shared_ptr<Viewer> pViewer);
     void SetStepByStep(bool bSet);
     bool GetStepByStep();
 
@@ -78,7 +79,7 @@ public:
     void InformOnlyTracking(const bool &flag);
 
     void UpdateCoordinateFrames(const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias> &b_option);
-    KeyFrame* GetLastKeyFrame();
+    std::shared_ptr<KeyFrame> GetLastKeyFrame();
 
     void CreateMapInAtlas();
     std::mutex mTrackingState;
@@ -89,8 +90,8 @@ public:
     int GetMatchesInliers();
 
     //DEBUG
-    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder="");
-    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, Map* pMap);
+    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder=std::string());
+    void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, std::shared_ptr<Map> pMap);
 
 
     bool isBACompleteForMap(); 
@@ -140,14 +141,16 @@ public:
 
     // frames with estimated pose
     bool mbStep;
+    bool mbReset;
 
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
 
+    bool ShouldReset();
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);
 
-    std::vector<MapPoint*> GetLocalMapMPS();
+    std::vector<std::shared_ptr<MapPoint>> GetLocalMapMPS();
     void setTrackingState(eTrackingState newState);
     eTrackingState getTrackingState();
 protected:
@@ -187,7 +190,7 @@ protected:
     bool mbMapUpdated;
 
     // Imu preintegration from last frame
-    IMU::Preintegrated *mpImuPreintegratedFromLastKF;
+    std::shared_ptr<IMU::Preintegrated> mpImuPreintegratedFromLastKF;
 
     // Queue of IMU measurements between frames
     std::list<IMU::Point> mlQueueImuData;
@@ -197,7 +200,7 @@ protected:
     std::mutex mMutexImuQueue;
 
     // Imu calibration parameters
-    IMU::Calib *mpImuCalib;
+    IMU::Calib mpImuCalib;
 
     // In case of performing only localization, this flag is true when there are no matches to
     // points in the map. Still tracking will continue if there are enough matches with temporal points.
@@ -206,44 +209,46 @@ protected:
     bool mbVO;
 
     //Other Thread Pointers
-    LocalMapping* mpLocalMapper;
-    LoopClosing* mpLoopClosing;
+    std::shared_ptr<LocalMapping> mpLocalMapper;
+    std::shared_ptr<LoopClosing> mpLoopClosing;
 
     //Frame
     int mFrameGridRows;
     int mFrameGridCols;
-    size_t mMaxLocalKFCount;
+    const size_t mMaxLocalKFCount;
+    const int mTemporalKeyFrameNd;
+    const int mCovisibilityKeyFrameNd;
     int mFeatureThresholdForKF;
 
     //ORB
-    ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
+    std::shared_ptr<ORBextractor> mpORBextractor;
 
     //BoW
-    ORBVocabulary* mpORBVocabulary;
-    KeyFrameDatabase* mpKeyFrameDB;
+    std::shared_ptr<ORBVocabulary> mpORBVocabulary;
+    std::shared_ptr<KeyFrameDatabase> mpKeyFrameDB;
 
     // Initalization (only for monocular)
     bool mbReadyToInitializate;
     bool mbSetInit;
 
     //Local Map
-    KeyFrame* mpReferenceKF;
-    std::vector<KeyFrame*> mvpLocalKeyFrames;
-    std::vector<MapPoint*> mvpLocalMapPoints;
+    std::shared_ptr<KeyFrame> mpReferenceKF;
+    std::vector<std::shared_ptr<KeyFrame>> mvpLocalKeyFrames;
+    std::vector<std::shared_ptr<MapPoint>> mvpLocalMapPoints;
 
     std::vector<std::shared_ptr<Frame>> mvpInitFrames;
     
     // System
-    System* mpSystem;
+    std::shared_ptr<System> mpSystem;
     
     //Drawers
-    Viewer* mpViewer;
-    FrameDrawer* mpFrameDrawer;
-    MapDrawer* mpMapDrawer;
+    std::shared_ptr<Viewer> mpViewer;
+    std::shared_ptr<FrameDrawer> mpFrameDrawer;
+    std::shared_ptr<MapDrawer> mpMapDrawer;
     bool bStepByStep;
 
     //Atlas
-    Atlas* mpAtlas;
+    std::shared_ptr<Atlas> mpAtlas;
 
     //Calibration matrix
     cv::Mat mK;
@@ -272,7 +277,7 @@ protected:
     int mnMatchesInliers;
 
     //Last Frame, KeyFrame and Relocalisation Info
-    KeyFrame* mpLastKeyFrame;
+    std::shared_ptr<KeyFrame> mpLastKeyFrame;
     unsigned int mnLastKeyFrameId;
     unsigned int mnLastRelocFrameId;
     double mTimeStampLost;
@@ -293,7 +298,7 @@ protected:
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;
 
-    std::list<MapPoint*> mlpTemporalPoints;
+    std::list<std::shared_ptr<MapPoint>> mlpTemporalPoints;
 
     int mnNumDataset;
 
@@ -305,13 +310,13 @@ protected:
     double mTime_LocalMapTrack;
     double mTime_NewKF_Dec;
 
-    GeometricCamera* mpCamera, *mpCamera2;
+    std::shared_ptr<GeometricCamera> mpCamera, mpCamera2;
 
     int initID, lastID;
 
     Sophus::SE3f mTlr;
 
-    void newParameterLoader(Settings* settings);
+    void newParameterLoader(std::shared_ptr<Settings> settings);
 
 public:
     cv::Mat mImRight;
