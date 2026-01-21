@@ -1366,7 +1366,7 @@ void Tracking::SearchLocalPoints()
             th=3;
         if(mpAtlas->isImuInitialized())
         {
-            th=5;
+            th=15;
         }
         else if(!mpAtlas->isImuInitialized() && (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
         {
