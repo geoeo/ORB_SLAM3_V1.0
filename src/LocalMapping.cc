@@ -35,17 +35,17 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
+LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper, std::chrono::microseconds period):
     mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mbMonocular(bMonocular), 
     mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
     mbNotStop(false), mMutexPtrGlobalData(make_shared<mutex>()), 
-    bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),
+    bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),mInitCompleteTime(0.0),
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
-    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
+    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),minTimeOffsetForGeorefBA(5.0) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
     mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
-    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
+    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({}), mPeriod(period)
 {
 }
 
@@ -62,7 +62,7 @@ void LocalMapping::SetTracker(shared_ptr<Tracking> pTracker)
 void LocalMapping::Run()
 {
     mbFinished = false;
-
+    auto const start = std::chrono::steady_clock::now();
     while(!CheckFinish())
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
@@ -91,7 +91,7 @@ void LocalMapping::Run()
             //if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
-                unique_lock<mutex> lock(*getGlobalDataMutex());
+                //unique_lock<mutex> lock(*getGlobalDataMutex());
                 SearchInNeighbors();
             }
 
@@ -139,13 +139,14 @@ void LocalMapping::Run()
 
             }
 
+
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
                 {
                     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
-                    const auto georef_succcess = GeoreferenceKeyframes();
-                    if(georef_succcess && writeKFAfterGeorefCount == 0){
+                    const auto georef_success = GeoreferenceKeyframes();
+                    if(georef_success && writeKFAfterGeorefCount == 0){
                         if(mbWriteGNSSData){
-                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
                             for(const auto kf : kfs)
                                 kf->ComputeReprojectionErrors(true);
                             Map::writeKeyframesCsv("keyframes_after_georef", kfs);
@@ -154,22 +155,33 @@ void LocalMapping::Run()
 
                         writeKFAfterGeorefCount = 1;
                     }
-                }
 
-                if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
-                    unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
-                    unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                    if(writeKFAfterGBACount == 0){
-                        Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
-                        Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
-                        if(mbWriteGNSSData){
-                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(false);
-                            Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
-                            Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
+                    // Wait 2 seconds before we apply georeference BA
+                    if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested && (mTElapsedTime > mInitCompleteTime + minTimeOffsetForGeorefBA)){
+                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
+                        unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
+                        if(writeKFAfterGBACount == 0){
+                            Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+
+                            // We write the reprojection errors again before BA since new keyframe will have been added
+                            if(mbWriteGNSSData){
+                                for(const auto kf : kfs)
+                                    kf->ComputeReprojectionErrors(true);
+                                Map::writeKeyframesCsv("keyframes_after_georef", kfs);
+                                Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
+                            }
+
+                            Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame, kfs, &mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
+
+                            if(mbWriteGNSSData){
+                                for(const auto kf : kfs)
+                                    kf->ComputeReprojectionErrors(true);
+                                Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
+                                Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
+                            }
+                            writeKFAfterGBACount = 1;
                         }
-
-                        writeKFAfterGBACount = 1;
-
                     }
                 }
             }
@@ -201,7 +213,7 @@ void LocalMapping::Run()
                         Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
                         auto success = false;
                         if (mbMonocular)
-                            success = InitializeIMU(1e10, 1e10, true, itsFIBA1, minTimeForVIBA1, 10);
+                            success = InitializeIMU(0.f, 0.f, true, itsFIBA1, minTimeForVIBA1, 10);
                         else
                             success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -210,6 +222,7 @@ void LocalMapping::Run()
                             mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
                             if(minTimeForFullBA < 0)
                                 mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                            mInitCompleteTime = mTElapsedTime;
                         }
                         
                         Verbose::PrintMess("end VIBA 1 " + to_string(success), Verbose::VERBOSITY_DEBUG);
@@ -249,6 +262,13 @@ void LocalMapping::Run()
 
         if(CheckFinish())
             break;
+
+
+        // Wait till the next period start.
+        auto now = std::chrono::steady_clock::now();
+        auto iterations = (now - start) / mPeriod;
+        auto next_start = start + (iterations + 1) * mPeriod;
+        std::this_thread::sleep_until(next_start);
     }
 
 }
@@ -284,6 +304,7 @@ void LocalMapping::ProcessNewKeyFrame()
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
+        unique_lock<mutex> lock2(*getGlobalDataMutex());
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
@@ -750,37 +771,37 @@ void LocalMapping::SearchInNeighbors()
     // Add some covisible of covisible
     // Extend to some second neighbors if abort is not requested
     const size_t coviseSize = 20;
-    for(int i=0, imax=vpTargetKFs.size(); i<imax; i++)
-    {
-        const vector<shared_ptr<KeyFrame>> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(coviseSize);
-        for(vector<shared_ptr<KeyFrame>>::const_iterator vit2=vpSecondNeighKFs.begin(), vend2=vpSecondNeighKFs.end(); vit2!=vend2; vit2++)
-        {
-            auto pKFi2 = *vit2;
-            if(pKFi2->isBad() || pKFi2->mnFuseTargetForKF==mpCurrentKeyFrame->mnId || pKFi2->mnId==mpCurrentKeyFrame->mnId)
-                continue;
-            vpTargetKFs.push_back(pKFi2);
-            pKFi2->mnFuseTargetForKF=mpCurrentKeyFrame->mnId;
-        }
-        if (mbAbortBA)
-            break;
-    }
-
+    // for(int i=0, imax=vpTargetKFs.size(); i<imax; i++)
+    // {
+    //     const vector<shared_ptr<KeyFrame>> vpSecondNeighKFs = vpTargetKFs[i]->GetBestCovisibilityKeyFrames(coviseSize);
+    //     for(vector<shared_ptr<KeyFrame>>::const_iterator vit2=vpSecondNeighKFs.begin(), vend2=vpSecondNeighKFs.end(); vit2!=vend2; vit2++)
+    //     {
+    //         auto pKFi2 = *vit2;
+    //         if(pKFi2->isBad() || pKFi2->mnFuseTargetForKF==mpCurrentKeyFrame->mnId || pKFi2->mnId==mpCurrentKeyFrame->mnId)
+    //             continue;
+    //         vpTargetKFs.push_back(pKFi2);
+    //         pKFi2->mnFuseTargetForKF=mpCurrentKeyFrame->mnId;
+    //     }
+    //     if (mbAbortBA)
+    //         break;
+    // }
+    Verbose::PrintMess("LocalMapping::SearchInNeighbors vpTargetKFs size: " + to_string(vpTargetKFs.size()), Verbose::VERBOSITY_NORMAL);
     // Extend to temporal neighbors
-    if(mbInertial)
-    {
-        auto pKFi = mpCurrentKeyFrame->mPrevKF;
-        while(vpTargetKFs.size()<coviseSize && pKFi)
-        {
-            if(pKFi->isBad() || pKFi->mnFuseTargetForKF==mpCurrentKeyFrame->mnId)
-            {
-                pKFi = pKFi->mPrevKF;
-                continue;
-            }
-            vpTargetKFs.push_back(pKFi);
-            pKFi->mnFuseTargetForKF=mpCurrentKeyFrame->mnId;
-            pKFi = pKFi->mPrevKF;
-        }
-    }
+    // if(mbInertial)
+    // {
+    //     auto pKFi = mpCurrentKeyFrame->mPrevKF;
+    //     while(vpTargetKFs.size()<coviseSize && pKFi)
+    //     {
+    //         if(pKFi->isBad() || pKFi->mnFuseTargetForKF==mpCurrentKeyFrame->mnId)
+    //         {
+    //             pKFi = pKFi->mPrevKF;
+    //             continue;
+    //         }
+    //         vpTargetKFs.push_back(pKFi);
+    //         pKFi->mnFuseTargetForKF=mpCurrentKeyFrame->mnId;
+    //         pKFi = pKFi->mPrevKF;
+    //     }
+    // }
 
     // Search matches by projection from current KF in target KFs
     ORBmatcher matcher;
@@ -788,7 +809,8 @@ void LocalMapping::SearchInNeighbors()
     for(vector<shared_ptr<KeyFrame>>::iterator vit=vpTargetKFs.begin(), vend=vpTargetKFs.end(); vit!=vend; vit++)
     {
         auto pKFi = *vit;
-        matcher.Fuse(pKFi,vpMapPointMatches, 30.0, false);
+        const auto fused_count = matcher.Fuse(pKFi,vpMapPointMatches, 10.0, false);
+        Verbose::PrintMess("LocalMapping::SearchInNeighbors: Fused " + to_string(fused_count) + " from Current KF to KF " + to_string(pKFi->mnId), Verbose::VERBOSITY_DEBUG);
     }
 
 
@@ -817,7 +839,8 @@ void LocalMapping::SearchInNeighbors()
         }
     }
 
-    matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates, 10.0);
+    const auto fused_count = matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates, 10.0);
+    Verbose::PrintMess("LocalMapping::SearchInNeighbors #2: Fused " + to_string(fused_count) + " from Current KF to KF " + to_string(mpCurrentKeyFrame->mnId), Verbose::VERBOSITY_DEBUG);
     if(mpCurrentKeyFrame->NLeft != -1) matcher.Fuse(mpCurrentKeyFrame,vpFuseCandidates,true);
 
 
@@ -837,7 +860,6 @@ void LocalMapping::SearchInNeighbors()
     }
 
     // Update connections in covisibility graph
-    //unique_lock<mutex> lock(*getGlobalDataMutex());
     mpCurrentKeyFrame->UpdateConnections();
 }
 

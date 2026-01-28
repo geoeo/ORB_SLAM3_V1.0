@@ -32,6 +32,7 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <chrono>
 
 
 namespace ORB_SLAM3
@@ -45,7 +46,7 @@ class LocalMapping
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
+    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper, std::chrono::microseconds period);
 
     void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
     void SetTracker(std::shared_ptr<Tracking> pTracker);
@@ -162,6 +163,7 @@ protected:
     int mNumKFCulling;
 
     float mTElapsedTime;
+    float mInitCompleteTime;
 
     int countRefinement;
 
@@ -172,6 +174,7 @@ protected:
     const float minTimeForFullBA;
     const float itsFIBAInit;
     const float itsFIBA1;
+    const float minTimeOffsetForGeorefBA;
     int writeKFAfterGeorefCount;
     int writeKFAfterGBACount;
 
@@ -181,6 +184,7 @@ protected:
     bool mbGeorefUpdate;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
+    std::chrono::microseconds mPeriod;
     GeometricReferencer mGeometricReferencer;
 
 

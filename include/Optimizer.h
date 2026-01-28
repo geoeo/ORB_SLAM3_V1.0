@@ -57,8 +57,8 @@ public:
 
     void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
     
-    void static LocalGNSSBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
-    void static LocalGNSSBundleAdjustmentSim3(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
+    void static LocalGNSSBundleAdjustment(std::shared_ptr<KeyFrame> pKF, vector<shared_ptr<KeyFrame>> vAllKfs ,bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
+    void static LocalGNSSBundleAdjustmentSim3(std::shared_ptr<KeyFrame> pKF, vector<shared_ptr<KeyFrame>> vAllKfs ,bool *pbStopFlag, std::shared_ptr<Map> pMap, GeometricReferencer& geoReferencer);
     int static PoseOptimization(std::shared_ptr<Frame> pFrame);
     int static PoseInertialOptimizationLastKeyFrame(std::shared_ptr<Frame> pFrame, bool bRecInit = false);
     int static PoseInertialOptimizationLastFrame(std::shared_ptr<Frame> pFrame, int inlierThreshold, bool bRecInit = false);

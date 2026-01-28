@@ -97,7 +97,7 @@ class SlamNode : public rclcpp::Node
       orb.nLevels     = 1;
       orb.scaleFactor = 2.0;
       orb.minThFast   = 10;
-      orb.iniThFast   = 15;
+      orb.iniThFast   = 20;
 
       // F6
       ORB_SLAM3::ImuParameters imu;
@@ -179,8 +179,8 @@ class SlamNode : public rclcpp::Node
       local_mapper.itsFIBA1 = 20;
       local_mapper.thFarPoints = 0.0;
       local_mapper.useGNSS = true;
-      local_mapper.useGNSSBA = false;
-      local_mapper.writeGNSSData = false;
+      local_mapper.useGNSSBA = true;
+      local_mapper.writeGNSSData = true;
       local_mapper.georefUpdate = false;
       local_mapper.minGeorefFrames = 10;
 
@@ -192,9 +192,9 @@ class SlamNode : public rclcpp::Node
       //double timeshift_cam_imu = 0.00851880502751802;
 
       ORB_SLAM3::TrackerParameters tracker_settings;
-      tracker_settings.frameGridCols = 32;
-      tracker_settings.frameGridRows = 16;
-      tracker_settings.maxLocalKFCount = 60;
+      tracker_settings.frameGridCols = 64;
+      tracker_settings.frameGridRows = 48;
+      tracker_settings.maxLocalKFCount = 15;
       tracker_settings.featureThresholdForKF = 200;
       tracker_settings.maxFrames = 10;
 

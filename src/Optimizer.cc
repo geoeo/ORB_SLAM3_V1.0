@@ -1359,7 +1359,7 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag
 }
 
 
-void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
+void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, vector<shared_ptr<KeyFrame>> vAllKfs, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
 {
     ZoneNamedN(LocalGNSSBundleAdjustment, "LocalGNSSBundleAdjustment", true); 
 
@@ -1367,8 +1367,6 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStop
     list<shared_ptr<KeyFrame>> lLocalKeyFrames;
 
     pKF->mnBALocalForKF = pKF->mnId;
-
-    vector<shared_ptr<KeyFrame>> vAllKfs = pMap->GetAllKeyFrames(true);
     
     // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
     // vAllKfs = newKfs;
@@ -1604,7 +1602,7 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStop
     // pMap->IncreaseChangeIndex();
 }
 
-void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
+void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, vector<shared_ptr<KeyFrame>> vAllKfs, bool* pbStopFlag, shared_ptr<Map> pMap, GeometricReferencer& geoReferencer)
 {
     ZoneNamedN(LocalGNSSBundleAdjustment, "LocalGNSSBundleAdjustment", true); 
 
@@ -1613,8 +1611,6 @@ void Optimizer::LocalGNSSBundleAdjustmentSim3(shared_ptr<KeyFrame> pKF, bool* pb
 
     //lLocalKeyFrames.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
-
-    auto vAllKfs = pMap->GetAllKeyFrames(true);
     
     // auto newKfs = vector<KeyFrame*>(vAllKfs.begin()+5, vAllKfs.end()-1);
     // vAllKfs = newKfs;
