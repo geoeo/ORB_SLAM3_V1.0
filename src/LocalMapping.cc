@@ -35,7 +35,7 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper, std::chrono::microseconds period):
+LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper):
     mScale(1.0), mInitSect(0),mnMatchesInliers(0), mIdxIteration(0), mbNotBA1(true), mbNotBA2(true), mbBadImu(false),mThFarPoints(local_mapper.thFarPoints), mbFarPoints(mThFarPoints!=0.0f), mbMonocular(bMonocular), 
     mbFixScale(false), mbInertial(bInertial), mbResetRequested(false), 
     mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas), mbAbortBA(false), mbStopped(false), mbStopRequested(false), 
@@ -45,7 +45,7 @@ LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
     itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),minTimeOffsetForGeorefBA(5.0) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
     mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
-    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({}), mPeriod(period)
+    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
 }
 
@@ -62,7 +62,6 @@ void LocalMapping::SetTracker(shared_ptr<Tracking> pTracker)
 void LocalMapping::Run()
 {
     mbFinished = false;
-    auto const start = std::chrono::steady_clock::now();
     while(!CheckFinish())
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
@@ -75,7 +74,7 @@ void LocalMapping::Run()
             mpAtlas->GetCurrentMap()->SetInertialBA2();
             mpAtlas->GetCurrentMap()->SetInertialFullBA();
         }
-
+        auto const start = std::chrono::steady_clock::now();
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames() && !mbBadImu)
         {
@@ -263,12 +262,11 @@ void LocalMapping::Run()
         if(CheckFinish())
             break;
 
-
-        // Wait till the next period start.
-        auto now = std::chrono::steady_clock::now();
-        auto iterations = (now - start) / mPeriod;
-        auto next_start = start + (iterations + 1) * mPeriod;
-        std::this_thread::sleep_until(next_start);
+        auto end = std::chrono::steady_clock::now();
+        auto const exe_time = end - start;
+        auto const time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(exe_time).count();
+        if(time_ms > 0)
+            Verbose::PrintMess("LocalMapper - Execution time: " + to_string(time_ms) + " ms", Verbose::VERBOSITY_NORMAL);
     }
 
 }

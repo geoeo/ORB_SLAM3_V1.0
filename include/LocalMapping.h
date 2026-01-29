@@ -46,7 +46,7 @@ class LocalMapping
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper, std::chrono::microseconds period);
+    LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular, bool bInertial, const LocalMapperParameters &local_mapper);
 
     void SetLoopCloser(std::shared_ptr<LoopClosing> pLoopCloser);
     void SetTracker(std::shared_ptr<Tracking> pTracker);
@@ -184,11 +184,7 @@ protected:
     bool mbGeorefUpdate;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
-    std::chrono::microseconds mPeriod;
     GeometricReferencer mGeometricReferencer;
-
-
-
     };
 
 } //namespace ORB_SLAM3

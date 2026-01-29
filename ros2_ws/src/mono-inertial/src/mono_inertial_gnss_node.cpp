@@ -1,6 +1,7 @@
 #include <iostream>
 #include <thread>
 #include <functional>
+#include <chrono>
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
@@ -186,7 +187,8 @@ class SlamNode : public rclcpp::Node
 
       
       // F6
-      double timeshift_cam_imu = 0.006882460203406222; 
+      const double timeshift_cam_imu = 0.006882460203406222;
+      //const double timeshift_cam_imu = -0.022;  
 
       // F4 
       //double timeshift_cam_imu = 0.00851880502751802;
@@ -215,7 +217,7 @@ class SlamNode : public rclcpp::Node
       sub_gnss_options.callback_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
       imugb_ = std::make_shared<ImuGrabber>(this->get_logger());
-      igb_ = std::make_unique<ImageGrabber>(SLAM_,imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, this->get_logger());
+      igb_ = std::make_unique<ImageGrabber>(SLAM_,imugb_,bEqual_, timeshift_cam_imu, cam.new_width, cam.new_height, resize_factor,clahe_clip_limit, clahe_grid_size, m_undistortion_map_1, m_undistortion_map_2, m_undistorted_image_gpu, std::chrono::milliseconds(50), this->get_logger());
 
       sub_imu_ = this->create_subscription<sensor_msgs::msg::Imu>("/bmi088_F6/imu", rclcpp::SensorDataQoS().keep_last(5000), bind(&ImuGrabber::GrabImu, imugb_.get(), placeholders::_1),sub_imu_options);
       sub_image_filter.subscribe(this, "/AIT_Fighter6/down/image", rclcpp::SensorDataQoS().keep_last(1000).get_rmw_qos_profile(), sub_image_options);

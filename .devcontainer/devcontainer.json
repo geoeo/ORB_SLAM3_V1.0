@@ -5,9 +5,6 @@
 	"build": {
 		"context": "..", 
 		"dockerfile": "Dockerfile",
-		// Update 'VARIANT' to pick focal, ...
-		// Update 'DISTRO' to pick foxy, rolling, ...
-		// Update 'from' to manually pick base image
 		"args": {}
 	},
 	"runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined",
@@ -21,11 +18,7 @@
 		"--env=NVIDIA_VISIBLE_DEVICES=all",
 		"--env=NVIDIA_DRIVER_CAPABILITIES=all"
 	], 
-	// Might need `xhost local:root` in terminal
-
-
-
-
+ 	"initializeCommand": "xhost +local:docker",
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-vscode.cpptools",
@@ -37,17 +30,11 @@
 		"twxs.cmake"
 	],
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": [],
-	//"postAttachCommand": "source /opt/ros/melodic/setup.bash && source /catkin_ws/devel/setup.bash",
-	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.  
-	// "tools/setup.sh", "source  /opt/ros/melodic/setup.bash", "source /catkin_ws/devel/setup.bash"
+
 	"remoteUser": "root",
 	"mounts": [
 		"source=/home/haubenstock/rosbags/openrealm,target=/bags,type=bind,consistency=cached"
 	]
 }
-//"-v /tmp/.X11-unix:/tmp/.X11-unix",

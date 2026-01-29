@@ -109,7 +109,7 @@ System::System(const std::string &strVocFile, const CameraParameters &cam_settin
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = std::make_shared<LocalMapping>(mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
-                                     mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, local_mapper_settings, std::chrono::milliseconds(50));
+                                     mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, local_mapper_settings);
     mptLocalMapping = std::make_shared<std::thread>(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = 0; // seems to be ununsed
     if(mpLocalMapper->mbFarPoints)

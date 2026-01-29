@@ -4,6 +4,8 @@
 #include<queue>
 #include<mutex>
 #include <memory>
+#include <chrono>
+
 #include <opencv2/core/cuda.hpp>
 #include <opencv2/cudawarping.hpp>
 #include <opencv2/cudaimgproc.hpp>
@@ -34,8 +36,8 @@ namespace ros2_orbslam3 {
     {
     public:
         ImageGrabber(std::shared_ptr<ORB_SLAM3::System> pSLAM, std::shared_ptr<ImuGrabber> pImuGb, const bool bClahe, double tshift_cam_imu, int width, int height, float resize_factor, double clahe_clip_limit, int clahe_grid_size,
-        const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, rclcpp::Logger logger)
-        : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor), m_width(width), m_height(height), logger_(logger),
+        const cv::cuda::GpuMat &undistortion_map_1, const cv::cuda::GpuMat& undistortion_map_2, const cv::cuda::GpuMat& undistorted_image_gpu, std::chrono::microseconds period, rclcpp::Logger logger)
+        : mpSLAM(pSLAM), mpImuGb(pImuGb), mbClahe(bClahe), timeshift_cam_imu(tshift_cam_imu), img_resize_factor(resize_factor), m_width(width), m_height(height), mPeriod(period), logger_(logger),
             m_undistortion_map_1(undistortion_map_1), m_undistortion_map_2(undistortion_map_2), m_undistorted_image_gpu(undistorted_image_gpu), m_stream(cv::cuda::Stream())
 
         {
@@ -62,6 +64,7 @@ namespace ros2_orbslam3 {
         int m_width;
         int m_height;
         rclcpp::Logger logger_;
+        std::chrono::microseconds mPeriod;
 
         cv::cuda::GpuMat m_undistortion_map_1;
         cv::cuda::GpuMat m_undistortion_map_2;
@@ -110,6 +113,7 @@ namespace ros2_orbslam3 {
     void ImageGrabber::SyncWithImu()
     {
         double init_ts = 0;
+        auto const start = std::chrono::steady_clock::now();
         while(!mpSLAM->isShutDown())
         {
             cv::cuda::HostMem im_managed;
@@ -182,14 +186,18 @@ namespace ros2_orbslam3 {
                 if(!vImuMeas.empty() && init_ts != 0){
                     RCLCPP_INFO_STREAM(logger_, "IMU meas size: " << vImuMeas.size());
 
-                    while(!mpSLAM->getGlobalDataMutex()->try_lock())
-                        this_thread::sleep_for(chrono::microseconds(500));
-                    
+                    //while(!mpSLAM->getGlobalDataMutex()->lock())
+                        //this_thread::sleep_for(chrono::microseconds(500));
+                    auto const start = std::chrono::steady_clock::now();
+                    mpSLAM->getGlobalDataMutex()->lock();
                     auto has_gnss = gnss_pos_opt.has_value();
                     auto gnss_position = has_gnss ? gnss_pos_opt.value() : Eigen::Vector3f::Zero();
                     const auto [pose, ba_complete_for_frame, is_keyframe, id, scale_factors] 
                         = mpSLAM->TrackMonocular(im_managed,tIm,vImuMeas, has_gnss, gnss_position);
                     mpSLAM->getGlobalDataMutex()->unlock();
+                    auto const end = std::chrono::steady_clock::now();
+                    auto const tracking_time = end - start;
+                    RCLCPP_INFO_STREAM(logger_, "Tracking time: " << std::chrono::duration_cast<std::chrono::milliseconds>(tracking_time).count() << " ms");
                     vImuMeas.clear();
                     const auto last_optimized_kfs = mpSLAM->getLatestOptimizedKFPoses();
                     const auto isGeoreferenceInitialized = mpSLAM->isGeorefInitialized();
@@ -205,6 +213,12 @@ namespace ros2_orbslam3 {
                     RCLCPP_INFO_STREAM(logger_,"is keyframe: " << is_keyframe);
                 }
             }
+
+            // Wait till the next period start.
+            auto now = std::chrono::steady_clock::now();
+            auto iterations = (now - start) / mPeriod;
+            auto next_start = start + (iterations + 1) * mPeriod;
+            std::this_thread::sleep_until(next_start);
         }
 
         RCLCPP_INFO_STREAM(logger_,"Exit Node");
