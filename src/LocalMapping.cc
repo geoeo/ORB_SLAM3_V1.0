@@ -143,7 +143,7 @@ void LocalMapping::Run()
             }
 
 
-            if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS){
+            if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS && (mTElapsedTime > (mInitCompleteTime + minTimeOffsetForGeorefBA))){
                 {
                     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     const auto georef_success = GeoreferenceKeyframes();
@@ -160,7 +160,7 @@ void LocalMapping::Run()
                     }
 
                     // Wait minTimeOffsetForGeorefBA seconds before we apply georeference BA
-                    if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested && (mTElapsedTime > (mInitCompleteTime + minTimeOffsetForGeorefBA))){
+                    if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
                         //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         if(writeKFAfterGBACount == 0){
@@ -168,12 +168,12 @@ void LocalMapping::Run()
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
 
                             // We write the reprojection errors again before BA since new keyframe will have been added
-                            if(mbWriteGNSSData){
-                                for(const auto kf : kfs)
-                                    kf->ComputeReprojectionErrors(true);
-                                Map::writeKeyframesCsv("keyframes_after_georef", kfs);
-                                Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
-                            }
+                            // if(mbWriteGNSSData){
+                            //     for(const auto kf : kfs)
+                            //         kf->ComputeReprojectionErrors(true);
+                            //     Map::writeKeyframesCsv("keyframes_after_georef", kfs);
+                            //     Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
+                            // }
 
                             Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame, kfs, &mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
 

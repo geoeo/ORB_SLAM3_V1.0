@@ -1381,11 +1381,11 @@ void Optimizer::LocalGNSSBundleAdjustment(shared_ptr<KeyFrame> pKF, vector<share
     const auto minStartingFixedKds = std::min(startFixedKFCount, vAllKfs.size());
     const auto maxStartingFixedKds = vAllKfs.size() - endFixedKFCount > 0 ? vAllKfs.size() - endFixedKFCount : vAllKfs.size();                              
     //sFixedKfIds.insert(maxKFId);
-    // for(auto i = 0; i < minStartingFixedKds; i++) 
-    //     sFixedKfIds.insert(vAllKfs[i]->mnId);
+    for(auto i = 0; i < minStartingFixedKds; i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
 
-    // for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
-    //     sFixedKfIds.insert(vAllKfs[i]->mnId);
+    for(auto i = maxStartingFixedKds; i < vAllKfs.size(); i++) 
+        sFixedKfIds.insert(vAllKfs[i]->mnId);
     
     for(auto pKFi: vAllKfs) {
         pKFi->mnBALocalForKF = pKF->mnId;
