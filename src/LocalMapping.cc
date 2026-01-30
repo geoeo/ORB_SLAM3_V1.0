@@ -155,7 +155,6 @@ void LocalMapping::Run()
                             Map::writeKeyframesCsv("keyframes_after_georef", kfs);
                             Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
                         }
-
                         writeKFAfterGeorefCount = 1;
                     }
 
@@ -166,17 +165,7 @@ void LocalMapping::Run()
                         if(writeKFAfterGBACount == 0){
                             Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
-
-                            // We write the reprojection errors again before BA since new keyframe will have been added
-                            // if(mbWriteGNSSData){
-                            //     for(const auto kf : kfs)
-                            //         kf->ComputeReprojectionErrors(true);
-                            //     Map::writeKeyframesCsv("keyframes_after_georef", kfs);
-                            //     Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
-                            // }
-
                             Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame, kfs, &mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
-
                             if(mbWriteGNSSData){
                                 for(const auto kf : kfs)
                                     kf->ComputeReprojectionErrors(true);
