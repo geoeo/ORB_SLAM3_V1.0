@@ -179,6 +179,10 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeOffsetForGeorefBA = 5.0;
       local_mapper.itsFIBAInit = 20;
       local_mapper.itsFIBA1 = 20;
+      local_mapper.priorAInit = 1e10;
+      local_mapper.priorGInit = 1e10;
+      local_mapper.priorA1 = 0.0;
+      local_mapper.priorG1 = 0.0;
       local_mapper.thFarPoints = 0.0;
       local_mapper.useGNSS = true;
       local_mapper.useGNSSBA = true;

@@ -172,8 +172,12 @@ protected:
     const float minTimeForVIBA1;
     const float minTimeForVIBA2;
     const float minTimeForFullBA;
-    const float itsFIBAInit;
-    const float itsFIBA1;
+    const int itsFIBAInit;
+    const int itsFIBA1;
+    const float priorAInit;
+    const float priorGInit;
+    const float priorA1;
+    const float priorG1;
     const float minTimeOffsetForGeorefBA;
     int writeKFAfterGeorefCount;
     int writeKFAfterGBACount;

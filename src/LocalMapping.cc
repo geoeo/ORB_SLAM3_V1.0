@@ -43,7 +43,9 @@ LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),mInitCompleteTime(0.0),
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
-    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),minTimeOffsetForGeorefBA(local_mapper.minTimeOffsetForGeorefBA) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
+    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),
+    priorAInit(local_mapper.priorAInit), priorGInit(local_mapper.priorGInit), priorA1(local_mapper.priorA1), priorG1(local_mapper.priorG1),
+    minTimeOffsetForGeorefBA(local_mapper.minTimeOffsetForGeorefBA) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
     mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
     mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
@@ -74,10 +76,12 @@ void LocalMapping::Run()
             mpAtlas->GetCurrentMap()->SetInertialBA2();
             mpAtlas->GetCurrentMap()->SetInertialFullBA();
         }
-        auto const start = std::chrono::steady_clock::now();
+
         // Check if there are keyframes in the queue
         if(CheckNewKeyFrames() && !mbBadImu)
         {
+            const auto start = std::chrono::steady_clock::now();
+
             // BoW conversion and insertion in Map
             ProcessNewKeyFrame();
             // Check recent MapPoints
@@ -189,7 +193,7 @@ void LocalMapping::Run()
             if(!mpCurrentKeyFrame->GetMap()->isImuInitialized() && mbInertial)
             {
                 Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
-                auto success = InitializeIMU(1e10, 1e10, true, itsFIBAInit, minTimeForImuInit, 10);
+                auto success = InitializeIMU(priorGInit, priorAInit, true, itsFIBAInit, minTimeForImuInit, 10);
                 Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
                 if(false){
                     mpAtlas->GetCurrentMap()->SetInertialBA1();
@@ -212,7 +216,7 @@ void LocalMapping::Run()
                         Verbose::PrintMess("start VIBA 1", Verbose::VERBOSITY_DEBUG);
                         auto success = false;
                         if (mbMonocular)
-                            success = InitializeIMU(0.f, 0.f, true, itsFIBA1, minTimeForVIBA1, 10);
+                            success = InitializeIMU(priorG1, priorA1, true, itsFIBA1, minTimeForVIBA1, 10);
                         else
                             success = InitializeIMU(1.f, 1e5, true, itsFIBA1, minTimeForVIBA1, 10);
 
@@ -257,16 +261,17 @@ void LocalMapping::Run()
             //mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
             Verbose::PrintMess("LocalMapper - Elapsed Time: " + to_string(mTElapsedTime) + " KF size:" + to_string(mpAtlas->GetCurrentMap()->GetAllKeyFrames(false).size()), Verbose::VERBOSITY_NORMAL);
 
+            const auto end = std::chrono::steady_clock::now();
+            auto const exe_time = end - start;
+            auto const time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(exe_time).count();
+            Verbose::PrintMess("LocalMapper - Execution time: " + to_string(time_ms) + " ms", Verbose::VERBOSITY_NORMAL);
+
         }
 
         if(CheckFinish())
             break;
 
-        auto end = std::chrono::steady_clock::now();
-        auto const exe_time = end - start;
-        auto const time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(exe_time).count();
-        if(time_ms > 0)
-            Verbose::PrintMess("LocalMapper - Execution time: " + to_string(time_ms) + " ms", Verbose::VERBOSITY_NORMAL);
+
     }
 
 }

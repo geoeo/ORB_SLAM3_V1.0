@@ -162,9 +162,19 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
+      local_mapper.minTimeOffsetForGeorefBA = 5.0;
+      local_mapper.itsFIBAInit = 20;
+      local_mapper.itsFIBA1 = 20;
+      local_mapper.priorAInit = 1e10;
+      local_mapper.priorGInit = 1e10;
+      local_mapper.priorA1 = 0.0;
+      local_mapper.priorG1 = 0.0;
       local_mapper.thFarPoints = 0.0;
-      local_mapper.itsFIBAInit = 5;
-      local_mapper.itsFIBA1 = 5;
+      local_mapper.useGNSS = true;
+      local_mapper.useGNSSBA = true;
+      local_mapper.writeGNSSData = true;
+      local_mapper.georefUpdate = false;
+      local_mapper.minGeorefFrames = 10;
       
       // F6
       //double timeshift_cam_imu = 0.006882460203406222; 
