@@ -176,6 +176,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.minTimeForVIBA1 = 50.0;
       local_mapper.minTimeForVIBA2 = 100.0;
       local_mapper.minTimeForFullBA = -1.0;
+      local_mapper.minTimeOffsetForGeorefBA = 5.0;
       local_mapper.itsFIBAInit = 20;
       local_mapper.itsFIBA1 = 20;
       local_mapper.thFarPoints = 0.0;

@@ -43,7 +43,7 @@ LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular
     bInitializing(false), infoInertial(Eigen::MatrixXd::Zero(9,9)), mNumLM(0),mNumKFCulling(0), mTElapsedTime(0.0),mInitCompleteTime(0.0),
     resetTimeThresh(local_mapper.resetTimeThresh), minTimeForImuInit(local_mapper.minTimeForImuInit), 
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
-    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),minTimeOffsetForGeorefBA(5.0) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
+    itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),minTimeOffsetForGeorefBA(local_mapper.minTimeOffsetForGeorefBA) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
     mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
     mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
@@ -90,7 +90,7 @@ void LocalMapping::Run()
             //if(!CheckNewKeyFrames())
             {
                 // Find more matches in neighbor keyframes and fuse point duplications
-                //unique_lock<mutex> lock(*getGlobalDataMutex());
+                unique_lock<mutex> lock(*getGlobalDataMutex());
                 SearchInNeighbors();
             }
 
@@ -155,8 +155,8 @@ void LocalMapping::Run()
                         writeKFAfterGeorefCount = 1;
                     }
 
-                    // Wait 2 seconds before we apply georeference BA
-                    if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested && (mTElapsedTime > mInitCompleteTime + minTimeOffsetForGeorefBA)){
+                    // Wait minTimeOffsetForGeorefBA seconds before we apply georeference BA
+                    if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested && (mTElapsedTime > (mInitCompleteTime + minTimeOffsetForGeorefBA))){
                         //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         if(writeKFAfterGBACount == 0){

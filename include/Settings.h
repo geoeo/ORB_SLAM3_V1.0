@@ -68,6 +68,7 @@ namespace ORB_SLAM3 {
         float minTimeForVIBA1;
         float minTimeForVIBA2;
         float minTimeForFullBA;
+        float minTimeOffsetForGeorefBA;
         float itsFIBAInit;
         float itsFIBA1;
         float thFarPoints;
