@@ -296,7 +296,7 @@ void LocalMapping::ProcessNewKeyFrame()
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
-        unique_lock<mutex> lock2(*getGlobalDataMutex());
+        //unique_lock<mutex> lock2(*getGlobalDataMutex());
         unique_lock<mutex> lock(mMutexNewKFs);
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
@@ -333,7 +333,7 @@ void LocalMapping::ProcessNewKeyFrame()
 
     // Update links in the Covisibility Graph
     {
-        //unique_lock<mutex> lock(*getGlobalDataMutex());
+        unique_lock<mutex> lock(*getGlobalDataMutex());
         mpCurrentKeyFrame->UpdateConnections();
     }
 
