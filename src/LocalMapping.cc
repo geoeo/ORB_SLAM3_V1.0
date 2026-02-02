@@ -393,7 +393,7 @@ void LocalMapping::MapPointCulling()
 void LocalMapping::CreateNewMapPoints()
 {
     // Retrieve neighbor keyframes in covisibility graph
-    size_t nn = 30;
+    size_t nn = 15;
     // For stereo inertial case
     // if(mbMonocular)
     //     nn=30;

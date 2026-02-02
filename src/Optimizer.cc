@@ -1073,9 +1073,9 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     vector<shared_ptr<KeyFrame>> lLocalKeyFrames;
-    const size_t maxOpt=12;
+    const size_t maxOpt=10;
     const int maxIterations = 5;
-    const size_t maxMapPointsPerFrame = 1500; // Half of 3000 nFeatuers -> TODO: Derive from settings
+    const size_t maxMapPointsPerFrame = 1300; // Half of 3000 nFeatuers -> TODO: Derive from settings
 
     const auto vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
