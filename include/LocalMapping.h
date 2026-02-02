@@ -55,7 +55,6 @@ public:
     void Run();
 
     void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
-    void EmptyQueue();
 
     // Thread Synch
     void RequestReset();
