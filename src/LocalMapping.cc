@@ -86,17 +86,18 @@ void LocalMapping::Run()
 
             //if(!CheckNewKeyFrames())
             {
-                // Find more matches in neighbor keyframes and fuse point duplications
                 unique_lock<mutex> lock(*getGlobalDataMutex());
-
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
+            }
                 // Check recent MapPoints
                 MapPointCulling();
                 // Triangulate new MapPoints
                 CreateNewMapPoints();
 
-
+            // Find more matches in neighbor keyframes and fuse point duplications
+            {
+                unique_lock<mutex> lock(*getGlobalDataMutex());
                 SearchInNeighbors();
             }
 
