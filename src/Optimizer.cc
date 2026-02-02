@@ -953,7 +953,7 @@ int Optimizer::PoseOptimization(shared_ptr<Frame> pFrame)
     // At the next optimization, outliers are not included, but at the end they can be classified as inliers again.
     const float chi2Mono[4]={5.991,5.991,5.991,5.991};
     const float chi2Stereo[4]={7.815,7.815,7.815, 7.815};
-    const int its[4]={15,15,15,15};    
+    const int its[4]={25,25,25,25};    
 
     int nBad=0;
     for(size_t it=0; it<4; it++)
@@ -1073,9 +1073,9 @@ void Optimizer::LocalBundleAdjustment(shared_ptr<KeyFrame> pKF, bool* pbStopFlag
 
     // Local KeyFrames: First Breath Search from Current Keyframe
     vector<shared_ptr<KeyFrame>> lLocalKeyFrames;
-    const size_t maxOpt=10;
+    const size_t maxOpt=12;
     const int maxIterations = 5;
-    const size_t maxMapPointsPerFrame = 1300; // Half of 3000 nFeatuers -> TODO: Derive from settings
+    const size_t maxMapPointsPerFrame = 1500; // Half of 3000 nFeatuers -> TODO: Derive from settings
 
     const auto vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
     const auto Nd = std::min(vNeighKFs.size(),maxOpt);
