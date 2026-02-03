@@ -1361,18 +1361,10 @@ void Tracking::SearchLocalPoints()
     if(nToMatch>0)
     {
         ORBmatcher matcher(0.95, true);
-        int th = 1;
-        if(mSensor==System::RGBD || mSensor==System::IMU_RGBD)
-            th=3;
+        int th = 15;
         if(mpAtlas->isImuInitialized())
-        {
-            th=15;
-        }
-        else if(!mpAtlas->isImuInitialized() && (mSensor==System::IMU_MONOCULAR || mSensor==System::IMU_STEREO || mSensor == System::IMU_RGBD))
-        {
-            th=10;
-        }
-
+            th=20;
+        
         // // If the camera has been relocalised recently, perform a coarser search
         // if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
         //     th=10;
