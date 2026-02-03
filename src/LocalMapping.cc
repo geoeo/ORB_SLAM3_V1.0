@@ -90,24 +90,18 @@ void LocalMapping::Run()
 
             //if(!CheckNewKeyFrames())
 
-
-            {
-                //unique_lock<mutex> lock(*getGlobalDataMutex());
-                // BoW conversion and insertion in Map
-                ProcessNewKeyFrame();
-            }
+            // BoW conversion and insertion in Map
+            ProcessNewKeyFrame();
             
-                // Check recent MapPoints
+            // Check recent MapPoints
             MapPointCulling();
 
             // Triangulate new MapPoints
             CreateNewMapPoints();
 
             // Find more matches in neighbor keyframes and fuse point duplications
-            {
-                unique_lock<mutex> lock(*getGlobalDataMutex());
-                SearchInNeighbors();
-            }
+            SearchInNeighbors();
+            
 
             bool b_doneLBA = false;
             int num_FixedKF_BA = 0;
@@ -171,7 +165,6 @@ void LocalMapping::Run()
 
                     // Wait minTimeOffsetForGeorefBA seconds before we apply georeference BA
                     if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
-                        //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
                         if(writeKFAfterGBACount == 0){
                             Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
@@ -1078,15 +1071,10 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     while(CheckNewKeyFrames()){
         ProcessNewKeyFrame();
-
         MapPointCulling();
-
         // Triangulate new MapPoints
         CreateNewMapPoints();
-
-
         SearchInNeighbors();
-
     }
 
 
