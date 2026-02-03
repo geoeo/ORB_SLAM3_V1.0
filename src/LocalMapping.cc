@@ -92,13 +92,13 @@ void LocalMapping::Run()
 
 
             {
-                unique_lock<mutex> lock(*getGlobalDataMutex());
+                //unique_lock<mutex> lock(*getGlobalDataMutex());
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
             }
             
                 // Check recent MapPoints
-                // MapPointCulling();
+            MapPointCulling();
 
             // Triangulate new MapPoints
             CreateNewMapPoints();
@@ -278,7 +278,7 @@ void LocalMapping::Run()
 
 void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 {
-    //unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
     //mbAbortBA=true;
 }
@@ -286,14 +286,14 @@ void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 
 bool LocalMapping::CheckNewKeyFrames()
 {
-    //unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock<mutex> lock(mMutexNewKFs);
     //unique_lock<mutex> lock(*getGlobalDataMutex());
     return(!mlNewKeyFrames.empty());
 }
 
 void LocalMapping::ResetNewKeyFrames() 
 {
-    //unique_lock<mutex> lock(mMutexNewKFs);
+    unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.clear();
 }
 
@@ -302,7 +302,7 @@ void LocalMapping::ProcessNewKeyFrame()
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
-        //unique_lock<mutex> lock(mMutexNewKFs);
+        unique_lock<mutex> lock(mMutexNewKFs);
         //unique_lock<mutex> lock(*getGlobalDataMutex());
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
@@ -1078,8 +1078,16 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     while(CheckNewKeyFrames()){
         ProcessNewKeyFrame();
-    }
 
+        MapPointCulling();
+
+        // Triangulate new MapPoints
+        CreateNewMapPoints();
+
+
+        SearchInNeighbors();
+
+    }
 
 
     //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
