@@ -68,10 +68,10 @@ void LocalMapping::Run()
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
 
-        {
-            unique_lock<mutex> lock(*getGlobalDataMutex());
+        //{
+            //unique_lock<mutex> lock(*getGlobalDataMutex());
             ResetIfRequested();
-        }
+        //}
 
 
         // If we dont use the IMU the initial map space is the final one
@@ -89,11 +89,14 @@ void LocalMapping::Run()
 
 
             //if(!CheckNewKeyFrames())
+
+
             {
                 unique_lock<mutex> lock(*getGlobalDataMutex());
                 // BoW conversion and insertion in Map
                 ProcessNewKeyFrame();
             }
+            
                 // Check recent MapPoints
                 // MapPointCulling();
 
@@ -284,12 +287,13 @@ void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 bool LocalMapping::CheckNewKeyFrames()
 {
     //unique_lock<mutex> lock(mMutexNewKFs);
+    //unique_lock<mutex> lock(*getGlobalDataMutex());
     return(!mlNewKeyFrames.empty());
 }
 
 void LocalMapping::ResetNewKeyFrames() 
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    //unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.clear();
 }
 
@@ -298,7 +302,8 @@ void LocalMapping::ProcessNewKeyFrame()
     ZoneNamedN(LocalMapping_ProcessNewKeyFrame, "LocalMapping_ProcessNewKeyFrame", true);  // NOLINT: Profiler
     {
         Verbose::PrintMess("LocalMapper - New KF Sizes: " + to_string(mlNewKeyFrames.size()), Verbose::VERBOSITY_DEBUG);
-        unique_lock<mutex> lock(mMutexNewKFs);
+        //unique_lock<mutex> lock(mMutexNewKFs);
+        //unique_lock<mutex> lock(*getGlobalDataMutex());
         mpCurrentKeyFrame = mlNewKeyFrames.front();
         if(mpCurrentKeyFrame->mPrevKF)
             mTElapsedTime += mpCurrentKeyFrame->mTimeStamp - mpCurrentKeyFrame->mPrevKF->mTimeStamp;
@@ -331,13 +336,8 @@ void LocalMapping::ProcessNewKeyFrame()
             }
         }
     }
-
-    // Update links in the Covisibility Graph
-    {
-        //unique_lock<mutex> lock(*getGlobalDataMutex());
-        mpCurrentKeyFrame->UpdateConnections();
-    }
-
+    
+    mpCurrentKeyFrame->UpdateConnections();
 
     if(mpAtlas->isImuInitialized())
         mpCurrentKeyFrame->GetKeyFrameDatabase()->add(mpCurrentKeyFrame);
@@ -1073,10 +1073,14 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
     Verbose::PrintMess("Init IMU: Elapsed Time: " + to_string(mTElapsedTime) + " min KF: " + to_string(kf_size), Verbose::VERBOSITY_DEBUG);
     bInitializing = true;
 
+
     // We lock here so that no new kfs can be generated
     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
-    while(CheckNewKeyFrames())
+    while(CheckNewKeyFrames()){
         ProcessNewKeyFrame();
+    }
+
+
 
     //unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
     auto vpKF = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
