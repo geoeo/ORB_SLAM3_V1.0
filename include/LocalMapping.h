@@ -56,16 +56,14 @@ public:
 
     void InsertKeyFrame(std::shared_ptr<KeyFrame> pKF);
 
-    // Thread Synch
+    // Thread Sync
     void RequestReset();
-    void Release();
+    //void Release();
 
     void InterruptBA();
 
     void RequestFinish();
     bool isFinished();
-
-    int KeyframesInQueue();
 
     bool IsInitializing() const;
     double GetCurrKFTime();

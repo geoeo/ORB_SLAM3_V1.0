@@ -68,7 +68,11 @@ void LocalMapping::Run()
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
 
-        ResetIfRequested();
+        {
+            unique_lock<mutex> lock(*getGlobalDataMutex());
+            ResetIfRequested();
+        }
+
 
         // If we dont use the IMU the initial map space is the final one
         if(!mbInertial){
@@ -91,9 +95,10 @@ void LocalMapping::Run()
                 ProcessNewKeyFrame();
             }
                 // Check recent MapPoints
-                MapPointCulling();
-                // Triangulate new MapPoints
-                CreateNewMapPoints();
+                // MapPointCulling();
+
+            // Triangulate new MapPoints
+            CreateNewMapPoints();
 
             // Find more matches in neighbor keyframes and fuse point duplications
             {
@@ -270,7 +275,7 @@ void LocalMapping::Run()
 
 void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    //unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.push_back(pKF);
     //mbAbortBA=true;
 }
@@ -278,7 +283,7 @@ void LocalMapping::InsertKeyFrame(shared_ptr<KeyFrame> pKF)
 
 bool LocalMapping::CheckNewKeyFrames()
 {
-    unique_lock<mutex> lock(mMutexNewKFs);
+    //unique_lock<mutex> lock(mMutexNewKFs);
     return(!mlNewKeyFrames.empty());
 }
 
@@ -286,12 +291,6 @@ void LocalMapping::ResetNewKeyFrames()
 {
     unique_lock<mutex> lock(mMutexNewKFs);
     mlNewKeyFrames.clear();
-}
-
-int LocalMapping::KeyframesInQueue()
-{
-    unique_lock<mutex> lock(mMutexNewKFs);
-    return mlNewKeyFrames.size();
 }
 
 void LocalMapping::ProcessNewKeyFrame()
@@ -851,26 +850,26 @@ void LocalMapping::SearchInNeighbors()
     mpCurrentKeyFrame->UpdateConnections();
 }
 
-void LocalMapping::Release()
-{
-    unique_lock<mutex> lock(mMutexStop);
-    unique_lock<mutex> lock2(mMutexFinish);
-    if(mbFinished)
-        return;
-    mbStopped = false;
-    mbStopRequested = false;
+// void LocalMapping::Release()
+// {
+//     unique_lock<mutex> lock(mMutexStop);
+//     unique_lock<mutex> lock2(mMutexFinish);
+//     if(mbFinished)
+//         return;
+//     mbStopped = false;
+//     mbStopRequested = false;
 
-    mTElapsedTime = 0.f;
-    mbNotBA2 = true;
-    mbNotBA1 = true;
-    mbBadImu=false;
+//     mTElapsedTime = 0.f;
+//     mbNotBA2 = true;
+//     mbNotBA1 = true;
+//     mbBadImu=false;
 
-    mbResetRequested = false;
-    mGeometricReferencer.clear();
+//     mbResetRequested = false;
+//     mGeometricReferencer.clear();
 
-    ResetNewKeyFrames();
-    Verbose::PrintMess("Local Mapping Release", Verbose::VERBOSITY_NORMAL);
-}
+//     ResetNewKeyFrames();
+//     Verbose::PrintMess("Local Mapping Release", Verbose::VERBOSITY_NORMAL);
+// }
 
 void LocalMapping::InterruptBA()
 {
