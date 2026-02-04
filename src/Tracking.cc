@@ -981,7 +981,7 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.95,true);
+    ORBmatcher matcher(0.75,true);
     vector<shared_ptr<MapPoint>> vpMapPointMatches;
 
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
@@ -1269,17 +1269,11 @@ bool Tracking::NeedNewKeyFrame()
     int nRefMatches = mpReferenceKF->TrackedMapPoints(nMinObs);
 
 
-    // Thresholds
-    float thRefRatio = 0.55;
-    if(nKFs<2)
-        thRefRatio = 0.4f;
-
-    // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
+    // Condition 1: More than "MaxFrames" have passed from last keyframe insertion
     const bool c1 = mCurrentFrame->mnId>=mnLastKeyFrameId+mMaxFrames;
-    const bool c2 = (mnMatchesInliers<nRefMatches*thRefRatio) && (mnMatchesInliers>15);
     const bool c4 = (mnMatchesInliers<mFeatureThresholdForKF) || getTrackingState()==RECENTLY_LOST;
 
-    Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) + " c2 " + to_string(c2)+ " c4 " + to_string(c4), Verbose::VERBOSITY_DEBUG);
+    Verbose::PrintMess("NeedNewKeyFrame: c1 " + to_string(c1) +" c4 " + to_string(c4), Verbose::VERBOSITY_DEBUG);
     return c1 || c4;
 }
 
@@ -1360,10 +1354,10 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.95, true);
+        ORBmatcher matcher(0.75, true);
         int th = 15;
         if(mpAtlas->isImuInitialized())
-            th=20;
+            th=10;
         
         // // If the camera has been relocalised recently, perform a coarser search
         // if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
