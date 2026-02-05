@@ -27,11 +27,8 @@ using namespace std;
 namespace ORB_SLAM3
 {
 
-    ORBmatcher::ORBmatcher(float nnratio, bool checkOri): mfNNratio(nnratio), mbCheckOrientation(checkOri)
-    {
-    }
 
-    int ORBmatcher::SearchByProjection(shared_ptr<Frame> F, const vector<shared_ptr<MapPoint>> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints)
+    int ORBmatcher::SearchByProjection(shared_ptr<Frame> F, const vector<shared_ptr<MapPoint>> &vpMapPoints, const float th, const bool bFarPoints, const float thFarPoints, const float nnRatio, const bool checkOrientation)
     {
         int nmatches=0, left = 0, right = 0;
 
@@ -110,10 +107,10 @@ namespace ORB_SLAM3
                     // Apply ratio to second match (only if best and second are in the same scale level)
                     if(bestDist<=TH_HIGH)
                     {
-                        if(bestLevel==bestLevel2 && bestDist>mfNNratio*bestDist2)
+                        if(bestLevel==bestLevel2 && bestDist>nnRatio*bestDist2)
                             continue;
 
-                        if(bestLevel!=bestLevel2 || bestDist<=mfNNratio*bestDist2){
+                        if(bestLevel!=bestLevel2 || bestDist<=nnRatio*bestDist2){
                             F->mvpMapPoints[bestIdx]=pMP;
                             nmatches++;
                             left++;
@@ -133,7 +130,7 @@ namespace ORB_SLAM3
             return 4.0;
     }
 
-    int ORBmatcher::SearchByBoW(shared_ptr<KeyFrame> pKF, shared_ptr<Frame> F, vector<shared_ptr<MapPoint>> &vpMapPointMatches)
+    int ORBmatcher::SearchByBoW(shared_ptr<KeyFrame> pKF, shared_ptr<Frame> F, vector<shared_ptr<MapPoint>> &vpMapPointMatches, const float nnRatio, const bool checkOrientation)
     {
         const auto vpMapPointsKF = pKF->GetMapPointMatches();
 
@@ -239,13 +236,13 @@ namespace ORB_SLAM3
 
                     if(bestDist1<=TH_LOW)
                     {
-                        if(static_cast<float>(bestDist1)<mfNNratio*static_cast<float>(bestDist2))
+                        if(static_cast<float>(bestDist1)<nnRatio*static_cast<float>(bestDist2))
                         {
                             vpMapPointMatches[bestIdxF]=pMP;
 
                             const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
-                            if(mbCheckOrientation)
+                            if(checkOrientation)
                             {
                                 auto &Fkp = F->mvKeysUn->operator[](bestIdxF);
 
@@ -263,13 +260,13 @@ namespace ORB_SLAM3
 
                         if(bestDist1R<=TH_LOW)
                         {
-                            if(static_cast<float>(bestDist1R)<mfNNratio*static_cast<float>(bestDist2R) || true)
+                            if(static_cast<float>(bestDist1R)<nnRatio*static_cast<float>(bestDist2R) || true)
                             {
                                 vpMapPointMatches[bestIdxFR]=pMP;
 
                                 const auto &kp = pKF->mvKeysUn->operator[](realIdxKF);
 
-                                if(mbCheckOrientation)
+                                if(checkOrientation)
                                 {
                                     auto &Fkp = F->mvKeysUn->operator[](bestIdxFR);
 
@@ -304,7 +301,7 @@ namespace ORB_SLAM3
 
         Verbose::PrintMess("BoW 1: Matches after loop " + std::to_string(nmatches), Verbose::VERBOSITY_DEBUG);
 
-        if(mbCheckOrientation)
+        if(checkOrientation)
         {
             int ind1=-1;
             int ind2=-1;
@@ -329,228 +326,7 @@ namespace ORB_SLAM3
         return nmatches;
     }
 
-    int ORBmatcher::SearchByProjection(shared_ptr<KeyFrame> pKF, Sophus::Sim3f &Scw, const vector<shared_ptr<MapPoint>> &vpPoints,
-                                       vector<shared_ptr<MapPoint>> &vpMatched, int th, float ratioHamming)
-    {
-        Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(),Scw.translation()/Scw.scale());
-        Eigen::Vector3f Ow = Tcw.inverse().translation();
-
-        // Set of MapPoints already found in the KeyFrame
-        set<shared_ptr<MapPoint>> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-        spAlreadyFound.erase(nullptr);
-
-        int nmatches=0;
-
-        // For each Candidate MapPoint Project and Match
-        for(int iMP=0, iendMP=vpPoints.size(); iMP<iendMP; iMP++)
-        {
-            auto pMP = vpPoints[iMP];
-
-            // Discard Bad MapPoints and already found
-            if(pMP->isBad() || spAlreadyFound.count(pMP))
-                continue;
-
-            // Get 3D Coords.
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
-
-            // Transform into Camera Coords.
-            Eigen::Vector3f p3Dc = Tcw * p3Dw;
-
-            // Depth must be positive
-            if(p3Dc(2)<0.0)
-                continue;
-
-            // Project into Image
-            const Eigen::Vector2f uv = pKF->mpCamera->project(p3Dc);
-
-            // Point must be inside the image
-            if(!pKF->IsInImage(uv(0),uv(1)))
-                continue;
-
-            // Depth must be inside the scale invariance region of the point
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
-            Eigen::Vector3f PO = p3Dw-Ow;
-            const float dist = PO.norm();
-
-            if(dist<minDistance || dist>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
-                continue;
-            }
-
-
-            // Viewing angle must be less than 60 deg
-            // Eigen::Vector3f Pn = pMP->GetNormal();
-
-            // if(PO.dot(Pn)<0.5*dist)
-            //     continue;
-
-            int nPredictedLevel = pMP->PredictScale(dist,pKF);
-
-            // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
-
-            const vector<size_t> vIndices = pKF->GetFeaturesInArea(uv(0),uv(1),radius);
-
-            if(vIndices.empty())
-                continue;
-
-            // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
-
-            int bestDist = 256;
-            int bestIdx = -1;
-            for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
-            {
-                const size_t idx = *vit;
-                if(vpMatched[idx])
-                    continue;
-
-                const int &kpLevel= pKF->mvKeysUn->operator[](idx).octave;
-
-                if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
-                    continue;
-
-                const cv::Mat &dKF = pKF->mDescriptors.row(idx);
-
-                const int dist = DescriptorDistance(dMP,dKF);
-
-                if(dist<bestDist)
-                {
-                    bestDist = dist;
-                    bestIdx = idx;
-                }
-            }
-
-            if(bestDist<=TH_LOW*ratioHamming)
-            {
-                vpMatched[bestIdx]=pMP;
-                nmatches++;
-            }
-
-        }
-
-        return nmatches;
-    }
-
-    int ORBmatcher::SearchByProjection(shared_ptr<KeyFrame> pKF, Sophus::Sim3<float> &Scw, const vector<shared_ptr<MapPoint>> &vpPoints, const vector<shared_ptr<KeyFrame>> &vpPointsKFs,
-                                       vector<shared_ptr<MapPoint>> &vpMatched, vector<shared_ptr<KeyFrame>> &vpMatchedKF, int th, float ratioHamming)
-    {
-        ZoneNamedN(SearchByProjectionCall_1, "SearchByProjectionCall_1", true); 
-        // Get Calibration Parameters for later projection
-        const float &fx = pKF->fx;
-        const float &fy = pKF->fy;
-        const float &cx = pKF->cx;
-        const float &cy = pKF->cy;
-
-        Sophus::SE3f Tcw = Sophus::SE3f(Scw.rotationMatrix(),Scw.translation()/Scw.scale());
-        Eigen::Vector3f Ow = Tcw.inverse().translation();
-
-        // Set of MapPoints already found in the KeyFrame
-        set<shared_ptr<MapPoint>> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-        spAlreadyFound.erase(nullptr);
-
-        int nmatches=0;
-
-        // For each Candidate MapPoint Project and Match
-        for(int iMP=0, iendMP=vpPoints.size(); iMP<iendMP; iMP++)
-        {
-            auto pMP = vpPoints[iMP];
-            auto pKFi = vpPointsKFs[iMP];
-
-            // Discard Bad MapPoints and already found
-            if(pMP->isBad() || spAlreadyFound.count(pMP))
-                continue;
-
-            // Get 3D Coords.
-            Eigen::Vector3f p3Dw = pMP->GetWorldPos();
-
-            // Transform into Camera Coords.
-            Eigen::Vector3f p3Dc = Tcw * p3Dw;
-
-            // Depth must be positive
-            if(p3Dc(2)<0.0)
-                continue;
-
-            // Project into Image
-            const float invz = 1/p3Dc(2);
-            const float x = p3Dc(0)*invz;
-            const float y = p3Dc(1)*invz;
-
-            const float u = fx*x+cx;
-            const float v = fy*y+cy;
-
-            // Point must be inside the image
-            if(!pKF->IsInImage(u,v))
-                continue;
-
-            // Depth must be inside the scale invariance region of the point
-            const float maxDistance = pMP->GetMaxDistanceInvariance();
-            const float minDistance = pMP->GetMinDistanceInvariance();
-            Eigen::Vector3f PO = p3Dw-Ow;
-            const float dist = PO.norm();
-
-            if(dist<minDistance || dist>maxDistance){
-                Verbose::PrintMess("Projection out of range: " + std::to_string(dist) + " not in [" + std::to_string(minDistance) + "," + std::to_string(maxDistance) + "]", Verbose::VERBOSITY_DEBUG);
-                continue;
-            }
-
-            // Viewing angle must be less than 60 deg
-            // Eigen::Vector3f Pn = pMP->GetNormal();
-
-            // if(PO.dot(Pn)<0.5*dist)
-            //     continue;
-
-            int nPredictedLevel = pMP->PredictScale(dist,pKF);
-
-            // Search in a radius
-            const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
-
-            const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
-
-            if(vIndices.empty())
-                continue;
-
-            // Match to the most similar keypoint in the radius
-            const cv::Mat dMP = pMP->GetDescriptor();
-
-            int bestDist = 256;
-            int bestIdx = -1;
-            for(vector<size_t>::const_iterator vit=vIndices.begin(), vend=vIndices.end(); vit!=vend; vit++)
-            {
-                const size_t idx = *vit;
-                if(vpMatched[idx])
-                    continue;
-
-                const int &kpLevel= pKF->mvKeysUn->operator[](idx).octave;
-
-                if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
-                    continue;
-
-                const cv::Mat &dKF = pKF->mDescriptors.row(idx);
-
-                const int dist = DescriptorDistance(dMP,dKF);
-
-                if(dist<bestDist)
-                {
-                    bestDist = dist;
-                    bestIdx = idx;
-                }
-            }
-
-            if(bestDist<=TH_LOW*ratioHamming)
-            {
-                vpMatched[bestIdx] = pMP;
-                vpMatchedKF[bestIdx] = pKFi;
-                nmatches++;
-            }
-
-        }
-
-        return nmatches;
-    }
-
-    pair<int,vector<int>> ORBmatcher::SearchForInitialization(shared_ptr<Frame> F1, shared_ptr<Frame> F2, int windowSize)
+    pair<int,vector<int>> ORBmatcher::SearchForInitialization(shared_ptr<Frame> F1, shared_ptr<Frame> F2, int windowSize, const float nnRatio, const bool checkOrientation)
     {
         ZoneNamedN(SearchForInitialization, "SearchForInitialization", true);
         int nmatches=0;
@@ -606,7 +382,7 @@ namespace ORB_SLAM3
 
             if(bestDist<=TH_LOW)
             {
-                if(bestDist<(float)bestDist2*mfNNratio)
+                if(bestDist<(float)bestDist2*nnRatio)
                 {
                     if(vnMatches21[bestIdx2]>=0)
                     {
@@ -618,7 +394,7 @@ namespace ORB_SLAM3
                     vMatchedDistance[bestIdx2]=bestDist;
                     nmatches++;
 
-                    if(mbCheckOrientation)
+                    if(checkOrientation)
                     {
                         float rot = F1->mvKeysUn->operator[](i1).angle-F2->mvKeysUn->operator[](bestIdx2).angle;
                         if(rot<0.0)
@@ -634,7 +410,7 @@ namespace ORB_SLAM3
 
         }
 
-        if(mbCheckOrientation)
+        if(checkOrientation)
         {
             int ind1=-1;
             int ind2=-1;
@@ -662,151 +438,8 @@ namespace ORB_SLAM3
         return {nmatches, vnMatches12};
     }
 
-    int ORBmatcher::SearchByBoW(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2, vector<shared_ptr<MapPoint>> &vpMatches12)
-    {
-        ZoneNamedN(SearchByBoWCall, "SearchByBoWCall", true); 
-        const auto &vKeysUn1 = pKF1->mvKeysUn;
-        const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
-        const auto vpMapPoints1 = pKF1->GetMapPointMatches();
-        const cv::Mat &Descriptors1 = pKF1->mDescriptors;
-
-        const auto &vKeysUn2 = pKF2->mvKeysUn;
-        const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
-        const auto vpMapPoints2 = pKF2->GetMapPointMatches();
-        const cv::Mat &Descriptors2 = pKF2->mDescriptors;
-
-        vpMatches12 = vector<shared_ptr<MapPoint>>(vpMapPoints1.size(),nullptr);
-        vector<bool> vbMatched2(vpMapPoints2.size(),false);
-
-        array<vector<int>,HISTO_LENGTH> rotHist;
-        for(size_t i=0;i<HISTO_LENGTH;i++)
-            rotHist[i].reserve(500);
-
-        const float factor = 1.0f/HISTO_LENGTH;
-
-        int nmatches = 0;
-
-        DBoW2::FeatureVector::const_iterator f1it = vFeatVec1.begin();
-        DBoW2::FeatureVector::const_iterator f2it = vFeatVec2.begin();
-        DBoW2::FeatureVector::const_iterator f1end = vFeatVec1.end();
-        DBoW2::FeatureVector::const_iterator f2end = vFeatVec2.end();
-
-        while(f1it != f1end && f2it != f2end)
-        {
-            if(f1it->first == f2it->first)
-            {
-                for(size_t i1=0, iend1=f1it->second.size(); i1<iend1; i1++)
-                {
-                    const size_t idx1 = f1it->second[i1];
-                    if(pKF1 -> NLeft != -1 && idx1 >= pKF1 -> mvKeysUn->size()){
-                        continue;
-                    }
-
-                    auto pMP1 = vpMapPoints1[idx1];
-                    if(!pMP1)
-                        continue;
-                    if(pMP1->isBad())
-                        continue;
-
-                    const cv::Mat &d1 = Descriptors1.row(idx1);
-
-                    int bestDist1=256;
-                    int bestIdx2 =-1 ;
-                    int bestDist2=256;
-
-                    for(size_t i2=0, iend2=f2it->second.size(); i2<iend2; i2++)
-                    {
-                        const size_t idx2 = f2it->second[i2];
-
-                        if(pKF2 -> NLeft != -1 && idx2 >= pKF2 -> mvKeysUn->size()){
-                            continue;
-                        }
-
-                        auto pMP2 = vpMapPoints2[idx2];
-
-                        if(vbMatched2[idx2] || !pMP2)
-                            continue;
-
-                        if(pMP2->isBad())
-                            continue;
-
-                        const cv::Mat &d2 = Descriptors2.row(idx2);
-
-                        int dist = DescriptorDistance(d1,d2);
-
-                        if(dist<bestDist1)
-                        {
-                            bestDist2=bestDist1;
-                            bestDist1=dist;
-                            bestIdx2=idx2;
-                        }
-                        else if(dist<bestDist2)
-                        {
-                            bestDist2=dist;
-                        }
-                    }
-
-                    if(bestDist1<TH_LOW)
-                    {
-                        if(static_cast<float>(bestDist1)<mfNNratio*static_cast<float>(bestDist2))
-                        {
-                            vpMatches12[idx1]=vpMapPoints2[bestIdx2];
-                            vbMatched2[bestIdx2]=true;
-
-                            if(mbCheckOrientation)
-                            {
-                                float rot = vKeysUn1->operator[](idx1).angle-vKeysUn2->operator[](bestIdx2).angle;
-                                if(rot<0.0)
-                                    rot+=360.0f;
-                                int bin = round(rot*factor);
-                                if(bin==HISTO_LENGTH)
-                                    bin=0;
-                                assert(bin>=0 && bin<HISTO_LENGTH);
-                                rotHist[bin].push_back(idx1);
-                            }
-                            nmatches++;
-                        }
-                    }
-                }
-
-                f1it++;
-                f2it++;
-            }
-            else if(f1it->first < f2it->first)
-            {
-                f1it = vFeatVec1.lower_bound(f2it->first);
-            }
-            else
-            {
-                f2it = vFeatVec2.lower_bound(f1it->first);
-            }
-        }
-
-        if(mbCheckOrientation)
-        {
-            int ind1=-1;
-            int ind2=-1;
-            int ind3=-1;
-
-            ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
-
-            for(int i=0; i<HISTO_LENGTH; i++)
-            {
-                if(i==ind1 || i==ind2 || i==ind3)
-                    continue;
-                for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
-                {
-                    vpMatches12[rotHist[i][j]]=nullptr;
-                    nmatches--;
-                }
-            }
-        }
-
-        return nmatches;
-    }
-
     int ORBmatcher::SearchForTriangulation(shared_ptr<KeyFrame> pKF1, shared_ptr<KeyFrame> pKF2,
-                                           vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse)
+                                           vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo, const bool bCoarse, const bool checkOrientation)
     {
         ZoneNamedN(SearchForTriangulationCall, "SearchForTriangulationCall", true);
         const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
@@ -981,7 +614,7 @@ namespace ORB_SLAM3
                         vMatches12[idx1]=bestIdx2;
                         nmatches++;
 
-                        if(mbCheckOrientation)
+                        if(checkOrientation)
                         {
                             float rot = kp1.angle-kp2.angle;
                             if(rot<0.0)
@@ -1008,7 +641,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(checkOrientation)
         {
             int ind1=-1;
             int ind2=-1;
@@ -1566,145 +1199,7 @@ namespace ORB_SLAM3
         return nFound;
     }
 
-    int ORBmatcher::SearchByProjection(shared_ptr<Frame> CurrentFrame, const shared_ptr<Frame> LastFrame, const float th, const bool bMono)
-    {
-        ZoneNamedN(SearchByProjectionCall_2, "SearchByProjectionCall_2", true); 
-        int nmatches = 0;
-
-        // Rotation Histogram (to check rotation consistency)
-        array<vector<int>,HISTO_LENGTH> rotHist;
-        for(size_t i=0;i<HISTO_LENGTH;i++)
-            rotHist[i].reserve(500);
-        const float factor = 1.0f/HISTO_LENGTH;
-
-        const Sophus::SE3f Tcw = CurrentFrame->GetPose();
-        const Eigen::Vector3f twc = Tcw.inverse().translation();
-
-        const Sophus::SE3f Tlw = LastFrame->GetPose();
-        const Eigen::Vector3f tlc = Tlw * twc;
-
-        const bool bForward = tlc(2)>CurrentFrame->mb && !bMono;
-        const bool bBackward = -tlc(2)>CurrentFrame->mb && !bMono;
-
-        for(int i=0; i<LastFrame->mNumKeypoints; i++)
-        {
-            auto pMP = LastFrame->mvpMapPoints[i];
-            if(pMP)
-            {
-                if(!LastFrame->mvbOutlier[i])
-                {
-                    // Project
-                    Eigen::Vector3f x3Dw = pMP->GetWorldPos();
-                    Eigen::Vector3f x3Dc = Tcw * x3Dw;
-
-                    const float invzc = 1.0/x3Dc(2);
-
-                    if(invzc<0)
-                        continue;
-
-                    Eigen::Vector2f uv = CurrentFrame->mpCamera->project(x3Dc);
-
-                    if(uv(0)<CurrentFrame->mnMinX || uv(0)>CurrentFrame->mnMaxX)
-                        continue;
-                    if(uv(1)<CurrentFrame->mnMinY || uv(1)>CurrentFrame->mnMaxY)
-                        continue;
-
-                    int nLastOctave = LastFrame->mvKeys->operator[](i).octave;
-
-                    // Search in a window. Size depends on scale
-                    float radius = th*CurrentFrame->mvScaleFactors[nLastOctave];
-
-                    vector<size_t> vIndices2;
-
-                    if(bForward)
-                        vIndices2 = CurrentFrame->GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave);
-                    else if(bBackward)
-                        vIndices2 = CurrentFrame->GetFeaturesInArea(uv(0),uv(1), radius, 0, nLastOctave);
-                    else
-                        vIndices2 = CurrentFrame->GetFeaturesInArea(uv(0),uv(1), radius, nLastOctave-1, nLastOctave+1);
-                    if(vIndices2.empty())
-                        continue;
-
-                    const cv::Mat dMP = pMP->GetDescriptor();
-
-                    int bestDist = 256;
-                    int bestIdx2 = -1;
-
-                    for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
-                    {
-                        const size_t i2 = *vit;
-
-                        if(CurrentFrame->mvpMapPoints[i2])
-                            if(CurrentFrame->mvpMapPoints[i2]->Observations()>0)
-                                continue;
-
-                        if(CurrentFrame->Nleft == -1 && CurrentFrame->mvuRight[i2]>0)
-                        {
-                            const float ur = uv(0) - CurrentFrame->mbf*invzc;
-                            const float er = fabs(ur - CurrentFrame->mvuRight[i2]);
-                            if(er>radius)
-                                continue;
-                        }
-
-                        const cv::Mat &d = CurrentFrame->mDescriptors.createMatHeader().row(i2);
-                        const int dist = DescriptorDistance(dMP,d);
-
-                        if(dist<bestDist)
-                        {
-                            bestDist=dist;
-                            bestIdx2=i2;
-                        }
-                    }
-
-                    if(bestDist<=TH_HIGH)
-                    {
-                        CurrentFrame->mvpMapPoints[bestIdx2]=pMP;
-                        nmatches++;
-
-                        if(mbCheckOrientation)
-                        {
-                            auto kpLF = LastFrame->mvKeysUn->operator[](i);
-                            auto kpCF = CurrentFrame->mvKeysUn->operator[](bestIdx2);
-                            float rot = kpLF.angle-kpCF.angle;
-                            if(rot<0.0)
-                                rot+=360.0f;
-                            int bin = round(rot*factor);
-                            if(bin==HISTO_LENGTH)
-                                bin=0;
-                            assert(bin>=0 && bin<HISTO_LENGTH);
-                            rotHist[bin].push_back(bestIdx2);
-                        }
-                    }
-                }
-            }
-        }
-
-        //Apply rotation consistency
-        if(mbCheckOrientation)
-        {
-            int ind1=-1;
-            int ind2=-1;
-            int ind3=-1;
-
-            ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
-
-            for(int i=0; i<HISTO_LENGTH; i++)
-            {
-                if(i!=ind1 && i!=ind2 && i!=ind3)
-                {
-                    for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
-                    {
-                        CurrentFrame->mvpMapPoints[rotHist[i][j]]=nullptr;
-                        nmatches--;
-                    }
-                }
-            }
-        }
-        // std::cout << "matches (2): " << nmatches << std::endl;
-        return nmatches;
-    }
-
-    int ORBmatcher::SearchByProjection(shared_ptr<Frame> CurrentFrame, shared_ptr<KeyFrame> pKF, const set<shared_ptr<MapPoint>> &sAlreadyFound, const float th , const int ORBdist)
+    int ORBmatcher::SearchByProjection(shared_ptr<Frame> CurrentFrame, shared_ptr<KeyFrame> pKF, const set<shared_ptr<MapPoint>> &sAlreadyFound, const float th, const bool checkOrientation)
     {
         ZoneNamedN(SearchByProjectionCall_3, "SearchByProjectionCall_3", true); 
         int nmatches = 0;
@@ -1784,12 +1279,12 @@ namespace ORB_SLAM3
                         }
                     }
 
-                    if(bestDist<=ORBdist)
+                    if(bestDist<=TH_HIGH)
                     {
                         CurrentFrame->mvpMapPoints[bestIdx2]=pMP;
                         nmatches++;
 
-                        if(mbCheckOrientation)
+                        if(checkOrientation)
                         {
                             float rot = pKF->mvKeysUn->operator[](i).angle-CurrentFrame->mvKeysUn->operator[](bestIdx2).angle;
                             if(rot<0.0)
@@ -1806,7 +1301,7 @@ namespace ORB_SLAM3
             }
         }
 
-        if(mbCheckOrientation)
+        if(checkOrientation)
         {
             int ind1=-1;
             int ind2=-1;

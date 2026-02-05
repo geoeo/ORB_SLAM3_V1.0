@@ -468,17 +468,17 @@ void Tracking::Track()
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
                     //TODO: Try Gnss fallback here
-                    if(mpLocalMapper->isGeorefInitialized() && !bOK)
-                    {
-                        Verbose::PrintMess("TRACK: Track with GNSS fallback", Verbose::VERBOSITY_NORMAL);
+                    //if(mpLocalMapper->isGeorefInitialized() && !bOK)
+                    //{
+                        //Verbose::PrintMess("TRACK: Track with GNSS fallback", Verbose::VERBOSITY_NORMAL);
                         //const auto georef_translation = mpLocalMapper->getGeorefTransform().translation();
                         // Coordiante Frames should be aligned, we only need to set the translation
-                        const auto gnssDeltaTranslation = mCurrentFrame->GetGNSS() - mInitialFrame->GetGNSS();
-                        auto currentFramePoseInverse = mCurrentFrame->GetPoseInverse();
-                        currentFramePoseInverse.translation() = gnssDeltaTranslation;
-                        mCurrentFrame->SetPose(currentFramePoseInverse.inverse());
-                        bOK = true;
-                    }
+                        // const auto gnssDeltaTranslation = mCurrentFrame->GetGNSS() - mInitialFrame->GetGNSS();
+                        // auto currentFramePoseInverse = mCurrentFrame->GetPoseInverse();
+                        // currentFramePoseInverse.translation() = gnssDeltaTranslation;
+                        // mCurrentFrame->SetPose(currentFramePoseInverse.inverse());
+                        // bOK = true;
+                    //}
 
                 }
 
@@ -750,9 +750,8 @@ void Tracking::MonocularInitialization()
         }
 
         // Find correspondences
-        ORBmatcher matcher(0.9,true);
         const auto windowSize = 40; // This parameter has to be large enough to ensure a good disparity but size will impact performance
-        auto [nmatches, vIniMatches] = matcher.SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize);
+        auto [nmatches, vIniMatches] = ORBmatcher::SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize,0.25,true);
 
         // Check if there are enough correspondences
         if(nmatches<FEAT_INIT_COUNT)
@@ -981,10 +980,8 @@ bool Tracking::TrackReferenceKeyFrame()
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.75,true);
     vector<shared_ptr<MapPoint>> vpMapPointMatches;
-
-    int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
+    int nmatches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches,0.45,true);
 
     if(nmatches<10)
     {
@@ -1039,7 +1036,6 @@ bool Tracking::TrackReferenceKeyFrame()
 bool Tracking::TrackWithMotionModel()
 {
     ZoneNamedN(TrackWithMotionModel, "TrackWithMotionModel", true); 
-    ORBmatcher matcher(0.85,true);
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -1052,78 +1048,6 @@ bool Tracking::TrackWithMotionModel()
     }
 
     return pred_success;
-
-    // if(pred_success)
-    //      return true;
-    // else 
-    //     mCurrentFrame->SetPose(mLastFramePostDelta * mLastFrame->GetPose()); // Linear continuation of last frame motion - this is wrong!
-    
-
-
-    // fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
-    // // Project points seen in previous frame
-    // int th;
-
-    // if(mSensor==System::STEREO)
-    //     th=7;
-    // else
-    //     th=10;
-
-    // int nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-
-    // // If few matches, uses a wider window search
-    // if(nmatches<20)
-    // {
-    //     Verbose::PrintMess("TrackWithMotionModel: Not enough matches, wider window search", Verbose::VERBOSITY_DEBUG);
-    //     fill(mCurrentFrame->mvpMapPoints.begin(),mCurrentFrame->mvpMapPoints.end(),nullptr);
-
-    //     nmatches = matcher.SearchByProjection(mCurrentFrame,mLastFrame,2*th,mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR);
-    //     Verbose::PrintMess("TrackWithMotionModel: Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
-
-    // }
-
-    // if(nmatches<20)
-    // {
-    //     return false;
-    // }
-
-    // // Optimize frame pose with all matches
-    // Optimizer::PoseOptimization(mCurrentFrame);
-
-    // // Discard outliers
-    // int nmatchesMap = 0;
-    // for(int i =0; i<mCurrentFrame->mNumKeypoints; i++)
-    // {
-    //     if(mCurrentFrame->mvpMapPoints[i])
-    //     {
-    //         if(mCurrentFrame->mvbOutlier[i])
-    //         {
-    //             auto pMP = mCurrentFrame->mvpMapPoints[i];
-
-    //             mCurrentFrame->mvpMapPoints[i]=nullptr;
-    //             mCurrentFrame->mvbOutlier[i]=false;
-    //             if(i < mCurrentFrame->Nleft){
-    //                 pMP->mbTrackInView = false;
-    //             }
-    //             else{
-    //                 pMP->mbTrackInViewR = false;
-    //             }
-    //             pMP->mnLastFrameSeen = mCurrentFrame->mnId;
-    //             nmatches--;
-    //         }
-    //         else if(mCurrentFrame->mvpMapPoints[i]->Observations()>0)
-    //             nmatchesMap++;
-    //     }
-    // }
-
-    // Verbose::PrintMess("TackWithMotionModel - nmatchesMap: " + to_string(nmatchesMap), Verbose::VERBOSITY_DEBUG);
-    // if(mbOnlyTracking)
-    // {
-    //     mbVO = nmatchesMap<10;
-    //     return nmatches>20;
-    // } else{
-    //     return nmatchesMap>=10;
-    // }
 }
 
 bool Tracking::TrackLocalMap()
@@ -1354,20 +1278,14 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {
-        ORBmatcher matcher(0.75, true);
-        int th = 15;
-        if(mpAtlas->isImuInitialized())
+        int th = 20;
+        float nnRatio = 0.45;
+        if(mpAtlas->isImuInitialized()){
             th=10;
+        }
         
-        // // If the camera has been relocalised recently, perform a coarser search
-        // if(mCurrentFrame.mnId<mnLastRelocFrameId+2)
-        //     th=10;
-
         const auto state = getTrackingState();
-        if(state==LOST || state==RECENTLY_LOST) // Lost for less than 1 second
-            th=15; // 15
-
-        auto matches = matcher.SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints);
+        auto matches = ORBmatcher::SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints, nnRatio, true);
         Verbose::PrintMess("SearchLocalPoints matches: " +to_string(matches), Verbose::VERBOSITY_DEBUG);
     }
 }
@@ -1600,7 +1518,6 @@ bool Tracking::Relocalization()
 
     // We perform first an ORB matching with each candidate
     // If enough matches are found we setup a PnP solver
-    ORBmatcher matcher(0.85,true);
 
     vector<MLPnPsolver*> vpMLPnPsolvers;
     vpMLPnPsolvers.resize(nKFs);
@@ -1620,7 +1537,7 @@ bool Tracking::Relocalization()
             vbDiscarded[i] = true;
         else
         {
-            int nmatches = matcher.SearchByBoW(pKF,mCurrentFrame,vvpMapPointMatches[i]);
+            int nmatches = ORBmatcher::SearchByBoW(pKF,mCurrentFrame,vvpMapPointMatches[i], 0.85,true);
             Verbose::PrintMess("Reloc SearchByBoW - Matches:  " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
             if(nmatches<15)
             {
@@ -1640,7 +1557,6 @@ bool Tracking::Relocalization()
     // Alternatively perform some iterations of P4P RANSAC
     // Until we found a camera pose supported by enough inliers
     bool bMatch = false;
-    ORBmatcher matcher2(0.9,true);
 
     while(nCandidates>0 && !bMatch)
     {
@@ -1699,7 +1615,7 @@ bool Tracking::Relocalization()
                 // If few inliers, search by projection in a coarse window and optimize again
                 if(nGood<50)
                 {
-                    int nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,10,100);
+                    int nadditional = ORBmatcher::SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,20.0,true);
                     Verbose::PrintMess("Reloc SearchByProjection - Additional:  " + to_string(nadditional), Verbose::VERBOSITY_DEBUG);
 
                     if(nadditional+nGood>=50)
@@ -1716,7 +1632,7 @@ bool Tracking::Relocalization()
                             for(int ip =0; ip<mCurrentFrame->mNumKeypoints; ip++)
                                 if(mCurrentFrame->mvpMapPoints[ip])
                                     sFound.insert(mCurrentFrame->mvpMapPoints[ip]);
-                            nadditional =matcher2.SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,3,64);
+                            nadditional = ORBmatcher::SearchByProjection(mCurrentFrame,vpCandidateKFs[i],sFound,20.0,true);
                             Verbose::PrintMess("Reloc SearchByProjection (2)- Additional:  " + to_string(nadditional), Verbose::VERBOSITY_DEBUG);
 
                             // Final optimization

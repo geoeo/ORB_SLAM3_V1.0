@@ -457,10 +457,7 @@ void LocalMapping::CreateNewMapPoints()
         vector<pair<size_t,size_t> > vMatchedIndices;
         bool bCoarse = mbInertial && mpTracker->mState==Tracking::RECENTLY_LOST && mpCurrentKeyFrame->GetMap()->GetInertialBA2();
 
-        // threshold does not seem to affect triangulation
-        float th = 0.6f;
-        ORBmatcher matcher(th,false);
-        matcher.SearchForTriangulation(mpCurrentKeyFrame,pKF2,vMatchedIndices,false,bCoarse);
+        ORBmatcher::SearchForTriangulation(mpCurrentKeyFrame,pKF2,vMatchedIndices,false,bCoarse, true);
 
         Sophus::SE3<float> sophTcw2 = pKF2->GetPose();
         Eigen::Matrix<float,3,4> eigTcw2 = sophTcw2.matrix3x4();
