@@ -1279,10 +1279,10 @@ void Tracking::SearchLocalPoints()
     if(nToMatch>0)
     {
         int th = 20;
-        float nnRatio = 0.45;
+        float nnRatio = 0.75;
         if(mpAtlas->isImuInitialized()){
             th=15;
-            nnRatio = 0.55;
+            nnRatio = 0.75;
         }
         
         const auto state = getTrackingState();
