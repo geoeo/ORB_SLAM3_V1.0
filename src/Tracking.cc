@@ -751,7 +751,7 @@ void Tracking::MonocularInitialization()
 
         // Find correspondences
         const auto windowSize = 40; // This parameter has to be large enough to ensure a good disparity but size will impact performance
-        auto [nmatches, vIniMatches] = ORBmatcher::SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize,0.25,true);
+        auto [nmatches, vIniMatches] = ORBmatcher::SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize,0.45,true);
 
         // Check if there are enough correspondences
         if(nmatches<FEAT_INIT_COUNT)
@@ -1281,7 +1281,8 @@ void Tracking::SearchLocalPoints()
         int th = 20;
         float nnRatio = 0.45;
         if(mpAtlas->isImuInitialized()){
-            th=10;
+            th=15;
+            nnRatio = 0.55;
         }
         
         const auto state = getTrackingState();
