@@ -981,7 +981,7 @@ bool Tracking::TrackReferenceKeyFrame()
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
     vector<shared_ptr<MapPoint>> vpMapPointMatches;
-    int nmatches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches,0.45,true);
+    int nmatches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches,0.65,true);
 
     if(nmatches<10)
     {
