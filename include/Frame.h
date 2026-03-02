@@ -52,9 +52,6 @@ class Frame : public std::enable_shared_from_this<Frame>
 public:
     Frame();
 
-    // Copy constructor.
-    Frame(const std::shared_ptr<Frame> frame);
-
     // Constructor for Monocular cameras.
     Frame(const cv::cuda::HostMem &im_managed_gray, const double &timeStamp, std::shared_ptr<ORBextractor> extractor, std::shared_ptr<ORBVocabulary> voc, 
         std::shared_ptr<GeometricCamera> pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, int frameGridRows, int frameGridCols,
