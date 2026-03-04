@@ -29,7 +29,7 @@ namespace ORB_SLAM3
 Viewer::Viewer(shared_ptr<FrameDrawer> pFrameDrawer, shared_ptr<MapDrawer> pMapDrawer, shared_ptr<Tracking> pTracking, const string &strSettingPath, std::shared_ptr<Settings> settings):
     both(false), mpFrameDrawer(pFrameDrawer),mpMapDrawer(pMapDrawer), mpTracker(pTracking), 
     mFixedTranslation(Eigen::Vector3f::Zero()), mbStopRequested(false), mbResetRequested(false),
-    mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true)
+    mbWrittenInitTrajectory(false), mbSaveInitTrajectory(true) // TODO: Add this to settings and rework settings into a struct that is being passed
 {
     if(settings){
         newParameterLoader(settings);
