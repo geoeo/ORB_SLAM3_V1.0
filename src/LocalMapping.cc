@@ -45,9 +45,9 @@ LocalMapping::LocalMapping(std::shared_ptr<Atlas> pAtlas, const float bMonocular
     minTimeForVIBA1(local_mapper.minTimeForVIBA1), minTimeForVIBA2(local_mapper.minTimeForVIBA2), minTimeForFullBA(local_mapper.minTimeForFullBA),
     itsFIBAInit(local_mapper.itsFIBAInit), itsFIBA1(local_mapper.itsFIBA1),
     priorAInit(local_mapper.priorAInit), priorGInit(local_mapper.priorGInit), priorA1(local_mapper.priorA1), priorG1(local_mapper.priorG1),
-    minTimeOffsetForGeorefBA(local_mapper.minTimeOffsetForGeorefBA) ,writeKFAfterGeorefCount(0), writeKFAfterGBACount(0),
+    minTimeOffsetForGeorefBA(local_mapper.minTimeOffsetForGeorefBA) ,writeKFAfterGeorefCompleted(false), GBAGeorefCompleted(false),
     mbUseGNSS(local_mapper.useGNSS), mbUseGNSSBA(local_mapper.useGNSSBA), mbWriteGNSSData(local_mapper.writeGNSSData), mbGeorefUpdate(local_mapper.georefUpdate),
-    mGeometricReferencer(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
+    mGeometricReferencer(local_mapper.minGeorefFramesInit), mMinGeorefFramesAfterInit(local_mapper.minGeorefFrames), mLatestOptimizedKFPoses({})
 {
 }
 
@@ -147,12 +147,12 @@ void LocalMapping::Run()
 
             }
 
-
+            // Wait minTimeOffsetForGeorefBA seconds before we apply georeference BA
             if(mpAtlas->GetCurrentMap()->GetInertialFullBA() && mbUseGNSS && (mTElapsedTime > (mInitCompleteTime + minTimeOffsetForGeorefBA))){
                 {
                     unique_lock<mutex> lockGlobal(*getGlobalDataMutex());
                     const auto georef_success = GeoreferenceKeyframes();
-                    if(georef_success && writeKFAfterGeorefCount == 0){
+                    if(georef_success && !writeKFAfterGeorefCompleted){
                         if(mbWriteGNSSData){
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
                             for(const auto kf : kfs)
@@ -160,13 +160,12 @@ void LocalMapping::Run()
                             Map::writeKeyframesCsv("keyframes_after_georef", kfs);
                             Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
                         }
-                        writeKFAfterGeorefCount = 1;
+                        writeKFAfterGeorefCompleted = true;
                     }
 
-                    // Wait minTimeOffsetForGeorefBA seconds before we apply georeference BA
                     if(mGeometricReferencer.isInitialized() && mbUseGNSSBA && !mbResetRequested){
                         unique_lock<mutex> lock(mpAtlas->GetCurrentMap()->mMutexMapUpdate);
-                        if(writeKFAfterGBACount == 0){
+                        if(!GBAGeorefCompleted){
                             Verbose::PrintMess("Starting GNSS Bundle Adjustment", Verbose::VERBOSITY_DEBUG);
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
                             Optimizer::LocalGNSSBundleAdjustment(mpCurrentKeyFrame, kfs, &mbAbortBA, mpAtlas->GetCurrentMap(), mGeometricReferencer);
@@ -176,10 +175,13 @@ void LocalMapping::Run()
                                 Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
                                 Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
                             }
-                            writeKFAfterGBACount = 1;
+                            GBAGeorefCompleted = true;
                         }
                     }
                 }
+
+                if(mGeometricReferencer.isInitialized() && mGeometricReferencer.getMinNrofFrames() != mMinGeorefFramesAfterInit)
+                    mGeometricReferencer.changeNumberOfMinFrames(mMinGeorefFramesAfterInit);
             }
 
             // Initialize IMU here
@@ -723,7 +725,12 @@ bool LocalMapping::GeoreferenceKeyframes(){
                 }
             });
         }
+
+        // kfsWithoutGeoref are now georeferenced, so we update the count in the referencer
         mGeometricReferencer.updateGeorefKFsCount(kfsWithoutGeoref.size());
+
+        // TODO: if georeferencer was initialized and BA has completed perform update to new kf size of set
+
     }
     return pose_scale_opt.has_value();
 }

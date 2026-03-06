@@ -40,6 +40,12 @@ bool GeometricReferencer::isInitialized() const
   return m_is_initialized;
 }
 
+int GeometricReferencer::getMinNrofFrames()
+{
+  unique_lock<mutex> lock(mMutexFrames);
+  return m_min_nrof_frames;
+}
+
 Sophus::Sim3d GeometricReferencer::getCurrentTransform()
 {
   unique_lock<mutex> lock(mMutexTransform);
@@ -53,6 +59,17 @@ void GeometricReferencer::addKeyFrame(shared_ptr<KeyFrame> kf){
     m_latest_frames_to_georef.push_back(kf);
     if(m_georefed_kfs_count > 0)
       --m_georefed_kfs_count;
+}
+
+void GeometricReferencer::changeNumberOfMinFrames(int min_nrof_frames){
+  unique_lock<mutex> lock(mMutexFrames);
+  const auto frames_without_georef = m_georefed_kfs_count < m_latest_frames_to_georef.size() ? vector<shared_ptr<KeyFrame>>(m_latest_frames_to_georef.cbegin()+m_georefed_kfs_count, m_latest_frames_to_georef.cend()) : vector<std::shared_ptr<KeyFrame>>();
+  while(min_nrof_frames <= m_latest_frames_to_georef.size()){
+    if(min_nrof_frames < frames_without_georef.size())
+      --m_georefed_kfs_count;
+    m_latest_frames_to_georef.pop_front();
+  }
+  m_min_nrof_frames = min_nrof_frames;
 }
 
 deque<shared_ptr<KeyFrame>> GeometricReferencer::getFramesForGeorefEstimation() {

@@ -102,10 +102,10 @@ class SlamNode : public rclcpp::Node
 
       // F4
       ORB_SLAM3::ImuParameters imu;
-      imu.accelWalk  = 0.0006431373218006597; //x1
-      imu.gyroWalk   = 0.000018714270991865037; //x1
-      imu.noiseAccel = 0.015592957173554883; //x10
-      imu.noiseGyro  = 0.0017019559710036963; // x10
+      imu.accelWalk  = 0.0064313732; //x100
+      imu.gyroWalk   = 0.0001871427; //x100
+      imu.noiseAccel = 0.1559295717; //x100
+      imu.noiseGyro  = 0.0170195597; // x100
       imu.InsertKFsWhenLost = false;
 
       cv::Mat cv_Tbc = cv::Mat::zeros(4,4,CV_32F);
@@ -174,6 +174,7 @@ class SlamNode : public rclcpp::Node
       local_mapper.useGNSSBA = true;
       local_mapper.writeGNSSData = true;
       local_mapper.georefUpdate = false;
+      local_mapper.minGeorefFramesInit = 60;
       local_mapper.minGeorefFrames = 10;
       
       // F6
