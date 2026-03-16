@@ -176,13 +176,14 @@ protected:
     const float priorA1;
     const float priorG1;
     const float minTimeOffsetForGeorefBA;
-    int writeKFAfterGeorefCount;
-    int writeKFAfterGBACount;
+    bool writeKFAfterGeorefCompleted;
+    bool GBAGeorefCompleted;
 
     bool mbUseGNSS;
     bool mbUseGNSSBA;
     bool mbWriteGNSSData;
     bool mbGeorefUpdate;
+    int mMinGeorefFramesAfterInit;
 
     std::vector<std::pair<long unsigned int,Sophus::SE3f>> mLatestOptimizedKFPoses;
     GeometricReferencer mGeometricReferencer;

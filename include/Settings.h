@@ -80,6 +80,7 @@ namespace ORB_SLAM3 {
         bool useGNSSBA;
         bool writeGNSSData;
         bool georefUpdate; 
+        int minGeorefFramesInit;
         int minGeorefFrames;
     };
 

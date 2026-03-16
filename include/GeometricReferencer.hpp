@@ -24,11 +24,13 @@ namespace ORB_SLAM3
     std::optional<Sophus::Sim3d> apply(const std::deque<std::shared_ptr<KeyFrame>> &frames, bool do_update);
     Sophus::Sim3d update(const std::deque<std::shared_ptr<KeyFrame>> &spatials);
     Sophus::Sim3d getCurrentTransform();
+    int getMinNrofFrames();
 
     bool isInitialized() const;
     void clear();
     void clearFrames();
     void updateGeorefKFsCount(size_t count);
+    void changeNumberOfMinFrames(int min_nrof_frames);
   private:
     bool m_is_initialized;
     int m_min_nrof_frames;

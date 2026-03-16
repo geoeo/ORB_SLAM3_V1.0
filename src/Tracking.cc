@@ -642,7 +642,7 @@ void Tracking::Track()
         if(mpViewer)
             mpFrameDrawer->Update(shared_from_this());
 
-        if(mCurrentFrame->isSet())
+        if(mCurrentFrame->isSet() && mpViewer)
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->GetPose());
 
         if(bOK || getTrackingState()==RECENTLY_LOST)
@@ -653,10 +653,6 @@ void Tracking::Track()
                 Sophus::SE3f LastTwc = mLastFrame->GetPose().inverse();
                 mLastFramePostDelta = mCurrentFrame->GetPose() * LastTwc;
             }
-
-
-            if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-                mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->GetPose());
 
             // Clean VO matches
             for(int i=0; i<mCurrentFrame->mNumKeypoints; i++)
@@ -700,13 +696,14 @@ void Tracking::Track()
         if(!mCurrentFrame->mpReferenceKF)
             mCurrentFrame->mpReferenceKF = mpReferenceKF;
 
-        //mLastFrame = std::make_shared<Frame>(mCurrentFrame);
     }
 
 
 
 
-    mLastFrame = make_shared<Frame>(mCurrentFrame);
+    mLastFrame = mCurrentFrame;
+    if(mLastFrame->mpPrevFrame)
+        mLastFrame->mpPrevFrame = nullptr; // Avoid keeping reference to previous frame, which is not needed anymore and can cause large memory occupancy
     Verbose::PrintMess("Tracking State:  " + to_string(getTrackingState()), Verbose::VERBOSITY_NORMAL);
 }
 
@@ -720,7 +717,7 @@ void Tracking::MonocularInitialization()
         if(mCurrentFrame->mvKeysUn->size()>FEAT_INIT_COUNT)
         {
 
-            mInitialFrame = std::make_shared<Frame>(mCurrentFrame);
+            mInitialFrame = mCurrentFrame;
             mInitialFrame->SetPose(Sophus::SE3f());
 
             if(mpViewer)
@@ -902,7 +899,7 @@ void Tracking::CreateInitialMapMonocular(const vector<int> &vIniMatches, const v
 
     mLastFramePostDelta = Sophus::SE3f();
 
-    mLastFrame = std::make_shared<Frame>(mCurrentFrame);
+    mLastFrame = mCurrentFrame;
 
     mpAtlas->SetReferenceMapPoints(mvpLocalMapPoints);
 
