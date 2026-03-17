@@ -978,7 +978,8 @@ bool Tracking::TrackReferenceKeyFrame()
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
     vector<shared_ptr<MapPoint>> vpMapPointMatches;
-    int nmatches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches,0.65,true);
+    float nnRatio = 0.75;
+    int nmatches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches,nnRatio,true);
 
     if(nmatches<10)
     {
@@ -1276,10 +1277,10 @@ void Tracking::SearchLocalPoints()
     if(nToMatch>0)
     {
         int th = 20;
-        float nnRatio = 0.75;
+        float nnRatio = 0.85;
         if(mpAtlas->isImuInitialized()){
-            th=15;
-            nnRatio = 0.75;
+            th=20;
+            nnRatio = 0.85;
         }
         
         const auto state = getTrackingState();

@@ -77,7 +77,7 @@ namespace ORB_SLAM3
 
     const int PATCH_SIZE = 31;
     const int HALF_PATCH_SIZE = 15;
-    const int EDGE_THRESHOLD = 25; // Seems to have be important for using the pattern
+    const int EDGE_THRESHOLD = 19; // Seems to be important for using the pattern
 
     ORBextractor::ORBextractor(int _nFeatures, int _nFastFeatures, float _scaleFactor, int _nlevels,
                                int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):
@@ -142,7 +142,7 @@ namespace ORB_SLAM3
             ++v0;
         }
 
-        gpuGaussian = cv::cuda::createGaussianFilter(CV_8UC1,CV_8UC1,Size(7, 7),1.2,1.2,BORDER_REFLECT_101);
+        gpuGaussian = cv::cuda::createGaussianFilter(CV_8UC1,CV_8UC1,Size(5, 5),1.2,1.2,BORDER_REFLECT_101);
 
         AllocatePyramid(imageWidth, imageHeight);
         ORB_SLAM3::cuda::angle::Angle::loadUMax(umax.data(), umax.size());

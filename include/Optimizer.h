@@ -53,7 +53,7 @@ public:
                                  const bool bRobust = true);
     void static GlobalBundleAdjustemnt(std::shared_ptr<Map> pMap, int nIterations=5, bool *pbStopFlag=NULL,
                                        const unsigned long nLoopKF=0, const bool bRobust = true);
-    void static FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6, Eigen::VectorXd *vSingVal = NULL, bool *bHess=NULL);
+    void static FullInertialBA(std::shared_ptr<Map> pMap, int its, const bool bFixLocal=false, const unsigned long nLoopKF=0, bool *pbStopFlag=NULL, bool bInit=false, float priorG = 1e2, float priorA=1e6);
 
     void static LocalBundleAdjustment(std::shared_ptr<KeyFrame> pKF, bool *pbStopFlag, std::shared_ptr<Map> pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges);
     
@@ -85,8 +85,6 @@ public:
 
     // Inertial pose-graph
     void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bFixScale, Eigen::MatrixXd  &covInertial, bool bFixedVel=false, bool bGauss=false, float priorG = 1e2, float priorA = 1e6);
-    void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Vector3d &bg, Eigen::Vector3d &ba, float priorG = 1e2, float priorA = 1e6);
-    void static InertialOptimization(std::shared_ptr<Map> pMap, Eigen::Matrix3d &Rwg, double &scale);
 
     void static ComputeAndFillLocalMapPoints(const std::vector<std::shared_ptr<KeyFrame>> &vpKFs, std::shared_ptr<Map> pMap, size_t maxMapPointsPerFrame, unsigned long int initialFrameId, std::list<std::shared_ptr<MapPoint>> &spLocalMapPoints_mut);
 

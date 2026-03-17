@@ -70,8 +70,8 @@ namespace ORB_SLAM3
         static int Fuse(std::shared_ptr<KeyFrame> pKF, Sophus::Sim3f &Scw, const std::vector<std::shared_ptr<MapPoint>> &vpPoints, float th, std::vector<std::shared_ptr<MapPoint>> &vpReplacePoint);
 
     public:
-        static constexpr int TH_LOW = 30;
-        static constexpr int TH_HIGH = 100;
+        static constexpr int TH_LOW = 50;
+        static constexpr int TH_HIGH = 500;
         static constexpr size_t HISTO_LENGTH = 30;
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
