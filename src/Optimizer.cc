@@ -2450,13 +2450,13 @@ vector<pair<long unsigned int,Sophus::SE3f>> Optimizer::LocalInertialBA(shared_p
     ZoneNamedN(LocalInertialBA, "LocalInertialBA", true); 
 
     // Full optimizable KFs
-    const int maxOpt=5;
-    const int opt_it=5;
+    const int maxOpt=20;
+    const int opt_it=20;
     // Optimizable visual KFs
     const int maxCovisibleKF = 0;
     //const int maxMapPoints = 1000;
     //const size_t maxMapPointsPerFrame = std::floor(maxMapPoints/(maxOpt+maxCovisibleKF));
-    const size_t maxMapPointsPerFrame = 1500;
+    const size_t maxMapPointsPerFrame = 10000;
     const int Nd = std::min((int)pMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 

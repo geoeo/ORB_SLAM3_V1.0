@@ -77,7 +77,7 @@ namespace ORB_SLAM3
 
     const int PATCH_SIZE = 31;
     const int HALF_PATCH_SIZE = 15;
-    const int EDGE_THRESHOLD = 19; // Seems to be important for using the pattern
+    const int EDGE_THRESHOLD = 5; // Seems to be important for using the pattern
 
     ORBextractor::ORBextractor(int _nFeatures, int _nFastFeatures, float _scaleFactor, int _nlevels,
                                int _iniThFAST, int _minThFAST, int imageWidth, int imageHeight):

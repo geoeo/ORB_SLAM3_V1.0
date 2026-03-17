@@ -25,7 +25,7 @@ class SlamNode : public rclcpp::Node
   public:
     SlamNode(std::string path_to_vocab, bool bEqual) : Node("mono_intertial_node"), path_to_vocab_(path_to_vocab), bEqual_(bEqual)
     {
-      float resize_factor = 0.4;
+      float resize_factor = 0.6;
 
       // F6
       ORB_SLAM3::CameraParameters cam{};
@@ -97,8 +97,8 @@ class SlamNode : public rclcpp::Node
       orb.nFastFeatures = 86000;
       orb.nLevels     = 6;
       orb.scaleFactor = 1.2;
-      orb.iniThFast   = 20;
-      orb.minThFast   = 15;
+      orb.iniThFast   = 40;
+      orb.minThFast   = 35;
 
 
       // F6
@@ -200,13 +200,13 @@ class SlamNode : public rclcpp::Node
       //double timeshift_cam_imu = 0.00851880502751802;
 
       ORB_SLAM3::TrackerParameters tracker_settings;
-      tracker_settings.frameGridCols = 128;
-      tracker_settings.frameGridRows = 96;
+      tracker_settings.frameGridCols = 512;
+      tracker_settings.frameGridRows = 512;
       tracker_settings.maxLocalKFCount = 15;
       tracker_settings.featureThresholdForKF = 200;
       tracker_settings.maxFrames = 10;
 
-      const double clahe_clip_limit = 80.0;
+      const double clahe_clip_limit = 30.0;
       const int clahe_grid_size = 8;
 
       // Create SLAM system. It initializes all system threads and gets ready to process frames.
