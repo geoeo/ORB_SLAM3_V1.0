@@ -591,52 +591,17 @@ void Tracking::Track()
             setTrackingState(OK);
         else if (getTrackingState() == OK)
         {
-            // if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
-            // {
-                Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
-                if(!mpAtlas->GetCurrentMap()->isImuInitialized())
-                {
-                    Verbose::PrintMess("IMU is not or recently initialized. Reseting active map..", Verbose::VERBOSITY_NORMAL);
-                    setTrackingState(LOST);
-                }
-                else
-                    setTrackingState(RECENTLY_LOST);
-            // }
-            // else
-            //     setTrackingState(RECENTLY_LOST); // visual to lost
+            Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
+            if(!mpAtlas->GetCurrentMap()->isImuInitialized())
+            {
+                Verbose::PrintMess("IMU is not or recently initialized. Reseting active map..", Verbose::VERBOSITY_NORMAL);
+                setTrackingState(LOST);
+            }
+            else
+                setTrackingState(RECENTLY_LOST);
 
-            /*if(mCurrentFrame.mnId>mnLastRelocFrameId+mMaxFrames)
-            {*/
-                mTimeStampLost = mCurrentFrame->mTimeStamp;
-            //}
+            mTimeStampLost = mCurrentFrame->mTimeStamp;
         }
-
-        // Save frame if recent relocalization, since they are used for IMU reset (as we are making copy, it should be once mCurrFrame is completely modified)
-        // if((mCurrentFrame.mnId<(mnLastRelocFrameId+mnFramesToResetIMU)) && (mCurrentFrame.mnId > mnFramesToResetIMU) &&
-        //    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD) && mpAtlas->GetCurrentMap()->isImuInitialized())
-        // {
-/*             // TODO check this situation
-            Verbose::PrintMess("Saving pointer to frame. imu needs reset...", Verbose::VERBOSITY_NORMAL);
-            Frame* pF = new Frame(mCurrentFrame);
-            pF->mpPrevFrame = new Frame(mLastFrame);
-
-            // Load preintegration
-            pF->mpImuPreintegratedFrame = new IMU::Preintegrated(mCurrentFrame.mpImuPreintegratedFrame); */
-        // }
-
-        // if(mpAtlas->GetCurrentMap()->isImuInitialized())
-        // {
-        //     if(bOK)
-        //     {
-        //         if(mCurrentFrame.mnId==(mnLastRelocFrameId+mnFramesToResetIMU))
-        //         {
-        //             Verbose::PrintMess("resetting Imu Frame", Verbose::VERBOSITY_NORMAL);
-        //             ResetFrameIMU();
-        //         }
-        //         else if(mCurrentFrame.mnId>(mnLastRelocFrameId+30))
-        //             mLastBias = mCurrentFrame.mImuBias;
-        //     }
-        // }
 
         // Update drawer
         if(mpViewer)
@@ -1055,16 +1020,6 @@ bool Tracking::TrackLocalMap()
     UpdateLocalMap();
     SearchLocalPoints();
 
-    // TOO check outliers before PO
-    // int aux1 = 0, aux2=0;
-    // for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
-    //     if( mCurrentFrame.mvpMapPoints[i])
-    //     {
-    //         aux1++;
-    //         if(mCurrentFrame.mvbOutlier[i])
-    //             aux2++;
-    //     }
-
     const auto inlierImuThreshold = 8;
     int inliers;
     if (!mpAtlas->isImuInitialized()){
@@ -1111,15 +1066,6 @@ bool Tracking::TrackLocalMap()
         }
     }
 
-    // aux1 = 0, aux2 = 0;
-    // for(int i=0; i<mCurrentFrame.mNumKeypoints; i++)
-    //     if( mCurrentFrame.mvpMapPoints[i])
-    //     {
-    //         aux1++;
-    //         if(mCurrentFrame.mvbOutlier[i])
-    //             aux2++;
-    //     }
-
     mnMatchesInliers = 0;
 
     // Update MapPoints Statistics
@@ -1143,46 +1089,19 @@ bool Tracking::TrackLocalMap()
         }
     }
 
-    // Decide if the tracking was succesful
-    // More restrictive if there was a relocalization recently
-    //mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
-    // if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<30)
-    //     return false;
-
     if((mnMatchesInliers>10)&&(getTrackingState()==RECENTLY_LOST))
         return true;
 
-    //if (mSensor == System::IMU_MONOCULAR)
-    //{
     const auto pred = (mnMatchesInliers<inlierImuThreshold && mpAtlas->isImuInitialized())||(mnMatchesInliers<30 && !mpAtlas->isImuInitialized());
     return !pred;
-    // }
-    // else
-    // {
-    //     return mnMatchesInliers>=30;
-    // }
 }
 
 bool Tracking::NeedNewKeyFrame()
 {
-    // if((mSensor == System::IMU_MONOCULAR) && !mpAtlas->GetCurrentMap()->isImuInitialized())
-    // {
-    //     if ((mSensor == System::IMU_MONOCULAR) && (mCurrentFrame.mTimeStamp-mpLastKeyFrame->mTimeStamp)>=0.25)
-    //         return true;
-    //     else
-    //         return false;
-    // }
-
     if(mbOnlyTracking)
         return false;
 
     const int nKFs = mpAtlas->KeyFramesInMap();
-
-    // Do not insert keyframes if not enough frames have passed from last relocalisation
-    // if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && nKFs>mMaxFrames)
-    // {
-    //     return false;
-    // }
 
     // Tracked MapPoints in the reference keyframe
     int nMinObs = 3;
