@@ -500,13 +500,6 @@ void Tracking::Track()
         if(bOK)
             setTrackingState(OK);
 
-        // Update drawer
-        if(mpViewer)
-            mpFrameDrawer->Update(shared_from_this());
-
-        if(mCurrentFrame->isSet() && mpViewer)
-            mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->GetPose());
-
         if(bOK)
         {
             // Clean VO matches
@@ -560,6 +553,14 @@ void Tracking::Track()
     mLastFrame = mCurrentFrame;
     if(mLastFrame->mpPrevFrame)
         mLastFrame->mpPrevFrame = nullptr; // Avoid keeping reference to previous frame, which is not needed anymore and can cause large memory occupancy
+
+        // Update drawer
+    if(mpViewer)
+        mpFrameDrawer->Update(shared_from_this());
+
+    if(mCurrentFrame->isSet() && mpViewer)
+        mpMapDrawer->SetCurrentCameraPose(mCurrentFrame->GetPose());
+
     Verbose::PrintMess("Tracking State:  " + to_string(getTrackingState()), Verbose::VERBOSITY_NORMAL);
 }
 
