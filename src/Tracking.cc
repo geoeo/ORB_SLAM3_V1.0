@@ -1193,7 +1193,7 @@ void Tracking::SearchLocalPoints()
         float nnRatio = 0.85;
         if(mpAtlas->isImuInitialized()){
             th=20;
-            nnRatio = 0.75;
+            nnRatio = 0.85;
         }
 
         auto matches = ORBmatcher::SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints, nnRatio, true);
