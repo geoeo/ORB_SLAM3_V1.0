@@ -958,10 +958,10 @@ bool Tracking::TrackLocalMap()
         if(!mbMapUpdated && mpcpiExists)
         {
             Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame", Verbose::VERBOSITY_DEBUG);
-            if(!mpLocalMapper->isGeorefInitialized()){
+            //if(!mpLocalMapper->isGeorefInitialized()){
                 inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);
                 Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-            }
+            //}
             //if(inliers < inlierImuThreshold){
                 // if(mpLocalMapper->isGeorefInitialized()){
                 //     //TODO: Try Gnss fallback here
@@ -998,10 +998,10 @@ bool Tracking::TrackLocalMap()
         else
         {
             Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame", Verbose::VERBOSITY_DEBUG);
-            if(!mpLocalMapper->isGeorefInitialized()){
+            //if(!mpLocalMapper->isGeorefInitialized()){
                 inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame);
                 Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-            }
+            //}
 
             //if(inliers < inlierImuThreshold){
                 //inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);  
