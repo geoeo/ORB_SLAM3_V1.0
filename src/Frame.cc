@@ -186,8 +186,6 @@ void Frame::ExtractORB(int flag, const cv::cuda::HostMem &im_managed)
         mvKeys = keys;
         mDescriptors = descriptors;
     }
-
-
 }
 
 bool Frame::isSet() const {

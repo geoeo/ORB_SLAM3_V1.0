@@ -377,6 +377,10 @@ public:
     Eigen::Matrix<float,3,3> GetRightRotation();
     Eigen::Vector3f GetRightTranslation();
 
+    inline Eigen::Vector3f GetGNSS() const {
+        return mGNSSPosition;
+    }
+
 
 };
 

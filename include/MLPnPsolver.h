@@ -62,7 +62,7 @@ namespace ORB_SLAM3{
 
         MLPnPsolver(const std::shared_ptr<Frame> F, const vector<std::shared_ptr<MapPoint>> &vpMapPointMatches);
 
-        ~MLPnPsolver();
+        //~MLPnPsolver();
 
         void SetRansacParameters(double probability = 0.99, int minInliers = 8, int maxIterations = 300, int minSet = 6, float epsilon = 0.4,
                                  float th2 = 5.991);
