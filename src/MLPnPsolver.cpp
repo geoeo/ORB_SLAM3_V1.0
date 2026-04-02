@@ -49,6 +49,7 @@
 #include <MLPnPsolver.h>
 
 #include <Eigen/Sparse>
+#include <Verbose.h>
 
 
 namespace ORB_SLAM3 {
@@ -104,6 +105,7 @@ namespace ORB_SLAM3 {
 
 	    if(N<mRansacMinInliers)
 	    {
+            Verbose::PrintMess("Ransac abort - Inliers N: " + to_string(N) + " < " + to_string(mRansacMinInliers), Verbose::VERBOSITY_NORMAL);
 	        bNoMore = true;
 	        return false;
 	    }
@@ -164,7 +166,6 @@ namespace ORB_SLAM3 {
 
 	        // Check inliers
 	        CheckInliers();
-
 	        if(mnInliersi>=mRansacMinInliers)
 	        {
 	            // If it is the best solution so far, save it
@@ -200,7 +201,6 @@ namespace ORB_SLAM3 {
 
 	        }
 	    }
-
 	    if(mnIterations>=mRansacMaxIts)
 	    {
 	        bNoMore=true;
