@@ -429,8 +429,7 @@ void Tracking::Track()
     {
         Verbose::PrintMess("TRACK: Init ", Verbose::VERBOSITY_DEBUG);
         MonocularInitialization();
-        
-        //mpFrameDrawer->Update(this);
+
 
         if(getTrackingState()!=OK) // If rightly initialized, mState=OK
             Verbose::PrintMess("TRACK: Init was not OK", Verbose::VERBOSITY_DEBUG);
@@ -462,7 +461,6 @@ void Tracking::Track()
                 {
                     Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                     bOK = TrackWithMotionModel();
-                        //bOK = TrackReferenceKeyFrame();
                 }
 
 
@@ -605,7 +603,8 @@ void Tracking::MonocularInitialization()
 
         // Find correspondences
         const auto windowSize = 40; // This parameter has to be large enough to ensure a good disparity but size will impact performance
-        auto [nmatches, vIniMatches] = ORBmatcher::SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize,0.45,true);
+        const auto nnRatio = 0.45f; 
+        auto [nmatches, vIniMatches] = ORBmatcher::SearchForInitialization(mInitialFrame,mCurrentFrame,windowSize,nnRatio,true);
 
         // Check if there are enough correspondences
         if(nmatches<FEAT_INIT_COUNT)
@@ -870,20 +869,6 @@ bool Tracking::TrackReferenceKeyFrame()
         Optimizer::PoseOptimization(mCurrentFrame);
     }
 
-    // if(nInliers<10)
-    // {
-    //     Verbose::PrintMess("TRACK_REF_KF: Less than 10 inliers - " + to_string(nInliers), Verbose::VERBOSITY_NORMAL);
-    //     return false;
-    // }
-
-    //mCurrentFrame->mvpMapPoints = vpMapPointMatches;
-    //
-
-    //mCurrentFrame.PrintPointDistribution();
-
-
-    //Optimizer::PoseOptimization(mCurrentFrame);
-
     // Discard outliers
     int nmatchesMap = 0;
     
@@ -958,87 +943,14 @@ bool Tracking::TrackLocalMap()
         if(!mbMapUpdated && mpcpiExists)
         {
             Verbose::PrintMess("TLM: PoseInertialOptimizationLastFrame", Verbose::VERBOSITY_DEBUG);
-            //if(!mpLocalMapper->isGeorefInitialized()){
-                inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);
-                Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-            //}
-            //if(inliers < inlierImuThreshold){
-                // if(mpLocalMapper->isGeorefInitialized()){
-                //     //TODO: Try Gnss fallback here
-                //     Verbose::PrintMess("TRACK: Track with GNSS init", Verbose::VERBOSITY_NORMAL);
-                //     const auto Tyg = mpLocalMapper->getGeorefTransform().inverse();
-                //     const auto TCurr = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mCurrentFrame->GetGNSS().cast<double>());
-                //     const auto TLast = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mLastFrame->GetGNSS().cast<double>());
-
-                //     // We transform GNSS delta to inertial frame
-                //     const auto Tlc_cam = TLast.inverse() * TCurr;
-                //     const auto Twc_last = mLastFrame->GetPoseInverse();
-                //     const auto Twc_last_simd3d = Sophus::Sim3d(1.0,Twc_last.unit_quaternion().cast<double>(),Twc_last.translation().cast<double>());
-
-                //     const auto Twc_curr_sim3d = Twc_last_simd3d*Tlc_cam;
-                //     const auto Tcw_curr = Twc_curr_sim3d.inverse();
-
-                //     const auto Tcw_curr_se3f = Sophus::SE3f(Tcw_curr.quaternion().cast<float>(), Tcw_curr.translation().cast<float>());
-                //     const auto diff = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
-                //     mCurrentFrame->SetPose(Tcw_curr_se3f);
-
-                //     inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);
-                //     const auto diff_2 = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
-
-                //     Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-                //     Verbose::PrintMess("Translation diff:  X - " + to_string(diff.translation().x()) + " Y - " + to_string(diff.translation().y()) + " Z - " + to_string(diff.translation().z()), Verbose::VERBOSITY_NORMAL);
-                //     Verbose::PrintMess("Translation diff 2:  X - " + to_string(diff_2.translation().x()) + " Y - " + to_string(diff_2.translation().y()) + " Z - " + to_string(diff_2.translation().z()), Verbose::VERBOSITY_NORMAL);
-                // }
-                //inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame);
-
-
-            //}
-        
+            inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);
+            Verbose::PrintMess("inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
         }
         else
         {
             Verbose::PrintMess("TLM: PoseInertialOptimizationLastKeyFrame", Verbose::VERBOSITY_DEBUG);
-            //if(!mpLocalMapper->isGeorefInitialized()){
-                inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame);
-                Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-            //}
-
-            //if(inliers < inlierImuThreshold){
-                //inliers = Optimizer::PoseInertialOptimizationLastFrame(mCurrentFrame, inlierImuThreshold);  
-                //Verbose::PrintMess("2# inliers last frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-                // if(mpLocalMapper->isGeorefInitialized()){
-                //     //TODO: Try Gnss fallback here
-                //     Verbose::PrintMess("TRACK: Track with GNSS init", Verbose::VERBOSITY_NORMAL);
-                //     const auto Tgy = mpLocalMapper->getGeorefTransform();
-                //     const auto Tyg = Tgy.inverse();
-                //     const auto Twc_last = mpLastKeyFrame->GetPoseInverse();
-
-                //     const auto TCurr = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mCurrentFrame->GetGNSS().cast<double>());
-                //     const auto TLastKey = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mpLastKeyFrame->GetGNSS().cast<double>());
-
-                //     // We transform GNSS delta to inertial frame
-                //     const auto Tlc_cam = TLastKey.inverse() * TCurr;
- 
-                //     const auto Twc_last_simd3d = Sophus::Sim3d(1.0,Twc_last.unit_quaternion().cast<double>(),Twc_last.translation().cast<double>());
-
-                //     const auto Twc_curr_sim3d = Twc_last_simd3d*Tlc_cam;
-                //     const auto Tcw_curr = Twc_curr_sim3d.inverse();
-
-                //     const auto Tcw_curr_se3f = Sophus::SE3f(Tcw_curr.quaternion().cast<float>(), Tcw_curr.translation().cast<float>());
-                //     const auto diff = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
-                //     mCurrentFrame->SetPose(Tcw_curr_se3f);
-
-                //     inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame, inlierImuThreshold);
-                //     const auto diff_2 = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
-                //     Verbose::PrintMess("inliers last key frame:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
-                //     Verbose::PrintMess("Translation diff:  X - " + to_string(diff.translation().x()) + " Y - " + to_string(diff.translation().y()) + " Z - " + to_string(diff.translation().z()), Verbose::VERBOSITY_NORMAL);
-                //     Verbose::PrintMess("Translation diff 2:  X - " + to_string(diff_2.translation().x()) + " Y - " + to_string(diff_2.translation().y()) + " Z - " + to_string(diff_2.translation().z()), Verbose::VERBOSITY_NORMAL);
-                //     //bOK = true;
-                //     //setTrackingState(OK);
-                //     //setTrackingState(LOST); //Temp to skip
-                // }
-            //}
-
+            inliers = Optimizer::PoseInertialOptimizationLastKeyFrame(mCurrentFrame);
+            Verbose::PrintMess("inliers last key:  " + to_string(inliers), Verbose::VERBOSITY_NORMAL);
         }
     
     }
@@ -1172,13 +1084,17 @@ void Tracking::SearchLocalPoints()
         if(mpLocalMapper->isGeorefInitialized()){
             //TODO: Try Gnss fallback here
             Verbose::PrintMess("TRACK: Track with GNSS init", Verbose::VERBOSITY_NORMAL);
-            const auto Tyg = mpLocalMapper->getGeorefTransform().inverse();
-            const auto TCurr = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mCurrentFrame->GetGNSS().cast<double>());
-            const auto TLast = Tyg * Sophus::Sim3d(1.0,Eigen::Quaterniond::Identity(),mLastFrame->GetGNSS().cast<double>());
+            const auto Tgy = mpLocalMapper->getGeorefTransform();
+            const auto Tyg = Tgy.inverse();
+            const auto targetFrame = mLastFrame; //mLastFrame, mpLastKeyFrame
+            const auto Rgc_curr = Tgy.quaternion()*mCurrentFrame->GetPoseInverse().unit_quaternion().cast<double>();
+            const auto Rgc_target = Tgy.quaternion()*targetFrame->GetPoseInverse().unit_quaternion().cast<double>();
+            const auto TCurr = Tyg * Sophus::Sim3d(1.0,Rgc_curr,mCurrentFrame->GetGNSS().cast<double>());
+            const auto TTarget = Tyg * Sophus::Sim3d(1.0,Rgc_target,targetFrame->GetGNSS().cast<double>());
 
             // We transform GNSS delta to inertial frame
-            const auto Tlc_cam = TLast.inverse() * TCurr;
-            const auto Twc_last = mLastFrame->GetPoseInverse();
+            const auto Tlc_cam = TTarget.inverse() * TCurr;
+            const auto Twc_last = targetFrame->GetPoseInverse();
             const auto Twc_last_simd3d = Sophus::Sim3d(1.0,Twc_last.unit_quaternion().cast<double>(),Twc_last.translation().cast<double>());
 
             const auto Twc_curr_sim3d = Twc_last_simd3d*Tlc_cam;
@@ -1192,43 +1108,11 @@ void Tracking::SearchLocalPoints()
         int th = 20;
         float nnRatio = 0.85;
         if(mpAtlas->isImuInitialized()){
-            th=20;
-            nnRatio = 0.85;
+            th=40;
+            nnRatio = 0.75;
         }
 
         auto matches = ORBmatcher::SearchByProjection(mCurrentFrame, mvpLocalMapPoints, th, false, mpLocalMapper->mThFarPoints, nnRatio, true);
-        //auto matches = ORBmatcher::SearchByBoW(mpReferenceKF,mCurrentFrame,mvpLocalMapPoints,nnRatio,true);
-        auto pSolver = std::make_unique<MLPnPsolver>(mCurrentFrame,mvpLocalMapPoints);
-        pSolver->SetRansacParameters(0.99,50,300,12,0.5,5.991);  //This solver needs at least 6 points
-        // Perform 5 Ransac Iterations
-        vector<bool> vbInliers;
-        int nInliers;
-        bool bNoMore;
-
-        Eigen::Matrix4f eigTcw;
-        bool bTcw = pSolver->iterate(20,bNoMore,vbInliers,nInliers, eigTcw);
-        if(bTcw)
-        {
-            Sophus::SE3f Tcw(eigTcw);
-            mCurrentFrame->SetPose(Tcw);
-            const int np = vbInliers.size();
-
-            for(int j=0; j<np; j++)
-            {
-                if(vbInliers[j])
-                {
-                    mCurrentFrame->mvpMapPoints[j]=mvpLocalMapPoints[j];
-                }
-                else
-                    mCurrentFrame->mvpMapPoints[j]=nullptr;
-            }
-            Verbose::PrintMess("SearchLocalPoints Ransac success - Inliers: " +to_string(nInliers), Verbose::VERBOSITY_NORMAL);
-        }
-
-
-
-
-        Verbose::PrintMess("SearchLocalPoints matches: " +to_string(matches), Verbose::VERBOSITY_DEBUG);
     }
 }
 
