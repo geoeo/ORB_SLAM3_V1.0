@@ -1081,29 +1081,29 @@ void Tracking::SearchLocalPoints()
 
     if(nToMatch>0)
     {        
-        if(mpLocalMapper->isGeorefInitialized()){
-            //TODO: Try Gnss fallback here
-            Verbose::PrintMess("TRACK: Track with GNSS init", Verbose::VERBOSITY_NORMAL);
-            const auto Tgy = mpLocalMapper->getGeorefTransform();
-            const auto Tyg = Tgy.inverse();
-            const auto targetFrame = mLastFrame; //mLastFrame, mpLastKeyFrame
-            const auto Rgc_curr = Tgy.quaternion()*mCurrentFrame->GetPoseInverse().unit_quaternion().cast<double>();
-            const auto Rgc_target = Tgy.quaternion()*targetFrame->GetPoseInverse().unit_quaternion().cast<double>();
-            const auto TCurr = Tyg * Sophus::Sim3d(1.0,Rgc_curr,mCurrentFrame->GetGNSS().cast<double>());
-            const auto TTarget = Tyg * Sophus::Sim3d(1.0,Rgc_target,targetFrame->GetGNSS().cast<double>());
+        // if(mpLocalMapper->isGeorefInitialized()){
+        //     //TODO: Try Gnss fallback here
+        //     Verbose::PrintMess("TRACK: Track with GNSS init", Verbose::VERBOSITY_NORMAL);
+        //     const auto Tgy = mpLocalMapper->getGeorefTransform();
+        //     const auto Tyg = Tgy.inverse();
+        //     const auto targetFrame = mLastFrame; //mLastFrame, mpLastKeyFrame
+        //     const auto Rgc_curr = Tgy.quaternion()*mCurrentFrame->GetPoseInverse().unit_quaternion().cast<double>();
+        //     const auto Rgc_target = Tgy.quaternion()*targetFrame->GetPoseInverse().unit_quaternion().cast<double>();
+        //     const auto TCurr = Tyg * Sophus::Sim3d(1.0,Rgc_curr,mCurrentFrame->GetGNSS().cast<double>());
+        //     const auto TTarget = Tyg * Sophus::Sim3d(1.0,Rgc_target,targetFrame->GetGNSS().cast<double>());
 
-            // We transform GNSS delta to inertial frame
-            const auto Tlc_cam = TTarget.inverse() * TCurr;
-            const auto Twc_last = targetFrame->GetPoseInverse();
-            const auto Twc_last_simd3d = Sophus::Sim3d(1.0,Twc_last.unit_quaternion().cast<double>(),Twc_last.translation().cast<double>());
+        //     // We transform GNSS delta to inertial frame
+        //     const auto Tlc_cam = TTarget.inverse() * TCurr;
+        //     const auto Twc_last = targetFrame->GetPoseInverse();
+        //     const auto Twc_last_simd3d = Sophus::Sim3d(1.0,Twc_last.unit_quaternion().cast<double>(),Twc_last.translation().cast<double>());
 
-            const auto Twc_curr_sim3d = Twc_last_simd3d*Tlc_cam;
-            const auto Tcw_curr = Twc_curr_sim3d.inverse();
+        //     const auto Twc_curr_sim3d = Twc_last_simd3d*Tlc_cam;
+        //     const auto Tcw_curr = Twc_curr_sim3d.inverse();
 
-            const auto Tcw_curr_se3f = Sophus::SE3f(Tcw_curr.quaternion().cast<float>(), Tcw_curr.translation().cast<float>());
-            const auto diff = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
-            mCurrentFrame->SetPose(Tcw_curr_se3f);
-        }
+        //     const auto Tcw_curr_se3f = Sophus::SE3f(Tcw_curr.quaternion().cast<float>(), Tcw_curr.translation().cast<float>());
+        //     const auto diff = Tcw_curr_se3f.inverse() * mCurrentFrame->GetPose();
+        //     mCurrentFrame->SetPose(Tcw_curr_se3f);
+        // }
 
         int th = 20;
         float nnRatio = 0.85;
