@@ -420,7 +420,7 @@ void FrameDrawer::Update(shared_ptr<Tracking> pTracker)
     mvIniKeys=pTracker->mInitialFrame->mvKeysUn;
     mvCurrentTrackedMapPoints = currentFrame->mvpMapPoints;
     const auto mvCurrentOutliers = currentFrame->mvbOutlier;
-    const auto lastProcessedState = pTracker->mLastProcessedState;
+    const auto lastProcessedState = pTracker->getTrackingState();
 
     if(both){
         mvCurrentKeysRight = pTracker->mCurrentFrame->mvKeysRight;

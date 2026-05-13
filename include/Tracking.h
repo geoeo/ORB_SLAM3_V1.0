@@ -127,7 +127,6 @@ public:
     };
 
     eTrackingState mState;
-    eTrackingState mLastProcessedState;
 
     // Input sensor
     int mSensor;
@@ -293,7 +292,6 @@ protected:
 
     //Motion Model
     bool mbVelocity;
-    Sophus::SE3f mLastFramePostDelta;
 
     //Color order (true RGB, false BGR, ignored if grayscale)
     bool mbRGB;

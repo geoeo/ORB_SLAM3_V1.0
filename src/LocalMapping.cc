@@ -708,7 +708,7 @@ bool LocalMapping::GeoreferenceKeyframes(){
     
     const auto georefKfs = mGeometricReferencer.getFramesForGeorefEstimation();
     Verbose::PrintMess("Georef function called with KFs :" + to_string(georefKfs.size()), Verbose::VERBOSITY_DEBUG);
-    auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
+    const auto pose_scale_opt = mGeometricReferencer.apply(georefKfs, mbGeorefUpdate);
     if(pose_scale_opt.has_value()){
         const auto Tgw = pose_scale_opt.value();
         Verbose::PrintMess("Georef applied to KFs: " + to_string(kfsWithoutGeoref.size()), Verbose::VERBOSITY_DEBUG);
@@ -1198,6 +1198,7 @@ bool LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA, int its
 
 void LocalMapping::UpdateTrackerAndMapCoordianateFrames(std::vector<shared_ptr<KeyFrame>> sortedKeyframes, const Sophus::Sim3f &Sim3_Tyw, const std::optional<IMU::Bias>& b_option){
     //TODO IMU Frame is hardcoded in pipeline as const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE); -> this should be aligned to some rotation frame if we are to support a GNSS alignged system
+
     mpTracker->UpdateInitialFrame(Sim3_Tyw);
     // const auto Sim3_Tiy = Sophus::Sim3f(1.0, mpTracker->GetInitialFrame()->GetPoseInverse().unit_quaternion(), mpTracker->GetInitialFrame()->GetPoseInverse().translation());
     // const auto Sim3_Tiw = Sim3_Tiy*Sim3_Tyw;
