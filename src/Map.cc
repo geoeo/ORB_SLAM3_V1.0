@@ -19,6 +19,7 @@
 
 #include <Map.h>
 #include <Verbose.h>
+#include <fstream>
 
 namespace ORB_SLAM3
 {
@@ -450,6 +451,62 @@ void Map::writeKeyframesReprojectionErrors(const string& filename,
             sum_errors += err.norm();
         const auto avg_error = num_errors == 0 ? -1.0 : sum_errors / static_cast<float>(num_errors);
         out << avg_error << sep << kf->GetFrameId() << "\n";
+    }
+    out.close();
+}
+
+void Map::writeKeyframesGyroBias(const string& filename,
+                   const vector<shared_ptr<KeyFrame>> keyframes,
+                   char sep,
+                   int precision) 
+{
+    const auto ext = ".csv";
+    const auto output_path = filename + ext;
+
+    std::ifstream existing_file(output_path);
+    const bool file_exists = existing_file.good();
+
+    if(file_exists)
+        return;
+
+    std::ofstream out(output_path, file_exists ? (std::ios::out | std::ios::app) : std::ios::out); // append if file already exists
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+    if (!file_exists) 
+        out << "# gx" << sep << "gy" << sep << "gz" << sep << "id" << "\n";
+
+    for (const auto& kf : keyframes) {
+        const auto gyro_bias = kf->GetGyroBias();
+        out << gyro_bias.x() << sep << gyro_bias.y() << sep << gyro_bias.z() << sep << kf->GetFrameId() << "\n";
+    }
+    out.close();
+}
+
+void Map::writeKeyframesAccelerometerBias(const string& filename,
+                   const vector<shared_ptr<KeyFrame>> keyframes,
+                   char sep,
+                   int precision) 
+{
+    const auto ext = ".csv";
+    const auto output_path = filename + ext;
+
+    std::ifstream existing_file(output_path);
+    const bool file_exists = existing_file.good();
+
+    if(file_exists)
+        return;
+
+    std::ofstream out(output_path, file_exists ? (std::ios::out | std::ios::app) : std::ios::out); // append if file already exists
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+    if (!file_exists) 
+        out << "# ax" << sep << "ay" << sep << "az" << sep << "id" << "\n";
+
+    for (const auto& kf : keyframes) {
+        const auto accel_bias = kf->GetAccBias();
+        out << accel_bias.x() << sep << accel_bias.y() << sep << accel_bias.z() << sep << kf->GetFrameId() << "\n";
     }
     out.close();
 }

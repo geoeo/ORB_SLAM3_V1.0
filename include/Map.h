@@ -107,6 +107,8 @@ public:
     void printReprojectionError(std::list<std::shared_ptr<KeyFrame>> &lpLocalWindowKFs, std::shared_ptr<KeyFrame> mpCurrentKF, std::string &name, std::string &name_folder);
     static void writeKeyframesCsv(const std::string& path, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
     static void writeKeyframesReprojectionErrors(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
+    static void writeKeyframesGyroBias(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
+    static void writeKeyframesAccelerometerBias(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
 
     std::vector<std::shared_ptr<KeyFrame>> mvpKeyFrameOrigins;
     std::vector<unsigned long int> mvBackupKeyFrameOriginsId;

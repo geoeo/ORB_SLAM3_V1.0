@@ -49,7 +49,6 @@ public:
 
     // Draw last processed frame.
     cv::Mat DrawFrame(float imageScale=1.f);
-    cv::Mat DrawRightFrame(float imageScale=1.f);
 
     bool both;
 
@@ -58,15 +57,18 @@ protected:
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
 
     // Info of the frame to be drawn
-    cv::Mat mIm,mImRight;
+    cv::Mat mIm, mImPrev;
     int N;
-    std::shared_ptr<std::vector<KeyPoint>> mvCurrentKeys,mvCurrentKeysRight;
+
+    std::shared_ptr<std::vector<KeyPoint>> mvCurrentKeys;
+    std::shared_ptr<std::vector<KeyPoint>> mvCurrentKeysPrev;
     std::vector<bool> mvbMap, mvbVO;
     bool mbOnlyTracking;
     int mnTracked, mnTrackedVO;
     std::shared_ptr<std::vector<KeyPoint>> mvIniKeys;
     std::vector<int> mvIniMatches;
     int mState;
+    int mCounter;
 
     std::shared_ptr<Atlas> mpAtlas;
 
@@ -79,9 +81,11 @@ protected:
     std::vector<KeyPoint> mvOutlierKeys;
     std::vector<std::shared_ptr<MapPoint>> mvpOutlierMPs;
     std::vector<std::shared_ptr<MapPoint>> mvCurrentTrackedMapPoints;
+    std::vector<long unsigned int> mCurrIds;
 
     std::map<long unsigned int, cv::Point2f> mmProjectPoints;
-    std::map<long unsigned int, cv::Point2f> mmMatchedInImage;
+    std::map<long unsigned int, KeyPoint> mmMatchedInImage;
+    std::map<long unsigned int, KeyPoint> mmMatchedInImagePrev;
 
 };
 

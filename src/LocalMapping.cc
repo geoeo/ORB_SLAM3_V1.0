@@ -266,6 +266,12 @@ void LocalMapping::Run()
         if(CheckFinish())
             break;
 
+        // if(mpAtlas->GetCurrentMap()->isImuInitialized() && mTElapsedTime > 60.0){
+        //     const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+        //     Map::writeKeyframesGyroBias("keyframes_gyro_bias", kfs);
+        //     Map::writeKeyframesAccelerometerBias("keyframes_accel_bias", kfs);
+        // }
+
 
     }
 
