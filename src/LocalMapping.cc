@@ -32,6 +32,8 @@
 
 using namespace std;
 
+constexpr std::string_view traj = "circle";
+
 namespace ORB_SLAM3
 {
 
@@ -64,6 +66,8 @@ void LocalMapping::SetTracker(shared_ptr<Tracking> pTracker)
 void LocalMapping::Run()
 {
     mbFinished = false;
+    float last_imu_write = 10.0;
+    int imu_write_count = 0;
     while(!CheckFinish())
     {
         ZoneNamedN(LocalMapping, "LocalMapping", true);  // NOLINT: Profiler
@@ -189,6 +193,9 @@ void LocalMapping::Run()
             {
                 Verbose::PrintMess("Initial IMU Init", Verbose::VERBOSITY_DEBUG);
                 auto success = InitializeIMU(priorGInit, priorAInit, true, itsFIBAInit, minTimeForImuInit, 10);
+                const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+                Map::writeKeyframesGyroBias("keyframes_gyro_bias_int_0_" + std::string(traj), kfs);
+                Map::writeKeyframesAccelerometerBias("keyframes_accel_bias_int_0_" + std::string(traj), kfs);
                 Verbose::PrintMess("Initial IMU Init Success: " + to_string(success), Verbose::VERBOSITY_DEBUG);
                 if(false){
                     mpAtlas->GetCurrentMap()->SetInertialBA1();
@@ -220,6 +227,9 @@ void LocalMapping::Run()
                             mpAtlas->GetCurrentMap()->SetInertialBA2(); // skip second BA
                             if(minTimeForFullBA < 0)
                                 mpAtlas->GetCurrentMap()->SetInertialFullBA();
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+                            Map::writeKeyframesGyroBias("keyframes_gyro_bias_int_1_" + std::string(traj), kfs);
+                            Map::writeKeyframesAccelerometerBias("keyframes_accel_bias_int_1_" + std::string(traj), kfs);
                             mInitCompleteTime = mTElapsedTime;
                         }
                         
@@ -235,6 +245,9 @@ void LocalMapping::Run()
 
                         if(success){
                             mpAtlas->GetCurrentMap()->SetInertialBA2();
+                            const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+                            Map::writeKeyframesGyroBias("keyframes_gyro_bias_int_2_" + std::string(traj), kfs);
+                            Map::writeKeyframesAccelerometerBias("keyframes_accel_bias_int_2_" + std::string(traj), kfs);
                             if(minTimeForFullBA < 0)
                                 mpAtlas->GetCurrentMap()->SetInertialFullBA();
                         }
@@ -266,11 +279,17 @@ void LocalMapping::Run()
         if(CheckFinish())
             break;
 
-        // if(mpAtlas->GetCurrentMap()->isImuInitialized() && mTElapsedTime > 60.0){
-        //     const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
-        //     Map::writeKeyframesGyroBias("keyframes_gyro_bias", kfs);
-        //     Map::writeKeyframesAccelerometerBias("keyframes_accel_bias", kfs);
-        // }
+        if(mGeometricReferencer.isInitialized() && mbWriteGNSSData){
+            if(mTElapsedTime - last_imu_write >= 10.0){
+                const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
+                Map::writeKeyframesGyroBias("keyframes_gyro_bias_" + std::string(traj) + "_" + to_string(imu_write_count), kfs);
+                Map::writeKeyframesAccelerometerBias("keyframes_accel_bias_" + std::string(traj) + "_" + to_string(imu_write_count), kfs);
+                last_imu_write = mTElapsedTime;
+                imu_write_count++;
+            }
+
+
+        }
 
 
     }
