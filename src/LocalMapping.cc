@@ -32,7 +32,7 @@
 
 using namespace std;
 
-constexpr std::string_view traj = "circle";
+constexpr std::string_view traj = "eight";
 
 namespace ORB_SLAM3
 {
@@ -161,8 +161,8 @@ void LocalMapping::Run()
                             const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
                             for(const auto kf : kfs)
                                 kf->ComputeReprojectionErrors(true);
-                            Map::writeKeyframesCsv("keyframes_after_georef", kfs);
-                            Map::writeKeyframesReprojectionErrors("reprojections_after_georef", kfs);
+                            Map::writeKeyframesCsv("keyframes_after_georef_" + std::string(traj), kfs);
+                            Map::writeKeyframesReprojectionErrors("reprojections_after_georef_" + std::string(traj), kfs);
                         }
                         writeKFAfterGeorefCompleted = true;
                     }
@@ -176,8 +176,8 @@ void LocalMapping::Run()
                             if(mbWriteGNSSData){
                                 for(const auto kf : kfs)
                                     kf->ComputeReprojectionErrors(true);
-                                Map::writeKeyframesCsv("keyframes_after_gnss_bundle", kfs);
-                                Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle", kfs);
+                                Map::writeKeyframesCsv("keyframes_after_gnss_bundle_" + std::string(traj), kfs);
+                                Map::writeKeyframesReprojectionErrors("reprojections_after_gnss_bundle_" + std::string(traj), kfs);
                             }
                             GBAGeorefCompleted = true;
                         }
@@ -284,6 +284,7 @@ void LocalMapping::Run()
                 const auto kfs = mpAtlas->GetCurrentMap()->GetAllKeyFrames(true);
                 Map::writeKeyframesGyroBias("keyframes_gyro_bias_" + std::string(traj) + "_" + to_string(imu_write_count), kfs);
                 Map::writeKeyframesAccelerometerBias("keyframes_accel_bias_" + std::string(traj) + "_" + to_string(imu_write_count), kfs);
+                Map::writeMapStats("map_stats_" + std::string(traj) + "_" + to_string(imu_write_count), mpAtlas->GetCurrentMap(), ',', 17);
                 last_imu_write = mTElapsedTime;
                 imu_write_count++;
             }
