@@ -22,6 +22,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <algorithm>
 #include <mutex>
 
 using namespace std;
@@ -72,6 +73,8 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
             mState=Tracking::NO_IMAGES_YET;
 
         mIm.copyTo(im);
+        if(mImPrev.empty())
+            mImPrev = cv::Mat(im.rows,im.cols,CV_8UC1, cv::Scalar(0));
         mImPrev.copyTo(imPrev);
 
         if(mState==Tracking::NOT_INITIALIZED)
@@ -103,19 +106,12 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
         }
     }
     
-    // if(imageScale != 1.f)
-    // {
-    //     int imWidth = im.cols / imageScale;
-    //     int imHeight = im.rows / imageScale;
-    //     std::cout << "resize" << std::endl;
-    //     cv::resize(im, im, cv::Size(imWidth, imHeight));
-    // }
+    cvtColor(im,im,cv::COLOR_GRAY2BGR); // Keypoints are drawn on a color image
+    cvtColor(imPrev,imPrev,cv::COLOR_GRAY2BGR);
 
-        // if(im.channels()<3) {
-        //     std::cout << "cvt" << std::endl;
-        cvtColor(im,im,cv::COLOR_GRAY2BGR); // Keypoints are drawn on a color image
-        // }
-        cvtColor(imPrev,imPrev,cv::COLOR_GRAY2BGR);
+    cv::Mat imCombined = cv::Mat::zeros(std::max(im.rows, imPrev.rows), im.cols + imPrev.cols, im.type());
+    imPrev.copyTo(imCombined.rowRange(0, imPrev.rows).colRange(0, imPrev.cols));
+    im.copyTo(imCombined.rowRange(0, im.rows).colRange(imPrev.cols, imPrev.cols + im.cols));
 
 
     // //Draw
@@ -159,10 +155,6 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
     else if(state==Tracking::OK) //TRACKING
     {
 
-
-        cv::Mat imCombined = cv::Mat::zeros(im.rows, im.cols + imPrev.cols, im.type());
-        imPrev.copyTo(imCombined.rowRange(0, imPrev.rows).colRange(0, imPrev.cols));
-        im.copyTo(imCombined.rowRange(0, im.rows).colRange(imPrev.cols, imPrev.cols + im.cols));
 
         mnTracked=0;
         mnTrackedVO=0;
@@ -235,12 +227,21 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
                     cv::circle(im,point,2,standardColor,-1);
                     mnTracked++;
 
-                    cv::rectangle(imCombined,pt1Shifted,pt2Shifted,standardColor);
-                    cv::circle(imCombined,pointShifted,2,standardColor,-1);
+
+                    if(PrevPointFound){
+                        cv::rectangle(imCombined,pt1Shifted,pt2Shifted,standardColor);
+                        cv::circle(imCombined,pointShifted,2,standardColor,-1);
+                    }
+                    else{
+                        cv::rectangle(imCombined,pt1Shifted,pt2Shifted,noLandmarkColor);
+                        cv::circle(imCombined,pointShifted,2,noLandmarkColor,-1);
+                    }
+
+
                     if(PrevPointFound)
                         cv::line(imCombined, pointPrev, pointShifted, standardColor);
 
-                    cv::imwrite("combined_frame_" + to_string(mCounter) + ".png", imCombined);
+                    //cv::imwrite("combined_frame_" + to_string(mCounter) + ".png", imCombined);
 
                 }
                 else if(vbVO[i]) // This is match to a "visual odometry" MapPoint created in the last frame - 0 Obs
@@ -296,7 +297,7 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
     cv::Mat imWithInfo;
     DrawTextInfo(im,state, imWithInfo);
 
-    return imWithInfo;
+    return imCombined;
 }
 
 
@@ -343,7 +344,12 @@ void FrameDrawer::Update(shared_ptr<Tracking> pTracker)
 {
     unique_lock<mutex> lock(mMutex);
     //Variables for the new visualization
-    mImPrev = mIm.clone();
+    if(mImPrev.empty() ||
+       mIm.rows != pTracker->mImGrayViewer.rows ||
+       mIm.cols != pTracker->mImGrayViewer.cols)
+        mImPrev = cv::Mat(pTracker->mImGrayViewer.rows, pTracker->mImGrayViewer.cols, CV_8UC1, cv::Scalar(0));
+    else
+        mIm.copyTo(mImPrev);
     mmMatchedInImagePrev = mmMatchedInImage;
 
     pTracker->mImGrayViewer.copyTo(mIm);

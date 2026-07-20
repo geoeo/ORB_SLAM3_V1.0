@@ -77,6 +77,10 @@ public:
         return mnFound;
     }
 
+    inline int GetVisible(){
+        return mnVisible;
+    }
+
     void ComputeDistinctiveDescriptors();
 
     cv::Mat GetDescriptor();

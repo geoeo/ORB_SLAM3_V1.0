@@ -511,5 +511,37 @@ void Map::writeKeyframesAccelerometerBias(const string& filename,
     out.close();
 }
 
+void Map::writeMapStats(const string& filename,
+                   const shared_ptr<Map> map,
+                   char sep,
+                   int precision) 
+{
+    const auto ext = ".csv";
+    const auto output_path = filename + ext;
+
+    std::ifstream existing_file(output_path);
+    const bool file_exists = existing_file.good();
+
+    if(file_exists)
+        return;
+
+    std::ofstream out(output_path, file_exists ? (std::ios::out | std::ios::app) : std::ios::out); // append if file already exists
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());        // decimal '.' regardless of locale
+    out << std::setprecision(precision) << std::defaultfloat;
+    if (!file_exists) 
+        out << "# found " << sep << "visible " << sep << "found ratio " << sep << "obs count" << "\n";
+
+    for(const auto& mp : map->GetAllMapPoints()) {
+        const auto found = mp->GetFound();
+        const auto visible = mp->GetVisible();
+        const auto found_ratio = mp->GetFoundRatio();
+        const auto obs_count = mp->GetObservations().size();
+        out << found << sep << visible << sep << found_ratio << sep << obs_count << "\n";
+     }
+
+    out.close();
+}
+
 
 } //namespace ORB_SLAM3
