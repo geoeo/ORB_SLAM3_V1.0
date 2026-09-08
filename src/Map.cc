@@ -379,6 +379,8 @@ void Map::SetLastMapChange(int currentChangeId)
     mnMapChangeNotified = currentChangeId;
 }
 
+
+
 void Map::writeKeyframesCsv(const string& filename,
                    const vector<shared_ptr<KeyFrame>> keyframes,
                    char sep,
@@ -480,6 +482,29 @@ void Map::writeKeyframesGyroBias(const string& filename,
         const auto gyro_bias = kf->GetGyroBias();
         out << gyro_bias.x() << sep << gyro_bias.y() << sep << gyro_bias.z() << sep << kf->GetFrameId() << "\n";
     }
+    out.close();
+}
+
+void Map::writeInlierCount(const string& filename,
+                   long unsigned int frame_id,
+                   int inlier_count,
+                   char sep)
+{
+    const auto ext = ".csv";
+    const auto output_path = filename + ext;
+
+    std::ifstream existing_file(output_path);
+    const bool file_exists = existing_file.good();
+
+    // One row is appended per call, so unlike the keyframe writers this must not
+    // bail out when the file is already there.
+    std::ofstream out(output_path, file_exists ? (std::ios::out | std::ios::app) : std::ios::out);
+    out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+    out.imbue(std::locale::classic());
+    if (!file_exists)
+        out << "# id" << sep << "inlier_count" << "\n";
+
+    out << frame_id << sep << inlier_count << "\n";
     out.close();
 }
 

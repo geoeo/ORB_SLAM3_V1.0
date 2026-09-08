@@ -93,18 +93,13 @@ namespace ORB_SLAM3
             }
         }
 
-        // Launch threads to compute in parallel a fundamental matrix and a homography
+        // Compute both models serially because Eigen's temporary allocations are not safe here.
         vector<bool> vbMatchesInliersH, vbMatchesInliersF;
         float SH, SF;
         Eigen::Matrix3f H, F;
 
-        //TODO: Profile if 2 threads are really necessary
-        thread threadH(&TwoViewReconstruction::FindHomography,this,ref(vbMatchesInliersH), ref(SH), ref(H));
-        thread threadF(&TwoViewReconstruction::FindFundamental,this,ref(vbMatchesInliersF), ref(SF), ref(F));
-
-        // Wait until both threads have finished
-        threadH.join();
-        threadF.join();
+        FindHomography(vbMatchesInliersH, SH, H);
+        FindFundamental(vbMatchesInliersF, SF, F);
 
         // Compute ratio of scores
         if(SH+SF == 0.f) return false;
@@ -180,7 +175,7 @@ namespace ORB_SLAM3
     void TwoViewReconstruction::FindFundamental(vector<bool> &vbMatchesInliers, float &score, Eigen::Matrix3f &F21)
     {
         // Number of putative matches
-        const int N = vbMatchesInliers.size();
+        const int N = mvMatches12.size();
 
         // Normalize coordinates
         vector<cv::Point2f> vPn1, vPn2;

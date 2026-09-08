@@ -108,6 +108,7 @@ public:
     static void writeKeyframesCsv(const std::string& path, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
     static void writeKeyframesReprojectionErrors(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
     static void writeKeyframesGyroBias(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
+    static void writeInlierCount(const std::string& filename, long unsigned int frame_id, int inlier_count, char sep = ',');
     static void writeKeyframesAccelerometerBias(const std::string& filename, const std::vector<std::shared_ptr<KeyFrame>> keyframes, char sep = ',', int precision = 17);
     static void writeMapStats(const std::string& filename, const std::shared_ptr<Map> map, char sep = ',', int precision = 17);
 

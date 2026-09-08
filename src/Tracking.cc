@@ -28,6 +28,7 @@
 #include <CameraModels/KannalaBrandt8.h>
 #include <MLPnPsolver.h>
 #include <GeometricTools.h>
+#include <Map.h>
 
 #include <iostream>
 #include <chrono>
@@ -977,6 +978,8 @@ bool Tracking::TrackLocalMap()
                 mCurrentFrame->mvpMapPoints[i] = nullptr;
         }
     }
+
+    Map::writeInlierCount("inlier", mCurrentFrame->mnId, mnMatchesInliers);
 
     const auto pred = (mnMatchesInliers<inlierImuThreshold && mpAtlas->isImuInitialized())||(mnMatchesInliers<30 && !mpAtlas->isImuInitialized());
     return !pred;

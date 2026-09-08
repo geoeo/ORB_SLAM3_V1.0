@@ -37,9 +37,9 @@ include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX17)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
    add_definitions(-DCOMPILEDWITHC17)
-   message(STATUS "Using flag -std=c++17.")
+        message(STATUS "Using flag -std=c++17.")
 elseif(COMPILER_SUPPORTS_CXX0X)
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
    add_definitions(-DCOMPILEDWITHC0X)
@@ -48,6 +48,19 @@ else()
    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
 endif()
 
+
+# OpenREALM's realm_vslam links GTSAM, which exports "-march=native" through its
+# INTERFACE_COMPILE_OPTIONS. On an AVX-512 host that sets EIGEN_MAX_ALIGN_BYTES=64
+# there, while a plain build here gets 16. The two then disagree on Eigen's
+# allocator ABI (handmade_aligned_free vs plain free) and corrupt the heap when a
+# buffer allocated by one is freed by the other. Match realm_vslam's alignment.
+# Skipped on ARM (no AVX-512; both sides stay at 16).
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  if(NOT "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm|aarch64")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    message(STATUS "Eigen ABI: building with -march=native to match realm_vslam")
+  endif()
+endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/cmake_modules)
 
